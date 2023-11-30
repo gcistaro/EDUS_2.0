@@ -1,5 +1,5 @@
-template<typename T>
-void BlockMatrix<T>::initialize(mdarray<T,3>& Values_)//, MeshGrid& meshgrid_)
+template<typename T, Space space>
+void BlockMatrix<T,space>::initialize(mdarray<T,3>& Values_)//, MeshGrid& meshgrid_)
 {
     Values = std::move(Values_);
     //meshgrid = std::make_shared<MeshGrid>(meshgrid_);
@@ -11,20 +11,20 @@ void BlockMatrix<T>::initialize(mdarray<T,3>& Values_)//, MeshGrid& meshgrid_)
     }
 }
 
-template<typename T>
-void BlockMatrix<T>::fill(const T& Scalar)
+template<typename T, Space space>
+void BlockMatrix<T,space>::fill(const T& Scalar)
 {
     std::fill(this->Values.begin(), this->Values.end(), Scalar);
 }
 
-template<typename T>
-Matrix<T>& BlockMatrix<T>::operator[](const int& iblock)
+template<typename T, Space space>
+Matrix<T>& BlockMatrix<T,space>::operator[](const int& iblock)
 {
     return const_cast<Matrix<T>&>(static_cast<const BlockMatrix<T>&>(*this)[iblock]);
 }
 
-template<typename T>
-const Matrix<T>& BlockMatrix<T>::operator[](const int& iblock) const
+template<typename T, Space space>
+const Matrix<T>& BlockMatrix<T,space>::operator[](const int& iblock) const
 {
     if(iblock < 0){
         return EmptyMatrix;
@@ -32,24 +32,24 @@ const Matrix<T>& BlockMatrix<T>::operator[](const int& iblock) const
     return submatrix[iblock];
 }
 
-template<typename T>
-void multiply(BlockMatrix<T>& Output, T Scalar, const BlockMatrix<T>& Input1, const BlockMatrix<T>& Input2 )
+template<typename T, Space space>
+void multiply(BlockMatrix<T,space>& Output, T Scalar, const BlockMatrix<T,space>& Input1, const BlockMatrix<T,space>& Input2 )
 {
     for(int iblock=0; iblock<Output.get_nblocks(); iblock++){
         Matrix_gemm(Output[iblock], Scalar, Input1[iblock], Input2[iblock], 0.);
     }
 }
 
-template<typename T, typename U>
-void convolution(BlockMatrix<T>& Output, U Scalar, const BlockMatrix<T>& Input1, const BlockMatrix<T>& Input2 )
+template<typename T, Space space, typename U>
+void convolution(BlockMatrix<T,space>& Output, U Scalar, const BlockMatrix<T,space>& Input1, const BlockMatrix<T,space>& Input2 )
 {
     assert(Output.get_nblocks()!=0);
 
     Output.fill(0.);
-    auto& ci = MeshGrid<R>::ConvolutionIndex[{Output.meshgrid->get_id(), Input1.meshgrid->get_id(), Input2.meshgrid->get_id()}];
+    auto& ci = MeshGrid<space>::ConvolutionIndex[{Output.meshgrid->get_id(), Input1.meshgrid->get_id(), Input2.meshgrid->get_id()}];
 
     if(ci.get_Size(0) == 0 ){
-        MeshGrid<R>::Calculate_ConvolutionIndex(*(Output.meshgrid), *(Input1.meshgrid), *(Input2.meshgrid));
+        MeshGrid<space>::Calculate_ConvolutionIndex(*(Output.meshgrid), *(Input1.meshgrid), *(Input2.meshgrid));
 
     }
     for(int iblock_o=0; iblock_o<Output.get_nblocks(); iblock_o++){
@@ -61,8 +61,8 @@ void convolution(BlockMatrix<T>& Output, U Scalar, const BlockMatrix<T>& Input1,
 }
 
 
-template<typename T>
-BlockMatrix<T>::~BlockMatrix()
+template<typename T, Space space>
+BlockMatrix<T,space>::~BlockMatrix()
 {
     Values.~mdarray<T,3>();
 }

@@ -6,7 +6,7 @@ int main()
 
     mdarray<std::complex<double>,3> bare_output({model.H.get_nblocks(), model.H.get_nrows(), model.H.get_ncols()});
     std::cout << bare_output.get_Size(0) << bare_output.get_Size(1) << bare_output.get_Size(2) << std::endl; 
-    BlockMatrix<std::complex<double>> Output;
+    BlockMatrix<std::complex<double>,R> Output;
     Output.initialize(bare_output);
     std::cout << Output.get_nblocks() << Output.get_nrows() << Output.get_ncols() << std::endl; 
     Output.set_MeshGrid((*model.r[2].get_MeshGrid()));

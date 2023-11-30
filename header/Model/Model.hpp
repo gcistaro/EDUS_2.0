@@ -10,16 +10,16 @@ class Model
 
 
     public:
-        enum Type{wannier} type;
-        std::array<BlockMatrix<std::complex<double>>, 3> r;
-        BlockMatrix<std::complex<double>> H;
+        enum MODEL{wannier} model;
+        std::array<BlockMatrix<std::complex<double>,R>, 3> r;
+        BlockMatrix<std::complex<double>,R> H;
         MeshGrid<R> Master_MeshGrid;
 
 
         Model(){};
         Model(const std::string& Filename)
         {
-            type = wannier;
+            model = wannier;
    
             Wannier wannier(Filename);
             //we move the resources from wannier.r and wannier.H, anyway we throw wannier right after.            
