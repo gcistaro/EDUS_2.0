@@ -1,0 +1,5 @@
+Here I create the model and with it I can make convolutions.
+To test it, the_tb.dat file create from the jupyter notebook create a fake wannier in which I have three functions on position operator. 
+I do the convolution of x and y and i obtain what is in z. Everything is analytical. (look at the screenshow in the folder.)
+
+x and y are F and G of the functions.png file, z is the result in Convolution.png
