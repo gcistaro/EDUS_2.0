@@ -16,7 +16,6 @@ constexpr double AtomicUnitOfTime   = 2.4188843265857*1.e-17; //s
 constexpr double SpeedOfLight       = 299792458/Bohr_value*AtomicUnitOfTime;
 
 double c1,c2,c3;
-bool direct, cartesian;
 
 double threshold = 1.e-08;
 
