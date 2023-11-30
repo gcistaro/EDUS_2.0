@@ -26,12 +26,12 @@
 //we need two different styles
 //1 - O(nk, nk') = O(n,n')(k) delta(k-k')
 //2 - O(nR, nR') = O(n,n')(R-R') 
-template<typename T>
+template<typename T=std::complex<double>, Space space=R>
 class BlockMatrix{
     private:
         mdarray<T,3> Values; //first index -> block, others -> matrix
         std::vector<Matrix<T>> submatrix;
-        std::shared_ptr<MeshGrid<R>> meshgrid;    
+        std::shared_ptr<MeshGrid<space>> meshgrid;    
         Matrix<T> EmptyMatrix;    
     public:
         BlockMatrix(){};
@@ -58,7 +58,7 @@ class BlockMatrix{
         BlockMatrix<T> operator*(const BlockMatrix<T>& B);
 
         const T* data() const {return Values.data();};
-        T* data() {return const_cast<T*>((static_cast<const BlockMatrix<T>&>(*this)).Values.data());};
+        T* data() {return const_cast<T*>((static_cast<const BlockMatrix<T,space>&>(*this)).Values.data());};
         //friend void multiply(Matrix<T>& OutputMatrix, const auto& Scalar1, const Matrix<T>& Matrix1, 
         //                                              const auto& Scalar2, const Matrix<T>& Matrix2);
 
@@ -67,11 +67,11 @@ class BlockMatrix{
         size_t get_nblocks() const{return Values.get_Size(0);};
         size_t get_nrows() const{return Values.get_Size(1);};
         size_t get_ncols() const{return Values.get_Size(2);};
-        MeshGrid<R>* get_MeshGrid()const {return this->meshgrid.get();};
+        MeshGrid<space>* get_MeshGrid()const {return this->meshgrid.get();};
 
-        void set_MeshGrid(MeshGrid<R>& meshgrid_){ this->meshgrid = std::make_shared<MeshGrid<R>>(meshgrid_);};
-        template<typename T_, typename U>
-        friend void convolution(BlockMatrix<T_>& Output, U Scalar, const BlockMatrix<T_>& Input1, const BlockMatrix<T_>& Input2 );
+        void set_MeshGrid(MeshGrid<space>& meshgrid_){ this->meshgrid = std::make_shared<MeshGrid<space>>(meshgrid_);};
+        template<typename T_, Space space_, typename U>
+        friend void convolution(BlockMatrix<T_,space_>& Output, U Scalar, const BlockMatrix<T_,space_>& Input1, const BlockMatrix<T_,space_>& Input2 );
         
 	//destructor
         ~BlockMatrix();	
