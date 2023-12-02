@@ -45,13 +45,14 @@ class Matrix{
         Matrix<T> inverse() const;
         Matrix<T> transpose() const;
         void LUdecompose(Matrix<T>& LU, lapack_int** pointer_to_ipiv) const;
-        //Matrix<T> LUdecompose() const;
+        void diagonalize(Matrix<T>& Eigenvectors, mdarray<T,1>& EigenValues) const;
+	//Matrix<T> LUdecompose() const;
 	T determinant() const;
         const T* data() const {return Values.data();};
         T* data() {return const_cast<T*>((static_cast<const Matrix<T>&>(*this)).Values.data());};
         //friend void multiply(Matrix<T>& OutputMatrix, const auto& Scalar1, const Matrix<T>& Matrix1, 
         //                                              const auto& Scalar2, const Matrix<T>& Matrix2);
-
+        
         auto begin() const { return Values.begin(); }
         auto end() const {return Values.end(); } 	
         int get_nrows() const;

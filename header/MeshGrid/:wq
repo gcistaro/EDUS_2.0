@@ -51,7 +51,7 @@ void Coordinate<space>::initialize(const double& c1, const double& c2, const dou
         assert(BasisDictionary.find(KeyForBasis) != BasisDictionary.end());
     }
     CoordinateDictionary[KeyForBasis] = Vector<double>();
-    CoordinateDictionary.at(KeyForBasis).initialize_n(c1,c2,c3);
+    CoordinateDictionary[KeyForBasis].initialize_n(c1,c2,c3);
     if(KeyForBasis != std::string("Cartesian")){
         auto& M = BasisDictionary[KeyForBasis].get_invM();
         CoordinateDictionary["Cartesian"] = M*CoordinateDictionary[KeyForBasis];
@@ -87,10 +87,9 @@ Coordinate<space>& Coordinate<space>::operator=(Coordinate<space>&& v)
 template<Space space>
 Coordinate<space> Coordinate<space>::operator-() const
 {
-    auto& cart = CoordinateDictionary.at("Cartesian");
-    return(Coordinate<space>(-cart(0),
-                             -cart(1),
-                             -cart(2)));
+    return(Coordinate<space>(-CoordinateDictionary["Cartesian")(]),
+                             -CoordinateDictionary["Cartesian"](1),
+                             -CoordinateDictionary["Cartesian"](2)));
 }
 
 template<Space space>

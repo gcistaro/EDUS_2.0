@@ -155,6 +155,19 @@ Matrix<T> Matrix<T>::transpose() const
     return transposeM;
 }
 
+template<typename T>
+void Matrix<T>::diagonalize(Matrix<T>& EigenVectors, mdarray<T,1>& EigenValues) const
+{
+    //note: we need to copy the matrix or we lose the info because it is overwritten with eigenvectors
+    assert(this->get_nrows() == this->get_ncols());
+    EigenVectors = *this;
+    auto n = this->get_nrows();
+    auto lda = n;
+    EigenValues.initialize({this->get_nrows()});
+    LAPACKE_dsyev( LAPACK_ROW_MAJOR, 'V', 'U', n, &EigenVectors(0,0), lda, &EigenValues(0) );
+ 
+}
+
 template<class T>
 Matrix<T> Matrix<T>::operator*(const Matrix<T>& B) const
 {

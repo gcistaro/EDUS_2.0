@@ -2,8 +2,8 @@
 
 int main()
 {
-    Model model("Convolution");
-
+    //Model model("Convolution");
+    Model model("TBgraphene");
     mdarray<std::complex<double>,3> bare_output({model.H.get_nblocks(), model.H.get_nrows(), model.H.get_ncols()});
     std::cout << bare_output.get_Size(0) << bare_output.get_Size(1) << bare_output.get_Size(2) << std::endl; 
     BlockMatrix<std::complex<double>,R> Output;
