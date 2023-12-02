@@ -73,7 +73,24 @@ class BlockMatrix{
         template<typename T_, Space space_, typename U>
         friend void convolution(BlockMatrix<T_,space_>& Output, U Scalar, const BlockMatrix<T_,space_>& Input1, const BlockMatrix<T_,space_>& Input2 );
         
-	//destructor
+        template<typename T_, Space space_>
+        friend void diagonalize(const BlockMatrix<T_,space_>& ToDiagonalize,
+                                mdarray<T_,2> Eigenvalues,
+                                BlockMatrix<T_,space_> Eigenvectors)
+        {
+            //assert(space_ == k);
+            Eigenvectors.initialize(ToDiagonalize.get_nblocks(), ToDiagonalize.get_nrows(), ToDiagonalize.get_ncols());
+            Eigenvalues.initialize({ToDiagonalize.get_nblocks(), ToDiagonalize.get_nrows()});
+
+            for(int ik=0; ik<ToDiagonalize.get_nblocks(); ik++){
+                diagonalize(ToDiagonalize[ik], Eigenvectors[ik], &Eigenvalues(ik,0));
+            }
+
+
+        }
+
+                        
+        //destructor
         ~BlockMatrix();	
 };
 
