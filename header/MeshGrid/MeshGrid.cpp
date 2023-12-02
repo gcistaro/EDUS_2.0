@@ -22,7 +22,7 @@ MeshGrid<space>& MeshGrid<space>::operator=(MeshGrid<space>&& mg)
 }
 
 template<Space space>
-MeshGrid<space>::MeshGrid(const std::vector<Vector<space>>& ReadMesh) : type(read), mesh(ReadMesh)
+MeshGrid<space>::MeshGrid(const std::vector<Coordinate<space>>& ReadMesh) : type(read), mesh(ReadMesh)
 {
     ++counter_id; 
     id = counter_id;
@@ -81,7 +81,7 @@ void MeshGrid<space>::initialize(const mdarray<double,2>& bare_mg, const std::st
 
     assert( bare_mg.get_Size(1) == 3 );
     for(size_t i=0; i<bare_mg.get_Size(0); ++i){
-        mesh.push_back(Vector<space>(bare_mg(i,0), bare_mg(i,1), bare_mg(i,2), KeyForBasis));
+        mesh.push_back(Coordinate<space>(bare_mg(i,0), bare_mg(i,1), bare_mg(i,2), KeyForBasis));
     }
     TotalSize = mesh.size();
 }
@@ -104,7 +104,7 @@ void MeshGrid<space>::initialize(const double& Radius_)
     
 
     //defining vectors of the mesh
-    auto& MetricTensor_ = Vector<space>::get_Basis("LatticeVectors").get_MetricTensor();
+    auto& MetricTensor_ = Coordinate<space>::get_Basis("LatticeVectors").get_MetricTensor();
     double i0_threshold, i1_threshold, i2_threshold;
     double fractPart;
     auto norm0 = std::sqrt(MetricTensor_(0,0));
@@ -128,7 +128,7 @@ void MeshGrid<space>::initialize(const double& Radius_)
     for(int i0=-i0_threshold; i0<=i0_threshold; i0++){
         for(int i1=-i1_threshold; i1<=i1_threshold; i1++){            
             for(int i2=-i2_threshold; i2<=i2_threshold; i2++){
-                auto v = Vector<space>(double(i0), double(i1), double(i2), "LatticeVectors");
+                auto v = Coordinate<space>(double(i0), double(i1), double(i2), "LatticeVectors");
                 if(v.norm() < Radius_+1.e-07){
                     mesh.push_back(v);
                 }
@@ -159,7 +159,7 @@ void MeshGrid<space>::initialize(const double& Radius_)
 
 
 template<Space space>
-const Vector<space>& MeshGrid<space>::operator[](const int& i) const
+const Coordinate<space>& MeshGrid<space>::operator[](const int& i) const
 {
     if(i < 0){
         return EmptyVector;
@@ -168,14 +168,14 @@ const Vector<space>& MeshGrid<space>::operator[](const int& i) const
 }
 
 template<Space space>
-Vector<space>& MeshGrid<space>::operator[](const int& i)
+Coordinate<space>& MeshGrid<space>::operator[](const int& i)
 {
-    return const_cast<Vector<space>&>(static_cast<const MeshGrid<space>&>(*this)[i]);
+    return const_cast<Coordinate<space>&>(static_cast<const MeshGrid<space>&>(*this)[i]);
 }
 
 
 template<Space space>
-int MeshGrid<space>::find(const Vector<space>& v) const
+int MeshGrid<space>::find(const Coordinate<space>& v) const
 {
     int index = -1;
     switch(type)
@@ -214,7 +214,7 @@ int MeshGrid<space>::find(const Vector<space>& v) const
 }
         
 template<Space space>
-Vector<space> MeshGrid<space>::reduce(const Vector<space>& v) const
+Coordinate<space> MeshGrid<space>::reduce(const Coordinate<space>& v) const
 {
         auto notcart = v.get("LatticeVectors");
         for(int ix=0; ix<3; ix++){
@@ -222,7 +222,7 @@ Vector<space> MeshGrid<space>::reduce(const Vector<space>& v) const
                 notcart[ix] += Size[ix];
             }
         }
-        Vector<R> v_reduced;
+        Coordinate<R> v_reduced;
         v_reduced.initialize(std::fmod(notcart[0],Size[0]),
                              std::fmod(notcart[1],Size[1]),
                              std::fmod(notcart[2],Size[2]),
@@ -233,7 +233,7 @@ Vector<space> MeshGrid<space>::reduce(const Vector<space>& v) const
 }
 
 template<Space space>
-const std::vector<Vector<space>>& MeshGrid<space>::get_mesh() const
+const std::vector<Coordinate<space>>& MeshGrid<space>::get_mesh() const
 {
     return mesh;
 }        

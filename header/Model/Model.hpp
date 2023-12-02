@@ -24,7 +24,7 @@ class Model
             Wannier wannier(Filename);
             //we move the resources from wannier.r and wannier.H, anyway we throw wannier right after.            
             Basis LatticeVectors(Matrix<double>(wannier.UnitCell).transpose());
-            Vector<R>::add_Basis(LatticeVectors, "LatticeVectors");
+            Coordinate<R>::add_Basis(LatticeVectors, "LatticeVectors");
             r[0].initialize(wannier.r[0]);
             r[1].initialize(wannier.r[1]);
             r[2].initialize(wannier.r[2]);

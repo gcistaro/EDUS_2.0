@@ -1,5 +1,6 @@
 #include <string>
 #include <map>
+#include "Vector.hpp"
 #include "Matrix.hpp"
 
 #ifndef GEOMETRY_HPP

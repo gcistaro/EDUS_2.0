@@ -9,9 +9,9 @@
 #include <iomanip>
 #include <typeinfo>
 
-#include "../mdContainers/mdContainers.hpp"
-#include "../MeshGrid/MeshGrid.hpp"
-#include "../Geometry/Matrix.hpp"
+#include "mdContainers.hpp"
+#include "MeshGrid.hpp"
+#include "Matrix.hpp"
 
 
 

@@ -30,10 +30,17 @@ int main()
     //std::cout << v1;
     //std::cout << v2;
 
-    M(0,0) = +1.;   M(0,1) = +5.;   M(0,2) = +1.;
-    M(1,0) = -10.;   M(1,1) = +7.;   M(1,2) = -1.;
+    M(0,0) = +1.;   M(0,1) = -10.;   M(0,2) = +5.;
+    M(1,0) = -10.;   M(1,1) = +7.;   M(1,2) = +4.;
     M(2,0) = +5.;   M(2,1) = +4.;   M(2,2) = -1.;
 
+
+    Matrix<double> U; 
+    mdarray<double,1> E;
+    M.diagonalize(U,E); 
+    std::cout << "Ut.M.U  \n" << U.transpose()*M*U << std::endl;
+    std::cout << "ENergy \n " << E;    
+/*
     auto invM = M.inverse();   
     std::cout << "I have done it! This is invM" << invM << std::endl;
     std::cout << "verification \n " <<invM*M << "\n" << M*invM ;
@@ -54,5 +61,5 @@ int main()
     Coordinate<R> k1;
     k1.initialize(0.,1.,0.,"LatticeVectors");
     std::cout << "k1::: "<< k1;
-
+*/
 }

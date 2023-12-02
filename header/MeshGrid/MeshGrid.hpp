@@ -6,8 +6,8 @@
 #include <vector>
 #include <algorithm>
 
-#include "../Constants.hpp"
-#include "../Geometry/Geometry.hpp"
+#include "Constants.hpp"
+#include "Coordinate.hpp"
 
 
 struct ShellInfo
@@ -22,7 +22,7 @@ struct ShellInfo
 template<Space space>
 class MeshGrid{
     private:
-        std::vector<Vector<space>> mesh;
+        std::vector<Coordinate<space>> mesh;
 
         //cube parameter
         std::array<int,3> Size;
@@ -32,7 +32,7 @@ class MeshGrid{
         std::vector<ShellInfo> shellinfo;
 
         //auxiliary vector for out of bounds (empty vector)
-        Vector<space> EmptyVector;
+        Coordinate<space> EmptyVector;
 
         size_t TotalSize=0;
         enum Type{cube,read,sphere} type;
@@ -48,7 +48,7 @@ class MeshGrid{
         MeshGrid(MeshGrid&& m) = default;
         MeshGrid<space>& operator=(MeshGrid<space>&& mg);
 
-        MeshGrid(const std::vector<Vector<space>>& ReadMesh); 
+        MeshGrid(const std::vector<Coordinate<space>>& ReadMesh); 
         MeshGrid(const mdarray<double,2>& bare_mg, const std::string& KeyForBasis);
         MeshGrid(const std::array<int,3>& Size_);
         MeshGrid(const double& Radius_);
@@ -58,13 +58,13 @@ class MeshGrid{
         void initialize(const mdarray<double,2>& bare_mg, const std::string& KeyForBasis);
 
 
-        Vector<space>& operator[](const int& i);
-        const Vector<space>& operator[](const int& i) const;
+        Coordinate<space>& operator[](const int& i);
+        const Coordinate<space>& operator[](const int& i) const;
 
-        int find(const Vector<space>& v) const;
-        Vector<space> reduce(const Vector<space>& v) const;
+        int find(const Coordinate<space>& v) const;
+        Coordinate<space> reduce(const Coordinate<space>& v) const;
 
-        const std::vector<Vector<space>>& get_mesh() const;
+        const std::vector<Coordinate<space>>& get_mesh() const;
         const std::array<int,3>& get_Size() const;
         size_t get_TotalSize() const;
         int get_id() const;

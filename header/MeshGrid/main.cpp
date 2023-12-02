@@ -11,13 +11,13 @@ int main()
     Basis Cartesian;
     Cartesian.initialize(M);
     std::cout << " CAARTESIAN:: \n" << Cartesian;
-    Vector<R>::add_Basis(Cartesian, "Cartesian");
+    Coordinate<R>::add_Basis(Cartesian, "Cartesian");
     M(0,0) = +1.;   M(0,1) = +0.5;   M(0,2) = -1.;
     M(1,0) = -1.;   M(1,1) = +1.5;   M(1,2) = -1.;
     M(2,0) = +1.;   M(2,1) = +0.5;   M(2,2) = +1.;
     Basis LatticeVectors;
     LatticeVectors.initialize(M);
-    Vector<R>::add_Basis(LatticeVectors, "LatticeVectors");
+    Coordinate<R>::add_Basis(LatticeVectors, "LatticeVectors");
    
     //sphere mesh testing:
     MeshGrid<R> m1(double(40.));
