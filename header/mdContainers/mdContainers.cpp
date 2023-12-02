@@ -41,13 +41,13 @@ mdarray<T,dim>& mdarray<T,dim>::operator=(mdarray<T,dim>&& ToBeMoved)
 
 
 template<typename T, size_t dim> 
-mdarray<T,dim>::mdarray(const std::array<size_t,dim>& Size_) 
+mdarray<T,dim>::mdarray(const std::array<int,dim>& Size_) 
 {
     this->initialize(Size_);
 }
 
 template<typename T, size_t dim> 
-mdarray<T,dim>::mdarray(T* Ptr_, const std::array<size_t,dim>& Size_)
+mdarray<T,dim>::mdarray(T* Ptr_, const std::array<int,dim>& Size_)
 {
     this->initialize(Ptr_, Size_);
 }
@@ -66,7 +66,7 @@ void mdarray<T,dim>::TotalSizeAndOffset()
 }
 
 template<typename T, size_t dim> 
-void mdarray<T,dim>::initialize(const std::array<size_t,dim>& Size_)
+void mdarray<T,dim>::initialize(const std::array<int,dim>& Size_)
 {
     (*this).~mdarray<T,dim>();
     Size = Size_;
@@ -79,7 +79,7 @@ void mdarray<T,dim>::initialize(const std::array<size_t,dim>& Size_)
 }
 
 template<typename T, size_t dim> 
-void mdarray<T,dim>::initialize(T* Ptr_, const std::array<size_t,dim>& Size_)
+void mdarray<T,dim>::initialize(T* Ptr_, const std::array<int,dim>& Size_)
 {
     Ptr = Ptr_; 
     Size = Size_; 
@@ -90,15 +90,15 @@ void mdarray<T,dim>::initialize(T* Ptr_, const std::array<size_t,dim>& Size_)
         
 template <typename T, size_t dim>
 template <typename... Args>
-size_t mdarray<T,dim>::oneDindex(Args... args) const
+int mdarray<T,dim>::oneDindex(Args... args) const
 {
     assert(dim == sizeof...(args));
     std::array<int,dim> i = {args...};
     for(int idim=0; idim<dim; idim++){
         assert(i[idim] >=0 && i[idim] < Size[idim]);
     }
-    size_t oneDindex = i[dim-1]*Offset[dim-1];
-    for(int idim=dim-2; idim>=0; idim--){
+    int oneDindex = i[dim-1]*Offset[dim-1];
+    for(int idim=int(dim)-2; idim>=0; idim--){
         oneDindex += Offset[idim]*i[idim];               
     }
     return oneDindex;
@@ -106,10 +106,10 @@ size_t mdarray<T,dim>::oneDindex(Args... args) const
 
 
 template <typename T, size_t dim>
-std::array<size_t,dim> mdarray<T,dim>::nDindex(const auto& oneDindex) const
+std::array<int,dim> mdarray<T,dim>::nDindex(const auto& oneDindex) const
 {
-    std::array<size_t,dim> nDindex;
-    size_t remainder = oneDindex;
+    std::array<int,dim> nDindex;
+    int remainder = oneDindex;
     for(int idim=dim-1; idim>=0; idim--){
         nDindex[idim] = remainder/Offset[idim];
         remainder = remainder%Offset[idim];
@@ -149,7 +149,7 @@ inline T& mdarray<T,dim>::operator[](const int& oneDindex)
 
 
 template <typename T, size_t dim>
-inline const size_t mdarray<T,dim>::get_Size(const int& index) const
+inline const int mdarray<T,dim>::get_Size(const int& index) const
 {
     return Size[index];
 }

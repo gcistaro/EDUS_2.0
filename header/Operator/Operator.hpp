@@ -1,16 +1,22 @@
 #include "BlockMatrix.hpp"
 
 
-template <typename T>
-class Operator : public BlockMatrix<T>
+template < typename T=std::complex<double>, Space space >
+class Operator : public BlockMatrix<T, space>
 {
     private:
-        static BlockMatrix<T> EigenVectors;
-        static BlockMatrix<T> EigenVectors_dagger;
+        BlockMatrix<T,k> Operator_k;
+        BlockMatrix<T,R> Operator_R;
 
-        Type type;
-    
+        static BlockMatrix<T,k> EigenVectors;
+        static BlockMatrix<T,k> EigenVectors_dagger;
+
+
+
     public:
+        Operator(){};
+        Operator(const Space space_) : space(space_){};
+        
         void Transform(Type& type_)
         {
             if(type == type_){

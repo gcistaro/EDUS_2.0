@@ -5,7 +5,7 @@ Matrix<T>::Matrix(const int& nrows, const int& ncols)
 }
 
 template<class T>
-void Matrix<T>::initialize(const size_t& nrows, const size_t& ncols)
+void Matrix<T>::initialize(const int& nrows, const int& ncols)
 {
     (*this).~Matrix<T>();
     assert(nrows > 0 && ncols > 0);
@@ -85,26 +85,61 @@ void Matrix_gemm(Matrix<T>& OutputMatrix, const T& alpha, const Matrix<T>& Input
     gemm(m, n, k, alpha, &(InputMatrix1(0,0)), k, &(InputMatrix2(0,0)), n, beta, &(OutputMatrix(0,0)), n);
 }
 
+
+template<class T>
+void Matrix<T>::LUdecompose(Matrix<T>& LU, lapack_int** pointer_to_ipiv) const
+{
+    //output: LU decomposition in a lone matrix. (upper part -> U , lower part-> L)
+    //L has diagonal elements equal to 1 and are not saved; the diagonal elements are that of U.
+    assert((std::is_same<T,double>::value));
+    LU = *this;
+    int m = (*this).get_nrows();
+    int n = (*this).get_ncols();
+    lapack_int lda = n;
+    //if(*pointer_to_ipiv != nullptr){
+    //	    delete[] *pointer_to_ipiv;
+    //}
+    *pointer_to_ipiv= new lapack_int[n];
+    
+    //LU decomposition
+    LAPACKE_dgetrf(LAPACK_ROW_MAJOR, m, n, 
+                   &(LU(0,0)), lda, *pointer_to_ipiv);  
+}
+
+
+template<typename T>
+T Matrix<T>::determinant() const
+{
+    //in LU decomposition, we can get advantage of the fact tha the determinant of a trinagular matrix 
+    //is the product of the diagonal elements, which also reprensent the eigenvalues.
+    assert((*this).get_nrows() == (*this).get_ncols());
+    Matrix<T> LU;
+    lapack_int* ipiv;
+    this->LUdecompose(LU, &ipiv);
+    T determinant = 1.;
+    
+    for(int i=0; i < (*this).get_nrows(); ++i){
+        determinant *= LU(i,i);
+    }
+    return determinant;
+}
+
+
 template<class T>
 Matrix<T> Matrix<T>::inverse() const
 {
     assert((*this).get_nrows() == (*this).get_ncols());
     assert((std::is_same<T,double>::value));
-
-    auto invM = (*this);
-    int m = (*this).get_nrows();
-    int n = (*this).get_ncols();
-    int lda = n;
-    lapack_int* ipiv= new lapack_int[n];
-    
-    //LU decomposition
-    LAPACKE_dgetrf(LAPACK_ROW_MAJOR, m, n, 
-                   &(invM(0,0)), lda, ipiv);  
-    
+    assert(abs(this->determinant()) > 1.e-08);
+    Matrix<T> invM;
+    lapack_int* ipiv;
+    LUdecompose(invM, &ipiv);
     //inverse
-    LAPACKE_dgetri(LAPACK_ROW_MAJOR, n, &(invM(0,0)),
-                    n, ipiv);
-    delete[] ipiv;//free(ipiv);
+    lapack_int n = invM.get_ncols();
+    lapack_int lda = n;
+    LAPACKE_dgetri(LAPACK_ROW_MAJOR, n, &invM(0,0),
+                    lda, ipiv);
+    delete[] ipiv;
     return invM;
 }
 
@@ -147,19 +182,31 @@ Matrix<T> operator*(T Scalar, const Matrix<T> A)
     return A*Scalar;
 }
 
+template<class T>
+Vector<T> Matrix<T>::operator*(const Vector<T>& v) const
+{
+    assert(v.get_NumberOfElements() == (*this).get_ncols());
+    Vector<T> result(v.get_NumberOfElements());
+    int m = this->get_nrows();
+    int k = this->get_ncols();
+    int n = 1;
+    gemm(m, n, k, 1., &(*this)(0,0), k, &v(0), n, 0., &result(0), n);
+    return result;
+
+}
 
 
 
 
 template<class T>
-size_t Matrix<T>::get_nrows() const
+int Matrix<T>::get_nrows() const
 {
     return this->Values.get_Size(0);
 }
 
 
 template<class T>
-size_t Matrix<T>::get_ncols() const
+int Matrix<T>::get_ncols() const
 {
     return this->Values.get_Size(1);
 }
@@ -192,7 +239,7 @@ std::ostream& operator<<(std::ostream& os, const Matrix<T>& m)
 {
     for(int irow=0; irow<m.get_nrows(); irow++){
         for(int icol=0; icol<m.get_ncols(); icol++){
-            os << std::setprecision(5) << std::setw(10) << m(irow,icol); 
+            os << std::setprecision(5) << std::setw(15) << m(irow,icol); 
         }
         os << std::endl;
     }

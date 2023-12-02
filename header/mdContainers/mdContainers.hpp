@@ -18,9 +18,9 @@ class mdarray
     private:
         //std::unique_ptr<T[]> Ptr =nullptr;
         T* Ptr=nullptr;
-        std::array<size_t, dim> Size{0};
-        size_t TotalSize=0;
-        std::array<size_t, dim> Offset{0};
+        std::array<int, dim> Size{0};
+        int TotalSize=0;
+        std::array<int, dim> Offset{0};
         bool NotDestruct = false;
         void TotalSizeAndOffset();
 
@@ -32,11 +32,11 @@ class mdarray
         mdarray(mdarray<T,dim>&& ToBeMoved);
         mdarray<T,dim>& operator=(mdarray<T,dim>&& ToBeMoved);
 
-        mdarray(const std::array<size_t,dim>& Size_);        
-        void initialize(const std::array<size_t,dim>& Size_);
+        mdarray(const std::array<int,dim>& Size_);        
+        void initialize(const std::array<int,dim>& Size_);
 
-        mdarray(T* Ptr_, const std::array<size_t,dim>& Size_);
-        void initialize(T* Ptr_, const std::array<size_t,dim>& Size_);
+        mdarray(T* Ptr_, const std::array<int,dim>& Size_);
+        void initialize(T* Ptr_, const std::array<int,dim>& Size_);
 
         struct Iterator
         {
@@ -70,9 +70,9 @@ class mdarray
         auto& data() {return Ptr;};
         
         template <typename... Args>
-        inline size_t oneDindex(Args... args) const;
+        inline int oneDindex(Args... args) const;
         
-        inline std::array<size_t,dim> nDindex(const auto& oneDindex) const;
+        inline std::array<int,dim> nDindex(const auto& oneDindex) const;
 
         template <typename... Args>
         inline T const& operator()(Args... args) const;
@@ -84,7 +84,7 @@ class mdarray
         inline T& operator[](const int& oneDindex);        
 
 
-        inline const size_t get_Size(const int& index) const;
+        inline const int get_Size(const int& index) const;
         ~mdarray();
 
         template<typename T_, size_t dim_>
