@@ -12,6 +12,40 @@ void BlockMatrix<T,space>::initialize(mdarray<T,3>& Values_)//, MeshGrid& meshgr
 }
 
 template<typename T, Space space>
+BlockMatrix<T, space>::BlockMatrix(const BlockMatrix<T, space>& A)
+{
+    *this = A;
+}
+
+
+template<typename T, Space space>
+BlockMatrix<T, space>& BlockMatrix<T, space>::operator=(const BlockMatrix<T, space>& A)
+{
+    Values = A.Values;
+    submatrix = A.submatrix;
+    meshgrid = A.meshgrid;
+    EmptyMatrix = A.EmptyMatrix; 
+    return *this;
+}
+
+template<typename T, Space space>
+BlockMatrix<T, space>::BlockMatrix(BlockMatrix<T, space>&& A)
+{
+    *this = A;
+}
+
+
+template<typename T, Space space>
+BlockMatrix<T, space>& BlockMatrix<T, space>::operator=(BlockMatrix<T, space>&& A)
+{
+    Values = std::move(A.Values);
+    submatrix = std::move(A.submatrix);
+    meshgrid = std::move(A.meshgrid);
+    EmptyMatrix = std::move(A.EmptyMatrix); 
+    return *this;
+}
+
+template<typename T, Space space>
 void BlockMatrix<T,space>::fill(const T& Scalar)
 {
     std::fill(this->Values.begin(), this->Values.end(), Scalar);
@@ -65,4 +99,19 @@ template<typename T, Space space>
 BlockMatrix<T,space>::~BlockMatrix()
 {
     Values.~mdarray<T,3>();
+}
+
+
+
+template<typename T_, Space space_>
+void diagonalize(const BlockMatrix<T_,space_>& ToDiagonalize,
+                        mdarray<T_,2> Eigenvalues,
+                        BlockMatrix<T_,space_> Eigenvectors)
+{
+    //assert(space_ == k);
+    Eigenvectors.initialize(ToDiagonalize.get_nblocks(), ToDiagonalize.get_nrows(), ToDiagonalize.get_ncols());
+    Eigenvalues.initialize({ToDiagonalize.get_nblocks(), ToDiagonalize.get_nrows()});
+    for(int ik=0; ik<ToDiagonalize.get_nblocks(); ik++){
+        diagonalize(ToDiagonalize[ik], Eigenvectors[ik], &Eigenvalues(ik,0));
+    }
 }

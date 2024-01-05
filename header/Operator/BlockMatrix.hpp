@@ -34,15 +34,15 @@ class BlockMatrix{
         std::shared_ptr<MeshGrid<space>> meshgrid;    
         Matrix<T> EmptyMatrix;    
     public:
-        BlockMatrix(){};
-        BlockMatrix(const int& nblocks, const int& nrows, const int& ncols);
+        BlockMatrix() : Values(mdarray<T,3>()), EmptyMatrix(Matrix<T>()){std::cout << submatrix.size(); };//*meshgrid = MeshGrid<space>();};
+        BlockMatrix(const int& nblocks, const int& nrows, const int& ncols){Values.initialize({nblocks, nrows, ncols});}
         void initialize(mdarray<T,3>& Values);
 
-        BlockMatrix(const BlockMatrix<T>& A);
-        BlockMatrix& operator=(const BlockMatrix<T>& m);
+        BlockMatrix(const BlockMatrix<T, space>& A);
+        BlockMatrix<T, space>& operator=(const BlockMatrix<T, space>& m);
         
-        BlockMatrix(BlockMatrix<T>&& A);
-        BlockMatrix<T>& operator=(BlockMatrix<T>&& m);
+        BlockMatrix(BlockMatrix<T, space>&& A);
+        BlockMatrix<T, space>& operator=(BlockMatrix<T, space>&& m);
 
         //const T& operator()(const int& nk1, const int& mk2) const; //full index
         //T& operator()(const int& nk1, const int& mk2);             //full index
@@ -67,27 +67,16 @@ class BlockMatrix{
         size_t get_nblocks() const{return Values.get_Size(0);};
         size_t get_nrows() const{return Values.get_Size(1);};
         size_t get_ncols() const{return Values.get_Size(2);};
-        MeshGrid<space>* get_MeshGrid()const {return this->meshgrid.get();};
+	std::shared_ptr<MeshGrid<space>>& get_MeshGrid(){return this->meshgrid;};
 
-        void set_MeshGrid(MeshGrid<space>& meshgrid_){ this->meshgrid = std::make_shared<MeshGrid<space>>(meshgrid_);};
+        void set_MeshGrid(const MeshGrid<space>& meshgrid_){std::cout << "Gonna create shared ptr\n"; this->meshgrid = std::make_shared<MeshGrid<space>>(meshgrid_); std::cout << "DONE!\n";};
         template<typename T_, Space space_, typename U>
         friend void convolution(BlockMatrix<T_,space_>& Output, U Scalar, const BlockMatrix<T_,space_>& Input1, const BlockMatrix<T_,space_>& Input2 );
         
         template<typename T_, Space space_>
         friend void diagonalize(const BlockMatrix<T_,space_>& ToDiagonalize,
                                 mdarray<T_,2> Eigenvalues,
-                                BlockMatrix<T_,space_> Eigenvectors)
-        {
-            //assert(space_ == k);
-            Eigenvectors.initialize(ToDiagonalize.get_nblocks(), ToDiagonalize.get_nrows(), ToDiagonalize.get_ncols());
-            Eigenvalues.initialize({ToDiagonalize.get_nblocks(), ToDiagonalize.get_nrows()});
-
-            for(int ik=0; ik<ToDiagonalize.get_nblocks(); ik++){
-                diagonalize(ToDiagonalize[ik], Eigenvectors[ik], &Eigenvalues(ik,0));
-            }
-
-
-        }
+                                BlockMatrix<T_,space_> Eigenvectors);
 
                         
         //destructor

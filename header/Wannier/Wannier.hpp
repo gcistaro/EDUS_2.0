@@ -25,7 +25,7 @@ class Wannier{
         Wannier(const std::string& FileName);
         void Print(const std::string& FileName);
 
-        friend class Model;
+        friend class Material;
 };
 
 
