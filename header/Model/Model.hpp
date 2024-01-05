@@ -1,23 +1,23 @@
 #include <cassert>
 #include "ConvertUnits.hpp"
 #include "Wannier.hpp"
-#include "MeshGrid.hpp"
-#include "BlockMatrix.hpp"
 
-class Model
+#include "Operator.hpp"
+
+class Material
 {
     private:
 
 
     public:
         enum MODEL{wannier} model;
-        std::array<BlockMatrix<std::complex<double>,R>, 3> r;
-        BlockMatrix<std::complex<double>,R> H;
-        MeshGrid<R> Master_MeshGrid;
+
+        Operator<std::complex<double>> H;
+        std::array< Operator<std::complex<double>>, 3> r;
 
 
-        Model(){};
-        Model(const std::string& Filename)
+        Material(){};
+        Material(const std::string& Filename)
         {
             model = wannier;
    
@@ -25,26 +25,37 @@ class Model
             //we move the resources from wannier.r and wannier.H, anyway we throw wannier right after.            
             Basis LatticeVectors(Matrix<double>(wannier.UnitCell).transpose());
             Coordinate<R>::add_Basis(LatticeVectors, "LatticeVectors");
-            r[0].initialize(wannier.r[0]);
-            r[1].initialize(wannier.r[1]);
-            r[2].initialize(wannier.r[2]);
-            H.initialize(wannier.H);
+            
+            Basis ReciprocalLatticeVectors(2.*pi*Matrix<double>(wannier.UnitCell).inverse());
+            Coordinate<k>::add_Basis(ReciprocalLatticeVectors, "LatticeVectors");
+            
+            r[0].get_Operator_R().initialize(wannier.r[0]);
+            r[1].get_Operator_R().initialize(wannier.r[1]);
+            r[2].get_Operator_R().initialize(wannier.r[2]);
+            H.get_Operator_R().initialize(wannier.H);
 
-            Convert_iterable(r[0], Angstrom, Bohr);
-            Convert_iterable(r[1], Angstrom, Bohr);
-            Convert_iterable(r[2], Angstrom, Bohr);
-            Convert_iterable(H, ElectronVolt, Rydberg);
+            Convert_iterable(r[0].get_Operator_R(), Angstrom, Bohr);
+            Convert_iterable(r[1].get_Operator_R(), Angstrom, Bohr);
+            Convert_iterable(r[2].get_Operator_R(), Angstrom, Bohr);
+            Convert_iterable(H.get_Operator_R(), ElectronVolt, Rydberg);
 
             MeshGrid<R> aux_mg(wannier.Rmesh, "LatticeVectors");
-            
-            H.set_MeshGrid(aux_mg);
-            r[0].set_MeshGrid(aux_mg);
-            r[1].set_MeshGrid(aux_mg);
-            r[2].set_MeshGrid(aux_mg);
 
-            //Master_MeshGrid.initialize(10.);//TODO: change 10. with a variable we can read
-            //std::cout << "Number of grids: " << MeshGrid<R>::get_counter_id() << std::endl;
+            for(auto& v : aux_mg.get_mesh()){
+                std::cout << v << std::endl;
+            }
+            H.get_Operator_R().set_MeshGrid(aux_mg);
+            r[0].get_Operator_R().set_MeshGrid(aux_mg);
+            r[1].get_Operator_R().set_MeshGrid(aux_mg);
+            r[2].get_Operator_R().set_MeshGrid(aux_mg);
         }
+
+	void print_info()
+	{
+            std::cout << Coordinate<R>::get_Basis("LatticeVectors");
+	    std::cout << Coordinate<k>::get_Basis("LatticeVectors");
+	}
+
 
 
 };

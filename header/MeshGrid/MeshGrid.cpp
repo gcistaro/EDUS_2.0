@@ -4,21 +4,46 @@ template<Space space>
 std::map<std::array<size_t,3>, mdarray<int,2> > MeshGrid<space>::ConvolutionIndex;
 
 template<Space space>
+MeshGrid<space>::MeshGrid(const MeshGrid<space>& mg)
+{
+    *this = mg;
+}
+
+template<Space space>
 MeshGrid<space>& MeshGrid<space>::operator=(const MeshGrid<space>& mg)
 {
+    mesh.resize(mg.mesh.size());
     std::copy(&(mg.mesh[0]),&(mg.mesh[0])+mg.mesh.size(),&(mesh[0]));
     std::copy(&(mg.Size[0]),&(mg.Size[0])+3,&(Size[0]));
     std::copy(&(mg.type),&(mg.type)+1,&type);
+    std::copy(&(mg.maxRadius), &(mg.maxRadius)+1, &(maxRadius));    
+    shellinfo.resize(mg.shellinfo.size()); 
+    std::copy(mg.shellinfo.begin(), mg.shellinfo.end(), shellinfo.begin());    
+    EmptyVector = mg.EmptyVector;
+    TotalSize = mg.TotalSize;
+    id = mg.id;
     return *this;
+}
+
+
+template<Space space>
+MeshGrid<space>::MeshGrid(MeshGrid<space>&& mg)
+{
+    *this = mg;
 }
 
 template<Space space>
 MeshGrid<space>& MeshGrid<space>::operator=(MeshGrid<space>&& mg)
 { 
-     mesh = std::move(mg.mesh);
-     Size = std::move(mg.Size);
-     type = std::move(mg.type);
-     return *this;
+    mesh = std::move(mg.mesh);
+    Size = std::move(mg.Size);
+    type = std::move(mg.type);
+    maxRadius = std::move(mg.maxRadius);
+    shellinfo = std::move(mg.shellinfo);
+    EmptyVector = std::move(EmptyVector);
+    TotalSize = std::move(mg.TotalSize);
+    id = std::move(mg.id);
+    return *this;
 }
 
 template<Space space>
@@ -57,19 +82,41 @@ void MeshGrid<space>::initialize(const std::array<int,3>& Size_)
     Size=Size_;
     TotalSize = Size[0]*Size[1]*Size[2];
     mesh.resize(TotalSize);
-
+    std::cout << "TotalSize: " << TotalSize << std::endl;
+    std::cout << "Size: " << Size[0] << " " << Size[1] << " " << Size[2]<<std::endl;
+    auto KeyForBasis = "LatticeVectors";
     //defining vectors of the mesh
-    auto BasisKey = "LatticeVectors";
-    for(int ix0=0; ix0<Size[0]; ix0++){
-        for(int ix1=0; ix1<Size[1]; ix1++){                   
-            for(int ix2=0; ix2<Size[2]; ix2++){
-                int index = ix2 + Size[2] * (ix1 + Size[1] * ix0);
-                mesh[index].initialize(double(ix0),
-                                       double(ix1),
-                                       double(ix2),
-                                       BasisKey);
+    switch(space){
+        case(k):
+        {
+            for(int ix0=0; ix0<Size[0]; ix0++){
+                for(int ix1=0; ix1<Size[1]; ix1++){                   
+                    for(int ix2=0; ix2<Size[2]; ix2++){
+                        int index = ix2 + Size[2] * (ix1 + Size[1] * ix0);
+                        mesh[index].initialize(-0.5+double(ix0)/Size[0],
+                                               -0.5+double(ix1)/Size[1],
+                                               -0.5+double(ix2)/Size[2],
+                                               KeyForBasis);
+                    }
+                }
             }
+            break;
         }
+        case(R):
+        {
+            for(int ix0=0; ix0<Size[0]; ix0++){
+                for(int ix1=0; ix1<Size[1]; ix1++){                   
+                    for(int ix2=0; ix2<Size[2]; ix2++){
+                        int index = ix2 + Size[2] * (ix1 + Size[1] * ix0);
+                        mesh[index].initialize(double(-Size[0]/2) + double(ix0),
+                                               double(-Size[1]/2) + double(ix1),
+                                               double(-Size[2]/2) + double(ix2),
+                                               KeyForBasis);
+                    }
+                }
+            }
+            break;
+        }        
     }
 }
 
@@ -86,19 +133,10 @@ void MeshGrid<space>::initialize(const mdarray<double,2>& bare_mg, const std::st
     TotalSize = mesh.size();
 }
 
-/*
-    in the following we use the inequality:
-    ||i0 a0 + i1 a1 + i2 a2|| <= |i0| ||a0|| + |i1| ||a1|| + |i2| ||a2|| <=R
-    so, starting from i0 we can get an upper boundary (overestimated in general) that asserts to get all the points in a sphere
-    |i0max| = R/||a0||
-    and for i1 and i2:
-    |i1max| = (R-|i0| ||a0||)/||a1||
-    |i2max| = (R-|i0| ||a0|| - |i1| ||a1||)/||a2||
-
-*/
 template<Space space>
 void MeshGrid<space>::initialize(const double& Radius_)
 {
+    assert(space == R);
     id = ++counter_id;
     type = sphere;
     
@@ -110,21 +148,10 @@ void MeshGrid<space>::initialize(const double& Radius_)
     auto norm0 = std::sqrt(MetricTensor_(0,0));
     auto norm1 = std::sqrt(MetricTensor_(1,1));
     auto norm2 = std::sqrt(MetricTensor_(2,2));
-    std::cout << "norm0 << norm1 << norm2 << " ;
-    std::cout << norm0 << " " << norm1 << " " << norm2 << std::endl;
 
-    fractPart = std::modf(Radius_/norm0, &i0_threshold);
-    i0_threshold = abs(i0_threshold)+2; //this ensures to have a good upper bound
-
-    fractPart = std::modf(Radius_/norm1, &i1_threshold);
-    i1_threshold = abs(i1_threshold)+2; //this ensures to have a good upper bound
-
-    fractPart = std::modf((Radius_+1.e-07)/norm2, &i2_threshold);
-    i2_threshold = abs(i2_threshold)+2; //this ensures to have a good upper bound
-
-    i0_threshold = 100;
-    i1_threshold = 100;
-    i2_threshold = 100;
+    i0_threshold = 25;
+    i1_threshold = 25;
+    i2_threshold = 25;
     for(int i0=-i0_threshold; i0<=i0_threshold; i0++){
         for(int i1=-i1_threshold; i1<=i1_threshold; i1++){            
             for(int i2=-i2_threshold; i2<=i2_threshold; i2++){
@@ -156,6 +183,58 @@ void MeshGrid<space>::initialize(const double& Radius_)
         }
     }
 }
+
+
+template<Space space>
+std::array<double,3> MeshGrid<space>::get_absmax() const
+{
+    std::array< std::vector<double>, 3> absCoord;
+    for (auto& absCoord_ : absCoord){
+        absCoord_.reserve(mesh.size());
+    }
+    for(auto& vector : mesh){
+        auto& CrystalCoordinate = vector.get("LatticeVectors");
+        absCoord[0].push_back(abs(CrystalCoordinate[0]));
+        absCoord[1].push_back(abs(CrystalCoordinate[1]));
+        absCoord[2].push_back(abs(CrystalCoordinate[2]));
+    }
+    std::array<double, 3> maxCoord;
+    for(int ix=0; ix<3; ++ix){
+        maxCoord[ix] = *(std::max_element(absCoord[ix].begin(), absCoord[ix].end()));
+    }
+    return maxCoord;
+}
+
+
+template<Space space, Space space_>
+MeshGrid<space_> fftPair(const MeshGrid<space>& KnownMG)
+{
+    assert(space_ != space);
+
+    MeshGrid<space_> fftMeshGrid;
+
+    switch(KnownMG.type)
+    {
+        case(sphere):
+        {
+            auto maxCoord = KnownMG.get_absmax();
+            std::array<int,3> maxCoordInt;
+            for(int ix=0; ix<3; ix++){
+                maxCoordInt[ix] = 2*int(maxCoord[ix])+1;
+		maxCoordInt[ix] += (maxCoordInt[ix]==0);
+            }
+	    std::cout << "fftpair, maxCoordInt = " << maxCoordInt[0] << " " << maxCoordInt[1] << " " << maxCoordInt[2] << std::endl;
+            fftMeshGrid.initialize(maxCoordInt);
+            break;
+        }
+        case(cube):
+        {
+            fftMeshGrid.initialize(KnownMG.get_Size());
+            break;
+        }
+    }
+    return fftMeshGrid;
+}   
 
 
 template<Space space>
@@ -216,20 +295,22 @@ int MeshGrid<space>::find(const Coordinate<space>& v) const
 template<Space space>
 Coordinate<space> MeshGrid<space>::reduce(const Coordinate<space>& v) const
 {
-        auto notcart = v.get("LatticeVectors");
-        for(int ix=0; ix<3; ix++){
-            while(notcart[ix]<0 && abs(notcart[ix])>threshold){
-                notcart[ix] += Size[ix];
-            }
+    assert(type == cube);
+    auto notcart = v.get("LatticeVectors");
+    std::array<int,3> grid_limit = (space==k) ? std::array<int,3>{1, 1, 1}
+                                              : Size;
+    for(int ix=0; ix<3; ix++){
+        while(notcart[ix]<0 && abs(notcart[ix])>threshold){    
+            notcart[ix] += grid_limit[ix];
         }
-        Coordinate<R> v_reduced;
-        v_reduced.initialize(std::fmod(notcart[0],Size[0]),
-                             std::fmod(notcart[1],Size[1]),
-                             std::fmod(notcart[2],Size[2]),
-                             "LatticeVectors");
-        //std::cout << "I am inside reduce.. this is the vectors v_reduced at the end:\n";
-        //std::cout << v_reduced;
-        return v_reduced;
+    }
+
+    Coordinate<space> v_reduced;
+    v_reduced.initialize(std::fmod(notcart[0], grid_limit[0]),
+                         std::fmod(notcart[1], grid_limit[1]),
+                         std::fmod(notcart[2], grid_limit[2]),
+                         "LatticeVectors");
+    return v_reduced;
 }
 
 template<Space space>
@@ -271,7 +352,6 @@ void MeshGrid<space>::Calculate_ConvolutionIndex(const MeshGrid& m1, const MeshG
     //The following openmp statement has been tested in one case.
     #pragma omp parallel for schedule(dynamic)
     for(int iR1=0; iR1<m1.get_TotalSize(); iR1++){
-        std::cout << "Get convolution index ... " << iR1 << std::endl; 
         for(int iR3=0; iR3<m1.get_TotalSize(); iR3++){
                 //std::cout << "iR1 << << iR3: " <<iR1 << " " << " " << iR3 << std::endl;
                 //std::cout << m1[iR1].get("LatticeVectors") << m1[iR3].get("LatticeVectors");

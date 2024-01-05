@@ -53,7 +53,7 @@ void Coordinate<space>::initialize(const double& c1, const double& c2, const dou
     CoordinateDictionary[KeyForBasis] = Vector<double>();
     CoordinateDictionary.at(KeyForBasis).initialize_n(c1,c2,c3);
     if(KeyForBasis != std::string("Cartesian")){
-        auto& M = BasisDictionary[KeyForBasis].get_invM();
+        auto& M = BasisDictionary[KeyForBasis].get_M();
         CoordinateDictionary["Cartesian"] = M*CoordinateDictionary[KeyForBasis];
     }
 }
