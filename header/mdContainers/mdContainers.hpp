@@ -85,6 +85,8 @@ class mdarray
 
 
         inline const int get_Size(const int& index) const;
+        inline auto get_Size() const {return Size;};
+        inline auto get_TotalSize() const {return TotalSize;};
         ~mdarray();
 
         template<typename T_, size_t dim_>

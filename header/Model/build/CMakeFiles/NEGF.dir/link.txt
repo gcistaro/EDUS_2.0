@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/NEGF.dir/bandstructure.cpp.o -o NEGF  -Wl,-rpath=/opt/intel/oneapi/mkl/2024.0/lib /opt/intel/oneapi/mkl/2024.0/lib/libmkl_intel_ilp64.so /opt/intel/oneapi/mkl/2024.0/lib/libmkl_intel_thread.so /opt/intel/oneapi/mkl/2024.0/lib/libmkl_core.so /opt/intel/oneapi/compiler/2024.0/lib/libiomp5.so -lm -ldl -lpthread 

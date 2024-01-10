@@ -72,6 +72,28 @@ MeshGrid<space>::MeshGrid(const double& Radius_)
     this->initialize(Radius_);
 }
 
+template<Space space>
+MeshGrid<space>::MeshGrid(const std::vector<Coordinate<space>>& PathPoint, const double& resolution)
+{
+    this->initialize(PathPoint, resolution);
+}
+
+template<Space space>
+void MeshGrid<space>::initialize(const std::vector<Coordinate<space>>& PathPoint, const double& resolution)
+{
+    int NumberOfLines = PathPoint.size()-1;
+    type = path;
+
+    mesh.push_back(PathPoint[0]);
+    for(int iline=0; iline<NumberOfLines; ++iline){
+        int NumberOfPointsInLine = (PathPoint[iline+1]-PathPoint[iline]).norm()/resolution;
+        for(int it=1; it<NumberOfPointsInLine; ++it){
+            double t = double(it)/(NumberOfPointsInLine-1);
+            mesh.push_back( (1-t)*PathPoint[iline] + t*PathPoint[iline+1] );
+        }
+    }
+    TotalSize = mesh.size();
+}
 
 template<Space space>
 void MeshGrid<space>::initialize(const std::array<int,3>& Size_)
@@ -124,7 +146,7 @@ template<Space space>
 void MeshGrid<space>::initialize(const mdarray<double,2>& bare_mg, const std::string& KeyForBasis)
 {
     id = ++counter_id;
-    type = read;
+    type = read_;
 
     assert( bare_mg.get_Size(1) == 3 );
     for(size_t i=0; i<bare_mg.get_Size(0); ++i){
