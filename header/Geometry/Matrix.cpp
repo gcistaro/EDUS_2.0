@@ -165,7 +165,6 @@ void Matrix<T>::diagonalize(Matrix<T>& EigenVectors, mdarray<T,1>& EigenValues) 
     auto lda = n;
     EigenValues.initialize({this->get_nrows()});
     LAPACKE_dsyev( LAPACK_ROW_MAJOR, 'V', 'U', n, &EigenVectors(0,0), lda, &EigenValues(0) );
- 
 }
 
 template<class T>

@@ -1,0 +1,3 @@
+/home/gcistaro/NEGF/header/Model/build/CMakeFiles/NEGF.dir
+/home/gcistaro/NEGF/header/Model/build/CMakeFiles/edit_cache.dir
+/home/gcistaro/NEGF/header/Model/build/CMakeFiles/rebuild_cache.dir

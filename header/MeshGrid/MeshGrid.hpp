@@ -6,8 +6,8 @@
 #include <vector>
 #include <algorithm>
 
-#include "Constants.hpp"
-#include "Coordinate.hpp"
+#include "../Constants.hpp"
+#include "../Geometry/Coordinate.hpp"
 
 
 struct ShellInfo
@@ -18,8 +18,8 @@ struct ShellInfo
 };
 
 
-enum TypeMeshGrid{cube,read,sphere};
-
+enum TypeMeshGrid{cube, read_, sphere, path};
+ 
 template<Space space>
 class MeshGrid{
     private:
@@ -53,10 +53,12 @@ class MeshGrid{
         MeshGrid(const mdarray<double,2>& bare_mg, const std::string& KeyForBasis);
         MeshGrid(const std::array<int,3>& Size_);
         MeshGrid(const double& Radius_);
-        
+        MeshGrid(const std::vector<Coordinate<space>>& PathPoints, const double& resolution);
+
         void initialize(const std::array<int,3>& Size_);
         void initialize(const double& Radius_);
         void initialize(const mdarray<double,2>& bare_mg, const std::string& KeyForBasis);
+        void initialize(const std::vector<Coordinate<space>>& PathPoints, const double& resolution);
 
         std::array<double,3> get_absmax() const;
         

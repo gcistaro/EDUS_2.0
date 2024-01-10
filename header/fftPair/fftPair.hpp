@@ -1,44 +1,104 @@
 #include <vector>
 #include <memory>
-#include <fftw.h>
+#include <complex>
+#include "../mdContainers/mdContainers.hpp"
+#include <fftw3.h>
 
-template<typename T>
+
+
+template<size_t dim>
 class fftPair
 {
     private:
-        T* Data    = nullptr;
-        T* fftData = nullptr;
-    	std::vector<int> Dimensions;
-        int Dimension;
-        fftw_plan fftw_plan_dft;
+        std::shared_ptr<mdarray<std::complex<double>, dim>> InputArray;
+        std::shared_ptr<mdarray<std::complex<double>, dim>> OutputArray;
+        std::vector<std::vector<double>> Mesh;
+        std::vector<std::vector<double>> Mesh_fft;
+    	int Dimensions[dim];
+        int TotalSize;
+        int istride = 1;
+        int ostride = 1;
+        int idist;
+        int odist;
+        int* inembed = nullptr;
+        int* onembed = nullptr;
+        int howmany = 1;
+
+        fftw_plan MyPlan;
     public:
         fftPair(){};
-        fftPair(const auto& Dimensions_, const T* Data_)
+        fftPair(mdarray<std::complex<double>,dim>& Data_)
         {
-            Dimensions = Dimensions_;
-            Data = Data_;
-            Dimension = Dimensions.size();
-            
-        };
-        void set_Data(const T& Data_) {Data = Data_;};
-        void set_Dimension(const auto& Dimensions_) {Dimensions = Dimensions_;};
-        
-	    void fft(const int& sign);
+            Mesh.resize(dim);
+            Mesh_fft.resize(dim);
+            InputArray = std::make_shared<mdarray<std::complex<double>,dim>>(Data_);
+            TotalSize = InputArray->get_TotalSize();
+            idist = TotalSize;
+            odist = TotalSize;
 
+            for(int i=0; i<dim; i++){
+                Dimensions[i] = InputArray->get_Size(i);
+                
+                Mesh[i].resize(Dimensions[i]);
+                Mesh_fft[i].resize(Dimensions[i]);
+                //by default, we sample always [0,Npoints) in direct space, i.e. [0,1) in fourier space
+                for(int ix=0; ix<Dimensions[i]; ix++){
+                    Mesh[i][ix] = double(ix);
+                    Mesh_fft[i][ix] = double(ix)/double(Dimensions[i]);
+                }
+            }
+        };
+
+	    void fft(const int& sign);
+        std::complex<double> fftPair<dim>::dft(const auto& Point) 
+        
+        const mdarray<std::complex<double>, dim>& get_OutputArray() const
+        {
+            return (*OutputArray);
+        }
+
+};
+
+
+template<size_t dim>
+void fftPair<dim>::fft(const int& sign)
+{
+    OutputArray = std::make_shared<mdarray<std::complex<double>, dim>>(mdarray<std::complex<double>, dim>(InputArray->get_Size()));
+
+    //TODO: be sure Data is allocated till the end
+    MyPlan = fftw_plan_many_dft(dim, //Dimension of the fft
+	                       &Dimensions[0],   
+                           howmany,       
+                           reinterpret_cast<fftw_complex*>(&(*InputArray)[0]),                    //row-major ordered 
+                           inembed,
+                           istride,
+                           idist,
+                           reinterpret_cast<fftw_complex*>(&(*OutputArray)[0]),                   //row-major ordered 
+                           onembed,
+                           ostride,
+                           odist,
+                           sign,
+			               FFTW_ESTIMATE);
+    fftw_execute(MyPlan);
+    fftw_destroy_plan(MyPlan);
 }
 
 
-template<typename T>
-void fftPair<T>::fft(const int& sign)
+
+
+template<size_t dim>
+std::complex<double> fftPair<dim>::dft(const auto& Point) 
 {
-    //TODO: be sure Data is allocated till the end
-    fftw_plan_dft = fftw_create_plan(int(Dimensions.size()), //Dimension of the fft
-	                                &Dimensions[0],          //array with size of the array over each dimension
-                                    Data,                    //row-major ordered 
-			                        fftData,
-                                    sign,
-			                        FFTW_ESTIMATE);
-    fftw_execute(fftw_plan_dft);
+    std::complex<double> FourierTransform = 0;
+    std::complex<double> im2pi = im*2*pi;
+    for(int i=0; i<Mesh.size(); i++){
+        double DotProduct = 0;
+        for(int ix=0; ix<3; ix++){
+            DotProduct += Point[ix]*Mesh[i][ix];
+        }
+        FourierTransform += std::exp(im2pi*Dotproduct)*InputArray[i];
+    }
+    return FourierTransform;
 }
 
 
