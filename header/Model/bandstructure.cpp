@@ -1,9 +1,10 @@
 #include "Model.hpp"
-
+#include "../fftPair/fftPair.hpp"
 int main()
 {
     Material model("TBgraphene");
     auto& HR = model.H.get_Operator_R();
+
     std::vector<Coordinate<k>> path;
 
     path.push_back(Coordinate<k>(0.000, 0.000, 0.000, "LatticeVectors"));
@@ -18,6 +19,10 @@ int main()
         std::cout << v.get("LatticeVectors");
     }
     
+    FourierTransform<3> fftm(HR);
+    for(auto& v : vectors){
+       fftm.dft(v.get("LatticeVectors"));
+    }
 }
 
 

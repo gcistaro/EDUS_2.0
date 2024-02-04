@@ -67,9 +67,14 @@ class BlockMatrix{
         size_t get_nblocks() const{return Values.get_Size(0);};
         size_t get_nrows() const{return Values.get_Size(1);};
         size_t get_ncols() const{return Values.get_Size(2);};
-	std::shared_ptr<MeshGrid<space>>& get_MeshGrid(){return this->meshgrid;};
+	    std::shared_ptr<MeshGrid<space>>& get_MeshGrid(){return this->meshgrid;};
 
         void set_MeshGrid(const MeshGrid<space>& meshgrid_){std::cout << "Gonna create shared ptr\n"; this->meshgrid = std::make_shared<MeshGrid<space>>(meshgrid_); std::cout << "DONE!\n";};
+        bool has_meshgrid()
+        {
+            return (*meshgrid != nullptr);
+        }
+        
         template<typename T_, Space space_, typename U>
         friend void convolution(BlockMatrix<T_,space_>& Output, U Scalar, const BlockMatrix<T_,space_>& Input1, const BlockMatrix<T_,space_>& Input2 );
         

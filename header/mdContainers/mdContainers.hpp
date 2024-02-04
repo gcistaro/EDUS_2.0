@@ -37,6 +37,8 @@ class mdarray
 
         mdarray(T* Ptr_, const std::array<int,dim>& Size_);
         void initialize(T* Ptr_, const std::array<int,dim>& Size_);
+        
+        void fill(const T& FillingValue);
 
         struct Iterator
         {
