@@ -87,7 +87,13 @@ void mdarray<T,dim>::initialize(T* Ptr_, const std::array<int,dim>& Size_)
     
     TotalSizeAndOffset();
 }
-        
+
+template <typename T, size_t dim>
+void mdarray<T,dim>::fill(const T& FillingValue)
+{
+    std::fill((*this).begin(), (*this).end(), FillingValue);
+}
+
 template <typename T, size_t dim>
 template <typename... Args>
 int mdarray<T,dim>::oneDindex(Args... args) const

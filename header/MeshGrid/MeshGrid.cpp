@@ -243,9 +243,9 @@ MeshGrid<space_> fftPair(const MeshGrid<space>& KnownMG)
             std::array<int,3> maxCoordInt;
             for(int ix=0; ix<3; ix++){
                 maxCoordInt[ix] = 2*int(maxCoord[ix])+1;
-		maxCoordInt[ix] += (maxCoordInt[ix]==0);
+		        maxCoordInt[ix] += (maxCoordInt[ix]==0);
             }
-	    std::cout << "fftpair, maxCoordInt = " << maxCoordInt[0] << " " << maxCoordInt[1] << " " << maxCoordInt[2] << std::endl;
+	        std::cout << "fftpair, maxCoordInt = " << maxCoordInt[0] << " " << maxCoordInt[1] << " " << maxCoordInt[2] << std::endl;
             fftMeshGrid.initialize(maxCoordInt);
             break;
         }

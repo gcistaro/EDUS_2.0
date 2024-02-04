@@ -64,9 +64,7 @@ class MeshGrid{
         
         template<Space space1, Space space2>
         friend MeshGrid<space2> fftPair(const MeshGrid<space1>& KnownMG);
-
-
-
+        
         Coordinate<space>& operator[](const int& i);
         const Coordinate<space>& operator[](const int& i) const;
 
