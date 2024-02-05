@@ -11,8 +11,8 @@ class FourierTransform
     private:
         std::shared_ptr<mdarray<std::complex<double>, 2>> InputArray;
         std::shared_ptr<mdarray<std::complex<double>, 2>> OutputArray;
-        std::vector<std::vector<double>> Mesh;
-        std::vector<std::vector<double>> Mesh_fft;
+        std::vector<std::array<double>, 3> Mesh;
+        std::vector<std::array<double>, 3> Mesh_fft;
         std::vector<int> Dimensions;
         int TotalSize;
         int istride = 1;
@@ -56,6 +56,12 @@ class FourierTransform
 	    {
             InputArray = std::make_shared<mdarray<std::complex<double>, 2>>(Input__);
             OutputArray = std::make_shared<mdarray<std::complex<double>, 2>>(Output__);
+        }
+
+        FourierTransform(const BlockMatrix<T,space>& BlockMatrix__)
+        {
+            InputArray = std::make_shared<mdarray<std::complex<double>, 2>>(BlockMatrix__.get_Values());
+            Mesh.resize(BlockMatrix__.get_mesh().size());
         }
 
 
@@ -118,7 +124,7 @@ mdarray<std::complex<double>, 1> FourierTransform<dim>::dft(const std::array<dou
 template<size_t dim>
 mdarray<std::complex<double>, 2>& FourierTransform<dim>::dft(const std::vector<std::array<double,dim>>& ArrayOfPoints, const int& sign)
 {
-    OutputArray = std::make_shared<mdarray<std::complex<double>, 2>>(mdarray<std::complex<double>, dim>(InputArray->get_Size()));
+    OutputArray = std::make_shared<mdarray<std::complex<double>, 2>>(mdarray<std::complex<double>, dim>({InputArray->get_Size()[0], ArrayOfPoints.size()}));
     for(int ip=0; ip<ArrayOfPoints.size(); ++ip){
         auto FT = dft(ArrayOfPoints[ip], sign);
         //copy to OutputArray

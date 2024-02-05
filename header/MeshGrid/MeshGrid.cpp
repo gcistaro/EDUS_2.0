@@ -47,7 +47,7 @@ MeshGrid<space>& MeshGrid<space>::operator=(MeshGrid<space>&& mg)
 }
 
 template<Space space>
-MeshGrid<space>::MeshGrid(const std::vector<Coordinate<space>>& ReadMesh) : type(read), mesh(ReadMesh)
+MeshGrid<space>::MeshGrid(const std::vector<Coordinate<space>>& ReadMesh) : type(read_), mesh(ReadMesh)
 {
     ++counter_id; 
     id = counter_id;
@@ -279,6 +279,7 @@ template<Space space>
 int MeshGrid<space>::find(const Coordinate<space>& v) const
 {
     int index = -1;
+    std::cout << "TYPE:: "<< type << std::endl;
     switch(type)
     {
         case cube:
@@ -286,8 +287,9 @@ int MeshGrid<space>::find(const Coordinate<space>& v) const
             auto v_reduced = reduce(v);
             auto notcart = v_reduced.get("LatticeVectors");
             index = int(notcart[2] + Size[2] * (notcart[1] + Size[1] * notcart[0]));
-            break;
-        }
+	    break;
+           
+	}
         case sphere:
         {
             if(v.norm() > maxRadius){
@@ -303,6 +305,7 @@ int MeshGrid<space>::find(const Coordinate<space>& v) const
         }
         case read_:
         {
+
             auto v_iterator = std::find_if(mesh.begin(), mesh.end(), [&v](const auto& v_){return (v_-v).norm() < 1.e-07;});
             if(v_iterator == mesh.end()){
                 return -1;
@@ -311,6 +314,7 @@ int MeshGrid<space>::find(const Coordinate<space>& v) const
             break;
         }
     }
+    if(index >= TotalSize) index = -1;	
     return index;
 }
         
@@ -372,19 +376,20 @@ void MeshGrid<space>::Calculate_ConvolutionIndex(const MeshGrid& m1, const MeshG
     std::cout << "Calculate_ConvolutionIndex " << i3<< std::endl;
 
     auto& ci = ConvolutionIndex[{i1,i2,i3}];
-    std::cout << "Done.\n"<< std::endl;
-    ci = mdarray<int,2>({m1.get_TotalSize(), m3.get_TotalSize()});
 
+    ci = mdarray<int,2>({m1.get_TotalSize(), m3.get_TotalSize()});
+    std::cout << "m1.get_TotalSize( ) " << m1.get_TotalSize() << " m3.get_TotalSize( ) " << m3.get_TotalSize() << std::endl;
+    std::cout << "Done.\n"<< std::endl;
     //The following openmp statement has been tested in one case.
     #pragma omp parallel for schedule(dynamic)
     for(int iR1=0; iR1<m1.get_TotalSize(); iR1++){
-        for(int iR3=0; iR3<m1.get_TotalSize(); iR3++){
-                //std::cout << "iR1 << << iR3: " <<iR1 << " " << " " << iR3 << std::endl;
-                //std::cout << m1[iR1].get("LatticeVectors") << m1[iR3].get("LatticeVectors");
-                //std::cout << "m1[iR1]-m3[iR3]: ";
-                //std::cout << std::setprecision(15) << (m1[iR1]-m1[iR3]).get("LatticeVectors") << std::endl;
-                //std::cout << "m1[iR1]-m3[iR3].norm(): ";
-                //std::cout << std::setprecision(15) << (m1[iR1]-m1[iR3]).norm() << std::endl;
+        for(int iR3=0; iR3<m3.get_TotalSize(); iR3++){
+                std::cout << "iR1 << << iR3: " <<iR1 << " " << " " << iR3 << std::endl;
+                std::cout << m1[iR1].get("LatticeVectors") << m1[iR3].get("LatticeVectors");
+                std::cout << "m1[iR1]-m3[iR3]: ";
+                std::cout << std::setprecision(15) << (m1[iR1]-m1[iR3]).get("LatticeVectors") << std::endl;
+                std::cout << "m1[iR1]-m3[iR3].norm(): ";
+                std::cout << std::setprecision(15) << (m1[iR1]-m1[iR3]).norm() << std::endl;
 
                 ci(iR1, iR3) = m2.find(m1[iR1]-m3[iR3]);
                 
