@@ -44,11 +44,11 @@ class BlockMatrix{
         BlockMatrix(BlockMatrix<T, space>&& A);
         BlockMatrix<T, space>& operator=(BlockMatrix<T, space>&& m);
 
-        //const T& operator()(const int& nk1, const int& mk2) const; //full index
-        //T& operator()(const int& nk1, const int& mk2);             //full index
+        const T& operator()(const int& nk1, const int& mk2) const; //full index
+        T& operator()(const int& nk1, const int& mk2);             //full index
 
-        //const T& operator()(const int& iblock, const int& n, const int& m) const; //block-like index
-        //T& operator()(const int& iblock, const int& n, const int& m);             //block-like index
+        const T& operator()(const int& iblock, const int& n, const int& m) const; //block-like index
+        T& operator()(const int& iblock, const int& n, const int& m);             //block-like index
 
         void fill(const T& Scalar);
 

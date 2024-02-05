@@ -150,30 +150,32 @@ class Operator
             auto nbnd = Operator_R.get_nrows();
             bandindex.initialize(nbnd);
             
-            FT_meshgrid_k = std::make_shared<MeshGrid<k>>(fftPair<R,k>(Operator_R.get_MeshGrid()));
+            FT_meshgrid_k = std::make_shared<MeshGrid<k>>(fftPair<R,k>(*Operator_R.get_MeshGrid()));
             FT_meshgrid_R = std::make_shared<MeshGrid<R>>(fftPair<k,R>(*FT_meshgrid_k));
 
             auto nk = FT_meshgrid_R->get_mesh().size();
             
-            FTfriendly_Operator_k = mdarray<std::complex<double>, 2>(nbnd*(nbnd+1)/2, nk);
-            FTfriendly_Operator_R = mdarray<std::complex<double>, 2>(nbnd*(nbnd+1)/2, nk);
+            FTfriendly_Operator_k = mdarray<std::complex<double>, 2>({nbnd*(nbnd+1)/2, nk});
+            FTfriendly_Operator_R = mdarray<std::complex<double>, 2>({nbnd*(nbnd+1)/2, nk});
 
             //use convolution index for shuffle index.
             mdarray<double,2> bare_mg({1,3});
             bare_mg.fill(0);
 
             auto MeshGrid_Null = std::make_shared<MeshGrid<R>>(bare_mg, "Cartesian");
-            MeshGrid<R>::Calculate_ConvolutionIndex(Operator_R.get_MeshGrid() , FT_meshgrid_R, MeshGrid_Null);
-            auto ci = MeshGrid<R>::get_ConvolutionIndex(Operator_R.get_MeshGrid() , FT_meshgrid_R, MeshGrid_Null);
-            for(int iR=0; iR<nk; iR++){
-                for(int ibnd1=0; ibnd1<nbnd; ++ibnd1){
-                    for(int ibnd2=0; ibnd2<nbnd; ++ibnd2){
-                        FTfriendly_Operator_R(bandindex.oneDband(ibnd1, ibnd2), iR) = Operator_R(ci(iR, 0), ibnd1, ibnd2);
-                    }
-                }
-            }
+            MeshGrid<R>::Calculate_ConvolutionIndex(*Operator_R.get_MeshGrid() , *FT_meshgrid_R, *MeshGrid_Null);
+            //auto ci = MeshGrid<R>::get_ConvolutionIndex(*Operator_R.get_MeshGrid() , *FT_meshgrid_R, *MeshGrid_Null);
+            //for(int iR=0; iR<nk; iR++){
+            //    for(int ibnd1=0; ibnd1<nbnd; ++ibnd1){
+            //        for(int ibnd2=0; ibnd2<nbnd; ++ibnd2){
+            //            FTfriendly_Operator_R(bandindex.oneDband(ibnd1, ibnd2), iR) = Operator_R(ci(iR, 0), ibnd1, ibnd2);
+            //        }
+            //    }
+            //}
 
 
         };
 };
 
+template < typename T>
+BandIndex Operator<T>::bandindex;

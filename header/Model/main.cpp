@@ -5,7 +5,8 @@ int main()
     //Model model("Convolution");
     Material model("TBgraphene");
 
-    auto& HR = model.H.get_Operator_R();
+    auto& H = model.H;
+    H.initialize_fft();
     //auto& r0R = model.r[0].get_Operator_R();
     //auto& r1R = model.r[1].get_Operator_R();
     //auto& r2R = model.r[2].get_Operator_R();
