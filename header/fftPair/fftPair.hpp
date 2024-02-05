@@ -6,7 +6,6 @@
 
 
 //Dimension of InputArray and OutputArray: [howmany x TotalSize of FFt]
-template<size_t dim>
 class FourierTransform
 {
     private:
@@ -14,7 +13,7 @@ class FourierTransform
         std::shared_ptr<mdarray<std::complex<double>, 2>> OutputArray;
         std::vector<std::vector<double>> Mesh;
         std::vector<std::vector<double>> Mesh_fft;
-        int Dimensions[dim];
+        std::vector<int> Dimensions;
         int TotalSize;
         int istride = 1;
         int ostride = 1;
@@ -26,17 +25,18 @@ class FourierTransform
         fftw_plan MyPlan;
     public:
         FourierTransform(){};
-        FourierTransform(mdarray<std::complex<double>,dim>& Data_)
+        FourierTransform(mdarray<std::complex<double>,2>& Data_, std::vector<int>& Dimensions__)
         {
             Mesh.resize(dim);
             Mesh_fft.resize(dim);
             InputArray = std::make_shared<mdarray<std::complex<double>, 2>>(Data_);
-            TotalSize = InputArray->get_TotalSize();
+            TotalSize = InputArray->get_Size()[1];
             idist = TotalSize;
             odist = TotalSize;
 
-            for(int i=0; i<dim; i++){
-                Dimensions[i] = InputArray->get_Size(i);
+            Dimensions = Dimensions__;
+            OutputArray = std::make_shared<mdarray<std::complex<double>, 2>>(
+                                mdarray<std::complex<double>, dim>(InputArray->get_Size()));
                 
                 //Mesh[i].resize(Dimensions[i]);
                 //Mesh_fft[i].resize(Dimensions[i]);
@@ -45,7 +45,6 @@ class FourierTransform
                 //    Mesh[i][ix] = double(ix);
                 //    Mesh_fft[i][ix] = double(ix)/double(Dimensions[i]);
                 //}
-            }
         };
 
         FourierTransform(const mdarray<std::complex<double>, 2>& Input__, const mdarray<std::complex<double>, 2>& Output__)
@@ -75,8 +74,6 @@ class FourierTransform
 template<size_t dim>
 void FourierTransform<dim>::fft(const int& sign)
 {
-    OutputArray = std::make_shared<mdarray<std::complex<double>, 2>>(mdarray<std::complex<double>, dim>(InputArray->get_Size()));
-
     //TODO: be sure Data is allocated till the end
     MyPlan = fftw_plan_many_dft(dim, //Dimension of the fft
 	                       &Dimensions[0],   

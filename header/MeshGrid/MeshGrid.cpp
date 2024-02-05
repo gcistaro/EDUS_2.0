@@ -237,7 +237,7 @@ MeshGrid<space_> fftPair(const MeshGrid<space>& KnownMG)
 
     switch(KnownMG.type)
     {
-        case(sphere):
+        case(sphere || read_):
         {
             auto maxCoord = KnownMG.get_absmax();
             std::array<int,3> maxCoordInt;
@@ -301,7 +301,7 @@ int MeshGrid<space>::find(const Coordinate<space>& v) const
             index = v_iterator-mesh.begin();
             break;
         }
-        case read:
+        case read_:
         {
             auto v_iterator = std::find_if(mesh.begin(), mesh.end(), [&v](const auto& v_){return (v_-v).norm() < 1.e-07;});
             if(v_iterator == mesh.end()){
@@ -365,10 +365,14 @@ template<Space space>
 void MeshGrid<space>::Calculate_ConvolutionIndex(const MeshGrid& m1, const MeshGrid& m2, const MeshGrid& m3)
 {
     auto i1 = m1.get_id();
+    std::cout << "Calculate_ConvolutionIndex " << i1<< std::endl;
     auto i2 = m2.get_id();
+    std::cout << "Calculate_ConvolutionIndex " << i2<< std::endl;
     auto i3 = m3.get_id();
+    std::cout << "Calculate_ConvolutionIndex " << i3<< std::endl;
 
     auto& ci = ConvolutionIndex[{i1,i2,i3}];
+    std::cout << "Done.\n"<< std::endl;
     ci = mdarray<int,2>({m1.get_TotalSize(), m3.get_TotalSize()});
 
     //The following openmp statement has been tested in one case.

@@ -17,6 +17,17 @@ BlockMatrix<T, space>::BlockMatrix(const BlockMatrix<T, space>& A)
     *this = A;
 }
 
+template<typename T, Space space>
+const T& BlockMatrix<T, space>::operator()(const int& iblock, const int& n, const int& m) const
+{
+    return this->Values(iblock, n, m);
+}
+
+template<typename T, Space space>
+T& BlockMatrix<T, space>::operator()(const int& iblock, const int& n, const int& m)
+{
+    return (const_cast<T&>(static_cast<BlockMatrix<T, space> const&>(*this)(iblock, n, m)));
+}
 
 template<typename T, Space space>
 BlockMatrix<T, space>& BlockMatrix<T, space>::operator=(const BlockMatrix<T, space>& A)
