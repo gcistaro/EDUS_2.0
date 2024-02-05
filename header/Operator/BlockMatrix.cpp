@@ -20,6 +20,9 @@ BlockMatrix<T, space>::BlockMatrix(const BlockMatrix<T, space>& A)
 template<typename T, Space space>
 const T& BlockMatrix<T, space>::operator()(const int& iblock, const int& n, const int& m) const
 {
+    if(iblock == -1){
+        return 0;
+    }
     return this->Values(iblock, n, m);
 }
 
