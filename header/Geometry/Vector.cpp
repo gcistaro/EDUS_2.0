@@ -1,11 +1,11 @@
 template<class T>
-Vector<T>::Vector(const int& n)
+Vector<T>::Vector(const size_t& n)
 {
     this->initialize(n);
 }
 
 template<class T>
-void Vector<T>::initialize(const int& n)
+void Vector<T>::initialize(const size_t& n)
 {
     (*this).~Vector<T>();
     this->Values.initialize({n});

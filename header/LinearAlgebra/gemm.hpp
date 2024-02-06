@@ -1,6 +1,7 @@
 #ifndef GEMM_HPP
 #define GEMM_HPP
 
+#define MKL_Complex16 complex
 
 #include <type_traits>
 #include "mkl.h"

@@ -4,6 +4,7 @@
 #include <complex>
 #include <memory>
 #include <cassert>
+#define MKL_Complex16 std::complex<double>
 #include "mkl.h"
 #include <iostream>
 #include <iomanip>
@@ -23,8 +24,8 @@ class Matrix{
     public:
         Matrix(){Values = mdarray<T,2>();};
         Matrix(mdarray<T,2> Values_) : Values(std::move(Values_)){};
-        Matrix(const int& nrows, const int& ncols);
-        void initialize(const int& nrows, const int& ncols);
+        Matrix(const size_t& nrows, const size_t& ncols);
+        void initialize(const size_t& nrows, const size_t& ncols);
 
         Matrix(const Matrix& A);
         Matrix& operator=(const Matrix& m);
@@ -45,7 +46,8 @@ class Matrix{
         Matrix<T> inverse() const;
         Matrix<T> transpose() const;
         void LUdecompose(Matrix<T>& LU, lapack_int** pointer_to_ipiv) const;
-        void diagonalize(Matrix<T>& Eigenvectors, mdarray<T,1>& EigenValues) const;
+
+        void diagonalize(Matrix<std::complex<double>>& Eigenvectors, mdarray<double,1>& EigenValues) const;
 	//Matrix<T> LUdecompose() const;
 	T determinant() const;
         const T* data() const {return Values.data();};
@@ -55,8 +57,8 @@ class Matrix{
         
         auto begin() const { return Values.begin(); }
         auto end() const {return Values.end(); } 	
-        int get_nrows() const;
-        int get_ncols() const;
+        size_t get_nrows() const;
+        size_t get_ncols() const;
         
 	//destructor
         ~Matrix();	

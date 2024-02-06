@@ -1,0 +1,34 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "(gdb) ",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/home/gcistaro/2negf_github/header/Model/a.out",
+            "cwd": "/home/gcistaro/2negf_github/header/Model/",
+            "stopAtEntry": false,
+            "environment": [{"name":"OMP_NUM_THREADS", "value":"1"},
+                            {"name":"SIRIUS_VERBOSITY", "value":"1"},
+                            {"name":"SIRIUS_PRINT_TIMING", "value":"1"},
+                            {"name":"SIRIUS_PRINT_MPI_LAYOUT", "value": "1"}],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ]
+}

@@ -149,7 +149,7 @@ void MeshGrid<space>::initialize(const mdarray<double,2>& bare_mg, const std::st
     type = read_;
 
     assert( bare_mg.get_Size(1) == 3 );
-    for(size_t i=0; i<bare_mg.get_Size(0); ++i){
+    for(int i=0; i<bare_mg.get_Size(0); ++i){
         mesh.push_back(Coordinate<space>(bare_mg(i,0), bare_mg(i,1), bare_mg(i,2), KeyForBasis));
     }
     TotalSize = mesh.size();
@@ -359,7 +359,7 @@ size_t MeshGrid<space>::get_TotalSize() const
 }
 
 template<Space space>
-int MeshGrid<space>::get_id() const
+size_t MeshGrid<space>::get_id() const
 {
     return id;
 }

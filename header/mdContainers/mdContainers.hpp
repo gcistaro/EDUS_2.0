@@ -18,8 +18,8 @@ class mdarray
     private:
         //std::unique_ptr<T[]> Ptr =nullptr;
         T* Ptr=nullptr;
-        std::array<int, dim> Size{0};
-        int TotalSize=0;
+        std::array<size_t, dim> Size{0};
+        size_t TotalSize=0;
         std::array<int, dim> Offset{0};
         bool NotDestruct = false;
         void TotalSizeAndOffset();
@@ -32,11 +32,11 @@ class mdarray
         mdarray(mdarray<T,dim>&& ToBeMoved);
         mdarray<T,dim>& operator=(mdarray<T,dim>&& ToBeMoved);
 
-        mdarray(const std::array<int,dim>& Size_);        
-        void initialize(const std::array<int,dim>& Size_);
+        mdarray(const std::array<size_t,dim>& Size_);        
+        void initialize(const std::array<size_t,dim>& Size_);
 
-        mdarray(T* Ptr_, const std::array<int,dim>& Size_);
-        void initialize(T* Ptr_, const std::array<int,dim>& Size_);
+        mdarray(T* Ptr_, const std::array<size_t,dim>& Size_);
+        void initialize(T* Ptr_, const std::array<size_t,dim>& Size_);
         
         void fill(const T& FillingValue);
 
@@ -86,7 +86,7 @@ class mdarray
         inline T& operator[](const int& oneDindex);        
 
 
-        inline const int get_Size(const int& index) const;
+        inline const size_t get_Size(const int& index) const;
         inline auto get_Size() const {return Size;};
         inline auto get_TotalSize() const {return TotalSize;};
         ~mdarray();

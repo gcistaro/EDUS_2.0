@@ -39,9 +39,9 @@ void PrintWannier(const std::string& FileName, const int& NumberOfBands, const i
 
     //Hamiltonian
     for(int iR=0; iR<NumberOfRpoints; iR++){
-        OutputFile << std::setw(5) << Rmesh(iR,0);
-        OutputFile << std::setw(5) << Rmesh(iR,1);
-        OutputFile << std::setw(5) << Rmesh(iR,2);
+        OutputFile << std::setw(5) << Rmesh(iR, 0);
+        OutputFile << std::setw(5) << Rmesh(iR, 1);
+        OutputFile << std::setw(5) << Rmesh(iR, 2);
         OutputFile << std::endl;
         for(int column=0; column<NumberOfBands; column++){
             for(int row=0; row<NumberOfBands; row++){
