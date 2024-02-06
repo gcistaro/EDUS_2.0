@@ -4,6 +4,7 @@
 #include <complex>
 #include <memory>
 #include <cassert>
+#define MKL_Complex16 std::complex<double>
 #include "mkl.h"
 #include <iostream>
 #include <iomanip>
@@ -33,10 +34,19 @@ class BlockMatrix{
         std::vector<Matrix<T>> submatrix;
         std::shared_ptr<MeshGrid<space>> meshgrid;    
         Matrix<T> EmptyMatrix;    
+        T NullValue = 0;
     public:
         BlockMatrix() : Values(mdarray<T,3>()), EmptyMatrix(Matrix<T>()){std::cout << submatrix.size(); };//*meshgrid = MeshGrid<space>();};
-        BlockMatrix(const int& nblocks, const int& nrows, const int& ncols){Values.initialize({nblocks, nrows, ncols});}
+        BlockMatrix(const size_t& nblocks, const size_t& nrows, const size_t& ncols){this->initialize(nblocks, nrows, ncols);}
         void initialize(mdarray<T,3>& Values);
+        void initialize(const size_t& nblocks, const size_t& nrows, const size_t& ncols)
+        {
+            Values.initialize({nblocks, nrows, ncols});
+            submatrix.resize(nblocks);
+            for(int iblock=0; iblock<nblocks; iblock++){
+                submatrix[iblock] =Matrix<T>(mdarray<T,2>(&(Values(iblock,0,0)),{Values.get_Size(1), Values.get_Size(2)}));    
+            }
+        }
 
         BlockMatrix(const BlockMatrix<T, space>& A);
         BlockMatrix<T, space>& operator=(const BlockMatrix<T, space>& m);
@@ -78,10 +88,11 @@ class BlockMatrix{
         template<typename T_, Space space_, typename U>
         friend void convolution(BlockMatrix<T_,space_>& Output, U Scalar, const BlockMatrix<T_,space_>& Input1, const BlockMatrix<T_,space_>& Input2 );
         
-        template<typename T_, Space space_>
-        friend void diagonalize(const BlockMatrix<T_,space_>& ToDiagonalize,
-                                mdarray<T_,2> Eigenvalues,
-                                BlockMatrix<T_,space_> Eigenvectors);
+        template<Space space_>
+        void diagonalize(const BlockMatrix<std::complex<double>,space_>& ToDiagonalize,
+                                std::vector<mdarray<double,1>>& Eigenvalues,
+                                BlockMatrix<std::complex<double>,space_>& Eigenvectors);
+
 
                         
         //destructor

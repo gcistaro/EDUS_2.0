@@ -74,7 +74,7 @@ class MeshGrid{
         const std::vector<Coordinate<space>>& get_mesh() const;
         const std::array<int,3>& get_Size() const;
         size_t get_TotalSize() const;
-        int get_id() const;
+        size_t get_id() const;
         static size_t get_counter_id(){return counter_id;}; //neded to count objects
 
         static void Calculate_ConvolutionIndex(const MeshGrid& m1, const MeshGrid& m2, const MeshGrid& m3);

@@ -101,6 +101,7 @@ class Operator
         static BandIndex bandindex;
         enum BandGauge{Bloch, Wannier};
 
+        FourierTransform ft_;
         
 
     public:
@@ -148,6 +149,7 @@ class Operator
         void initialize_fft()
         {
             auto nbnd = Operator_R.get_nrows();
+            
             bandindex.initialize(nbnd);
             
             FT_meshgrid_k = std::make_shared<MeshGrid<k>>(fftPair<R,k>(*Operator_R.get_MeshGrid()));
@@ -169,11 +171,74 @@ class Operator
                 for(int ibnd1=0; ibnd1<nbnd; ++ibnd1){
                     for(int ibnd2=ibnd1; ibnd2<nbnd; ++ibnd2){
                         std::cout  << " R " << iR << "ibnd1 " << ibnd1  << "ibnd2 "<< ibnd2  << " ci(iR,0) "<<   ci(iR,0) << std::endl;
-                        FTfriendly_Operator_R(bandindex.oneDband(ibnd1, ibnd2), ci(iR,0)) = Operator_R(iR, ibnd1, ibnd2);
+                        FTfriendly_Operator_R(static_cast<int>(bandindex.oneDband(ibnd1, ibnd2)), ci(iR,0)) = Operator_R(iR, ibnd1, ibnd2);
                     }
                 }
             }
         };
+
+
+        void dft(const std::vector<Coordinate<k>>& path, const int& sign)
+        {
+            initialize_dft();
+            execute_dft(path, sign);
+            shuffle_to_RK();
+        }
+
+
+        void initialize_dft()
+        {
+            auto nbnd = Operator_R.get_nrows();
+            bandindex.initialize(nbnd);
+            //initialize input of fft
+            FTfriendly_Operator_R = mdarray<std::complex<double>, 2>({nbnd*(nbnd+1)/2, Operator_R.get_nblocks()});
+            for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
+                for(int ibnd1=0; ibnd1<nbnd; ++ibnd1){
+                    for(int ibnd2=ibnd1; ibnd2<nbnd; ++ibnd2){
+                        FTfriendly_Operator_R(static_cast<int>(bandindex.oneDband(ibnd1, ibnd2)), iR) = 
+                                                                            Operator_R(iR, ibnd1, ibnd2);
+                    }
+                }
+            }
+            std::vector< std::vector<double> > Mesh_FT;
+            auto& mesh_operator = Operator_R.get_MeshGrid()->get_mesh();
+            Mesh_FT.resize(mesh_operator.size());        
+
+            for(int im=0; im<mesh_operator.size(); im++){
+                Mesh_FT[im].resize(3);
+                Mesh_FT[im][0] = mesh_operator[im].get("LatticeVectors")[0];
+                Mesh_FT[im][1] = mesh_operator[im].get("LatticeVectors")[1];
+                Mesh_FT[im][2] = mesh_operator[im].get("LatticeVectors")[2];
+            }
+            ft_.initialize(FTfriendly_Operator_R, Mesh_FT);
+            std::cout << "ft is initialized.\n";
+        }
+
+
+        void execute_dft(const std::vector<Coordinate<k>>& path, const int& sign)
+        {
+            std::vector< std::vector<double>> path_bare(path.size());
+            for(int i=0; i<path.size(); ++i){
+                path_bare[i].resize(3);
+                path_bare[i][0] = path[i].get("LatticeVectors")[0];
+                path_bare[i][1] = path[i].get("LatticeVectors")[1];
+                path_bare[i][2] = path[i].get("LatticeVectors")[2];
+            }
+            FTfriendly_Operator_k = ft_.dft(path_bare, +1);
+        }
+
+
+        void shuffle_to_RK()
+        {
+            Operator_k.initialize(FTfriendly_Operator_k.get_Size(1), Operator_R.get_nrows(), Operator_R.get_ncols());
+            for(int ik=0; ik<Operator_k.get_nblocks(); ++ik){
+                for(int ibnd1=0; ibnd1<Operator_k.get_nrows(); ++ibnd1){
+                    for(int ibnd2=ibnd1; ibnd2<Operator_k.get_nrows(); ++ibnd2){ 
+                        Operator_k(ik, ibnd1, ibnd2) = FTfriendly_Operator_k(static_cast<int>(bandindex.oneDband(ibnd1,ibnd2)),ik);            
+                    }
+                }
+            }
+        }
 };
 
 template < typename T>

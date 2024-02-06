@@ -21,7 +21,7 @@ template<typename T, Space space>
 const T& BlockMatrix<T, space>::operator()(const int& iblock, const int& n, const int& m) const
 {
     if(iblock == -1){
-        return 0;
+        return NullValue;
     }
     return this->Values(iblock, n, m);
 }
@@ -68,7 +68,7 @@ void BlockMatrix<T,space>::fill(const T& Scalar)
 template<typename T, Space space>
 Matrix<T>& BlockMatrix<T,space>::operator[](const int& iblock)
 {
-    return const_cast<Matrix<T>&>(static_cast<const BlockMatrix<T>&>(*this)[iblock]);
+    return const_cast<Matrix<T>&>(static_cast<const BlockMatrix<T,space>&>(*this)[iblock]);
 }
 
 template<typename T, Space space>
@@ -116,16 +116,17 @@ BlockMatrix<T,space>::~BlockMatrix()
 }
 
 
-
-template<typename T_, Space space_>
-void diagonalize(const BlockMatrix<T_,space_>& ToDiagonalize,
-                        mdarray<T_,2> Eigenvalues,
-                        BlockMatrix<T_,space_> Eigenvectors)
+template<Space space_>
+void diagonalize(const BlockMatrix<std::complex<double>,space_>& ToDiagonalize,
+                        std::vector<mdarray<double,1>>& Eigenvalues,
+                        BlockMatrix<std::complex<double>,space_>& Eigenvectors)
 {
     //assert(space_ == k);
     Eigenvectors.initialize(ToDiagonalize.get_nblocks(), ToDiagonalize.get_nrows(), ToDiagonalize.get_ncols());
-    Eigenvalues.initialize({ToDiagonalize.get_nblocks(), ToDiagonalize.get_nrows()});
+    Eigenvalues.resize(ToDiagonalize.get_nblocks());
     for(int ik=0; ik<ToDiagonalize.get_nblocks(); ik++){
-        diagonalize(ToDiagonalize[ik], Eigenvectors[ik], &Eigenvalues(ik,0));
+        Eigenvalues[ik].initialize({ToDiagonalize.get_nrows()});
+        std::cout << "IK: " << ik << " ToDiagonalize[ik]: " << ToDiagonalize[ik];
+        (ToDiagonalize[ik]).diagonalize(Eigenvectors[ik], Eigenvalues[ik]);
     }
 }

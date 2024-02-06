@@ -5,6 +5,7 @@
 #include <complex>
 #include <memory>
 #include <cassert>
+#define MKL_Complex16 std::complex<double>
 #include "mkl.h"
 #include <iostream>
 #include <iomanip>
@@ -26,15 +27,15 @@ class Vector{
         Vector(){Values = mdarray<T,1>();};
         Vector(mdarray<T,1> Values_) : Values(std::move(Values_)){};
         
-        Vector(const int& n);
-        void initialize(const int& n);
+        Vector(const size_t& n);
+        void initialize(const size_t& n);
 
         template <typename... Args>
         void initialize_n(Args... args)
         {
             auto dim = sizeof...(args);
             std::vector<std::common_type_t<Args...>> aux{args...};
-            Values.initialize({int(dim)});
+            Values.initialize({dim});
             for(int ix=0; ix<dim; ix++){
                 Values[ix] = aux[ix];
             }

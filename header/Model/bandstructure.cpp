@@ -1,5 +1,4 @@
 #include "Model.hpp"
-#include "../fftPair/fftPair.hpp"
 int main()
 {
     Material model("TBgraphene");
@@ -19,9 +18,14 @@ int main()
         std::cout << v.get("LatticeVectors");
     }
     
-    FourierTransform<3> fftm(HR);
-    for(auto& v : vectors){
-       fftm.dft(v.get("LatticeVectors"));
+    std::cout << model.H.get_Operator_R()[0];
+    model.H.dft(MeshGridPath.get_mesh(),+1);
+    
+    std::vector<mdarray<double,1>> Eigenvalues;
+    BlockMatrix<std::complex<double>, k> Eigenvectors;
+    diagonalize(model.H.get_Operator_k(), Eigenvalues, Eigenvectors);
+    for(int ik=0; ik<Eigenvalues.size(); ik++){
+        std::cout << Eigenvalues[ik] << std::endl;
     }
 }
 

@@ -1,3 +1,12 @@
 With this dgetrf and dgetri don't cause any error in valgrind (lapack_int is set correctly):
 
-g++  -DMKL_ILP64  -m64  -I"${MKLROOT}/include" ../main.cpp   -L${MKLROOT}/lib/intel64 -Wl,--no-as-needed -lmkl_intel_ilp64 -lmkl_sequential -lmkl_core -lpthread -lm -ldl
+
+g++  -std=c++17 -fconcepts -DMKL_ILP64  -m64 -I../   -I../mdContainers -I../Geometry -I../MeshGrid -I../Wannier -I../Operator/ -I../fftPair -I"${MKLROOT}/include" -I/opt/intel/oneapi/mkl/2024.0/include/fftw/ main.cpp   -L${MKLROOT}/lib/   -lfftw3  -lmkl_intel_ilp64 -lmkl_sequential -lmkl_core -lpthread  -lm -ldli
+
+
+
+lfftw3 was not found because the linker looks for the file libfftw3.so instead of libfftw3.so.<version> (Check it with:
+ld -lfftw3 --verbose
+). To solve it I created a symbolic link to the library:
+
+sudo ln -s /usr/lib/x86_64-linux-gnu/libfftw3.so.3.5.8 /usr/lib/x86_64-linux-gnu/libfftw3.so

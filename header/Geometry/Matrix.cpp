@@ -1,11 +1,11 @@
 template<class T>
-Matrix<T>::Matrix(const int& nrows, const int& ncols)
+Matrix<T>::Matrix(const size_t& nrows, const size_t& ncols)
 {
     this->initialize(nrows, ncols);
 }
 
 template<class T>
-void Matrix<T>::initialize(const int& nrows, const int& ncols)
+void Matrix<T>::initialize(const size_t& nrows, const size_t& ncols)
 {
     (*this).~Matrix<T>();
     assert(nrows > 0 && ncols > 0);
@@ -93,8 +93,8 @@ void Matrix<T>::LUdecompose(Matrix<T>& LU, lapack_int** pointer_to_ipiv) const
     //L has diagonal elements equal to 1 and are not saved; the diagonal elements are that of U.
     assert((std::is_same<T,double>::value));
     LU = *this;
-    int m = (*this).get_nrows();
-    int n = (*this).get_ncols();
+    size_t m = (*this).get_nrows();
+    size_t n = (*this).get_ncols();
     lapack_int lda = n;
     //if(*pointer_to_ipiv != nullptr){
     //	    delete[] *pointer_to_ipiv;
@@ -155,8 +155,8 @@ Matrix<T> Matrix<T>::transpose() const
     return transposeM;
 }
 
-template<typename T>
-void Matrix<T>::diagonalize(Matrix<T>& EigenVectors, mdarray<T,1>& EigenValues) const
+template<>
+void Matrix<std::complex<double>>::diagonalize(Matrix<std::complex<double>>& EigenVectors, mdarray<double,1>& EigenValues) const
 {
     //note: we need to copy the matrix or we lose the info because it is overwritten with eigenvectors
     assert(this->get_nrows() == this->get_ncols());
@@ -164,7 +164,8 @@ void Matrix<T>::diagonalize(Matrix<T>& EigenVectors, mdarray<T,1>& EigenValues) 
     auto n = this->get_nrows();
     auto lda = n;
     EigenValues.initialize({this->get_nrows()});
-    LAPACKE_dsyev( LAPACK_ROW_MAJOR, 'V', 'U', n, &EigenVectors(0,0), lda, &EigenValues(0) );
+    //LAPACKE_dsyev( LAPACK_ROW_MAJOR, 'V', 'U', n, &EigenVectors(0,0), lda, &EigenValues(0) );
+    LAPACKE_zheev( LAPACK_ROW_MAJOR, 'V', 'U', n, &EigenVectors(0,0), lda, &EigenValues(0) );
 }
 
 template<class T>
@@ -211,14 +212,14 @@ Vector<T> Matrix<T>::operator*(const Vector<T>& v) const
 
 
 template<class T>
-int Matrix<T>::get_nrows() const
+size_t Matrix<T>::get_nrows() const
 {
     return this->Values.get_Size(0);
 }
 
 
 template<class T>
-int Matrix<T>::get_ncols() const
+size_t Matrix<T>::get_ncols() const
 {
     return this->Values.get_Size(1);
 }
