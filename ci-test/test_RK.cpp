@@ -1,11 +1,8 @@
-//g++ -std=c++17 -I../header/ test_RK.cpp -o test_RK.x
 #include <iostream> 
-#include <complex>
 #include <iomanip>
-#include <algorithm>
 #include <vector>
 #include <math.h>
-#include "RungeKutta.hpp"
+#include "RungeKutta/RungeKutta.hpp"
 
 //here we solve y'=c*y
 //The analytical solution is y=y0*Exp(c*t)
@@ -13,7 +10,7 @@
 int main()
 {
     double InitialTime = 0.;
-    double ResolutionTime = 0.01;
+    double ResolutionTime = 0.001;
     static double InitialConstant = 1.;
     static double RateOfIncrease = 2.;
 
@@ -59,12 +56,16 @@ int main()
             std::cout << "  ";
             std::cout << std::setw(15) << std::setprecision(8) << std::scientific <<  100*abs(NumericalSolution-AnalyticalSolution)/abs(AnalyticalSolution);
             std::cout << "  |" << std::endl;
+        
+            if( 100*abs(NumericalSolution-AnalyticalSolution)/abs(AnalyticalSolution) > 1.e-08){
+                exit(1);
+            }
+
         }    
 
         rungekutta.Propagate();
-
-
     }
+
     
 
 }
