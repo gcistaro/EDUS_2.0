@@ -13,8 +13,8 @@
 
 #include <cstdarg>
 
-#include "../mdContainers/mdContainers.hpp"
-#include "../LinearAlgebra/gemm.hpp"
+#include "mdContainers/mdContainers.hpp"
+#include "LinearAlgebra/gemm.hpp"
 
 template<typename T>
 class Matrix;
