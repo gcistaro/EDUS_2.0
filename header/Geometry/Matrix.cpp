@@ -38,12 +38,25 @@ Matrix<T>::Matrix(Matrix&& A){
 
 //move assignment
 template<class T>
-Matrix<T>& Matrix<T>::operator=(Matrix<T>&& m){
+Matrix<T>& Matrix<T>::operator=(Matrix<T>&& m)
+{
     (*this).~Matrix<T>();
-    (*this).Values = m.Values;
+    (*this).Values = std::move(m.Values);
     return *this;
 }
 
+
+template<class T>
+Matrix<T>::Matrix(T* Ptr, const std::array<size_t,2>& Size_)
+{
+    Values.initialize(Ptr, Size_);
+}
+
+template<class T>
+void Matrix<T>::fill(const T& filling_constant)
+{
+    Values.fill(filling_constant);
+}
 
 template<class T>
 const T& Matrix<T>::operator()(const int& row, const int& col) const
@@ -60,8 +73,8 @@ T& Matrix<T>::operator()(const int& row, const int& col)
 }
 
 
-template<typename T>
-void Matrix_gemm(Matrix<T>& OutputMatrix, const T& alpha, const Matrix<T>& InputMatrix1, const Matrix<T>& InputMatrix2, const T& beta)
+template<typename T, typename T_>
+void Matrix_gemm(Matrix<T>& OutputMatrix, const T_& alpha, const Matrix<T>& InputMatrix1, const Matrix<T>& InputMatrix2, const T_& beta)
 {
     if(InputMatrix1.data() == nullptr || InputMatrix2.data() == nullptr){
         return;
@@ -178,6 +191,40 @@ Matrix<T> Matrix<T>::operator*(const Matrix<T>& B) const
 }
 
 template<class T>
+Matrix<T> Matrix<T>::operator+(const Matrix<T>& B) const
+{
+    assert( this->get_nrows() == B.get_nrows() && this->get_ncols() == B.get_ncols() );
+    Matrix<T> C(this->get_nrows(), this->get_ncols());
+    for(int irow=0; irow<C.get_nrows(); ++irow){
+        for(int icol=0; icol<C.get_ncols(); ++icol){
+            C(irow, icol) = (*this)(irow, icol) + B(irow, icol); 
+        }
+    }
+    return C;
+}
+
+template<class T>
+Matrix<T> Matrix<T>::operator-() const
+{
+    Matrix<T> C(this->get_nrows(), this->get_ncols());
+    for(int irow=0; irow<C.get_nrows(); ++irow){
+        for(int icol=0; icol<C.get_ncols(); ++icol){
+            C(irow, icol) = -(*this)(irow, icol);
+        }
+    }
+    return C;
+}
+
+template<class T>
+Matrix<T> Matrix<T>::operator-(const Matrix<T>& B) const
+{    
+    return (*this) + (-B);
+}
+
+
+
+
+template<class T>
 Matrix<T> Matrix<T>::operator*(T Scalar) const
 {
     Matrix<T> C(this->get_nrows(), this->get_ncols());
@@ -232,6 +279,15 @@ Matrix<T>::~Matrix()
     (*this).Values.~mdarray<T,2>();
 }
 
+template<typename T>
+double Matrix<T>::norm() const
+{
+    double Norm=0;
+    for(auto& val : (*this)){
+        Norm += val*val;
+    }
+    return Norm;
+}
 
 //overloading writing matrix
 /*template<class T>
@@ -258,3 +314,5 @@ std::ostream& operator<<(std::ostream& os, const Matrix<T>& m)
     }
     return os;
 }
+
+

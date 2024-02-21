@@ -3,13 +3,41 @@ void BlockMatrix<T,space>::initialize(mdarray<T,3>& Values_)//, MeshGrid& meshgr
 {
     Values = std::move(Values_);
     //meshgrid = std::make_shared<MeshGrid>(meshgrid_);
+    initialize_submatrix();
+}
 
-    submatrix.resize(Values.get_Size(0));
-    auto Size1 = std::array<size_t,2>{Values.get_Size(1), Values.get_Size(2)};
-    for(auto iblock=0; iblock<Values.get_Size(0); iblock++){
-        submatrix[iblock] =Matrix<T>(mdarray<T,2>(&(Values(iblock,0,0)),{Values.get_Size(1), Values.get_Size(2)}));
+template<typename T, Space space>
+void BlockMatrix<T,space>::initialize_submatrix()
+{
+        submatrix.resize(Values.get_Size(0));
+        for(auto iblock=0; iblock<Values.get_Size(0); iblock++){
+            submatrix[iblock] =Matrix<T>(&(Values(iblock,0,0)),{Values.get_Size(1), Values.get_Size(2)});    
+        }
+}
+
+
+template<typename T, Space space>
+void BlockMatrix<T,space>::initialize(const size_t& nblocks, const size_t& nrows, const size_t& ncols)
+{
+    Values.initialize({nblocks, nrows, ncols});
+    initialize_submatrix();
+}
+
+template<typename T, Space space>
+void BlockMatrix<T,space>::test_submatrix()
+{
+    for(int ib=0; ib<this->get_nblocks(); ib++){
+        for(int ir=0; ir<this->get_nrows(); ir++){
+            for(int ic=0; ic<this->get_ncols(); ic++){
+                std::cout << std::setw(20) << &((*this)(ib,ir,ic)); 
+                std::cout << std::setw(20) << &(this->submatrix[ib](ir,ic));
+                std::cout << std::setw(20) << &((*this)(ib,ir,ic)) - &(this->submatrix[ib](ir,ic));
+                std::cout << std::endl;
+            }
+        }
     }
 }
+
 
 template<typename T, Space space>
 BlockMatrix<T, space>::BlockMatrix(const BlockMatrix<T, space>& A)
@@ -36,7 +64,7 @@ template<typename T, Space space>
 BlockMatrix<T, space>& BlockMatrix<T, space>::operator=(const BlockMatrix<T, space>& A)
 {
     Values = A.Values;
-    submatrix = A.submatrix;
+    initialize_submatrix();
     meshgrid = A.meshgrid;
     EmptyMatrix = A.EmptyMatrix; 
     return *this;
@@ -53,7 +81,7 @@ template<typename T, Space space>
 BlockMatrix<T, space>& BlockMatrix<T, space>::operator=(BlockMatrix<T, space>&& A)
 {
     Values = std::move(A.Values);
-    submatrix = std::move(A.submatrix);
+    initialize_submatrix();
     meshgrid = std::move(A.meshgrid);
     EmptyMatrix = std::move(A.EmptyMatrix); 
     return *this;

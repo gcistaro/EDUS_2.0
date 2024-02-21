@@ -4,14 +4,18 @@
 #include <complex>
 #include <memory>
 #include <cassert>
-#define MKL_Complex16 std::complex<double>
-#include "mkl.h"
 #include <iostream>
 #include <iomanip>
 #include <type_traits>
-#include <cassert>
-#include "../mdContainers/mdContainers.hpp"
-#include "../LinearAlgebra/gemm.hpp"
+
+//define mkl_complex16 to avoid incompatibilities
+#ifndef MKL_Complex16
+    #define MKL_Complex16 std::complex<double>
+#endif 
+
+#include "mkl.h"
+#include "mdContainers/mdContainers.hpp"
+#include "LinearAlgebra/gemm.hpp"
 
 template<typename T>
 class Vector;
@@ -23,10 +27,17 @@ class Matrix{
         mdarray<T,2> Values;
     public:
         Matrix(){Values = mdarray<T,2>();};
-        Matrix(mdarray<T,2> Values_) : Values(std::move(Values_)){};
+        Matrix(const mdarray<T,2>& Values_) : Values(Values_){};
+        Matrix(mdarray<T,2>&& Values_) : Values(Values_)
+        {
+                std::cout << "i am moving(hope)!! Values: " << &Values[0] << " " << "Values_ " << &Values_[0] <<std::endl;                
+                Values=std::move(Values_);
+                std::cout << "i moved(hope)!! Values: " << &Values[0] << " " << "Values_ " << &Values_[0] <<std::endl;
+        };
         Matrix(const size_t& nrows, const size_t& ncols);
         void initialize(const size_t& nrows, const size_t& ncols);
 
+        Matrix(T* Ptr, const std::array<size_t,2>& dims);
         Matrix(const Matrix& A);
         Matrix& operator=(const Matrix& m);
         
@@ -36,10 +47,15 @@ class Matrix{
         const T& operator()(const int& n, const int& m) const;
         T& operator()(const int& n, const int& m);
 
+        void fill(const T& filling_constant);
         Matrix<T> operator*(const Matrix<T>& B) const;
         Matrix<T> operator*(T Scalar) const;
         Vector<T> operator*(const Vector<T>& v) const;
-         
+        
+        Matrix<T> operator+(const Matrix<T>& B) const;
+        Matrix<T> operator-() const;
+        Matrix<T> operator-(const Matrix<T>& B) const;
+
         template<typename U>
         friend Matrix<U> operator*(U Scalar, const Matrix<U> M);
 
@@ -48,6 +64,7 @@ class Matrix{
         void LUdecompose(Matrix<T>& LU, lapack_int** pointer_to_ipiv) const;
 
         void diagonalize(Matrix<std::complex<double>>& Eigenvectors, mdarray<double,1>& EigenValues) const;
+        double norm() const;
 	//Matrix<T> LUdecompose() const;
 	T determinant() const;
         const T* data() const {return Values.data();};
@@ -67,8 +84,8 @@ class Matrix{
 };
 
 
-template<typename T>
-void Matrix_gemm(Matrix<T>& OutputMatrix, const T& alpha, const Matrix<T>& InputMatrix1, const Matrix<T>& InputMatrix2, const T& beta);
+template<typename T, typename T_>
+void Matrix_gemm(Matrix<T>& OutputMatrix, const T_& alpha, const Matrix<T>& InputMatrix1, const Matrix<T>& InputMatrix2, const T_& beta);
 
 //overloading writing matrix
 template<class T>

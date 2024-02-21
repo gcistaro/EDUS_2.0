@@ -183,6 +183,7 @@ class Operator
             initialize_dft();
             execute_dft(path, sign);
             shuffle_to_RK();
+	    std::cout << Operator_k.Values << std::endl;
         }
 
 
@@ -225,6 +226,7 @@ class Operator
                 path_bare[i][2] = path[i].get("LatticeVectors")[2];
             }
             FTfriendly_Operator_k = ft_.dft(path_bare, +1);
+	    std::cout <<"\n\n\n\n FTfriendly_Operator_k \n\n\n\n" <<  FTfriendly_Operator_k << "\n\n\n\n\n";
         }
 
 
@@ -235,11 +237,21 @@ class Operator
                 for(int ibnd1=0; ibnd1<Operator_k.get_nrows(); ++ibnd1){
                     for(int ibnd2=ibnd1; ibnd2<Operator_k.get_nrows(); ++ibnd2){ 
                         Operator_k(ik, ibnd1, ibnd2) = FTfriendly_Operator_k(static_cast<int>(bandindex.oneDband(ibnd1,ibnd2)),ik);            
-                    }
+                        Operator_k(ik, ibnd2, ibnd1) = std::conj(Operator_k(ik,ibnd1, ibnd2));
+		    }
                 }
+		std::cout  << "Pointer to first element of Values: " << &(Operator_k(ik,0,0));
+		std::cout << "Pointer to first element of matrix: " << &(Operator_k[ik](0,0)) << std::endl;
             }
         }
+
 };
 
 template < typename T>
 BandIndex Operator<T>::bandindex;
+
+template < typename T>
+BlockMatrix<T,k> Operator<T>::EigenVectors;
+
+template < typename T>
+BlockMatrix<T,k> Operator<T>::EigenVectors_dagger;

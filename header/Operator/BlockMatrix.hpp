@@ -30,24 +30,18 @@
 template<typename T=std::complex<double>, Space space=R>
 class BlockMatrix{
     private:
-        mdarray<T,3> Values; //first index -> block, others -> matrix
+
         std::vector<Matrix<T>> submatrix;
         std::shared_ptr<MeshGrid<space>> meshgrid;    
         Matrix<T> EmptyMatrix;    
         T NullValue = 0;
+        void initialize_submatrix();
     public:
-        BlockMatrix() : Values(mdarray<T,3>()), EmptyMatrix(Matrix<T>()){std::cout << submatrix.size(); };//*meshgrid = MeshGrid<space>();};
+        mdarray<T,3> Values; //first index -> block, others -> matrix
+        BlockMatrix() : Values(mdarray<T,3>()), EmptyMatrix(Matrix<T>()){};
         BlockMatrix(const size_t& nblocks, const size_t& nrows, const size_t& ncols){this->initialize(nblocks, nrows, ncols);}
         void initialize(mdarray<T,3>& Values);
-        void initialize(const size_t& nblocks, const size_t& nrows, const size_t& ncols)
-        {
-            Values.initialize({nblocks, nrows, ncols});
-            submatrix.resize(nblocks);
-            for(int iblock=0; iblock<nblocks; iblock++){
-                submatrix[iblock] =Matrix<T>(mdarray<T,2>(&(Values(iblock,0,0)),{Values.get_Size(1), Values.get_Size(2)}));    
-            }
-        }
-
+        void initialize(const size_t& nblocks, const size_t& nrows, const size_t& ncols);
         BlockMatrix(const BlockMatrix<T, space>& A);
         BlockMatrix<T, space>& operator=(const BlockMatrix<T, space>& m);
         
@@ -94,7 +88,8 @@ class BlockMatrix{
                                 BlockMatrix<std::complex<double>,space_>& Eigenvectors);
 
 
-                        
+        void test_submatrix();
+
         //destructor
         ~BlockMatrix();	
 };

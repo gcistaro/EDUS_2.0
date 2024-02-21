@@ -52,9 +52,10 @@ class Material
 
 	void print_info()
 	{
-            std::cout << Coordinate<R>::get_Basis("LatticeVectors");
+        std::cout << Coordinate<R>::get_Basis("LatticeVectors");
 	    std::cout << Coordinate<k>::get_Basis("LatticeVectors");
 	}
+
 
 
 

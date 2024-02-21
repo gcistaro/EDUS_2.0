@@ -22,7 +22,14 @@ mdarray<T,dim>& mdarray<T,dim>::operator=(const mdarray<T,dim>& ToBeCopied)
 template<typename T, size_t dim> 
 mdarray<T,dim>::mdarray(mdarray<T,dim>&& ToBeMoved)
 {
-    *this = ToBeMoved;
+    (*this).~mdarray<T,dim>();
+    this->Ptr = std::move(ToBeMoved.Ptr);
+    this->Size = std::move(ToBeMoved.Size);
+    this->TotalSize = std::move(ToBeMoved.TotalSize);
+    if(this->TotalSize>0)    
+    this->Offset = std::move(ToBeMoved.Offset);
+    ToBeMoved.Ptr=nullptr;
+    NotDestruct = ToBeMoved.NotDestruct;
 }
 
 
@@ -34,8 +41,10 @@ mdarray<T,dim>& mdarray<T,dim>::operator=(mdarray<T,dim>&& ToBeMoved)
     this->Ptr = std::move(ToBeMoved.Ptr);
     this->Size = std::move(ToBeMoved.Size);
     this->TotalSize = std::move(ToBeMoved.TotalSize);
+    if(this->TotalSize>0)    
     this->Offset = std::move(ToBeMoved.Offset);
     ToBeMoved.Ptr=nullptr;
+    NotDestruct = ToBeMoved.NotDestruct;
     return *this;
 }
 
@@ -84,7 +93,7 @@ void mdarray<T,dim>::initialize(T* Ptr_, const std::array<size_t,dim>& Size_)
     Ptr = Ptr_; 
     Size = Size_; 
     NotDestruct=true;    //The Ptr_ must be destructed by the other owners. care!
-    
+ 
     TotalSizeAndOffset();
 }
 
@@ -133,7 +142,7 @@ T const& mdarray<T,dim>::operator()(Args... args) const
 
 template <typename T, size_t dim>
 template <typename... Args>
-T& mdarray<T,dim>::operator()(Args... args)
+inline T& mdarray<T,dim>::operator()(Args... args)
 {
     return (const_cast<T&>(static_cast<mdarray<T,dim> const&>(*this)(args...)));
 }
