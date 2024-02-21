@@ -284,7 +284,7 @@ double Matrix<T>::norm() const
 {
     double Norm=0;
     for(auto& val : (*this)){
-        Norm += val*val;
+        Norm += abs(val)*abs(val);
     }
     return Norm;
 }
