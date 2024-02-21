@@ -49,6 +49,14 @@ target_include_directories(Matrix_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFA
 target_include_directories(Matrix_test PUBLIC header/)
 target_link_libraries(Matrix_test PUBLIC $<LINK_ONLY:MKL::MKL>)
 
+#Matrix
+add_executable(Eigen_test ci-test/test_eigen.cpp)
+target_compile_options(Eigen_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
+target_include_directories(Eigen_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
+target_include_directories(Eigen_test PUBLIC header/)
+target_link_libraries(Eigen_test PUBLIC $<LINK_ONLY:MKL::MKL>)
+
+
 #RK
 add_executable(RK_test ci-test/test_RK.cpp)
 target_include_directories(RK_test PUBLIC header/)
@@ -63,5 +71,6 @@ target_include_directories(fft_test PUBLIC header/)
 enable_testing()
 add_test(NAME Containers_test COMMAND Containers_test)
 add_test(NAME Matrix_test COMMAND Matrix_test)
+add_test(NAME Eigen_test COMMAND Eigen_test)
 add_test(NAME RK_test COMMAND RK_test)
 add_test(NAME fft_test COMMAND fft_test)
