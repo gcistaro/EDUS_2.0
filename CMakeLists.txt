@@ -46,15 +46,15 @@ target_include_directories(Containers_test PUBLIC header/)
 add_executable(Matrix_test ci-test/test_matrix.cpp)
 target_compile_options(Matrix_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
 target_include_directories(Matrix_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
-target_include_directories(Matrix_test PUBLIC header/)
 target_link_libraries(Matrix_test PUBLIC $<LINK_ONLY:MKL::MKL>)
+target_include_directories(Matrix_test PUBLIC header/)
 
-#Matrix
+#Eigenvalues
 add_executable(Eigen_test ci-test/test_eigen.cpp)
 target_compile_options(Eigen_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
 target_include_directories(Eigen_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
-target_include_directories(Eigen_test PUBLIC header/)
 target_link_libraries(Eigen_test PUBLIC $<LINK_ONLY:MKL::MKL>)
+target_include_directories(Eigen_test PUBLIC header/)
 
 
 #RK
@@ -67,6 +67,15 @@ add_executable(fft_test ci-test/test_fft.cpp)
 target_link_libraries(fft_test fftw3)
 target_include_directories(fft_test PUBLIC header/)
 
+#simulation 
+add_executable(simulation_test ci-test/test_fft.cpp)
+#find_package(fftw3 REQUIRED)
+target_link_libraries(simulation_test PUBLIC fftw3)
+target_compile_options(simulation_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
+target_include_directories(simulation_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
+target_link_libraries(simulation_test PUBLIC $<LINK_ONLY:MKL::MKL>)
+target_include_directories(simulation_test PUBLIC header/)
+
 #build for ctest
 enable_testing()
 add_test(NAME Containers_test COMMAND Containers_test)
@@ -74,3 +83,4 @@ add_test(NAME Matrix_test COMMAND Matrix_test)
 add_test(NAME Eigen_test COMMAND Eigen_test)
 add_test(NAME RK_test COMMAND RK_test)
 add_test(NAME fft_test COMMAND fft_test)
+add_test(NAME simulation_test COMMAND simulation_test)
