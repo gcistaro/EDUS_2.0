@@ -47,11 +47,20 @@ class RungeKutta
         LambdaForSourceTerm EvaluateSourceFunction;
         LambdaForInitialCondition EvaluateInitialCondition;
 	public:
+        RungeKutta();
+
+        RungeKutta(const RungeKutta& RK) = delete;
+        RungeKutta& operator=(const RungeKutta& RK) = delete;
+
+        RungeKutta(RungeKutta&& RK) = delete;
+        RungeKutta& operator=(RungeKutta&& RK) = delete;
+        
         RungeKutta(const LambdaForInitialCondition& EvaluateInitialCondition_, const LambdaForSourceTerm& EvaluateSourceFunction_); 
         RungeKutta(const LambdaForInitialCondition& EvaluateInitialCondition_, const LambdaForSourceTerm& EvaluateSourceFunction_, 
                    const double& InitialTime_, const double& TimeResolution_);
         void Propagate(); 
         const T& get_Function() const; 
+        T& get_Function(); 
         const double& get_CurrentTime() const {return CurrentTime;};
         void set_InitialTime(const double& InitialTime_){InitialTime = InitialTime_;}
         void set_ResolutionTime(const double& ResolutionTime_){ResolutionTime = ResolutionTime_;}
@@ -60,8 +69,12 @@ class RungeKutta
 
 
 template<typename T, typename LambdaForSourceTerm, typename LambdaForInitialCondition>
-RungeKutta<T, LambdaForSourceTerm, LambdaForInitialCondition>::RungeKutta(const LambdaForInitialCondition& EvaluateInitialCondition_, const LambdaForSourceTerm& EvaluateSourceFunction_, const double& InitialTime_, const double& TimeResolution_) : 
-EvaluateInitialCondition(EvaluateInitialCondition_), EvaluateSourceFunction(EvaluateSourceFunction_), InitialTime(InitialTime_), CurrentTime(InitialTime_), ResolutionTime(TimeResolution_)
+RungeKutta<T, LambdaForSourceTerm, LambdaForInitialCondition>::RungeKutta
+            (const LambdaForInitialCondition& EvaluateInitialCondition_, const LambdaForSourceTerm& EvaluateSourceFunction_, 
+            const double& InitialTime_, const double& TimeResolution_) : 
+EvaluateInitialCondition(EvaluateInitialCondition_), 
+EvaluateSourceFunction(EvaluateSourceFunction_), 
+InitialTime(InitialTime_), CurrentTime(InitialTime_), ResolutionTime(TimeResolution_)
 {
     std::cout << "Initializing RK object..  ";
     EvaluateInitialCondition(Function);
@@ -105,9 +118,18 @@ const T& RungeKutta<T, LambdaForSourceTerm, LambdaForInitialCondition>::get_Func
 }
 
 template<typename T, typename LambdaForSourceTerm, typename LambdaForInitialCondition>
+T& RungeKutta<T, LambdaForSourceTerm, LambdaForInitialCondition>::get_Function() 
+{
+    return this->Function;
+}
+
+
+template<typename T, typename LambdaForSourceTerm, typename LambdaForInitialCondition>
 auto make_RungeKutta(const LambdaForInitialCondition& InitialCondition_, const LambdaForSourceTerm& SourceTerm_) 
 -> RungeKutta<T, LambdaForSourceTerm, LambdaForInitialCondition>
 {
     return RungeKutta<T, LambdaForSourceTerm, LambdaForInitialCondition>(InitialCondition_, SourceTerm_, 0., 0.);
 }
+
+
 #endif
