@@ -83,6 +83,6 @@ class MeshGrid{
         }
 };
 
-#include "MeshGrid.cpp"
+#include "MeshGrid_definitions.hpp"
 
 #endif

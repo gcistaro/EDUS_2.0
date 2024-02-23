@@ -1,6 +1,6 @@
 #include "cassert"
-#include "BlockMatrix.hpp"
-#include "fftPair.hpp"
+#include "Operator/BlockMatrix.hpp"
+#include "fftPair/fftPair.hpp"
 
 class BandIndex
 {
@@ -96,8 +96,6 @@ class Operator
         std::shared_ptr<MeshGrid<k>> FT_meshgrid_k;
         std::shared_ptr<MeshGrid<R>> FT_meshgrid_R;
 
-        static BlockMatrix<T,k> EigenVectors;
-        static BlockMatrix<T,k> EigenVectors_dagger;
         static BandIndex bandindex;
         enum BandGauge{Bloch, Wannier};
 
@@ -105,6 +103,8 @@ class Operator
         
 
     public:
+        static BlockMatrix<T,k> EigenVectors;
+        static BlockMatrix<T,k> EigenVectors_dagger;
         Operator() : Operator_k(BlockMatrix<T,k>()), Operator_R(BlockMatrix<T,R>()){};
 
         Operator(const Operator<T>& Op_) {*this = Op_;}
@@ -183,10 +183,15 @@ class Operator
             initialize_dft();
             execute_dft(path, sign);
             shuffle_to_RK();
-	    std::cout << Operator_k.Values << std::endl;
+	        std::cout << Operator_k.Values << std::endl;
         }
 
-
+/*
+ * "initialize_dft()"
+ * The following function is used to reshuffle the operator in such a way that R is the first index
+ * and can be easily used for doing a fft. In the same time, we put as R mesh of the dft the one of 
+ * Operator_R.
+*/
         void initialize_dft()
         {
             auto nbnd = Operator_R.get_nrows();
@@ -238,10 +243,8 @@ class Operator
                     for(int ibnd2=ibnd1; ibnd2<Operator_k.get_nrows(); ++ibnd2){ 
                         Operator_k(ik, ibnd1, ibnd2) = FTfriendly_Operator_k(static_cast<int>(bandindex.oneDband(ibnd1,ibnd2)),ik);            
                         Operator_k(ik, ibnd2, ibnd1) = std::conj(Operator_k(ik,ibnd1, ibnd2));
-		    }
+        		    }
                 }
-		std::cout  << "Pointer to first element of Values: " << &(Operator_k(ik,0,0));
-		std::cout << "Pointer to first element of matrix: " << &(Operator_k[ik](0,0)) << std::endl;
             }
         }
 

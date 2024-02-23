@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 #set(CMAKE_REQUIRED_FLAGS -fconcepts)
 
-set(GCC_FLAG "-fconcepts")
+set(GCC_FLAG "-fconcepts -g")
 add_definitions(${GCC_FLAG})
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
@@ -68,7 +68,7 @@ target_link_libraries(fft_test fftw3)
 target_include_directories(fft_test PUBLIC header/)
 
 #simulation 
-add_executable(simulation_test ci-test/test_fft.cpp)
+add_executable(simulation_test ci-test/test_simulation.cpp)
 #find_package(fftw3 REQUIRED)
 target_link_libraries(simulation_test PUBLIC fftw3)
 target_compile_options(simulation_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)

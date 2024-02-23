@@ -7,6 +7,8 @@ class Simulation
 {
     private:
         Material material;
+
+        std::vector<mdarray<double,1>> Band_energies;
         //Operator<std::complex<double>> DensityMatrix;
         RungeKutta<Operator<std::complex<double>>, LambdaForSourceTerm, LambdaForInitialCondition> RK_object;
 
@@ -15,7 +17,7 @@ class Simulation
                    const LambdaForSourceTerm& EvaluateSourceFunction_) 
         : RK_object(make_RungeKutta<Operator<std::complex<double>>>(EvaluateInitialCondition_, EvaluateSourceFunction_))
         {
-            material = Material("/home/gcistaro/2negf_github/tb_models/TBgraphene");
+            material = Material("/home/gcistaro/NEGF/tb_models/TBgraphene");
 
             auto& DensityMatrix = RK_object.get_Function();
             //setting up grids
@@ -24,13 +26,46 @@ class Simulation
             
             auto& kgrid = DensityMatrix.get_Operator_k().get_MeshGrid();
             kgrid = std::make_shared<MeshGrid<k>>(std::move(fftPair<R, k>(*MasterRgrid)));//fftPair for k space
-
+            
             auto Rfft = std::make_shared<MeshGrid<R>>(fftPair<k, R>(*kgrid));//Rspace as fourier space of kgrid
             print_grids();   
             material.print_info();
+
+            //get U and Udagger from Hamiltonian
+            evaluate_UandUdagger();
         };
 
+        void evaluate_UandUdagger()
+        {
+            //diagonalizing Hk on the k vectors of the grid of the Density matrix.
+            auto& DensityMatrix = RK_object.get_Function();
+            auto& MasterkGrid = DensityMatrix.get_Operator_k().get_MeshGrid()->get_mesh();
+            std::cout << "MasterkGrid::: \n";
+            for(int ik=0; ik<MasterkGrid.size(); ik++){
+                std::cout << ik << MasterkGrid[ik].get("LatticeVectors");
+            }
+            material.H.dft(MasterkGrid, +1);
+            
+            material.H.get_Operator_k().diagonalize(Band_energies, Operator<std::complex<double>>::EigenVectors);
 
+            auto& Uk = Operator<std::complex<double>>::EigenVectors;
+            auto& UkDagger = Operator<std::complex<double>>::EigenVectors_dagger;
+            UkDagger.initialize(Uk.get_nblocks(), Uk.get_ncols(), Uk.get_nrows());
+            //HermitianTranspose(Operator<std::complex<double>>::EigenVectors, 
+            //                   Operator<std::complex<double>>::EigenVectors_dagger);
+            for(int ik=0; ik<UkDagger.get_nblocks(); ++ik){
+                for(int ir=0; ir<UkDagger.get_nrows(); ++ir){
+                    for(int ic=0; ic<UkDagger.get_ncols(); ++ic){
+                        UkDagger[ik](ir, ic) = conj(Uk[ik](ic,ir));
+                    }
+                }
+            }
+
+            for(int ik=0; ik<UkDagger.get_nblocks(); ++ik){
+                std::cout << UkDagger[ik]*Uk[ik];
+            }
+
+        };
 
 
 

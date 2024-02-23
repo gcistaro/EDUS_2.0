@@ -10,9 +10,9 @@
 #include <iomanip>
 #include <typeinfo>
 
-#include "mdContainers.hpp"
-#include "MeshGrid.hpp"
-#include "Matrix.hpp"
+#include "mdContainers/mdContainers.hpp"
+#include "MeshGrid/MeshGrid.hpp"
+#include "Geometry/Matrix.hpp"
 
 
 
@@ -82,10 +82,8 @@ class BlockMatrix{
         template<typename T_, Space space_, typename U>
         friend void convolution(BlockMatrix<T_,space_>& Output, U Scalar, const BlockMatrix<T_,space_>& Input1, const BlockMatrix<T_,space_>& Input2 );
         
-        template<Space space_>
-        void diagonalize(const BlockMatrix<std::complex<double>,space_>& ToDiagonalize,
-                                std::vector<mdarray<double,1>>& Eigenvalues,
-                                BlockMatrix<std::complex<double>,space_>& Eigenvectors);
+        void diagonalize(std::vector<mdarray<double,1>>& Eigenvalues,
+                         BlockMatrix<std::complex<double>,space>& Eigenvectors) const;
 
 
         void test_submatrix();

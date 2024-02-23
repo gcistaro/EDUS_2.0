@@ -144,17 +144,15 @@ BlockMatrix<T,space>::~BlockMatrix()
 }
 
 
-template<Space space_>
-void diagonalize(const BlockMatrix<std::complex<double>,space_>& ToDiagonalize,
-                        std::vector<mdarray<double,1>>& Eigenvalues,
-                        BlockMatrix<std::complex<double>,space_>& Eigenvectors)
+template<typename T, Space space>
+void BlockMatrix<T,space>::diagonalize(std::vector<mdarray<double,1>>& Eigenvalues,
+                 BlockMatrix<std::complex<double>,space>& Eigenvectors) const
 {
     //assert(space_ == k);
-    Eigenvectors.initialize(ToDiagonalize.get_nblocks(), ToDiagonalize.get_nrows(), ToDiagonalize.get_ncols());
-    Eigenvalues.resize(ToDiagonalize.get_nblocks());
-    for(int ik=0; ik<ToDiagonalize.get_nblocks(); ik++){
-        Eigenvalues[ik].initialize({ToDiagonalize.get_nrows()});
-        std::cout << "IK: " << ik << " ToDiagonalize[ik]: " << ToDiagonalize[ik];
-        (ToDiagonalize[ik]).diagonalize(Eigenvectors[ik], Eigenvalues[ik]);
+    Eigenvectors.initialize(this->get_nblocks(), this->get_nrows(), this->get_ncols());
+    Eigenvalues.resize(this->get_nblocks());
+    for(int ik=0; ik<this->get_nblocks(); ik++){
+        Eigenvalues[ik].initialize({this->get_nrows()});
+        ((*this)[ik]).diagonalize(Eigenvectors[ik], Eigenvalues[ik]);
     }
 }

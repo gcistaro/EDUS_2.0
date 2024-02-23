@@ -1,8 +1,8 @@
 #include <cassert>
 #include "ConvertUnits.hpp"
-#include "Wannier.hpp"
+#include "Wannier/Wannier.hpp"
 
-#include "Operator.hpp"
+#include "Operator/Operator.hpp"
 
 class Material
 {
