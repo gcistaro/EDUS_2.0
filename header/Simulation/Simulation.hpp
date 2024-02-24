@@ -2,20 +2,18 @@
 #include "RungeKutta/RungeKutta.hpp"
 
 
-template<typename LambdaForSourceTerm, typename LambdaForInitialCondition>
 class Simulation
 {
     private:
         Material material;
 
         std::vector<mdarray<double,1>> Band_energies;
+        double FermiEnergy;
         //Operator<std::complex<double>> DensityMatrix;
-        RungeKutta<Operator<std::complex<double>>, LambdaForSourceTerm, LambdaForInitialCondition> RK_object;
+        RungeKutta<Operator<std::complex<double>>> RK_object;
 
     public:
-        Simulation(const LambdaForInitialCondition& EvaluateInitialCondition_, 
-                   const LambdaForSourceTerm& EvaluateSourceFunction_) 
-        : RK_object(make_RungeKutta<Operator<std::complex<double>>>(EvaluateInitialCondition_, EvaluateSourceFunction_))
+        Simulation()
         {
             material = Material("/home/gcistaro/NEGF/tb_models/TBgraphene");
 
@@ -32,10 +30,31 @@ class Simulation
             material.print_info();
 
             //get U and Udagger from Hamiltonian
-            evaluate_UandUdagger();
+            SettingUp_EigenSystem();
+            
+            auto& Uk = Operator<std::complex<double>>::EigenVectors;
+            auto& UkDagger = Operator<std::complex<double>>::EigenVectors_dagger;
+            auto InitialCondition = [&](Operator<std::complex<double>>& DM)
+            {
+                DM.Operator_k.initialize(Uk.get_nblocks(), Uk.get_nrows(), Uk.get_ncols());
+                DM.Operator_k.fill(0.);
+                //filling matrix in Bloch gauge
+                for(int ik=0; ik<Uk.get_nblocks(); ++ik){
+                    for(int iband=0; iband<Uk.get_nrows(); iband++){
+                        if(this->Band_energies[ik](iband) < FermiEnergy-threshold){
+                            DM.Operator_k(ik, iband, iband) = 1.;
+                        }
+                    }
+                }
+                DM.lock_gauge(bloch);
+                DM.lock_space(k);
+                DM.go_to_wannier();
+                DM.go_to_R();
+            };
+            
         };
 
-        void evaluate_UandUdagger()
+        void SettingUp_EigenSystem()
         {
             //diagonalizing Hk on the k vectors of the grid of the Density matrix.
             auto& DensityMatrix = RK_object.get_Function();
@@ -50,9 +69,16 @@ class Simulation
 
             auto& Uk = Operator<std::complex<double>>::EigenVectors;
             auto& UkDagger = Operator<std::complex<double>>::EigenVectors_dagger;
-            UkDagger.initialize(Uk.get_nblocks(), Uk.get_ncols(), Uk.get_nrows());
             //HermitianTranspose(Operator<std::complex<double>>::EigenVectors, 
             //                   Operator<std::complex<double>>::EigenVectors_dagger);
+
+            //doing conjugate transpose using mkl...
+            UkDagger.initialize(Uk.get_nblocks(), Uk.get_ncols(), Uk.get_nrows());
+            //no stride
+            //size_t lda = Uk.get_nrows();
+            //size_t ldb = Uk.get_ncols();
+            //mkl_zomatcopy('R', 'C', Uk.get_nrows(), Uk.get_ncols(), std::complex<double>(1.), 
+            //              &Uk(0,0,0), lda, &UkDagger(0,0,0), ldb); 
             for(int ik=0; ik<UkDagger.get_nblocks(); ++ik){
                 for(int ir=0; ir<UkDagger.get_nrows(); ++ir){
                     for(int ic=0; ic<UkDagger.get_ncols(); ++ic){
@@ -99,11 +125,3 @@ class Simulation
         
 };
 
-
-
-template<typename T, typename LambdaForSourceTerm, typename LambdaForInitialCondition>
-auto make_Simulation(const LambdaForInitialCondition& InitialCondition_, const LambdaForSourceTerm& SourceTerm_) 
--> Simulation<LambdaForSourceTerm, LambdaForInitialCondition>
-{
-    return Simulation<LambdaForSourceTerm, LambdaForInitialCondition>(InitialCondition_, SourceTerm_);
-}

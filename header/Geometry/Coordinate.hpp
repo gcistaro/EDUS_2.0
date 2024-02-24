@@ -9,7 +9,6 @@
 template<typename T>
 using Dictionary = std::map<std::string, T>;//WARNING !! operator[] works only if the Dictionary is not const.
 
-enum Space{k,R};
 
 template<typename T>
 std::ostream& operator<<(std::ostream& os, const Dictionary<T>& dic)

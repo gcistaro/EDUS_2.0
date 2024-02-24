@@ -11,9 +11,9 @@
 */
 int main()
 {
-    int Npoints = 1000;
+    size_t Npoints = 1000;
     mdarray<std::complex<double>,2> Input({1,Npoints});
-    std::vector<int> dimensions = {Npoints};
+    std::vector<int> dimensions = {int(Npoints)};
     
     double i0 = 0;
     double a = 1./double(Npoints);

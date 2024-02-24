@@ -98,6 +98,6 @@ class BlockMatrix{
 //overloading writing matrix
 template<class T>
 std::ostream& operator<<(std::ostream& os, BlockMatrix<T>& m);
-#include "BlockMatrix.cpp"
+#include "BlockMatrix_definitions.hpp"
 
 #endif

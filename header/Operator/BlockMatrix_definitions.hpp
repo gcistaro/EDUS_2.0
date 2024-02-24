@@ -112,9 +112,10 @@ template<typename T, Space space>
 void multiply(BlockMatrix<T,space>& Output, T Scalar, const BlockMatrix<T,space>& Input1, const BlockMatrix<T,space>& Input2 )
 {
     for(int iblock=0; iblock<Output.get_nblocks(); iblock++){
-        Matrix_gemm(Output[iblock], Scalar, Input1[iblock], Input2[iblock], 0.);
+        Matrix_gemm(Output[iblock], Scalar, Input1[iblock], Input2[iblock], T(0.));
     }
 }
+
 
 template<typename T, Space space, typename U>
 void convolution(BlockMatrix<T,space>& Output, U Scalar, const BlockMatrix<T,space>& Input1, const BlockMatrix<T,space>& Input2 )

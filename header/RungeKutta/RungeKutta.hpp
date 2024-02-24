@@ -3,7 +3,7 @@
 
 #include <algorithm>
 #include <cassert>
-
+#include <functional>
 
 /*
     Equations implemented here: 
@@ -33,7 +33,8 @@ void SumWithProduct(T& Output, const Scalar_T& FirstScalar, const T& FirstAddend
 
 
 
-template<typename T, typename LambdaForSourceTerm, typename LambdaForInitialCondition>
+//template<typename T, typename LambdaForSourceTerm, typename LambdaForInitialCondition>
+template<typename T>
 class RungeKutta
 {
     private:
@@ -44,19 +45,21 @@ class RungeKutta
         double InitialTime;
         double ResolutionTime;
         double CurrentTime;
-        LambdaForSourceTerm EvaluateSourceFunction;
-        LambdaForInitialCondition EvaluateInitialCondition;
+        //LambdaForSourceTerm EvaluateSourceFunction;
+        //LambdaForInitialCondition EvaluateInitialCondition;
+        std::function<void(T&)> EvaluateInitialCondition;
+        std::function<void(T&, const double&, const T&)> EvaluateSourceFunction;
 	public:
-        RungeKutta();
+        RungeKutta(){};
 
         RungeKutta(const RungeKutta& RK) = delete;
         RungeKutta& operator=(const RungeKutta& RK) = delete;
 
         RungeKutta(RungeKutta&& RK) = delete;
         RungeKutta& operator=(RungeKutta&& RK) = delete;
-        
-        RungeKutta(const LambdaForInitialCondition& EvaluateInitialCondition_, const LambdaForSourceTerm& EvaluateSourceFunction_); 
-        RungeKutta(const LambdaForInitialCondition& EvaluateInitialCondition_, const LambdaForSourceTerm& EvaluateSourceFunction_, 
+
+        RungeKutta(const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_); 
+        RungeKutta(const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_, 
                    const double& InitialTime_, const double& TimeResolution_);
         void Propagate(); 
         const T& get_Function() const; 
@@ -68,9 +71,11 @@ class RungeKutta
 
 
 
-template<typename T, typename LambdaForSourceTerm, typename LambdaForInitialCondition>
-RungeKutta<T, LambdaForSourceTerm, LambdaForInitialCondition>::RungeKutta
-            (const LambdaForInitialCondition& EvaluateInitialCondition_, const LambdaForSourceTerm& EvaluateSourceFunction_, 
+//template<typename T, typename LambdaForSourceTerm, typename LambdaForInitialCondition>
+//RungeKutta<T, LambdaForSourceTerm, LambdaForInitialCondition>::RungeKutta
+template<typename T>
+RungeKutta<T>::RungeKutta
+            (const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_, 
             const double& InitialTime_, const double& TimeResolution_) : 
 EvaluateInitialCondition(EvaluateInitialCondition_), 
 EvaluateSourceFunction(EvaluateSourceFunction_), 
@@ -84,8 +89,8 @@ InitialTime(InitialTime_), CurrentTime(InitialTime_), ResolutionTime(TimeResolut
     std::cout << "done\n";
 }
 
-template<typename T, typename LambdaForSourceTerm, typename LambdaForInitialCondition>
-void RungeKutta<T, LambdaForSourceTerm, LambdaForInitialCondition>::Propagate()
+template<typename T>
+void RungeKutta<T>::Propagate()
 {
     //k1=f(tn,yn)
     EvaluateSourceFunction(k, CurrentTime, Function);
@@ -105,30 +110,30 @@ void RungeKutta<T, LambdaForSourceTerm, LambdaForInitialCondition>::Propagate()
     SumWithProduct(ReducingFunction, 1., ReducingFunction, ResolutionTime/3., k);  
     EvaluateSourceFunction(k, CurrentTime+ResolutionTime, AuxiliaryFunction); 
 
-    //compute final density matrix
+    //compute final function
     SumWithProduct(Function, 1., ReducingFunction, ResolutionTime/6., k);  
     CurrentTime += ResolutionTime;
 }
 
 
-template<typename T, typename LambdaForSourceTerm, typename LambdaForInitialCondition>
-const T& RungeKutta<T, LambdaForSourceTerm, LambdaForInitialCondition>::get_Function() const 
+template<typename T>
+const T& RungeKutta<T>::get_Function() const 
 {
     return this->Function;
 }
 
-template<typename T, typename LambdaForSourceTerm, typename LambdaForInitialCondition>
-T& RungeKutta<T, LambdaForSourceTerm, LambdaForInitialCondition>::get_Function() 
+template<typename T>
+T& RungeKutta<T>::get_Function() 
 {
     return this->Function;
 }
 
 
-template<typename T, typename LambdaForSourceTerm, typename LambdaForInitialCondition>
-auto make_RungeKutta(const LambdaForInitialCondition& InitialCondition_, const LambdaForSourceTerm& SourceTerm_) 
--> RungeKutta<T, LambdaForSourceTerm, LambdaForInitialCondition>
+template<typename T>
+auto make_RungeKutta(const std::function<void(T&)>& InitialCondition_, const std::function<void(T&, const double&, const T&)>& SourceTerm_) 
+-> RungeKutta<T>
 {
-    return RungeKutta<T, LambdaForSourceTerm, LambdaForInitialCondition>(InitialCondition_, SourceTerm_, 0., 0.);
+    return RungeKutta<T>(InitialCondition_, SourceTerm_, 0., 0.);
 }
 
 

@@ -19,4 +19,7 @@ double c1,c2,c3;
 
 double threshold = 1.e-08;
 
+enum Space{k,R};
+enum BandGauge{bloch, wannier};
+
 #endif

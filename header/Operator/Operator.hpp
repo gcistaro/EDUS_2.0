@@ -97,12 +97,16 @@ class Operator
         std::shared_ptr<MeshGrid<R>> FT_meshgrid_R;
 
         static BandIndex bandindex;
-        enum BandGauge{Bloch, Wannier};
+        BandGauge bandgauge;
+        Space space;
 
+        bool locked_bandgauge = false;
+        bool locked_space = false;
         FourierTransform ft_;
         
 
     public:
+        friend class Simulation;
         static BlockMatrix<T,k> EigenVectors;
         static BlockMatrix<T,k> EigenVectors_dagger;
         Operator() : Operator_k(BlockMatrix<T,k>()), Operator_R(BlockMatrix<T,R>()){};
@@ -247,6 +251,60 @@ class Operator
                 }
             }
         }
+
+        void go_to_wannier()
+        {
+            assert(locked_bandgauge);
+            if (bandgauge == wannier){
+                return;
+            }
+
+            multiply(Operator_k, std::complex<double>(1.), EigenVectors, Operator_k);
+            multiply(Operator_k, std::complex<double>(1.), Operator_k, EigenVectors_dagger);
+        };
+
+        void go_to_bloch()
+        {
+            assert(locked_bandgauge);
+            if(bandgauge == bloch){
+                return;
+            }
+            multiply(Operator_k, std::complex<double>(1.), EigenVectors_dagger, Operator_k);
+            multiply(Operator_k, std::complex<double>(1.), Operator_k, EigenVectors);
+        };
+
+        void go_to_R()
+        {
+            assert(locked_space);
+            if(space == R){
+                return;
+            }
+            std::cout << "Warning! go_to_R is to be implemented!\n";
+            //dft();
+        }
+
+        void go_to_k()
+        {
+            assert(locked_space);
+            if(space == k){
+                return;
+            }
+            std::cout << "Warning! go_to_R is to be implemented!\n";
+
+            //dft();
+        }
+
+        void lock_gauge(const BandGauge& bandgauge__)
+        {
+            bandgauge = bandgauge__;
+            locked_bandgauge = true;
+        };
+
+        void lock_space(const Space& space__)
+        {
+            space = space__;
+            locked_space = true;
+        };
 
 };
 
