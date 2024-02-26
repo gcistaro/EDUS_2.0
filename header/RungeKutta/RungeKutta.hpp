@@ -52,13 +52,14 @@ class RungeKutta
 	public:
         RungeKutta(){};
 
-        RungeKutta(const RungeKutta& RK) = delete;
-        RungeKutta& operator=(const RungeKutta& RK) = delete;
+        RungeKutta(const RungeKutta& RK) = default;
+        RungeKutta& operator=(const RungeKutta& RK) = default;
 
-        RungeKutta(RungeKutta&& RK) = delete;
-        RungeKutta& operator=(RungeKutta&& RK) = delete;
+        RungeKutta(RungeKutta&& RK) = default;
+        RungeKutta& operator=(RungeKutta&& RK) = default;
 
         RungeKutta(const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_); 
+        void initialize(const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_); 
         RungeKutta(const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_, 
                    const double& InitialTime_, const double& TimeResolution_);
         void Propagate(); 
@@ -88,6 +89,19 @@ InitialTime(InitialTime_), CurrentTime(InitialTime_), ResolutionTime(TimeResolut
     k = Function;  
     std::cout << "done\n";
 }
+
+template<typename T>
+void RungeKutta<T>::initialize(const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_)
+{
+    EvaluateInitialCondition = EvaluateInitialCondition_;
+    EvaluateSourceFunction = EvaluateSourceFunction_;
+    EvaluateInitialCondition(Function);
+    AuxiliaryFunction = Function;
+    ReducingFunction = Function;
+    k = Function;  
+    std::cout << "done\n";
+}
+
 
 template<typename T>
 void RungeKutta<T>::Propagate()

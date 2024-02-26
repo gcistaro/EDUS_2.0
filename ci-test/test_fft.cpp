@@ -12,7 +12,8 @@
 int main()
 {
     size_t Npoints = 1000;
-    mdarray<std::complex<double>,2> Input({1,Npoints});
+    mdarray<std::complex<double>,2> Array_x({1,Npoints});
+    mdarray<std::complex<double>,2> Array_k({1,Npoints});
     std::vector<int> dimensions = {int(Npoints)};
     
     double i0 = 0;
@@ -25,12 +26,12 @@ int main()
         else{
             x = Npoints-i;
         }
-        Input(0,i) = std::exp(-a*std::pow(x, 2));
-        std::cout << i << " " << x << " " <<  Input(0,i) << std::endl;
+        Array_x(0,i) = std::exp(-a*std::pow(x, 2));
+        std::cout << i << " " << x << " " <<  Array_x(0,i) << std::endl;
     }
 
     std::cout << "Setting up Fourier Transform..\n";
-    FourierTransform fftm(Input, dimensions);
+    FourierTransform fftm(Array_x, Array_k, dimensions);
 
     std::cout << "Doing Fourier transform...\n";
     fftm.fft(-1);
@@ -43,7 +44,7 @@ int main()
     std::cout << "|    freq    | Numerical solution | Analytical solution |      Error(%)     |\n";
     std::cout << "+------------+--------------------+---------------------+-------------------+\n";
 
-    auto&& NumericalSolution = fftm.get_OutputArray();
+    auto&& NumericalSolution = fftm.get_Array_k();
 
     for(int i=0; i<Npoints; i++){
         double w;

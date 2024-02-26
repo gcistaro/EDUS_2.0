@@ -19,24 +19,23 @@ class Simulation
 
             auto& DensityMatrix = RK_object.get_Function();
             //setting up grids
-            auto& MasterRgrid = DensityMatrix.get_Operator_R().get_MeshGrid();
-            MasterRgrid = std::make_shared<MeshGrid<R>>(MeshGrid<R>(3.));//spherical grid for exponentially decaying DM
-            
-            auto& kgrid = DensityMatrix.get_Operator_k().get_MeshGrid();
-            kgrid = std::make_shared<MeshGrid<k>>(std::move(fftPair<R, k>(*MasterRgrid)));//fftPair for k space
-            
-            auto Rfft = std::make_shared<MeshGrid<R>>(fftPair<k, R>(*kgrid));//Rspace as fourier space of kgrid
-            print_grids();   
-            material.print_info();
+            auto MasterRgrid = std::make_shared<MeshGrid<R>>(MeshGrid<R>(3.));//spherical grid for exponentially decaying DM
+
+            //auto& kgrid = DensityMatrix.get_Operator_k().get_MeshGrid();
+            //kgrid = std::make_shared<MeshGrid<k>>(std::move(fftPair<R, k>(*MasterRgrid)));//fftPair for k space
+            //auto Rfft = std::make_shared<MeshGrid<R>>(fftPair<k, R>(*kgrid));//Rspace as fourier space of kgrid
+            //print_grids();   
+            //material.print_info();
 
             //get U and Udagger from Hamiltonian
+            DensityMatrix.initialize_fft(*MasterRgrid, material.H.get_Operator_R().get_nrows());
             SettingUp_EigenSystem();
             
             auto& Uk = Operator<std::complex<double>>::EigenVectors;
             auto& UkDagger = Operator<std::complex<double>>::EigenVectors_dagger;
-            auto InitialCondition = [&](Operator<std::complex<double>>& DM)
+            std::function<void(Operator<std::complex<double>>&)> InitialCondition = [&](Operator<std::complex<double>>& DM)
             {
-                DM.Operator_k.initialize(Uk.get_nblocks(), Uk.get_nrows(), Uk.get_ncols());
+                //DM.Operator_k.initialize(Uk.get_nblocks(), Uk.get_nrows(), Uk.get_ncols());
                 DM.Operator_k.fill(0.);
                 //filling matrix in Bloch gauge
                 for(int ik=0; ik<Uk.get_nblocks(); ++ik){
@@ -51,7 +50,16 @@ class Simulation
                 DM.go_to_wannier();
                 DM.go_to_R();
             };
-            
+
+            std::function<void(Operator<std::complex<double>>&, double const&, Operator<std::complex<double>> const&)> SourceTerm = 
+            [&](Operator<std::complex<double>>& Output, const double& Time, const Operator<std::complex<double>>& Input)
+            {
+                Output.get_Operator_R().fill(0.*im);
+                convolution(Output.get_Operator_R(), -im, this->material.H.get_Operator_R(), Input.get_Operator_R());
+                convolution(Output.get_Operator_R(), +im, Input.get_Operator_R(), this->material.H.get_Operator_R());
+            };
+
+            RK_object.initialize(InitialCondition, SourceTerm);
         };
 
         void SettingUp_EigenSystem()
@@ -59,10 +67,6 @@ class Simulation
             //diagonalizing Hk on the k vectors of the grid of the Density matrix.
             auto& DensityMatrix = RK_object.get_Function();
             auto& MasterkGrid = DensityMatrix.get_Operator_k().get_MeshGrid()->get_mesh();
-            std::cout << "MasterkGrid::: \n";
-            for(int ik=0; ik<MasterkGrid.size(); ik++){
-                std::cout << ik << MasterkGrid[ik].get("LatticeVectors");
-            }
             material.H.dft(MasterkGrid, +1);
             
             material.H.get_Operator_k().diagonalize(Band_energies, Operator<std::complex<double>>::EigenVectors);

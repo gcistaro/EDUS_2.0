@@ -95,6 +95,7 @@ class Operator
         mdarray<std::complex<double>, 2> FTfriendly_Operator_k;
         std::shared_ptr<MeshGrid<k>> FT_meshgrid_k;
         std::shared_ptr<MeshGrid<R>> FT_meshgrid_R;
+        std::shared_ptr<MeshGrid<R>> MeshGrid_Null;
 
         static BandIndex bandindex;
         BandGauge bandgauge;
@@ -102,6 +103,8 @@ class Operator
 
         bool locked_bandgauge = false;
         bool locked_space = false;
+        bool initialized_dft = false;
+        bool initialized_fft = false;
         FourierTransform ft_;
         
 
@@ -110,6 +113,7 @@ class Operator
         static BlockMatrix<T,k> EigenVectors;
         static BlockMatrix<T,k> EigenVectors_dagger;
         Operator() : Operator_k(BlockMatrix<T,k>()), Operator_R(BlockMatrix<T,R>()){};
+
 
         Operator(const Operator<T>& Op_) {*this = Op_;}
         
@@ -150,35 +154,61 @@ class Operator
         };
 
 
-        void initialize_fft()
+        template<Space space>
+        void initialize_fft(const MeshGrid<space>& MG, const size_t& nbnd)
         {
-            auto nbnd = Operator_R.get_nrows();
+            //for now this is the only case implemented. it will be more general.
+            //we enter in this function only once
+            if(initialized_fft){
+                return;
+            }
+            initialized_fft = true;
             
-            bandindex.initialize(nbnd);
-            
-            FT_meshgrid_k = std::make_shared<MeshGrid<k>>(fftPair<R,k>(*Operator_R.get_MeshGrid()));
-            FT_meshgrid_R = std::make_shared<MeshGrid<R>>(fftPair<k,R>(*FT_meshgrid_k));
+            Operator_R = BlockMatrix<std::complex<double>,R>(MG.get_mesh().size(), nbnd, nbnd);
+
+            switch(space)
+            {
+                case R:
+                {
+                    auto& Rgrid = Operator_R.get_MeshGrid();
+                    Rgrid = std::make_shared<MeshGrid<R>>(MG);
+                    FT_meshgrid_k = std::make_shared<MeshGrid<k>>(fftPair<R,k>(MG));
+                    FT_meshgrid_R = std::make_shared<MeshGrid<R>>(fftPair<k,R>(*FT_meshgrid_k));
+                    break;
+                }
+                case k:
+                {
+                    //FT_meshgrid_R = std::make_shared<MeshGrid<R>>(fftPair<R,k>(MG));
+                    //FT_meshgrid_k = std::make_shared<MeshGrid<k>>(fftPair<R,k>(*FT_meshgrid_R));
+                    std::cout <<"Initialize fft from k Not yet implemented!\n";
+                    exit(1);
+                }
+            }
+            mdarray<double,2> bare_mg({1,3});
+            bare_mg.fill(0);
+            MeshGrid_Null = std::make_shared<MeshGrid<R>>(bare_mg, "Cartesian");
+            MeshGrid<R>::Calculate_ConvolutionIndex(MG , *FT_meshgrid_R, *MeshGrid_Null);
 
             auto nk = FT_meshgrid_R->get_mesh().size();
+
+            Operator_k = BlockMatrix<std::complex<double>,k>(nk, nbnd, nbnd);
+            auto& kgrid = Operator_k.get_MeshGrid();
+            kgrid = FT_meshgrid_k;
+            bandindex.initialize(nbnd);
+            
+
             
             FTfriendly_Operator_k = mdarray<std::complex<double>, 2>({nbnd*(nbnd+1)/2, nk});
             FTfriendly_Operator_R = mdarray<std::complex<double>, 2>({nbnd*(nbnd+1)/2, nk});
 
             //use convolution index for shuffle index.
-            mdarray<double,2> bare_mg({1,3});
-            bare_mg.fill(0);
-
-            auto MeshGrid_Null = std::make_shared<MeshGrid<R>>(bare_mg, "Cartesian");
-            MeshGrid<R>::Calculate_ConvolutionIndex(*Operator_R.get_MeshGrid() , *FT_meshgrid_R, *MeshGrid_Null);
-            auto ci = MeshGrid<R>::get_ConvolutionIndex(*Operator_R.get_MeshGrid() , *FT_meshgrid_R, *MeshGrid_Null);
-            for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
-                for(int ibnd1=0; ibnd1<nbnd; ++ibnd1){
-                    for(int ibnd2=ibnd1; ibnd2<nbnd; ++ibnd2){
-                        std::cout  << " R " << iR << "ibnd1 " << ibnd1  << "ibnd2 "<< ibnd2  << " ci(iR,0) "<<   ci(iR,0) << std::endl;
-                        FTfriendly_Operator_R(static_cast<int>(bandindex.oneDband(ibnd1, ibnd2)), ci(iR,0)) = Operator_R(iR, ibnd1, ibnd2);
-                    }
-                }
+            std::vector<int> Dimensions(3);
+            for(int ix=0; ix<3; ix++){
+                Dimensions[ix] = FT_meshgrid_k->get_Size()[ix];
             }
+
+            ft_.initialize(FTfriendly_Operator_k, FTfriendly_Operator_R, Dimensions);
+            //shuffle_to_fft();
         };
 
 
@@ -198,6 +228,11 @@ class Operator
 */
         void initialize_dft()
         {
+            //we enter in this function only once
+            if(initialized_dft){
+                return;
+            }
+            initialized_dft = true;
             auto nbnd = Operator_R.get_nrows();
             bandindex.initialize(nbnd);
             //initialize input of fft
@@ -235,7 +270,6 @@ class Operator
                 path_bare[i][2] = path[i].get("LatticeVectors")[2];
             }
             FTfriendly_Operator_k = ft_.dft(path_bare, +1);
-	    std::cout <<"\n\n\n\n FTfriendly_Operator_k \n\n\n\n" <<  FTfriendly_Operator_k << "\n\n\n\n\n";
         }
 
 
@@ -251,6 +285,57 @@ class Operator
                 }
             }
         }
+
+        void shuffle_to_fft_R()
+        {
+            auto ci = MeshGrid<R>::get_ConvolutionIndex(*Operator_R.get_MeshGrid() , *FT_meshgrid_R, *MeshGrid_Null);
+            for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
+                for(int ibnd1=0; ibnd1<Operator_R.get_nrows(); ++ibnd1){
+                    for(int ibnd2=ibnd1; ibnd2<Operator_R.get_ncols(); ++ibnd2){
+                        std::cout  << " R " << iR << "ibnd1 " << ibnd1  << "ibnd2 "<< ibnd2  << " ci(iR,0) "<<   ci(iR,0) << std::endl;
+                        FTfriendly_Operator_R(static_cast<int>(bandindex.oneDband(ibnd1, ibnd2)), ci(iR,0)) = Operator_R(iR, ibnd1, ibnd2);
+                    }
+                }
+            }
+        }
+
+        void shuffle_to_fft_k()
+        {
+            for(int ik=0; ik<Operator_k.get_nblocks(); ik++){
+                for(int ibnd1=0; ibnd1<Operator_k.get_nrows(); ++ibnd1){
+                    for(int ibnd2=ibnd1; ibnd2<Operator_k.get_ncols(); ++ibnd2){
+                        FTfriendly_Operator_k(static_cast<int>(bandindex.oneDband(ibnd1, ibnd2)), ik) = Operator_k(ik, ibnd1, ibnd2);
+                    }
+                }
+            }
+        }
+
+        void shuffle_from_fft_R()
+        {
+            auto ci = MeshGrid<R>::get_ConvolutionIndex(*Operator_R.get_MeshGrid() , *FT_meshgrid_R, *MeshGrid_Null);
+            for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
+                for(int ibnd1=0; ibnd1<Operator_R.get_nrows(); ++ibnd1){
+                    for(int ibnd2=ibnd1; ibnd2<Operator_R.get_ncols(); ++ibnd2){
+                        std::cout  << " R " << iR << "ibnd1 " << ibnd1  << "ibnd2 "<< ibnd2  << " ci(iR,0) "<<   ci(iR,0) << std::endl;
+                        Operator_R(iR, ibnd1, ibnd2) = FTfriendly_Operator_R(static_cast<int>(bandindex.oneDband(ibnd1, ibnd2)), ci(iR,0));
+                        Operator_R(iR, ibnd2, ibnd1) = conj(Operator_R(iR,ibnd1,ibnd2)); 
+                    }
+                }
+            }
+        }
+
+        void shuffle_from_fft_k()
+        {
+            for(int ik=0; ik<Operator_k.get_nblocks(); ik++){
+                for(int ibnd1=0; ibnd1<Operator_k.get_nrows(); ++ibnd1){
+                    for(int ibnd2=ibnd1; ibnd2<Operator_k.get_ncols(); ++ibnd2){
+                        Operator_k(ik, ibnd1, ibnd2) = FTfriendly_Operator_k(static_cast<int>(bandindex.oneDband(ibnd1, ibnd2)), ik);
+                        Operator_k(ik, ibnd2, ibnd1) = conj(Operator_k(ik, ibnd1, ibnd2));
+                    }
+                }
+            }
+        }
+
 
         void go_to_wannier()
         {
@@ -275,21 +360,24 @@ class Operator
 
         void go_to_R()
         {
-            assert(locked_space);
+            assert(locked_space && initialized_fft);
             if(space == R){
                 return;
             }
-            std::cout << "Warning! go_to_R is to be implemented!\n";
-            //dft();
+            shuffle_to_fft_k();
+            ft_.fft(-1);          
+            shuffle_from_fft_R();  
         }
 
         void go_to_k()
         {
-            assert(locked_space);
+            assert(locked_space && initialized_fft);
             if(space == k){
                 return;
             }
-            std::cout << "Warning! go_to_R is to be implemented!\n";
+            shuffle_to_fft_R();
+            ft_.fft(+1);          
+            shuffle_from_fft_k();  
 
             //dft();
         }

@@ -122,7 +122,7 @@ void convolution(BlockMatrix<T,space>& Output, U Scalar, const BlockMatrix<T,spa
 {
     assert(Output.get_nblocks()!=0);
 
-    Output.fill(0.);
+    //Output.fill(0.);
     auto& ci = MeshGrid<space>::ConvolutionIndex[{Output.meshgrid->get_id(), Input1.meshgrid->get_id(), Input2.meshgrid->get_id()}];
 
     if(ci.get_Size(0) == 0 ){
