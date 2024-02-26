@@ -61,7 +61,8 @@ class mdarray
             Iterator operator++(int) { Iterator tmp = *this; ++(*this); return tmp; }
             friend bool operator== (const Iterator& a, const Iterator& b) { return a.m_ptr == b.m_ptr; };
             friend bool operator!= (const Iterator& a, const Iterator& b) { return a.m_ptr != b.m_ptr; };     
-        
+            //difference
+            size_t operator-(const Iterator& it2) {return this->m_ptr - it2.m_ptr;}        
         private:
             pointer m_ptr;
         };

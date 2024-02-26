@@ -136,6 +136,7 @@ void ParseWannier(const std::string& FileNameTB, auto& NumberOfBands, auto& Numb
 
 
     auto Line_endPositionOperator = ParseWannier_PositionOperator(LineIterator, Rmesh, r, NumberOfBands);
+    std::cout << r[0] << std::endl;
     
 }
 

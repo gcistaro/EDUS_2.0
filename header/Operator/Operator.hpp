@@ -109,6 +109,7 @@ class Operator
         
 
     public:
+        static BlockMatrix<T, k> temp_k;
         friend class Simulation;
         static BlockMatrix<T,k> EigenVectors;
         static BlockMatrix<T,k> EigenVectors_dagger;
@@ -343,9 +344,9 @@ class Operator
             if (bandgauge == wannier){
                 return;
             }
-
-            multiply(Operator_k, std::complex<double>(1.), EigenVectors, Operator_k);
-            multiply(Operator_k, std::complex<double>(1.), Operator_k, EigenVectors_dagger);
+            temp_k.fill(0); 
+            multiply(temp_k, std::complex<double>(1.), EigenVectors, Operator_k);
+            multiply(Operator_k, std::complex<double>(1.), temp_k, EigenVectors_dagger);
         };
 
         void go_to_bloch()
@@ -354,7 +355,8 @@ class Operator
             if(bandgauge == bloch){
                 return;
             }
-            multiply(Operator_k, std::complex<double>(1.), EigenVectors_dagger, Operator_k);
+            temp_k.fill(0); 
+            multiply(temp_k, std::complex<double>(1.), EigenVectors_dagger, Operator_k);
             multiply(Operator_k, std::complex<double>(1.), Operator_k, EigenVectors);
         };
 
@@ -404,3 +406,7 @@ BlockMatrix<T,k> Operator<T>::EigenVectors;
 
 template < typename T>
 BlockMatrix<T,k> Operator<T>::EigenVectors_dagger;
+
+
+template < typename T>
+BlockMatrix<T,k> Operator<T>::temp_k;

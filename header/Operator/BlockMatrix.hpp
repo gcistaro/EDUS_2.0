@@ -33,12 +33,12 @@ class BlockMatrix{
 
         std::vector<Matrix<T>> submatrix;
         std::shared_ptr<MeshGrid<space>> meshgrid;    
-        Matrix<T> EmptyMatrix;    
+        static Matrix<T> EmptyMatrix;    
         T NullValue = 0;
         void initialize_submatrix();
     public:
         mdarray<T,3> Values; //first index -> block, others -> matrix
-        BlockMatrix() : Values(mdarray<T,3>()), EmptyMatrix(Matrix<T>()){};
+        BlockMatrix() : Values(mdarray<T,3>()){};
         BlockMatrix(const size_t& nblocks, const size_t& nrows, const size_t& ncols){this->initialize(nblocks, nrows, ncols);}
         void initialize(mdarray<T,3>& Values);
         void initialize(const size_t& nblocks, const size_t& nrows, const size_t& ncols);
@@ -93,7 +93,8 @@ class BlockMatrix{
 };
 
 
-
+template<typename T, Space space>
+Matrix<T> BlockMatrix<T,space>::EmptyMatrix = Matrix<T>();
 
 //overloading writing matrix
 template<class T>

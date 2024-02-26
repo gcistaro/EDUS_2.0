@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cassert>
 #include <functional>
+#include <memory>
 
 /*
     Equations implemented here: 
@@ -22,7 +23,8 @@
 template <typename T, typename Scalar_T>
 void SumWithProduct(T& Output, const Scalar_T& FirstScalar, const T& FirstAddend, const Scalar_T& SecondScalar, const T& SecondAddend)
 {
-    assert(Output.end() - Output.begin() == FirstAddend.end() - FirstAddend.begin() == SecondAddend.end() - SecondAddend.begin());
+    assert(Output.end() - Output.begin() == FirstAddend.end() - FirstAddend.begin());
+    assert(FirstAddend.end() - FirstAddend.begin() == SecondAddend.end() - SecondAddend.begin());
     
     for(auto OutputIterator=Output.begin(), FirstAddendIterator = FirstAddend.begin(), SecondAddendIterator = SecondAddend.begin();
         (OutputIterator!=Output.end()) && (FirstAddendIterator != FirstAddend.end()) && (SecondAddendIterator != SecondAddend.end());  
@@ -38,7 +40,7 @@ template<typename T>
 class RungeKutta
 {
     private:
-        T Function;            //beginning and end of a step, it has the function at a particular time y(n)
+        std::shared_ptr<T> Function;            //beginning and end of a step, it has the function at a particular time y(n)
         T AuxiliaryFunction;   //It has the function incremented by k, for the propagator in the 4 steps i.e. yn+h/2*k1
 	    T ReducingFunction;    //Adds up all the contributions to the function until the end of the step to get y(n+1) = yn+h/6*(k1+2*k2+2*k3+k4)
         T k;
@@ -58,7 +60,7 @@ class RungeKutta
         RungeKutta(RungeKutta&& RK) = default;
         RungeKutta& operator=(RungeKutta&& RK) = default;
 
-        RungeKutta(const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_); 
+        //RungeKutta(const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_); 
         void initialize(const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_); 
         RungeKutta(const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_, 
                    const double& InitialTime_, const double& TimeResolution_);
@@ -68,6 +70,7 @@ class RungeKutta
         const double& get_CurrentTime() const {return CurrentTime;};
         void set_InitialTime(const double& InitialTime_){InitialTime = InitialTime_;}
         void set_ResolutionTime(const double& ResolutionTime_){ResolutionTime = ResolutionTime_;}
+        void set_Function(const T& Function__){Function = std::make_shared<T>(Function__);};
 };
 
 
@@ -83,22 +86,24 @@ EvaluateSourceFunction(EvaluateSourceFunction_),
 InitialTime(InitialTime_), CurrentTime(InitialTime_), ResolutionTime(TimeResolution_)
 {
     std::cout << "Initializing RK object..  ";
-    EvaluateInitialCondition(Function);
-    AuxiliaryFunction = Function;
-    ReducingFunction = Function;
-    k = Function;  
+    Function = std::make_shared<T>(T());
+    EvaluateInitialCondition(*Function);
+    AuxiliaryFunction = *Function;
+    ReducingFunction = *Function;
+    k = *Function;  
     std::cout << "done\n";
 }
 
 template<typename T>
 void RungeKutta<T>::initialize(const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_)
 {
+    Function = std::make_shared<T>(T());
     EvaluateInitialCondition = EvaluateInitialCondition_;
     EvaluateSourceFunction = EvaluateSourceFunction_;
-    EvaluateInitialCondition(Function);
-    AuxiliaryFunction = Function;
-    ReducingFunction = Function;
-    k = Function;  
+    EvaluateInitialCondition(*Function);
+    AuxiliaryFunction = *Function;
+    ReducingFunction = *Function;
+    k = *Function;  
     std::cout << "done\n";
 }
 
@@ -107,25 +112,25 @@ template<typename T>
 void RungeKutta<T>::Propagate()
 {
     //k1=f(tn,yn)
-    EvaluateSourceFunction(k, CurrentTime, Function);
+    EvaluateSourceFunction(k, CurrentTime, *Function);
 
     //k2=f(tn+h/2,yn+h/2*k1)
-    SumWithProduct(AuxiliaryFunction, 1., Function, ResolutionTime/2., k); 
-    SumWithProduct(ReducingFunction, 1., Function, ResolutionTime/6., k);  
+    SumWithProduct(AuxiliaryFunction, 1., *Function, ResolutionTime/2., k); 
+    SumWithProduct(ReducingFunction, 1., *Function, ResolutionTime/6., k);  
     EvaluateSourceFunction(k, CurrentTime+ResolutionTime/2., AuxiliaryFunction);
 
     //k3=f(tn+h/2, yn+h/2*k2)
-    SumWithProduct(AuxiliaryFunction, 1., Function, ResolutionTime/2., k);
+    SumWithProduct(AuxiliaryFunction, 1., *Function, ResolutionTime/2., k);
     SumWithProduct(ReducingFunction, 1., ReducingFunction, ResolutionTime/3., k);   
     EvaluateSourceFunction(k,CurrentTime+ResolutionTime/2., AuxiliaryFunction); 
 
     //k4=f(tn+h,yn+h*k3)
-    SumWithProduct(AuxiliaryFunction, 1., Function, ResolutionTime, k);
+    SumWithProduct(AuxiliaryFunction, 1., *Function, ResolutionTime, k);
     SumWithProduct(ReducingFunction, 1., ReducingFunction, ResolutionTime/3., k);  
     EvaluateSourceFunction(k, CurrentTime+ResolutionTime, AuxiliaryFunction); 
 
     //compute final function
-    SumWithProduct(Function, 1., ReducingFunction, ResolutionTime/6., k);  
+    SumWithProduct(*Function, 1., ReducingFunction, ResolutionTime/6., k);  
     CurrentTime += ResolutionTime;
 }
 
@@ -133,13 +138,13 @@ void RungeKutta<T>::Propagate()
 template<typename T>
 const T& RungeKutta<T>::get_Function() const 
 {
-    return this->Function;
+    return *(this->Function);
 }
 
 template<typename T>
 T& RungeKutta<T>::get_Function() 
 {
-    return this->Function;
+    return *(this->Function);
 }
 
 
@@ -149,6 +154,7 @@ auto make_RungeKutta(const std::function<void(T&)>& InitialCondition_, const std
 {
     return RungeKutta<T>(InitialCondition_, SourceTerm_, 0., 0.);
 }
+
 
 
 #endif

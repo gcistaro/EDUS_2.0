@@ -66,7 +66,6 @@ BlockMatrix<T, space>& BlockMatrix<T, space>::operator=(const BlockMatrix<T, spa
     Values = A.Values;
     initialize_submatrix();
     meshgrid = A.meshgrid;
-    EmptyMatrix = A.EmptyMatrix; 
     return *this;
 }
 
@@ -83,7 +82,6 @@ BlockMatrix<T, space>& BlockMatrix<T, space>::operator=(BlockMatrix<T, space>&& 
     Values = std::move(A.Values);
     initialize_submatrix();
     meshgrid = std::move(A.meshgrid);
-    EmptyMatrix = std::move(A.EmptyMatrix); 
     return *this;
 }
 

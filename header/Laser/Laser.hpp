@@ -5,7 +5,7 @@
 
 #include "../Constants.hpp"
 #include "../ConvertUnits.hpp"
-#include "../Geometry/Geometry.hpp"
+#include "../Geometry/Coordinate.hpp"
 #include "../TimeGrid/TimeGrid.hpp"
 
 struct period
@@ -102,7 +102,7 @@ class Envelope{
 
 class Laser{
     private:    
-        std::vector<Vector<k>> Values;
+        std::vector<Coordinate<k>> Values;
         std::shared_ptr<TimeGrid> timegrid;
 
         Wave PlaneWave;
@@ -111,7 +111,7 @@ class Laser{
         double NumberOfCycles = 0;
         double Intensity = 0;
         double Amplitude = 0;
-        Vector<k> Polarization;//you need this only in cartesian coordinates.
+        Coordinate<k> Polarization;//you need this only in cartesian coordinates.
 
     public:
         Laser(){};
@@ -138,7 +138,7 @@ class Laser{
                 {Amplitude = Amplitude_;}
 
 
-        void set_Polarization(const Vector<k>& Polarization_)
+        void set_Polarization(const Coordinate<k>& Polarization_)
                 {Polarization = Polarization_; };
         void set_TimeGrid(const TimeGrid& TimeGrid_)
                 {timegrid = std::make_shared<TimeGrid>(TimeGrid_);};
@@ -162,7 +162,7 @@ class SetOfLaser
 
         auto operator()(const double& Time)
         {
-            Vector<k> result({0,0,0});
+            Coordinate<k> result({0,0,0});
             for(auto& laser : LaserArray){
                 result += laser(Time);
             }

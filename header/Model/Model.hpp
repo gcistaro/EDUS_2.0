@@ -10,7 +10,7 @@ class Material
 
 
     public:
-        enum MODEL{wannier} model;
+        enum MODEL{wannierTB} model;
 
         Operator<std::complex<double>> H;
         std::array< Operator<std::complex<double>>, 3> r;
@@ -19,27 +19,33 @@ class Material
         Material(){};
         Material(const std::string& Filename)
         {
-            model = wannier;
+            model = wannierTB;
    
-            Wannier wannier(Filename);
+            Wannier wannier_(Filename);
             //we move the resources from wannier.r and wannier.H, anyway we throw wannier right after.            
-            Basis LatticeVectors(Matrix<double>(wannier.UnitCell).transpose());
+            Basis LatticeVectors(Matrix<double>(wannier_.UnitCell).transpose());
             Coordinate<R>::add_Basis(LatticeVectors, "LatticeVectors");
             
-            Basis ReciprocalLatticeVectors(2.*pi*Matrix<double>(wannier.UnitCell).inverse());
+            Basis ReciprocalLatticeVectors(2.*pi*Matrix<double>(wannier_.UnitCell).inverse());
             Coordinate<k>::add_Basis(ReciprocalLatticeVectors, "LatticeVectors");
             
-            r[0].get_Operator_R().initialize(wannier.r[0]);
-            r[1].get_Operator_R().initialize(wannier.r[1]);
-            r[2].get_Operator_R().initialize(wannier.r[2]);
-            H.get_Operator_R().initialize(wannier.H);
+            r[0].lock_gauge(wannier);      r[0].lock_space(R);        
+            r[1].lock_gauge(wannier);      r[1].lock_space(R);        
+            r[2].lock_gauge(wannier);      r[2].lock_space(R);        
+            H.lock_gauge(wannier);         H.lock_space(R);         
+
+
+            r[0].get_Operator_R().initialize(wannier_.r[0]);
+            r[1].get_Operator_R().initialize(wannier_.r[1]);
+            r[2].get_Operator_R().initialize(wannier_.r[2]);
+            H.get_Operator_R().initialize(wannier_.H);
 
             Convert_iterable(r[0].get_Operator_R(), Angstrom, Bohr);
             Convert_iterable(r[1].get_Operator_R(), Angstrom, Bohr);
             Convert_iterable(r[2].get_Operator_R(), Angstrom, Bohr);
             Convert_iterable(H.get_Operator_R(), ElectronVolt, Rydberg);
 
-            MeshGrid<R> aux_mg(wannier.Rmesh, "LatticeVectors");
+            MeshGrid<R> aux_mg(wannier_.Rmesh, "LatticeVectors");
 
             for(auto& v : aux_mg.get_mesh()){
                 std::cout << v << std::endl;
@@ -48,6 +54,8 @@ class Material
             r[0].get_Operator_R().set_MeshGrid(aux_mg);
             r[1].get_Operator_R().set_MeshGrid(aux_mg);
             r[2].get_Operator_R().set_MeshGrid(aux_mg);
+            std::cout << r[0].get_Operator_R()[0];
+
         }
 
 	void print_info()

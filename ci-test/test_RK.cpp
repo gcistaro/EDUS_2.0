@@ -28,7 +28,7 @@ int main()
         }
     };
 
-    auto rungekutta = make_RungeKutta<std::vector<double>>(InitialCondition, SourceTerm); 
+    auto rungekutta = make_RungeKutta<std::vector<double>>(InitialCondition, SourceTerm);
     rungekutta.set_InitialTime(InitialTime);
     rungekutta.set_ResolutionTime(ResolutionTime);
 
