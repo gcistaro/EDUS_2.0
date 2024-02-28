@@ -1,3 +1,6 @@
+#ifndef FOURIERTRANSFORM_HPP
+#define FOURIERTRANSFORM_HPP
+
 #include <vector>
 #include <memory>
 #include <complex>
@@ -106,7 +109,6 @@ mdarray<std::complex<double>, 1> FourierTransform::dft(const std::vector<double>
                 DotProduct += Point[ix]*Mesh[i][ix];
             }
             FT(h) += std::exp(double(sign)*im2pi*DotProduct)*Array_x(h,i);
-	    std::cout<< "DotProduct" << DotProduct << "std::exp(double(sign)*im2pi*DotProduct) " << std::exp(double(sign)*im2pi*DotProduct) << std::endl;//std::cout << "h "<< h <<" howmany " << howmany << "Mesh.size() "<< Mesh.size()<< " i "<<i <<  " FT(h) " << FT(h) << "(*Array_x(h,i) " << (*Array_x)(h,i)<< std::endl;
 	    }
     }
     return FT;
@@ -127,3 +129,4 @@ mdarray<std::complex<double>, 2>& FourierTransform::dft(const std::vector<std::v
 }
 
 
+#endif

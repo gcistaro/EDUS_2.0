@@ -67,9 +67,9 @@ MeshGrid<space>::MeshGrid(const mdarray<double,2>& bare_mg, const std::string& K
 
 
 template<Space space>
-MeshGrid<space>::MeshGrid(const double& Radius_)
+MeshGrid<space>::MeshGrid(const double& Radius_, const std::array<double, 3>& resolution)
 {
-    this->initialize(Radius_);
+    this->initialize(Radius_, resolution);
 }
 
 template<Space space>
@@ -156,29 +156,23 @@ void MeshGrid<space>::initialize(const mdarray<double,2>& bare_mg, const std::st
 }
 
 template<Space space>
-void MeshGrid<space>::initialize(const double& Radius_)
+void MeshGrid<space>::initialize(const double& Radius_, const std::array<double, 3>& resolution)
 {
-    assert(space == R);
+    //assert(space == R);
     id = ++counter_id;
     type = sphere;
-    
 
     //defining vectors of the mesh
-    auto& MetricTensor_ = Coordinate<space>::get_Basis("LatticeVectors").get_MetricTensor();
     double i0_threshold, i1_threshold, i2_threshold;
-    double fractPart;
-    auto norm0 = std::sqrt(MetricTensor_(0,0));
-    auto norm1 = std::sqrt(MetricTensor_(1,1));
-    auto norm2 = std::sqrt(MetricTensor_(2,2));
 
-    i0_threshold = 25;
-    i1_threshold = 25;
-    i2_threshold = 25;
+    i0_threshold = 25*resolution[0];
+    i1_threshold = 25*resolution[1];
+    i2_threshold = 25*resolution[2];
     for(int i0=-i0_threshold; i0<=i0_threshold; i0++){
         for(int i1=-i1_threshold; i1<=i1_threshold; i1++){            
             for(int i2=-i2_threshold; i2<=i2_threshold; i2++){
-                auto v = Coordinate<space>(double(i0), double(i1), double(i2), "LatticeVectors");
-                if(v.norm() < Radius_+1.e-07){
+                auto v = Coordinate<space>(double(i0)/resolution[0], double(i1)/resolution[1], double(i2)/resolution[2], "LatticeVectors");
+                if(v.norm() < Radius_+threshold){
                     mesh.push_back(v);
                 }
             }//end i2 loop

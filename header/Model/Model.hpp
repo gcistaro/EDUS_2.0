@@ -40,22 +40,17 @@ class Material
             r[2].get_Operator_R().initialize(wannier_.r[2]);
             H.get_Operator_R().initialize(wannier_.H);
 
-            Convert_iterable(r[0].get_Operator_R(), Angstrom, Bohr);
-            Convert_iterable(r[1].get_Operator_R(), Angstrom, Bohr);
-            Convert_iterable(r[2].get_Operator_R(), Angstrom, Bohr);
-            Convert_iterable(H.get_Operator_R(), ElectronVolt, Rydberg);
+            Convert_iterable(r[0].get_Operator_R(), Angstrom, AuLength);
+            Convert_iterable(r[1].get_Operator_R(), Angstrom, AuLength);
+            Convert_iterable(r[2].get_Operator_R(), Angstrom, AuLength);
+            Convert_iterable(H.get_Operator_R(), ElectronVolt, AuEnergy);
 
             MeshGrid<R> aux_mg(wannier_.Rmesh, "LatticeVectors");
 
-            for(auto& v : aux_mg.get_mesh()){
-                std::cout << v << std::endl;
-            }
             H.get_Operator_R().set_MeshGrid(aux_mg);
             r[0].get_Operator_R().set_MeshGrid(aux_mg);
             r[1].get_Operator_R().set_MeshGrid(aux_mg);
             r[2].get_Operator_R().set_MeshGrid(aux_mg);
-            std::cout << r[0].get_Operator_R()[0];
-
         }
 
 	void print_info()

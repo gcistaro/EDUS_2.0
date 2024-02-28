@@ -107,6 +107,20 @@ const Matrix<T>& BlockMatrix<T,space>::operator[](const int& iblock) const
 }
 
 template<typename T, Space space>
+Matrix<T>& BlockMatrix<T,space>::operator[](const Coordinate<space>& Point)
+{
+    return const_cast<Matrix<T>&>(static_cast<const BlockMatrix<T,space>&>(*this)[Point]);
+}
+
+template<typename T, Space space>
+const Matrix<T>& BlockMatrix<T,space>::operator[](const Coordinate<space>& Point) const
+{
+    int iblock = (*meshgrid).find(Point);
+    return (*this)[iblock];
+}
+
+
+template<typename T, Space space>
 void multiply(BlockMatrix<T,space>& Output, T Scalar, const BlockMatrix<T,space>& Input1, const BlockMatrix<T,space>& Input2 )
 {
     for(int iblock=0; iblock<Output.get_nblocks(); iblock++){

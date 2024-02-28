@@ -13,18 +13,18 @@ class Simulation
         Laser laser;
         Operator<std::complex<double>> DensityMatrix;
         RungeKutta<BlockMatrix<std::complex<double>, R>> RK_object;
-
+        std::ofstream OutLaser;
+        std::ofstream OutPos;
     public:
         Simulation(const std::string& FileName, const double& Radius)
         {
             material = Material(FileName);
-            std::cout << material.r[0].get_Operator_R()[0] << std::endl;
-            laser.set_Amplitude(10);
-            laser.set_InitialTime(0.);
-            laser.set_Omega(0.1);
-            laser.set_NumberOfCycles(3);
+            laser.set_Intensity(1.e+05, Wcm2);
+            laser.set_InitialTime(0., FemtoSeconds);
+            laser.set_Lambda(800, NanoMeters);
+            laser.set_NumberOfCycles(5);
             laser.set_Polarization(Coordinate<k>(1,0,0));
-
+            laser.print_info();
             //auto& DensityMatrix = RK_object.get_Function();
             //setting up grids
             auto MasterRgrid = std::make_shared<MeshGrid<R>>(MeshGrid<R>(Radius));//spherical grid for exponentially decaying DM
@@ -59,19 +59,33 @@ class Simulation
             std::function<void(BlockMatrix<std::complex<double>, R>&, double const&, BlockMatrix<std::complex<double>, R> const&)> SourceTerm = 
             [&](BlockMatrix<std::complex<double>, R>& Output, const double& time, const BlockMatrix<std::complex<double>, R>& Input)
             {
+                //Von Neumann Equations: idp/dt = [H, p]
                 Output.fill(0.*im);
                 Calculate_TDHamiltonian(time);
                 convolution(Output, -im, H.get_Operator_R(), Input);
                 convolution(Output, +im, Input, H.get_Operator_R());
+
             };
 
             //RK_object.set_Function(DensityMatrix.get_Operator_R());
             RK_object.initialize(InitialCondition, SourceTerm);
 
             RK_object.set_InitialTime(0.);
-            RK_object.set_ResolutionTime(0.01);
+            RK_object.set_ResolutionTime(0.1);
 
-            RK_object.Propagate();
+            std::ofstream OutLaser;
+            OutLaser.open("Laser.txt");
+            for(int i=0; i<6000; i++){
+                //std::cout << i << std::endl;
+                RK_object.Propagate();
+                auto las = laser(RK_object.get_CurrentTime()).get("Cartesian");
+                OutLaser << std::setw(20) << std::setprecision(5) << Convert(RK_object.get_CurrentTime(), AuTime, FemtoSeconds);
+                OutLaser << std::setw(20) << std::setprecision(5) << las[0];
+                OutLaser << std::setw(20) << std::setprecision(5) << las[1];
+                OutLaser << std::setw(20) << std::setprecision(5) << las[2];
+                OutLaser << std::endl;
+            }
+            OutLaser.close();
         };
 
         void SettingUp_EigenSystem()
@@ -103,7 +117,7 @@ class Simulation
             }
 
             for(int ik=0; ik<UkDagger.get_nblocks(); ++ik){
-                std::cout << UkDagger[ik]*Uk[ik];
+                //std::cout << UkDagger[ik]*Uk[ik];
             }
 
         };
@@ -145,15 +159,14 @@ class Simulation
             auto& xR = material.r[0].get_Operator_R();
             auto& yR = material.r[1].get_Operator_R();
             auto& zR = material.r[2].get_Operator_R();
-            std::cout << xR[0];
-            auto& las = laser(time).get("Cartesian");
+            auto las = laser(time).get("Cartesian");
             for(int iblock=0; iblock<H.get_Operator_R().get_nblocks(); ++iblock){
                 for(int irow=0; irow<H.get_Operator_R().get_nrows(); ++irow){
                     for(int icol=0; icol<H.get_Operator_R().get_ncols(); ++icol){
                         HR(iblock, irow, icol) = H0R(iblock, irow, icol);
-                        HR(iblock, irow, icol) += las[0]*material.r[0].get_Operator_R()(iblock, irow, icol);
-                        HR(iblock, irow, icol) += las[1]*material.r[1].get_Operator_R()(iblock, irow, icol);
-                        HR(iblock, irow, icol) += las[2]*material.r[2].get_Operator_R()(iblock, irow, icol);
+                        HR(iblock, irow, icol) += las[0]*xR(iblock, irow, icol);
+                        HR(iblock, irow, icol) += las[1]*yR(iblock, irow, icol);
+                        HR(iblock, irow, icol) += las[2]*zR(iblock, irow, icol);
                     }
                 }
             }

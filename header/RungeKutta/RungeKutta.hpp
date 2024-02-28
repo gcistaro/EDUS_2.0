@@ -68,6 +68,7 @@ class RungeKutta
         const T& get_Function() const; 
         T& get_Function(); 
         const double& get_CurrentTime() const {return CurrentTime;};
+        const double& get_ResolutionTime() const {return ResolutionTime;};
         void set_InitialTime(const double& InitialTime_){InitialTime = InitialTime_;}
         void set_ResolutionTime(const double& ResolutionTime_){ResolutionTime = ResolutionTime_;}
         void set_Function(const T& Function__){Function = std::make_shared<T>(Function__);};

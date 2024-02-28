@@ -66,7 +66,7 @@ double Envelope::operator()(const double& Time)
     if(t < 0 || t > Duration){
         return 0.;
     }
-    return std::pow(std::sin(t/Duration), 2.);
+    return std::pow(std::sin(pi*t/Duration), 2.);
 }
 
 void Envelope::set_Duration(const double& Duration_)

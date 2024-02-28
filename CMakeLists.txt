@@ -76,6 +76,24 @@ target_include_directories(simulation_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INT
 target_link_libraries(simulation_test PUBLIC $<LINK_ONLY:MKL::MKL>)
 target_include_directories(simulation_test PUBLIC header/)
 
+#simulation 
+add_executable(Coulomb_test ci-test/test_Coulomb.cpp)
+#find_package(fftw3 REQUIRED)
+target_link_libraries(Coulomb_test PUBLIC fftw3)
+target_compile_options(Coulomb_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
+target_include_directories(Coulomb_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
+target_link_libraries(Coulomb_test PUBLIC $<LINK_ONLY:MKL::MKL>)
+target_include_directories(Coulomb_test PUBLIC header/)
+
+#bandstructure
+add_executable(Bandstructure_test ci-test/test_bandstructure.cpp)
+#find_package(fftw3 REQUIRED)
+target_link_libraries(Bandstructure_test PUBLIC fftw3)
+target_compile_options(Bandstructure_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
+target_include_directories(Bandstructure_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
+target_link_libraries(Bandstructure_test PUBLIC $<LINK_ONLY:MKL::MKL>)
+target_include_directories(Bandstructure_test PUBLIC header/)
+
 #build for ctest
 enable_testing()
 add_test(NAME Containers_test COMMAND Containers_test)
@@ -84,3 +102,7 @@ add_test(NAME Eigen_test COMMAND Eigen_test)
 add_test(NAME RK_test COMMAND RK_test)
 add_test(NAME fft_test COMMAND fft_test)
 add_test(NAME simulation_test COMMAND simulation_test)
+add_test(NAME Coulomb_test COMMAND Coulomb_test)
+add_test(NAME Bandstructure_test COMMAND 
+					bash -c "${CMAKE_CURRENT_BINARY_DIR}/Bandstructure_test ; \
+					python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py BANDSTRUCTURE.txt ${CMAKE_SOURCE_DIR}/ci-test/Reference/BANDSTRUCTURE.txt")

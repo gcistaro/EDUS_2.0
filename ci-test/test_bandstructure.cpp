@@ -1,11 +1,9 @@
-#include "Model.hpp"
+#include <iomanip>
+#include "Model/Model.hpp"
 int main()
 {
 
-    std::cout << "Reading wannier file...\n";
-    Material model("TBgraphene");
-    std::cout << "read!\n";
-    auto& HR = model.H.get_Operator_R();
+    Material model("/home/gcistaro/NEGF/tb_models/TBgraphene");
 
     std::vector<Coordinate<k>> path;
 
@@ -24,19 +22,17 @@ int main()
     std::cout << model.H.get_Operator_R()[0];
     model.H.dft(MeshGridPath.get_mesh(),+1);
 
-    model.H.get_Operator_k().test_submatrix();
     std::vector<mdarray<double,1>> Eigenvalues;
     BlockMatrix<std::complex<double>, k> Eigenvectors;
-    for(int ik=0; ik<MeshGridPath.get_mesh().size(); ik++){
-    std::cout <<" model.H.get_Operator_k():: \n\n\n" <<  model.H.get_Operator_k().Values << std::endl;
-    }
-    diagonalize(model.H.get_Operator_k(), Eigenvalues, Eigenvectors);
+    model.H.get_Operator_k().diagonalize(Eigenvalues, Eigenvectors);
 
     std::ofstream Output;
     Output.open("BANDSTRUCTURE.txt");
+    Output << "#k-number    energy(eV)\n";
     for(int ik=0; ik<Eigenvalues.size(); ik++){
         for(int iband=0; iband<Eigenvalues[ik].get_Size(0); ++iband){
-            Output << ik << " " << Eigenvalues[ik](iband) << std::endl;
+            Output << std::setw(6) << ik;
+            Output << std::setw(15) << std::setprecision(6) << Convert(Eigenvalues[ik](iband),AuEnergy,ElectronVolt) << std::endl;
         }
     }
     Output.close();

@@ -1,3 +1,6 @@
+#ifndef OPERATOR_HPP
+#define OPERATOR_HPP
+
 #include "cassert"
 #include "Operator/BlockMatrix.hpp"
 #include "fftPair/fftPair.hpp"
@@ -255,6 +258,7 @@ class Operator
                 Mesh_FT[im][0] = mesh_operator[im].get("LatticeVectors")[0];
                 Mesh_FT[im][1] = mesh_operator[im].get("LatticeVectors")[1];
                 Mesh_FT[im][2] = mesh_operator[im].get("LatticeVectors")[2];
+                //std::cout <<"MESH_FT: "<< Mesh_FT[im][0] <<" " << Mesh_FT[im][1] << " " << Mesh_FT[im][2] << std::endl;
             }
             ft_.initialize(FTfriendly_Operator_R, Mesh_FT);
             std::cout << "ft is initialized.\n";
@@ -410,3 +414,5 @@ BlockMatrix<T,k> Operator<T>::EigenVectors_dagger;
 
 template < typename T>
 BlockMatrix<T,k> Operator<T>::temp_k;
+
+#endif

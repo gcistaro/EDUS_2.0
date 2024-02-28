@@ -59,6 +59,9 @@ class BlockMatrix{
         Matrix<T>& operator[](const int& iblock);
         const Matrix<T>& operator[](const int& iblock) const;
 
+        Matrix<T>& operator[](const Coordinate<space>& Point);
+        const Matrix<T>& operator[](const Coordinate<space>& Point) const;
+
         BlockMatrix<T> operator*(const BlockMatrix<T>& B);
 
         const T* data() const {return Values.data();};
