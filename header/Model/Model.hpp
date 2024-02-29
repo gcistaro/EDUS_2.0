@@ -1,5 +1,6 @@
 #include <cassert>
 #include "ConvertUnits.hpp"
+#include "core/profiler.hpp"
 #include "Wannier/Wannier.hpp"
 
 #include "Operator/Operator.hpp"
@@ -19,6 +20,7 @@ class Material
         Material(){};
         Material(const std::string& Filename)
         {
+            PROFILE("Material");
             model = wannierTB;
    
             Wannier wannier_(Filename);

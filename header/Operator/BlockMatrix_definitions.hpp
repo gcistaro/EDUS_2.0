@@ -88,6 +88,7 @@ BlockMatrix<T, space>& BlockMatrix<T, space>::operator=(BlockMatrix<T, space>&& 
 template<typename T, Space space>
 void BlockMatrix<T,space>::fill(const T& Scalar)
 {
+    PROFILE("BlockMatrix::fill");
     std::fill(this->Values.begin(), this->Values.end(), Scalar);
 }
 
@@ -141,12 +142,14 @@ void convolution(BlockMatrix<T,space>& Output, U Scalar, const BlockMatrix<T,spa
         MeshGrid<space>::Calculate_ConvolutionIndex(*(Output.meshgrid), *(Input1.meshgrid), *(Input2.meshgrid));
 
     }
+    PROFILE_START("BlockMatrix::convolution");
     for(int iblock_o=0; iblock_o<Output.get_nblocks(); iblock_o++){
         for(int iblock_i2=0; iblock_i2<Input2.get_nblocks(); iblock_i2++){
             auto& iblock_i1 = ci(iblock_o, iblock_i2);
             Matrix_gemm(Output[iblock_o], Scalar+im*0., Input1[iblock_i1], Input2[iblock_i2], 1.+im*0.);
         }
     }
+    PROFILE_STOP("BlockMatrix::convolution");
 }
 
 

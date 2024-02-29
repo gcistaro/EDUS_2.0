@@ -125,6 +125,19 @@ Coordinate<space> Coordinate<space>::operator*(const double& alpha) const
 }
 
 template<Space space>
+Coordinate<space> Coordinate<space>::operator/(const double& alpha) const
+{
+    Coordinate<space> v1;
+    v1.CoordinateDictionary["Cartesian"] = this->CoordinateDictionary.at("Cartesian");
+
+    v1.CoordinateDictionary["Cartesian"][0] = v1.CoordinateDictionary["Cartesian"][0]/alpha; 
+    v1.CoordinateDictionary["Cartesian"][1] = v1.CoordinateDictionary["Cartesian"][1]/alpha; 
+    v1.CoordinateDictionary["Cartesian"][2] = v1.CoordinateDictionary["Cartesian"][2]/alpha; 
+    return v1;
+}
+
+
+template<Space space>
 Coordinate<space> operator*(const double& alpha, const Coordinate<space>& v)
 {
     return v*alpha;

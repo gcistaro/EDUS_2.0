@@ -104,8 +104,8 @@ void MeshGrid<space>::initialize(const std::array<int,3>& Size_)
     Size=Size_;
     TotalSize = Size[0]*Size[1]*Size[2];
     mesh.resize(TotalSize);
-    std::cout << "TotalSize: " << TotalSize << std::endl;
-    std::cout << "Size: " << Size[0] << " " << Size[1] << " " << Size[2]<<std::endl;
+    //std::cout << "TotalSize: " << TotalSize << std::endl;
+    //std::cout << "Size: " << Size[0] << " " << Size[1] << " " << Size[2]<<std::endl;
     auto KeyForBasis = "LatticeVectors";
     //defining vectors of the mesh
     switch(space){
@@ -158,6 +158,7 @@ void MeshGrid<space>::initialize(const mdarray<double,2>& bare_mg, const std::st
 template<Space space>
 void MeshGrid<space>::initialize(const double& Radius_, const std::array<double, 3>& resolution)
 {
+    PROFILE("MeshGrid::initializeSphere");
     //assert(space == R);
     id = ++counter_id;
     type = sphere;
@@ -225,6 +226,7 @@ std::array<double,3> MeshGrid<space>::get_absmax() const
 template<Space space, Space space_>
 MeshGrid<space_> fftPair(const MeshGrid<space>& KnownMG)
 {
+    PROFILE("MeshGrid::fftPair");
     assert(space_ != space);
 
     MeshGrid<space_> fftMeshGrid;
@@ -272,7 +274,7 @@ template<Space space>
 int MeshGrid<space>::find(const Coordinate<space>& v) const
 {
     int index = -1;
-    std::cout << "TYPE:: "<< type << std::endl;
+    //std::cout << "TYPE:: "<< type << std::endl;
     switch(type)
     {
         case cube:
@@ -361,28 +363,29 @@ size_t MeshGrid<space>::get_id() const
 template<Space space>
 void MeshGrid<space>::Calculate_ConvolutionIndex(const MeshGrid& m1, const MeshGrid& m2, const MeshGrid& m3)
 {
+    PROFILE("MeshGrid::CalculateConvolutionIndex");
     auto i1 = m1.get_id();
-    std::cout << "Calculate_ConvolutionIndex " << i1<< std::endl;
+    //std::cout << "Calculate_ConvolutionIndex " << i1<< std::endl;
     auto i2 = m2.get_id();
-    std::cout << "Calculate_ConvolutionIndex " << i2<< std::endl;
+    //std::cout << "Calculate_ConvolutionIndex " << i2<< std::endl;
     auto i3 = m3.get_id();
-    std::cout << "Calculate_ConvolutionIndex " << i3<< std::endl;
+    //std::cout << "Calculate_ConvolutionIndex " << i3<< std::endl;
 
     auto& ci = ConvolutionIndex[{i1,i2,i3}];
 
     ci = mdarray<int,2>({m1.get_TotalSize(), m3.get_TotalSize()});
-    std::cout << "m1.get_TotalSize( ) " << m1.get_TotalSize() << " m3.get_TotalSize( ) " << m3.get_TotalSize() << std::endl;
-    std::cout << "Done.\n"<< std::endl;
+    //std::cout << "m1.get_TotalSize( ) " << m1.get_TotalSize() << " m3.get_TotalSize( ) " << m3.get_TotalSize() << std::endl;
+    //std::cout << "Done.\n"<< std::endl;
     //The following openmp statement has been tested in one case.
     #pragma omp parallel for schedule(dynamic)
     for(int iR1=0; iR1<m1.get_TotalSize(); iR1++){
         for(int iR3=0; iR3<m3.get_TotalSize(); iR3++){
-                std::cout << "iR1 << << iR3: " <<iR1 << " " << " " << iR3 << std::endl;
-                std::cout << m1[iR1].get("LatticeVectors") << m1[iR3].get("LatticeVectors");
-                std::cout << "m1[iR1]-m3[iR3]: ";
-                std::cout << std::setprecision(15) << (m1[iR1]-m1[iR3]).get("LatticeVectors") << std::endl;
-                std::cout << "m1[iR1]-m3[iR3].norm(): ";
-                std::cout << std::setprecision(15) << (m1[iR1]-m1[iR3]).norm() << std::endl;
+                //std::cout << "iR1 << << iR3: " <<iR1 << " " << " " << iR3 << std::endl;
+                //std::cout << m1[iR1].get("LatticeVectors") << m1[iR3].get("LatticeVectors");
+                //std::cout << "m1[iR1]-m3[iR3]: ";
+                //std::cout << std::setprecision(15) << (m1[iR1]-m1[iR3]).get("LatticeVectors") << std::endl;
+                //std::cout << "m1[iR1]-m3[iR3].norm(): ";
+                //std::cout << std::setprecision(15) << (m1[iR1]-m1[iR3]).norm() << std::endl;
 
                 ci(iR1, iR3) = m2.find(m1[iR1]-m3[iR3]);
                 

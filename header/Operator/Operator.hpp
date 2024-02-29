@@ -297,7 +297,7 @@ class Operator
             for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
                 for(int ibnd1=0; ibnd1<Operator_R.get_nrows(); ++ibnd1){
                     for(int ibnd2=ibnd1; ibnd2<Operator_R.get_ncols(); ++ibnd2){
-                        std::cout  << " R " << iR << "ibnd1 " << ibnd1  << "ibnd2 "<< ibnd2  << " ci(iR,0) "<<   ci(iR,0) << std::endl;
+                        //std::cout  << " R " << iR << "ibnd1 " << ibnd1  << "ibnd2 "<< ibnd2  << " ci(iR,0) "<<   ci(iR,0) << std::endl;
                         FTfriendly_Operator_R(static_cast<int>(bandindex.oneDband(ibnd1, ibnd2)), ci(iR,0)) = Operator_R(iR, ibnd1, ibnd2);
                     }
                 }

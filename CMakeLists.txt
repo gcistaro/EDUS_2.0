@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.16) #last feature: target_precompile_header
 # set the project name and version
 project(NEGF VERSION 1.0)
 
+
+option(NEGF_PROFILE "Profiling function timings" ON)
+
 set(CMAKE_VERBOSE_MAKEFILE ON)
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 17)
@@ -10,13 +13,23 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 #set(CMAKE_REQUIRED_FLAGS -fconcepts)
 
 set(GCC_FLAG "-fconcepts -g")
-add_definitions(${GCC_FLAG})
+add_definitions(${GCC_FLAG} -DNEGF_PROFILE=ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
+
+#compile sources as library INTERFACE (not a real library, just objects to be reused)
+set(_SOURCES header/core/profiler.cpp 
+             header/Geometry/Matrix.cpp 
+             header/core/print_timing.cpp 
+             header/core/rt_graph.cpp)
+add_library(OBJECTS INTERFACE)
+target_sources(OBJECTS PUBLIC ${_SOURCES})
+
 
 set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /lib/x86_64-linux-gnu/)
 # add the executable
 add_executable(NEGF main.cpp)
+target_link_libraries(NEGF PUBLIC OBJECTS)
 
 #mkl
 set(MKL_ARCH intel64)
@@ -34,12 +47,12 @@ message(STATUS "Imported oneMKL targets: ${MKL_IMPORTED_TARGETS}")
 target_precompile_headers(NEGF PUBLIC 
 	                 header/Geometry/Matrix.hpp
 	                 header/Geometry/Vector.hpp
-					 header/mdContainers/mdContainers.hpp
-			 )
+ 			 header/mdContainers/mdContainers.hpp
+ 			 )
 
 #testing...
 #mdcontainers
-add_executable(Containers_test ci-test/test_mdarray.cpp)
+add_executable(Containers_test ci-test/test_mdarray.cpp) #${_SOURCES})
 target_include_directories(Containers_test PUBLIC header/)
 
 #Matrix
@@ -48,13 +61,15 @@ target_compile_options(Matrix_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_C
 target_include_directories(Matrix_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
 target_link_libraries(Matrix_test PUBLIC $<LINK_ONLY:MKL::MKL>)
 target_include_directories(Matrix_test PUBLIC header/)
+target_link_libraries(Matrix_test PUBLIC OBJECTS)
 
 #Eigenvalues
-add_executable(Eigen_test ci-test/test_eigen.cpp)
+add_executable(Eigen_test ci-test/test_eigen.cpp) 
 target_compile_options(Eigen_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
 target_include_directories(Eigen_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
 target_link_libraries(Eigen_test PUBLIC $<LINK_ONLY:MKL::MKL>)
 target_include_directories(Eigen_test PUBLIC header/)
+target_link_libraries(Eigen_test PUBLIC OBJECTS)
 
 
 #RK
@@ -75,6 +90,7 @@ target_compile_options(simulation_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFA
 target_include_directories(simulation_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
 target_link_libraries(simulation_test PUBLIC $<LINK_ONLY:MKL::MKL>)
 target_include_directories(simulation_test PUBLIC header/)
+target_link_libraries(simulation_test PUBLIC OBJECTS)
 
 #simulation 
 add_executable(Coulomb_test ci-test/test_Coulomb.cpp)
@@ -84,6 +100,7 @@ target_compile_options(Coulomb_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_
 target_include_directories(Coulomb_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
 target_link_libraries(Coulomb_test PUBLIC $<LINK_ONLY:MKL::MKL>)
 target_include_directories(Coulomb_test PUBLIC header/)
+target_link_libraries(Coulomb_test PUBLIC OBJECTS)
 
 #bandstructure
 add_executable(Bandstructure_test ci-test/test_bandstructure.cpp)
@@ -93,6 +110,7 @@ target_compile_options(Bandstructure_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTE
 target_include_directories(Bandstructure_test PUBLIC $<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
 target_link_libraries(Bandstructure_test PUBLIC $<LINK_ONLY:MKL::MKL>)
 target_include_directories(Bandstructure_test PUBLIC header/)
+target_link_libraries(Bandstructure_test PUBLIC OBJECTS)
 
 #build for ctest
 enable_testing()

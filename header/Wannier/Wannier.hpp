@@ -6,7 +6,8 @@
 #include <sstream>
 
 #include <vector>
-#include "../mdContainers/mdContainers.hpp"
+#include "core/profiler.hpp"
+#include "mdContainers/mdContainers.hpp"
 #include "ReadWannier.hpp"
 #include "PrintWannier.hpp"
 
@@ -31,6 +32,7 @@ class Wannier{
 
 Wannier::Wannier(const std::string& FileName)
 {
+    PROFILE("Wannier");
     std::stringstream TotalFileName;
     TotalFileName << FileName << "_tb.dat";    
     ParseWannier(TotalFileName.str(), NumberOfBands, NumberOfRpoints,

@@ -18,6 +18,8 @@ class Simulation
     public:
         Simulation(const std::string& FileName, const double& Radius)
         {
+            PROFILE("Simulation");
+            PROFILE_START("Simulation::Initialize");
             material = Material(FileName);
             laser.set_Intensity(1.e+05, Wcm2);
             laser.set_InitialTime(0., FemtoSeconds);
@@ -37,8 +39,10 @@ class Simulation
             
             auto& Uk = Operator<std::complex<double>>::EigenVectors;
             auto& UkDagger = Operator<std::complex<double>>::EigenVectors_dagger;
+            
             std::function<void(BlockMatrix<std::complex<double>, R>&)> InitialCondition = [&](BlockMatrix<std::complex<double>, R>& DM)
             {
+                PROFILE("RK::InitialCondition");
                 //DM.Operator_k.initialize(Uk.get_nblocks(), Uk.get_nrows(), Uk.get_ncols());
                 DM = DensityMatrix.get_Operator_R();
                 DensityMatrix.Operator_k.fill(0.);
@@ -59,6 +63,7 @@ class Simulation
             std::function<void(BlockMatrix<std::complex<double>, R>&, double const&, BlockMatrix<std::complex<double>, R> const&)> SourceTerm = 
             [&](BlockMatrix<std::complex<double>, R>& Output, const double& time, const BlockMatrix<std::complex<double>, R>& Input)
             {
+                PROFILE("RK::SourceTerm");
                 //Von Neumann Equations: idp/dt = [H, p]
                 Output.fill(0.*im);
                 Calculate_TDHamiltonian(time);
@@ -72,24 +77,28 @@ class Simulation
 
             RK_object.set_InitialTime(0.);
             RK_object.set_ResolutionTime(0.1);
+            PROFILE_STOP("Simulation::Initialize");
+
 
             std::ofstream OutLaser;
             OutLaser.open("Laser.txt");
-            for(int i=0; i<6000; i++){
+            for(int i=0; i<100; i++){
+                PROFILE("RK_Propagate");
                 //std::cout << i << std::endl;
                 RK_object.Propagate();
-                auto las = laser(RK_object.get_CurrentTime()).get("Cartesian");
-                OutLaser << std::setw(20) << std::setprecision(5) << Convert(RK_object.get_CurrentTime(), AuTime, FemtoSeconds);
-                OutLaser << std::setw(20) << std::setprecision(5) << las[0];
-                OutLaser << std::setw(20) << std::setprecision(5) << las[1];
-                OutLaser << std::setw(20) << std::setprecision(5) << las[2];
-                OutLaser << std::endl;
+                //auto las = laser(RK_object.get_CurrentTime()).get("Cartesian");
+                //OutLaser << std::setw(20) << std::setprecision(5) << Convert(RK_object.get_CurrentTime(), AuTime, FemtoSeconds);
+                //OutLaser << std::setw(20) << std::setprecision(5) << las[0];
+                //OutLaser << std::setw(20) << std::setprecision(5) << las[1];
+                //OutLaser << std::setw(20) << std::setprecision(5) << las[2];
+                //OutLaser << std::endl;
             }
             OutLaser.close();
         };
 
         void SettingUp_EigenSystem()
         {
+            PROFILE("Simulation::SetEigensystem");
             //diagonalizing Hk on the k vectors of the grid of the Density matrix.
             auto& MasterkGrid = DensityMatrix.get_Operator_k().get_MeshGrid()->get_mesh();
             material.H.dft(MasterkGrid, +1);
@@ -154,6 +163,7 @@ class Simulation
 
         void Calculate_TDHamiltonian(const double& time)
         {
+            PROFILE("SourceTerm::Calculate_TDHamiltonian");
             auto& HR = H.get_Operator_R();
             auto& H0R = material.H.get_Operator_R();
             auto& xR = material.r[0].get_Operator_R();

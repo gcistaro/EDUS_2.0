@@ -5,9 +5,9 @@
 
 #include <stdlib.h>//for atof and atoi
 
-#include "../Constants.hpp"
-#include "../mdContainers/mdContainers.hpp"
-#include "../StreamFile.hpp"
+#include "Constants.hpp"
+#include "mdContainers/mdContainers.hpp"
+#include "StreamFile.hpp"
 
 //each function reads part of wannier "_tb.dat" file
 

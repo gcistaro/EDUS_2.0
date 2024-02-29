@@ -122,7 +122,7 @@ mdarray<std::complex<double>, 2>& FourierTransform::dft(const std::vector<std::v
         //copy to Array_k
         for(int h=0; h<howmany; ++h){
             Array_k(h,ip) = FT(h);
-            std::cout << "p: " << ip <<  "h " << h << "(*Array_k)(h,ip) " << (Array_k)(h,ip) << std::endl;
+            //std::cout << "p: " << ip <<  "h " << h << "(*Array_k)(h,ip) " << (Array_k)(h,ip) << std::endl;
 	}
     }
     return Array_k;

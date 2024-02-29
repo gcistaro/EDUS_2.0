@@ -1,10 +1,11 @@
 #include "Geometry/Matrix.hpp"
-
+#include "core/print_timing.hpp"
 
 #define watch(x)  (#x)
 constexpr std::complex<double> im(0.,1.);
 int main()
 {
+    PROFILE_START("NEGF");
     std::cout << "Testing matrix multiplication...\n";
     double threshold = 1.e-14;
     Matrix<double> A(3,3);
@@ -59,4 +60,7 @@ int main()
     if((A*C-B).norm() >threshold || (C*A-B).norm() > threshold){
         exit(1);
     }
+
+    PROFILE_STOP("NEGF");
+    print_timing(2);
 }

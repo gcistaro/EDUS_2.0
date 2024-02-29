@@ -9,13 +9,11 @@
 #include <type_traits>
 
 //define mkl_complex16 to avoid incompatibilities
-#ifndef MKL_Complex16
-    #define MKL_Complex16 std::complex<double>
-#endif 
 
-#include "mkl.h"
+//#include "mkl.h"
 #include "mdContainers/mdContainers.hpp"
 #include "LinearAlgebra/gemm.hpp"
+#include "core/profiler.hpp"
 
 template<typename T>
 class Vector;
@@ -30,9 +28,7 @@ class Matrix{
         Matrix(const mdarray<T,2>& Values_) : Values(Values_){};
         Matrix(mdarray<T,2>&& Values_) : Values(Values_)
         {
-                std::cout << "i am moving(hope)!! Values: " << &Values[0] << " " << "Values_ " << &Values_[0] <<std::endl;                
                 Values=std::move(Values_);
-                std::cout << "i moved(hope)!! Values: " << &Values[0] << " " << "Values_ " << &Values_[0] <<std::endl;
         };
         Matrix(const size_t& nrows, const size_t& ncols);
         void initialize(const size_t& nrows, const size_t& ncols);
@@ -83,6 +79,8 @@ class Matrix{
         friend class Vector<T>;
 };
 
+template<>
+void Matrix<std::complex<double>>::diagonalize(Matrix<std::complex<double>>& EigenVectors, mdarray<double,1>& EigenValues) const;
 
 template<typename T, typename T_>
 void Matrix_gemm(Matrix<T>& OutputMatrix, const T_& alpha, const Matrix<T>& InputMatrix1, const Matrix<T>& InputMatrix2, const T_& beta);
@@ -90,6 +88,6 @@ void Matrix_gemm(Matrix<T>& OutputMatrix, const T_& alpha, const Matrix<T>& Inpu
 //overloading writing matrix
 template<class T>
 std::ostream& operator<<(std::ostream& os, const Matrix<T>& m);
-#include "Matrix.cpp"
+#include "Matrix_definitions.hpp"
 
 #endif

@@ -14,8 +14,8 @@ template<typename T>
 std::ostream& operator<<(std::ostream& os, const Dictionary<T>& dic)
 {
     for(const auto& [key,value]: dic){
-        std::cout << "key: " << key << std::endl;
-        std::cout << value;
+        os << "key: " << key << std::endl;
+        os << value;
     }
     return os;
 }
@@ -103,6 +103,7 @@ class Coordinate{
         Coordinate& operator+=(const Coordinate& v);
 
         Coordinate operator*(const double& alpha) const;
+        Coordinate operator/(const double& alpha) const;
 
         template<Space space_>
         friend Coordinate<space_> operator*(const double& alpha, const Coordinate<space_>& v);

@@ -160,7 +160,9 @@ class Laser{
 
 
         void set_Polarization(const Coordinate<k>& Polarization_)
-                {Polarization = Polarization_; };
+        {
+            Polarization = Polarization_/Polarization_.norm(); 
+        };
         void set_TimeGrid(const TimeGrid& TimeGrid_)
                 {timegrid = std::make_shared<TimeGrid>(TimeGrid_);};
 

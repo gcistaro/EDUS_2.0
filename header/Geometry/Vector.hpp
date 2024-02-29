@@ -84,6 +84,6 @@ class Vector{
 //overloading writing matrix
 template<class T>
 std::ostream& operator<<(std::ostream& os, const Vector<T>& v);
-#include "Vector.cpp"
+#include "Vector_definitions.hpp"
 
 #endif
