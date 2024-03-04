@@ -81,10 +81,13 @@ class Matrix{
 
 template<>
 void Matrix<std::complex<double>>::diagonalize(Matrix<std::complex<double>>& EigenVectors, mdarray<double,1>& EigenValues) const;
+template<>
+Matrix<double> Matrix<double>::inverse() const;
 
 template<typename T, typename T_>
 void Matrix_gemm(Matrix<T>& OutputMatrix, const T_& alpha, const Matrix<T>& InputMatrix1, const Matrix<T>& InputMatrix2, const T_& beta);
 
+        
 //overloading writing matrix
 template<class T>
 std::ostream& operator<<(std::ostream& os, const Matrix<T>& m);

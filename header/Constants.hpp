@@ -19,9 +19,7 @@ constexpr double FineStructure         = 7.2973525693*1.e-03;//pure units
 constexpr double SpeedOfLight          = 1./FineStructure; //a.u.
 constexpr double AtomicUnitOfIntensity = .5*SpeedOfLight*Epsilon0*E0*E0; //W/cm2
 
-double c1,c2,c3;
-
-double threshold = 1.e-08;
+constexpr double threshold = 1.e-08;
 
 enum Space{k,R};
 enum BandGauge{bloch, wannier};

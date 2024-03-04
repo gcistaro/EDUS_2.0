@@ -72,7 +72,9 @@ BlockMatrix<T, space>& BlockMatrix<T, space>::operator=(const BlockMatrix<T, spa
 template<typename T, Space space>
 BlockMatrix<T, space>::BlockMatrix(BlockMatrix<T, space>&& A)
 {
-    *this = A;
+    Values = std::move(A.Values);
+    initialize_submatrix();
+    meshgrid = std::move(A.meshgrid);
 }
 
 
@@ -129,17 +131,25 @@ void multiply(BlockMatrix<T,space>& Output, T Scalar, const BlockMatrix<T,space>
     }
 }
 
+template<typename T, Space space>
+void multiply(BlockMatrix<T,space>& Output, T Scalar, const BlockMatrix<T,space>& Input1, const BlockMatrix<T,space>& Input2, T Scalar2 )
+{
+    for(int iblock=0; iblock<Output.get_nblocks(); iblock++){
+        Matrix_gemm(Output[iblock], Scalar, Input1[iblock], Input2[iblock], Scalar2);
+    }
+}
+
 
 template<typename T, Space space, typename U>
-void convolution(BlockMatrix<T,space>& Output, U Scalar, const BlockMatrix<T,space>& Input1, const BlockMatrix<T,space>& Input2 )
+void convolution1(BlockMatrix<T,space>& Output, U Scalar, const BlockMatrix<T,space>& Input1, const BlockMatrix<T,space>& Input2 )
 {
     assert(Output.get_nblocks()!=0);
 
     //Output.fill(0.);
-    auto& ci = MeshGrid<space>::ConvolutionIndex[{Output.meshgrid->get_id(), Input1.meshgrid->get_id(), Input2.meshgrid->get_id()}];
+    auto& ci = MeshGrid<space>::ConvolutionIndex1[{Output.meshgrid->get_id(), Input1.meshgrid->get_id(), Input2.meshgrid->get_id()}];
 
     if(ci.get_Size(0) == 0 ){
-        MeshGrid<space>::Calculate_ConvolutionIndex(*(Output.meshgrid), *(Input1.meshgrid), *(Input2.meshgrid));
+        MeshGrid<space>::Calculate_ConvolutionIndex1(*(Output.meshgrid), *(Input1.meshgrid), *(Input2.meshgrid));
 
     }
     PROFILE_START("BlockMatrix::convolution");
@@ -149,8 +159,45 @@ void convolution(BlockMatrix<T,space>& Output, U Scalar, const BlockMatrix<T,spa
             Matrix_gemm(Output[iblock_o], Scalar+im*0., Input1[iblock_i1], Input2[iblock_i2], 1.+im*0.);
         }
     }
+
+    //auto maximum1 = max(Input1);
+    //auto maximum2 = max(Input2);
+    //auto maximum3 = max(Output);
+    //std::cout << "MAX INPUT1:  " << maximum1 << std::endl;
+    //std::cout << "MAX INPUT2:  " << maximum2 << std::endl;
+    //std::cout << "MAX OUTPUT:  " << maximum3 << std::endl;
     PROFILE_STOP("BlockMatrix::convolution");
 }
+
+template<typename T, Space space, typename U>
+void convolution2(BlockMatrix<T,space>& Output, U Scalar, const BlockMatrix<T,space>& Input1, const BlockMatrix<T,space>& Input2 )
+{
+    assert(Output.get_nblocks()!=0);
+
+    //Output.fill(0.);
+    auto& ci = MeshGrid<space>::ConvolutionIndex2[{Output.meshgrid->get_id(), Input1.meshgrid->get_id(), Input2.meshgrid->get_id()}];
+
+    if(ci.get_Size(0) == 0 ){
+        MeshGrid<space>::Calculate_ConvolutionIndex2(*(Output.meshgrid), *(Input1.meshgrid), *(Input2.meshgrid));
+
+    }
+    PROFILE_START("BlockMatrix::convolution");
+    for(int iblock_o=0; iblock_o<Output.get_nblocks(); iblock_o++){
+        for(int iblock_i1=0; iblock_i1<Input1.get_nblocks(); iblock_i1++){
+            auto& iblock_i2 = ci(iblock_o, iblock_i1);
+            Matrix_gemm(Output[iblock_o], Scalar+im*0., Input1[iblock_i1], Input2[iblock_i2], 1.+im*0.);
+        }
+    }
+
+    //auto maximum1 = max(Input1);
+    //auto maximum2 = max(Input2);
+    //auto maximum3 = max(Output);
+    //std::cout << "MAX INPUT1:  " << maximum1 << std::endl;
+    //std::cout << "MAX INPUT2:  " << maximum2 << std::endl;
+    //std::cout << "MAX OUTPUT:  " << maximum3 << std::endl;
+    PROFILE_STOP("BlockMatrix::convolution");
+}
+
 
 
 template<typename T, Space space>
@@ -166,9 +213,37 @@ void BlockMatrix<T,space>::diagonalize(std::vector<mdarray<double,1>>& Eigenvalu
 {
     //assert(space_ == k);
     Eigenvectors.initialize(this->get_nblocks(), this->get_nrows(), this->get_ncols());
+    std::cout << "eigenvectors test : " << &(Eigenvectors[0](0,0)) << " "<< &(Eigenvectors(0,0,0)) << std::endl;
     Eigenvalues.resize(this->get_nblocks());
     for(int ik=0; ik<this->get_nblocks(); ik++){
         Eigenvalues[ik].initialize({this->get_nrows()});
         ((*this)[ik]).diagonalize(Eigenvectors[ik], Eigenvalues[ik]);
     }
+}
+
+
+template<typename T, Space space>
+double max(const BlockMatrix<T,space> m)
+{
+    double max = 0;
+    for(int iblock=0; iblock<m.get_nblocks(); ++iblock){
+        for(int irow=0; irow<m.get_nrows(); ++irow){
+            for(int icol=0; icol<m.get_ncols(); ++icol){
+                //HR(ci(iblock, 0), irow, icol) = H0R(iblock, irow, icol);
+                if(std::abs(m(iblock, irow, icol)) > max){
+                    max =std::abs( m(iblock, irow, icol));
+                }
+            }
+        }
+    }            
+    return max;
+}
+
+template<class T, Space space>
+std::ostream& operator<<(std::ostream& os, const BlockMatrix<T, space>& m)
+{
+    for(int i=0; i<m.get_nblocks(); i++){
+        std::cout << i << std::endl << m[i] << std::endl;
+    }
+    return os;
 }

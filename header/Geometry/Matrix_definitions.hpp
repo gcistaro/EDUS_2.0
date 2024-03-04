@@ -23,7 +23,9 @@ Matrix<T>::Matrix(const Matrix<T>& A){
 //copy assigment
 template<class T>
 Matrix<T>& Matrix<T>::operator=(const Matrix<T>& m){
-    (*this).~Matrix<T>();
+    if( this->get_nrows() != m.get_nrows() || this->get_ncols() != m.get_ncols() ){
+        (*this).~Matrix<T>();
+    }
     this->Values = m.Values;
     return *this;
 }
@@ -76,7 +78,6 @@ T& Matrix<T>::operator()(const int& row, const int& col)
 template<typename T, typename T_>
 void Matrix_gemm(Matrix<T>& OutputMatrix, const T_& alpha, const Matrix<T>& InputMatrix1, const Matrix<T>& InputMatrix2, const T_& beta)
 {
-    PROFILE("Matrix_gemm");
     if(InputMatrix1.data() == nullptr || InputMatrix2.data() == nullptr){
         return;
     }
@@ -138,24 +139,6 @@ T Matrix<T>::determinant() const
     return determinant;
 }
 
-
-template<class T>
-Matrix<T> Matrix<T>::inverse() const
-{
-    assert((*this).get_nrows() == (*this).get_ncols());
-    assert((std::is_same<T,double>::value));
-    assert(abs(this->determinant()) > 1.e-08);
-    Matrix<T> invM;
-    lapack_int* ipiv;
-    LUdecompose(invM, &ipiv);
-    //inverse
-    lapack_int n = invM.get_ncols();
-    lapack_int lda = n;
-    LAPACKE_dgetri(LAPACK_ROW_MAJOR, n, &invM(0,0),
-                    lda, ipiv);
-    delete[] ipiv;
-    return invM;
-}
 
 template<class T>
 Matrix<T> Matrix<T>::transpose() const

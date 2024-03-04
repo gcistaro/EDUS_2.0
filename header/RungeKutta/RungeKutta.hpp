@@ -34,13 +34,12 @@ void SumWithProduct(T& Output, const Scalar_T& FirstScalar, const T& FirstAddend
 }
 
 
-
-//template<typename T, typename LambdaForSourceTerm, typename LambdaForInitialCondition>
+//Warning! This class does not own Function, that must be deleted outside!!
 template<typename T>
 class RungeKutta
 {
     private:
-        std::shared_ptr<T> Function;            //beginning and end of a step, it has the function at a particular time y(n)
+        T* Function;            //beginning and end of a step, it has the function at a particular time y(n)
         T AuxiliaryFunction;   //It has the function incremented by k, for the propagator in the 4 steps i.e. yn+h/2*k1
 	    T ReducingFunction;    //Adds up all the contributions to the function until the end of the step to get y(n+1) = yn+h/6*(k1+2*k2+2*k3+k4)
         T k;
@@ -60,10 +59,8 @@ class RungeKutta
         RungeKutta(RungeKutta&& RK) = default;
         RungeKutta& operator=(RungeKutta&& RK) = default;
 
-        //RungeKutta(const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_); 
-        void initialize(const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_); 
-        RungeKutta(const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_, 
-                   const double& InitialTime_, const double& TimeResolution_);
+        RungeKutta(T& Function_, const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_); 
+        void initialize(T& Function_, const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_); 
         void Propagate(); 
         const T& get_Function() const; 
         T& get_Function(); 
@@ -71,7 +68,6 @@ class RungeKutta
         const double& get_ResolutionTime() const {return ResolutionTime;};
         void set_InitialTime(const double& InitialTime_){InitialTime = InitialTime_;}
         void set_ResolutionTime(const double& ResolutionTime_){ResolutionTime = ResolutionTime_;}
-        void set_Function(const T& Function__){Function = std::make_shared<T>(Function__);};
 };
 
 
@@ -79,34 +75,24 @@ class RungeKutta
 //template<typename T, typename LambdaForSourceTerm, typename LambdaForInitialCondition>
 //RungeKutta<T, LambdaForSourceTerm, LambdaForInitialCondition>::RungeKutta
 template<typename T>
-RungeKutta<T>::RungeKutta
-            (const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_, 
-            const double& InitialTime_, const double& TimeResolution_) : 
-EvaluateInitialCondition(EvaluateInitialCondition_), 
-EvaluateSourceFunction(EvaluateSourceFunction_), 
-InitialTime(InitialTime_), CurrentTime(InitialTime_), ResolutionTime(TimeResolution_)
+RungeKutta<T>::RungeKutta(T& Function_, const std::function<void(T&)>& EvaluateInitialCondition_, 
+                        const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_)
 {
-    std::cout << "Initializing RK object..  ";
-    Function = std::make_shared<T>(T());
-    EvaluateInitialCondition(*Function);
-    AuxiliaryFunction = *Function;
-    ReducingFunction = *Function;
-    k = *Function;  
-    std::cout << "done\n";
-}
+    this->initialize(Function_, EvaluateInitialCondition_, EvaluateSourceFunction_);
+}  
 
 template<typename T>
-void RungeKutta<T>::initialize(const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_)
+void RungeKutta<T>::initialize(T& Function_, const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_)
 {
-    Function = std::make_shared<T>(T());
+    Function = &Function_;
     EvaluateInitialCondition = EvaluateInitialCondition_;
     EvaluateSourceFunction = EvaluateSourceFunction_;
     EvaluateInitialCondition(*Function);
     AuxiliaryFunction = *Function;
     ReducingFunction = *Function;
     k = *Function;  
-    std::cout << "done\n";
 }
+
 
 
 template<typename T>
@@ -149,12 +135,12 @@ T& RungeKutta<T>::get_Function()
 }
 
 
-template<typename T>
-auto make_RungeKutta(const std::function<void(T&)>& InitialCondition_, const std::function<void(T&, const double&, const T&)>& SourceTerm_) 
--> RungeKutta<T>
-{
-    return RungeKutta<T>(InitialCondition_, SourceTerm_, 0., 0.);
-}
+//template<typename T>
+//auto make_RungeKutta(const std::function<void(T&)>& InitialCondition_, const std::function<void(T&, const double&, const T&)>& SourceTerm_) 
+//-> RungeKutta<T>
+//{
+//    return RungeKutta<T>(InitialCondition_, SourceTerm_, 0., 0.);
+//}
 
 
 

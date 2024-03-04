@@ -1,7 +1,9 @@
 template<Space space>
 size_t MeshGrid<space>::counter_id = 0;
 template<Space space>
-std::map<std::array<size_t,3>, mdarray<int,2> > MeshGrid<space>::ConvolutionIndex;
+std::map<std::array<size_t,3>, mdarray<int,2> > MeshGrid<space>::ConvolutionIndex1;
+template<Space space>
+std::map<std::array<size_t,3>, mdarray<int,2> > MeshGrid<space>::ConvolutionIndex2;
 
 template<Space space>
 MeshGrid<space>::MeshGrid(const MeshGrid<space>& mg)
@@ -98,6 +100,7 @@ void MeshGrid<space>::initialize(const std::vector<Coordinate<space>>& PathPoint
 template<Space space>
 void MeshGrid<space>::initialize(const std::array<int,3>& Size_)
 {
+    //cubic grids are always [0, Size-1] so that are fft friendly
     id = ++counter_id;
 
     type=cube;
@@ -115,9 +118,9 @@ void MeshGrid<space>::initialize(const std::array<int,3>& Size_)
                 for(int ix1=0; ix1<Size[1]; ix1++){                   
                     for(int ix2=0; ix2<Size[2]; ix2++){
                         int index = ix2 + Size[2] * (ix1 + Size[1] * ix0);
-                        mesh[index].initialize(-0.5+double(ix0)/Size[0],
-                                               -0.5+double(ix1)/Size[1],
-                                               -0.5+double(ix2)/Size[2],
+                        mesh[index].initialize(double(ix0)/Size[0],
+                                               double(ix1)/Size[1],
+                                               double(ix2)/Size[2],
                                                KeyForBasis);
                     }
                 }
@@ -130,9 +133,9 @@ void MeshGrid<space>::initialize(const std::array<int,3>& Size_)
                 for(int ix1=0; ix1<Size[1]; ix1++){                   
                     for(int ix2=0; ix2<Size[2]; ix2++){
                         int index = ix2 + Size[2] * (ix1 + Size[1] * ix0);
-                        mesh[index].initialize(double(-Size[0]/2) + double(ix0),
-                                               double(-Size[1]/2) + double(ix1),
-                                               double(-Size[2]/2) + double(ix2),
+                        mesh[index].initialize(double(ix0),
+                                               double(ix1),
+                                               double(ix2),
                                                KeyForBasis);
                     }
                 }
@@ -281,10 +284,9 @@ int MeshGrid<space>::find(const Coordinate<space>& v) const
         {
             auto v_reduced = reduce(v);
             auto notcart = v_reduced.get("LatticeVectors");
-            index = int(notcart[2] + Size[2] * (notcart[1] + Size[1] * notcart[0]));
-	    break;
-           
-	}
+            index = int(round(notcart[2] + Size[2] * (notcart[1] + Size[1] * notcart[0])));//warning! round is important, if not it will get the integer part, usually wrong.
+            break;   
+	    }
         case sphere:
         {
             if(v.norm() > maxRadius){
@@ -320,6 +322,7 @@ Coordinate<space> MeshGrid<space>::reduce(const Coordinate<space>& v) const
     auto notcart = v.get("LatticeVectors");
     std::array<int,3> grid_limit = (space==k) ? std::array<int,3>{1, 1, 1}
                                               : Size;
+
     for(int ix=0; ix<3; ix++){
         while(notcart[ix]<0 && abs(notcart[ix])>threshold){    
             notcart[ix] += grid_limit[ix];
@@ -361,7 +364,7 @@ size_t MeshGrid<space>::get_id() const
 
 
 template<Space space>
-void MeshGrid<space>::Calculate_ConvolutionIndex(const MeshGrid& m1, const MeshGrid& m2, const MeshGrid& m3)
+void MeshGrid<space>::Calculate_ConvolutionIndex1(const MeshGrid& m1, const MeshGrid& m2, const MeshGrid& m3)
 {
     PROFILE("MeshGrid::CalculateConvolutionIndex");
     auto i1 = m1.get_id();
@@ -371,13 +374,13 @@ void MeshGrid<space>::Calculate_ConvolutionIndex(const MeshGrid& m1, const MeshG
     auto i3 = m3.get_id();
     //std::cout << "Calculate_ConvolutionIndex " << i3<< std::endl;
 
-    auto& ci = ConvolutionIndex[{i1,i2,i3}];
+    auto& ci = ConvolutionIndex1[{i1,i2,i3}];
 
     ci = mdarray<int,2>({m1.get_TotalSize(), m3.get_TotalSize()});
     //std::cout << "m1.get_TotalSize( ) " << m1.get_TotalSize() << " m3.get_TotalSize( ) " << m3.get_TotalSize() << std::endl;
     //std::cout << "Done.\n"<< std::endl;
     //The following openmp statement has been tested in one case.
-    #pragma omp parallel for schedule(dynamic)
+    //#pragma omp parallel for schedule(dynamic)
     for(int iR1=0; iR1<m1.get_TotalSize(); iR1++){
         for(int iR3=0; iR3<m3.get_TotalSize(); iR3++){
                 //std::cout << "iR1 << << iR3: " <<iR1 << " " << " " << iR3 << std::endl;
@@ -388,6 +391,54 @@ void MeshGrid<space>::Calculate_ConvolutionIndex(const MeshGrid& m1, const MeshG
                 //std::cout << std::setprecision(15) << (m1[iR1]-m1[iR3]).norm() << std::endl;
 
                 ci(iR1, iR3) = m2.find(m1[iR1]-m3[iR3]);
+            auto& Rmesh = m1.get_mesh();
+            auto& ciiR = ci(iR1,iR3);
+            //std::cout  << " R " << iR1 << " (" <<  Rmesh[iR1].get("LatticeVectors")[0] << " " << Rmesh[iR1].get("LatticeVectors")[1] << " " << Rmesh[iR1].get("LatticeVectors")[2];
+            //std::cout << " ci(iR,0) "<<   ciiR << " (" <<m2[ciiR].get("LatticeVectors")[0] << " " << m2[ciiR].get("LatticeVectors")[1] << " " << m2[ciiR].get("LatticeVectors")[2] << std::endl;
+            //    std::cout << iR1 << " " << iR3 << " ci(iR1,iR3): " << ci(iR1,iR3) << std::endl;
+        }
+    }
+
+//    for(int iR=0; iR<m1.get_TotalSize(); iR++){
+//        //for(int iR3=0; iR3<m3.get_TotalSize(); iR3++){
+//
+//            auto& Rmesh = m1.get_mesh();
+//            std::cout  << " R " << iR << " (" <<  Rmesh[iR].get("LatticeVectors")[0] << " " << Rmesh[iR].get("LatticeVectors")[1] << " " << Rmesh[iR].get("LatticeVectors")[2];
+//            auto& ciiR = ci(iR,0);
+//            std::cout << " ci(iR,0) "<<   ci(iR,0) << " (" <<m2[ciiR].get("LatticeVectors")[0] << " " << m2[ciiR].get("LatticeVectors")[1] << " " << m2[ciiR].get("LatticeVectors")[2] << std::endl;
+//        //}
+//    }
+}
+
+
+template<Space space>
+void MeshGrid<space>::Calculate_ConvolutionIndex2(const MeshGrid& m1, const MeshGrid& m2, const MeshGrid& m3)
+{
+    PROFILE("MeshGrid::CalculateConvolutionIndex");
+    auto i1 = m1.get_id();
+    //std::cout << "Calculate_ConvolutionIndex " << i1<< std::endl;
+    auto i2 = m2.get_id();
+    //std::cout << "Calculate_ConvolutionIndex " << i2<< std::endl;
+    auto i3 = m3.get_id();
+    //std::cout << "Calculate_ConvolutionIndex " << i3<< std::endl;
+
+    auto& ci = ConvolutionIndex2[{i1,i2,i3}];
+
+    ci = mdarray<int,2>({m1.get_TotalSize(), m3.get_TotalSize()});
+    //std::cout << "m1.get_TotalSize( ) " << m1.get_TotalSize() << " m3.get_TotalSize( ) " << m3.get_TotalSize() << std::endl;
+    //std::cout << "Done.\n"<< std::endl;
+    //The following openmp statement has been tested in one case.
+    //#pragma omp parallel for schedule(dynamic)
+    for(int iR1=0; iR1<m1.get_TotalSize(); iR1++){
+        for(int iR3=0; iR3<m3.get_TotalSize(); iR3++){
+                //std::cout << "iR1 << << iR3: " <<iR1 << " " << " " << iR3 << std::endl;
+                //std::cout << m1[iR1].get("LatticeVectors") << m1[iR3].get("LatticeVectors");
+                //std::cout << "m1[iR1]-m3[iR3]: ";
+                //std::cout << std::setprecision(15) << (m1[iR1]-m1[iR3]).get("LatticeVectors") << std::endl;
+                //std::cout << "m1[iR1]-m3[iR3].norm(): ";
+                //std::cout << std::setprecision(15) << (m1[iR1]-m1[iR3]).norm() << std::endl;
+
+                ci(iR1, iR3) = m2.find(m1[iR1]+m3[iR3]);
                 
                 //std::cout << "ci(iR1,iR3): " << ci(iR1,iR3) << std::endl;
         }

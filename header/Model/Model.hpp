@@ -18,6 +18,12 @@ class Material
 
 
         Material(){};
+        Material(const Material& m) = default;
+        Material& operator=(const Material& m) = default;
+        
+        Material(Material&& m) = default;
+        Material& operator=(Material&& m) = default;
+
         Material(const std::string& Filename)
         {
             PROFILE("Material");
@@ -31,12 +37,6 @@ class Material
             Basis ReciprocalLatticeVectors(2.*pi*Matrix<double>(wannier_.UnitCell).inverse());
             Coordinate<k>::add_Basis(ReciprocalLatticeVectors, "LatticeVectors");
             
-            r[0].lock_gauge(wannier);      r[0].lock_space(R);        
-            r[1].lock_gauge(wannier);      r[1].lock_space(R);        
-            r[2].lock_gauge(wannier);      r[2].lock_space(R);        
-            H.lock_gauge(wannier);         H.lock_space(R);         
-
-
             r[0].get_Operator_R().initialize(wannier_.r[0]);
             r[1].get_Operator_R().initialize(wannier_.r[1]);
             r[2].get_Operator_R().initialize(wannier_.r[2]);
@@ -53,6 +53,14 @@ class Material
             r[0].get_Operator_R().set_MeshGrid(aux_mg);
             r[1].get_Operator_R().set_MeshGrid(aux_mg);
             r[2].get_Operator_R().set_MeshGrid(aux_mg);
+
+            r[0].lock_gauge(wannier);      r[0].lock_space(R);        
+            r[1].lock_gauge(wannier);      r[1].lock_space(R);        
+            r[2].lock_gauge(wannier);      r[2].lock_space(R);        
+            H.lock_gauge(wannier);         H.lock_space(R);         
+
+
+
         }
 
 	void print_info()

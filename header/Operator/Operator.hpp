@@ -119,23 +119,11 @@ class Operator
         Operator() : Operator_k(BlockMatrix<T,k>()), Operator_R(BlockMatrix<T,R>()){};
 
 
-        Operator(const Operator<T>& Op_) {*this = Op_;}
+        Operator(const Operator<T>& Op_) = default;
+        Operator<T>& operator=(const Operator<T>& Op_) = default;
         
-        Operator<T>& operator=(const Operator<T>& Op_)
-        {
-            Operator_k = Op_.Operator_k;
-            Operator_R = Op_.Operator_R;
-            return *this;
-        };
-        
-        Operator(Operator<T>&& Op_)  {*this = Op_;}
-        Operator<T>& operator=(Operator<T>&& Op_)
-        {
-        	std::cout << "Moving operator...\n";
-            Operator_k = Op_.Operator_k;
-            Operator_R = Op_.Operator_R;
-                return *this;
-        };
+        Operator(Operator<T>&& Op_)  = default;
+        Operator<T>& operator=(Operator<T>&& Op_) = default;
 
         BlockMatrix<T,k>& get_Operator_k()
         {
@@ -191,7 +179,7 @@ class Operator
             mdarray<double,2> bare_mg({1,3});
             bare_mg.fill(0);
             MeshGrid_Null = std::make_shared<MeshGrid<R>>(bare_mg, "Cartesian");
-            MeshGrid<R>::Calculate_ConvolutionIndex(MG , *FT_meshgrid_R, *MeshGrid_Null);
+            MeshGrid<R>::Calculate_ConvolutionIndex1(MG , *FT_meshgrid_R, *MeshGrid_Null);
 
             auto nk = FT_meshgrid_R->get_mesh().size();
 
@@ -293,7 +281,7 @@ class Operator
 
         void shuffle_to_fft_R()
         {
-            auto ci = MeshGrid<R>::get_ConvolutionIndex(*Operator_R.get_MeshGrid() , *FT_meshgrid_R, *MeshGrid_Null);
+            auto ci = MeshGrid<R>::get_ConvolutionIndex1(*Operator_R.get_MeshGrid() , *FT_meshgrid_R, *MeshGrid_Null);
             for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
                 for(int ibnd1=0; ibnd1<Operator_R.get_nrows(); ++ibnd1){
                     for(int ibnd2=ibnd1; ibnd2<Operator_R.get_ncols(); ++ibnd2){
@@ -310,6 +298,8 @@ class Operator
                 for(int ibnd1=0; ibnd1<Operator_k.get_nrows(); ++ibnd1){
                     for(int ibnd2=ibnd1; ibnd2<Operator_k.get_ncols(); ++ibnd2){
                         FTfriendly_Operator_k(static_cast<int>(bandindex.oneDband(ibnd1, ibnd2)), ik) = Operator_k(ik, ibnd1, ibnd2);
+                        std::cout << bandindex.oneDband(ibnd1, ibnd2) << " " << ik;
+                        std::cout << Operator_k(ik, ibnd1, ibnd2) << std::endl;
                     }
                 }
             }
@@ -317,11 +307,11 @@ class Operator
 
         void shuffle_from_fft_R()
         {
-            auto ci = MeshGrid<R>::get_ConvolutionIndex(*Operator_R.get_MeshGrid() , *FT_meshgrid_R, *MeshGrid_Null);
+            auto ci = MeshGrid<R>::get_ConvolutionIndex1(*Operator_R.get_MeshGrid() , *FT_meshgrid_R, *MeshGrid_Null);
             for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
                 for(int ibnd1=0; ibnd1<Operator_R.get_nrows(); ++ibnd1){
                     for(int ibnd2=ibnd1; ibnd2<Operator_R.get_ncols(); ++ibnd2){
-                        std::cout  << " R " << iR << "ibnd1 " << ibnd1  << "ibnd2 "<< ibnd2  << " ci(iR,0) "<<   ci(iR,0) << std::endl;
+                        //std::cout  << " R " << iR << "ibnd1 " << ibnd1  << "ibnd2 "<< ibnd2  << " ci(iR,0) "<<   ci(iR,0) << std::endl;
                         Operator_R(iR, ibnd1, ibnd2) = FTfriendly_Operator_R(static_cast<int>(bandindex.oneDband(ibnd1, ibnd2)), ci(iR,0));
                         Operator_R(iR, ibnd2, ibnd1) = conj(Operator_R(iR,ibnd1,ibnd2)); 
                     }
@@ -345,47 +335,58 @@ class Operator
         void go_to_wannier()
         {
             assert(locked_bandgauge);
+            //assert(space == k);
             if (bandgauge == wannier){
                 return;
             }
+            auto temp_k = Operator_k;
             temp_k.fill(0); 
+
             multiply(temp_k, std::complex<double>(1.), EigenVectors, Operator_k);
+            Operator_k.fill(0);
             multiply(Operator_k, std::complex<double>(1.), temp_k, EigenVectors_dagger);
+            bandgauge = wannier;
         };
 
         void go_to_bloch()
         {
             assert(locked_bandgauge);
+            //assert(space == k);
             if(bandgauge == bloch){
                 return;
             }
+            auto temp_k = Operator_k;
             temp_k.fill(0); 
             multiply(temp_k, std::complex<double>(1.), EigenVectors_dagger, Operator_k);
-            multiply(Operator_k, std::complex<double>(1.), Operator_k, EigenVectors);
+            Operator_k.fill(0);
+            multiply(Operator_k, std::complex<double>(1.), temp_k, EigenVectors);
+            bandgauge = bloch;
         };
 
         void go_to_R()
         {
             assert(locked_space && initialized_fft);
-            if(space == R){
-                return;
-            }
+            //if(space == R){
+            //    return;
+            //}
             shuffle_to_fft_k();
-            ft_.fft(-1);          
+            ft_.fft(-1);       
             shuffle_from_fft_R();  
+
+            //space = R;
         }
 
         void go_to_k()
         {
             assert(locked_space && initialized_fft);
-            if(space == k){
-                return;
-            }
+            //if(space == k){
+            //    return;
+            //}
             shuffle_to_fft_R();
             ft_.fft(+1);          
             shuffle_from_fft_k();  
 
-            //dft();
+            //space = k;
         }
 
         void lock_gauge(const BandGauge& bandgauge__)

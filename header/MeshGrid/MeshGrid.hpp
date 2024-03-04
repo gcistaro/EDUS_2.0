@@ -6,8 +6,8 @@
 #include <vector>
 #include <algorithm>
 
-#include "../Constants.hpp"
-#include "../Geometry/Coordinate.hpp"
+#include "Constants.hpp"
+#include "Geometry/Coordinate.hpp"
 
 
 struct ShellInfo
@@ -40,7 +40,8 @@ class MeshGrid{
         size_t id; //each MeshGrid has a unique id,  to exchange the indices with others
         static size_t counter_id; //neded to count objects
     public:
-        static std::map<std::array<size_t,3>, mdarray<int,2> > ConvolutionIndex;//to call it: [{id1,id2,id3}][{iR1,iR3}]
+        static std::map<std::array<size_t,3>, mdarray<int,2> > ConvolutionIndex1;//to call it: [{id1,id2,id3}][{iR1,iR3}]
+        static std::map<std::array<size_t,3>, mdarray<int,2> > ConvolutionIndex2;//to call it: [{id1,id2,id3}][{iR1,iR3}]
 
         MeshGrid(){};
         MeshGrid(const MeshGrid& m);
@@ -77,9 +78,13 @@ class MeshGrid{
         size_t get_id() const;
         static size_t get_counter_id(){return counter_id;}; //neded to count objects
 
-        static void Calculate_ConvolutionIndex(const MeshGrid& m1, const MeshGrid& m2, const MeshGrid& m3);
-        static mdarray<int,2>& get_ConvolutionIndex(const MeshGrid& m1, const MeshGrid& m2, const MeshGrid& m3){
-            return ConvolutionIndex[{m1.get_id(), m2.get_id(), m3.get_id()}];
+        static void Calculate_ConvolutionIndex1(const MeshGrid& m1, const MeshGrid& m2, const MeshGrid& m3);
+        static void Calculate_ConvolutionIndex2(const MeshGrid& m1, const MeshGrid& m2, const MeshGrid& m3);
+        static mdarray<int,2>& get_ConvolutionIndex1(const MeshGrid& m1, const MeshGrid& m2, const MeshGrid& m3){
+            return ConvolutionIndex1[{m1.get_id(), m2.get_id(), m3.get_id()}];
+        }
+        static mdarray<int,2>& get_ConvolutionIndex2(const MeshGrid& m1, const MeshGrid& m2, const MeshGrid& m3){
+            return ConvolutionIndex2[{m1.get_id(), m2.get_id(), m3.get_id()}];
         }
 };
 

@@ -9,11 +9,13 @@ template<typename T, size_t dim>
 mdarray<T,dim>& mdarray<T,dim>::operator=(const mdarray<T,dim>& ToBeCopied)
 {
     //this->Ptr = std::make_unique<T[]>(ToBeCopied.TotalSize);
-    (*this).~mdarray<T,dim>();
-    this->Ptr = new T[ToBeCopied.TotalSize];
-    this->Size = ToBeCopied.Size;
-    this->TotalSize = ToBeCopied.TotalSize;
-    this->Offset = ToBeCopied.Offset;
+    if( this->Size != ToBeCopied.Size || Ptr == nullptr){
+        (*this).~mdarray<T,dim>();
+        this->Ptr = new T[ToBeCopied.TotalSize];
+        this->Size = ToBeCopied.Size;
+        this->TotalSize = ToBeCopied.TotalSize;
+        this->Offset = ToBeCopied.Offset;        
+    }
     std::copy(ToBeCopied.begin(), ToBeCopied.end(), this->begin());
     return *this;
 }

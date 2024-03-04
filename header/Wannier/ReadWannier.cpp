@@ -1,3 +1,4 @@
+#include "StreamFile.hpp"
 //each function reads part of wannier "_tb.dat" file
 
 int ParseWannier_Degeneracies(const auto& LineIterator_Begin, auto& Degeneracy)

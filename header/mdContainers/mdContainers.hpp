@@ -96,7 +96,7 @@ class mdarray
         friend std::ostream& operator<<(std::ostream&, const mdarray<T_,dim_>& mdarray_); 
 };
 
-#include "mdContainers.cpp"
+#include "mdContainers_definitions.hpp"
 
 
 #endif

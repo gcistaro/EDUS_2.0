@@ -13,6 +13,7 @@ int main()
     double ResolutionTime = 0.001;
     static double InitialConstant = 1.;
     static double RateOfIncrease = 2.;
+    std::vector<double> Function_;
 
     auto InitialCondition = [&](auto& Function){
         Function.resize(1);
@@ -28,7 +29,7 @@ int main()
         }
     };
 
-    auto rungekutta = make_RungeKutta<std::vector<double>>(InitialCondition, SourceTerm);
+    auto rungekutta = RungeKutta<std::vector<double>>(Function_, InitialCondition, SourceTerm);
     rungekutta.set_InitialTime(InitialTime);
     rungekutta.set_ResolutionTime(ResolutionTime);
 

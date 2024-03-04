@@ -1,5 +1,6 @@
 #include <string>
 #include <map>
+#include "Constants.hpp"
 #include "Vector.hpp"
 #include "Matrix.hpp"
 
@@ -32,47 +33,16 @@ class Basis{
         Basis(const Matrix<double>& A) {this->initialize(A);};
         void initialize(const Matrix<double>& A);
         
-        inline const Matrix<double>& get_M() const;
-        inline const Matrix<double>& get_invM() const;
-        inline const Matrix<double>& get_MetricTensor() const;
+        inline const Matrix<double>& get_M() const {return M;};
+        inline const Matrix<double>& get_invM() const {return invM;};
+        inline const Matrix<double>& get_MetricTensor() const {return MetricTensor;};
 
         friend std::ostream& operator<<(std::ostream& os, const Basis& basis);
 };
 
-std::ostream& operator<<(std::ostream& os, const Basis& basis)
-{
-    os<< "Basis"; 
-    os<< "\n        M:\n";
-    os<< basis.M;
-    os<< "\n     invM:\n";
-    os<< basis.invM;
+std::ostream& operator<<(std::ostream& os, const Basis& basis);
 
-    return os;
-}
 
-//
-//class Coordinate
-//{
-//    private:
-//        std::array<double,3> Values{-1.e+08,-1.e+08, -1.e08};
-//    public:
-//        Coordinate(){};
-//        Coordinate(const double& c1, const double& c2, const double& c3) : Values({c1,c2,c3}){};
-//
-//        double& operator[](const int& i){return const_cast<double&>(static_cast<const Coordinate&>(*this)[i]);};
-//        const double& operator[](const int& i) const {return Values[i];};
-//        
-//        template<Space space> friend class Vector;
-//
-//        friend std::ostream& operator<<(std::ostream& os, const Coordinate& c_);
-//};
-//
-//std::ostream& operator<<(std::ostream& os, const Coordinate& c_)
-//{
-//    std::cout << c_.Values[0] << " " << c_.Values[1] << " " << c_.Values[2] << "\n";
-//    return os;
-//}
-//
 
 template<Space space>
 class Coordinate{
@@ -129,9 +99,6 @@ void Coordinate<space>::add_Basis(const Basis& Basis_to_add, const std::string& 
     BasisDictionary[KeyForBasis] = Basis_to_add;
 }
 
-
-
-#include "Coordinate.cpp"
-
+#include "Coordinate_definitions.hpp"
 
 #endif

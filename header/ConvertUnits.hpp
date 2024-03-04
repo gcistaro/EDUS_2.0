@@ -7,27 +7,26 @@
 
 #include "Constants.hpp"
 
-
-enum Type{LENGTH, TIME, ENERGY, INTENSITY};
+enum  Type{LENGTH, TIME, ENERGY, INTENSITY};
 
 struct Unit{
     Type type;
     double value;
     
-    Unit(const Type& type_, const double& value_) : type(type_), value(value_){};
+    Unit(const Type& type_, const double& value_);
 };
 
-Unit Angstrom(LENGTH,1.e-10);
-Unit NanoMeters(LENGTH, 1.e-09);
-Unit ElectronVolt(ENERGY,ElectronVolt_value);
-Unit Joule(ENERGY,1.);
-Unit Wcm2(INTENSITY, 1.);
-Unit FemtoSeconds(TIME, 1.e-15);
+extern Unit Angstrom;
+extern Unit NanoMeters;
+extern Unit ElectronVolt;
+extern Unit Joule;
+extern Unit Wcm2;
+extern Unit FemtoSeconds;
 
-Unit AuIntensity(INTENSITY, AtomicUnitOfIntensity);
-Unit AuTime(TIME, AtomicUnitOfTime);
-Unit AuLength(LENGTH,Bohr_value);
-Unit AuEnergy(ENERGY,2.*Rydberg_value);
+extern Unit AuIntensity;
+extern Unit AuTime;
+extern Unit AuLength;
+extern Unit AuEnergy;
 
 
 template<typename T>

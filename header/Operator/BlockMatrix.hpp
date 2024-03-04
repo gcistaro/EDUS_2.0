@@ -15,7 +15,8 @@
 #include "Geometry/Matrix.hpp"
 
 
-
+template<class T>
+class Operator;
 //Our sparse matrices are block matrices. 
 //we save them in a contiguous array of size (#blocks, #rows, #cols)
 //if the blocks have different shape, #rows and #cols must be the maximum. 
@@ -37,6 +38,9 @@ class BlockMatrix{
         T NullValue = 0;
         void initialize_submatrix();
     public:
+
+        friend class Operator<T>;
+
         mdarray<T,3> Values; //first index -> block, others -> matrix
         BlockMatrix() : Values(mdarray<T,3>()){};
         BlockMatrix(const size_t& nblocks, const size_t& nrows, const size_t& ncols){this->initialize(nblocks, nrows, ncols);}
@@ -76,14 +80,20 @@ class BlockMatrix{
         size_t get_ncols() const{return Values.get_Size(2);};
 	    std::shared_ptr<MeshGrid<space>>& get_MeshGrid(){return this->meshgrid;};
 
-        void set_MeshGrid(const MeshGrid<space>& meshgrid_){std::cout << "Gonna create shared ptr\n"; this->meshgrid = std::make_shared<MeshGrid<space>>(meshgrid_); std::cout << "DONE!\n";};
+        void set_MeshGrid(const MeshGrid<space>& meshgrid_)
+        {
+            this->meshgrid = std::make_shared<MeshGrid<space>>(meshgrid_);
+        };
+
         bool has_meshgrid()
         {
             return (*meshgrid != nullptr);
         }
         
         template<typename T_, Space space_, typename U>
-        friend void convolution(BlockMatrix<T_,space_>& Output, U Scalar, const BlockMatrix<T_,space_>& Input1, const BlockMatrix<T_,space_>& Input2 );
+        friend void convolution1(BlockMatrix<T_,space_>& Output, U Scalar, const BlockMatrix<T_,space_>& Input1, const BlockMatrix<T_,space_>& Input2 );
+        template<typename T_, Space space_, typename U>
+        friend void convolution2(BlockMatrix<T_,space_>& Output, U Scalar, const BlockMatrix<T_,space_>& Input1, const BlockMatrix<T_,space_>& Input2 );
         
         void diagonalize(std::vector<mdarray<double,1>>& Eigenvalues,
                          BlockMatrix<std::complex<double>,space>& Eigenvectors) const;
@@ -100,8 +110,19 @@ template<typename T, Space space>
 Matrix<T> BlockMatrix<T,space>::EmptyMatrix = Matrix<T>();
 
 //overloading writing matrix
-template<class T>
-std::ostream& operator<<(std::ostream& os, BlockMatrix<T>& m);
+template<class T, Space space>
+std::ostream& operator<<(std::ostream& os, const BlockMatrix<T, space>& m);
+
+template<typename T, Space space>
+double max(const BlockMatrix<T,space> m);
+
+template<typename T, Space space>
+void multiply(BlockMatrix<T,space>& Output, T Scalar, const BlockMatrix<T,space>& Input1, const BlockMatrix<T,space>& Input2, T Scalar2 );
+
+
+template<typename T, Space space>
+void multiply(BlockMatrix<T,space>& Output, T Scalar, const BlockMatrix<T,space>& Input1, const BlockMatrix<T,space>& Input2);
+
 #include "BlockMatrix_definitions.hpp"
 
 #endif
