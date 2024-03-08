@@ -52,13 +52,14 @@ class mdarray
             //iterator constructor
             Iterator(pointer ptr) : m_ptr(ptr) {}
         
+            auto data() { return m_ptr;}
             //iterator overloadings
-            reference operator*() const { return *m_ptr; }
-            pointer operator->() { return m_ptr; }
+            reference operator*() const { return *m_ptr; };
+            pointer operator->() { return m_ptr; };
             // Prefix increment
-            Iterator& operator++() { m_ptr++; return *this; }  
+            Iterator& operator++() { m_ptr++; return *this; };  
             // Postfix increment
-            Iterator operator++(int) { Iterator tmp = *this; ++(*this); return tmp; }
+            Iterator operator++(int) { Iterator tmp = *this; ++(*this); return tmp; };
             friend bool operator== (const Iterator& a, const Iterator& b) { return a.m_ptr == b.m_ptr; };
             friend bool operator!= (const Iterator& a, const Iterator& b) { return a.m_ptr != b.m_ptr; };     
             //difference

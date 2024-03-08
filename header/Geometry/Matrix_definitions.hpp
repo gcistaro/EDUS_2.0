@@ -287,4 +287,20 @@ std::ostream& operator<<(std::ostream& os, const Matrix<T>& m)
     return os;
 }
 
+template<typename T>
+auto max(const Matrix<T>& m)
+{
+    //double max = 0;
+//    for(int iblock=0; iblock<m.get_nblocks(); ++iblock){
+//        for(int irow=0; irow<m.get_nrows(); ++irow){
+//            for(int icol=0; icol<m.get_ncols(); ++icol){
+//                //HR(ci(iblock, 0), irow, icol) = H0R(iblock, irow, icol);
+//                if(std::abs(m(iblock, irow, icol)) > max){
+//                    max =std::abs( m(iblock, irow, icol));
+//                }
+//            }
+//        }
+//    }            
+    return *std::max_element(m.begin(), m.end(), [&](const T& a1, const T& a2){ return std::abs(a1) < std::abs(a2);});
+}
 

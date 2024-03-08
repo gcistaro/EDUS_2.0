@@ -23,5 +23,6 @@ class Simulation
         void print_grids();
         void Calculate_TDHamiltonian(const double& time);
         void Propagate();
+        void print_recap();
 };
 

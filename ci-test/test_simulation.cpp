@@ -3,6 +3,6 @@
 
 int main()
 {            
-    Simulation simulation("/home/gcistaro/NEGF/tb_models/non_dummy_gap", 20.);
+    Simulation simulation("/home/gcistaro/NEGF/tb_models/hBN_gap7.25eV_a2.5A", 100.);
     print_timing(1);
 }

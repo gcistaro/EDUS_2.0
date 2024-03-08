@@ -17,7 +17,7 @@ add_definitions(${GCC_FLAG} -DNEGF_PROFILE=ON)
 
 
 #compile sources as library INTERFACE (not a real library, just objects to be reused)
-include_directories(PUBLIC header/)
+include_directories(header/)
 
 set(_SOURCES header/ConvertUnits.cpp
              header/StreamFile.cpp
@@ -31,9 +31,12 @@ set(_SOURCES header/ConvertUnits.cpp
              header/core/print_timing.cpp 
              header/core/rt_graph.cpp
 			 )
+
+find_package(OpenMP)
+link_libraries(OpenMP::OpenMP_CXX)
+                      
 add_library(OBJECTS OBJECT ${_SOURCES})
 #target_sources(OBJECTS PUBLIC ${_SOURCES})
-
 link_libraries(OBJECTS)
 
 #mkl

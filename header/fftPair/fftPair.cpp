@@ -15,6 +15,7 @@ FourierTransform::initialize
     std::cout << "INITIALIZE FFT. Array_k and Array_k__"<< &((*Array_k)(0,0)) << " " <<&((Array_k__)(0,0)); 
     howmany = Array_x->get_Size(0);
     TotalSize = Array_x->get_Size(1);
+    SqrtTotalSize = std::sqrt(TotalSize);
     dim = Dimensions__.size();
     Dimensions = Dimensions__;
     idist = TotalSize;
@@ -29,6 +30,7 @@ FourierTransform::initialize
     howmany = Array_x__.get_Size(0);
     dim = Mesh[0].size();
     TotalSize = Array_x__.get_Size(1);
+    SqrtTotalSize = std::sqrt(TotalSize);
     Array_x = &Array_x__;
 }
 
@@ -52,12 +54,16 @@ void FourierTransform::fft(const int& sign)
                            sign,
 			               FFTW_ESTIMATE);
     fftw_execute(MyPlan);
+    for(auto& output_el : output){
+        output_el /= SqrtTotalSize;
+    }
     fftw_destroy_plan(MyPlan);
 }
 
 
 mdarray<std::complex<double>, 1> FourierTransform::dft(const std::vector<double>& Point, const int& sign) 
 {
+    std::cout << Point.size() << " " << dim << std::endl;
     assert(Point.size() == dim);
     mdarray<std::complex<double>, 1> FT({Array_x->get_Size()[0]});
     FT.fill(std::complex<double>(0.));

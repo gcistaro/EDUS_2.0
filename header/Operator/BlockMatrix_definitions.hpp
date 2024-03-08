@@ -223,27 +223,27 @@ void BlockMatrix<T,space>::diagonalize(std::vector<mdarray<double,1>>& Eigenvalu
 
 
 template<typename T, Space space>
-double max(const BlockMatrix<T,space> m)
+auto max(const BlockMatrix<T,space>& m)
 {
-    double max = 0;
-    for(int iblock=0; iblock<m.get_nblocks(); ++iblock){
-        for(int irow=0; irow<m.get_nrows(); ++irow){
-            for(int icol=0; icol<m.get_ncols(); ++icol){
-                //HR(ci(iblock, 0), irow, icol) = H0R(iblock, irow, icol);
-                if(std::abs(m(iblock, irow, icol)) > max){
-                    max =std::abs( m(iblock, irow, icol));
-                }
-            }
-        }
-    }            
-    return max;
+    //double max = 0;
+//    for(int iblock=0; iblock<m.get_nblocks(); ++iblock){
+//        for(int irow=0; irow<m.get_nrows(); ++irow){
+//            for(int icol=0; icol<m.get_ncols(); ++icol){
+//                //HR(ci(iblock, 0), irow, icol) = H0R(iblock, irow, icol);
+//                if(std::abs(m(iblock, irow, icol)) > max){
+//                    max =std::abs( m(iblock, irow, icol));
+//                }
+//            }
+//        }
+//    }            
+    return std::max_element(m.begin(), m.end(), [&](const T& a1, const T& a2){ return std::abs(a1) < std::abs(a2);});
 }
 
 template<class T, Space space>
 std::ostream& operator<<(std::ostream& os, const BlockMatrix<T, space>& m)
 {
     for(int i=0; i<m.get_nblocks(); i++){
-        std::cout << i << std::endl << m[i] << std::endl;
+        std::cout << (*((const_cast<BlockMatrix<T,space>&>(m)).get_MeshGrid()))[i].get("LatticeVectors") << m[i] << std::endl;
     }
     return os;
 }

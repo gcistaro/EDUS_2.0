@@ -60,7 +60,7 @@ class BandIndex
         for(int i=0; i<NumberOfBands; ++i){
             RowIndexBoundary[i].first = StartingIndex(i);
             RowIndexBoundary[i].second = StartingIndex(i) + (NumberOfBands - i) - 1;
-            std::cout << "row " << i << " boundaries: [" << RowIndexBoundary[i].first << " , " << RowIndexBoundary[i].second << "]" << std::endl;
+            //std::cout << "row " << i << " boundaries: [" << RowIndexBoundary[i].first << " , " << RowIndexBoundary[i].second << "]" << std::endl;
         }
 
     }
@@ -98,6 +98,7 @@ class Operator
         mdarray<std::complex<double>, 2> FTfriendly_Operator_k;
         std::shared_ptr<MeshGrid<k>> FT_meshgrid_k;
         std::shared_ptr<MeshGrid<R>> FT_meshgrid_R;
+        std::shared_ptr<MeshGrid<R>> FT_meshgrid_Rminus;
         std::shared_ptr<MeshGrid<R>> MeshGrid_Null;
 
         static BandIndex bandindex;
@@ -166,6 +167,7 @@ class Operator
                     Rgrid = std::make_shared<MeshGrid<R>>(MG);
                     FT_meshgrid_k = std::make_shared<MeshGrid<k>>(fftPair<R,k>(MG));
                     FT_meshgrid_R = std::make_shared<MeshGrid<R>>(fftPair<k,R>(*FT_meshgrid_k));
+                    FT_meshgrid_Rminus = std::make_shared<MeshGrid<R>>(Opposite(MG));
                     break;
                 }
                 case k:
@@ -180,7 +182,33 @@ class Operator
             bare_mg.fill(0);
             MeshGrid_Null = std::make_shared<MeshGrid<R>>(bare_mg, "Cartesian");
             MeshGrid<R>::Calculate_ConvolutionIndex1(MG , *FT_meshgrid_R, *MeshGrid_Null);
+            std::cout << std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl;
+            std::cout << std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl;
+            std::cout << std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl;
+            std::cout << std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl;
+            MeshGrid<R>::Calculate_ConvolutionIndex1(MG, *FT_meshgrid_Rminus, *MeshGrid_Null);
+            std::cout << std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl;
+            std::cout << std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl;
+            std::cout << std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl;
+            std::cout << std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl;
 
+            //prove that is working
+            std::ofstream MG1, MG2;
+            MG1.open("Mg1.txt");
+            MG2.open("Mg2.txt");
+            for(int iR=0; iR<FT_meshgrid_R->get_mesh().size(); iR++){
+                MG1 <<  (*FT_meshgrid_R)[iR].get("LatticeVectors");
+            }
+            for(int iR=0; iR<MG.get_mesh().size(); iR++){
+                auto& ci = MeshGrid<R>::ConvolutionIndex1[{MG.get_id(), FT_meshgrid_R->get_id(), MeshGrid_Null->get_id()}];
+                if(ci(iR, 0) != -1){
+                    MG2 << (*FT_meshgrid_R)[ci(iR,0)].get("LatticeVectors"); 
+                }
+            }
+            MG1.close();
+            MG2.close();
+            //endofproof
+            
             auto nk = FT_meshgrid_R->get_mesh().size();
 
             Operator_k = BlockMatrix<std::complex<double>,k>(nk, nbnd, nbnd);
@@ -206,10 +234,13 @@ class Operator
 
         void dft(const std::vector<Coordinate<k>>& path, const int& sign)
         {
+            //for(auto& k : path){
+            //    auto& kk = k.get("LatticeVectors");
+            //    std::cout << kk[0] << " " << kk[1] << " " << kk[2] << std::endl;
+            //}
             initialize_dft();
             execute_dft(path, sign);
             shuffle_to_RK();
-	        std::cout << Operator_k.Values << std::endl;
         }
 
 /*
@@ -247,6 +278,7 @@ class Operator
                 Mesh_FT[im][1] = mesh_operator[im].get("LatticeVectors")[1];
                 Mesh_FT[im][2] = mesh_operator[im].get("LatticeVectors")[2];
                 //std::cout <<"MESH_FT: "<< Mesh_FT[im][0] <<" " << Mesh_FT[im][1] << " " << Mesh_FT[im][2] << std::endl;
+                //std::cout << Mesh_FT[im][0] << " " << Mesh_FT[im][1] << Mesh_FT[im][2] << std::endl;
             }
             ft_.initialize(FTfriendly_Operator_R, Mesh_FT);
             std::cout << "ft is initialized.\n";
@@ -298,8 +330,8 @@ class Operator
                 for(int ibnd1=0; ibnd1<Operator_k.get_nrows(); ++ibnd1){
                     for(int ibnd2=ibnd1; ibnd2<Operator_k.get_ncols(); ++ibnd2){
                         FTfriendly_Operator_k(static_cast<int>(bandindex.oneDband(ibnd1, ibnd2)), ik) = Operator_k(ik, ibnd1, ibnd2);
-                        std::cout << bandindex.oneDband(ibnd1, ibnd2) << " " << ik;
-                        std::cout << Operator_k(ik, ibnd1, ibnd2) << std::endl;
+                        //std::cout << bandindex.oneDband(ibnd1, ibnd2) << " " << ik;
+                        //std::cout << Operator_k(ik, ibnd1, ibnd2) << std::endl;
                     }
                 }
             }
@@ -307,13 +339,29 @@ class Operator
 
         void shuffle_from_fft_R()
         {
-            auto ci = MeshGrid<R>::get_ConvolutionIndex1(*Operator_R.get_MeshGrid() , *FT_meshgrid_R, *MeshGrid_Null);
+            auto ci = MeshGrid<R>::get_ConvolutionIndex1(*Operator_R.get_MeshGrid(), *FT_meshgrid_R, *MeshGrid_Null);
+            auto ciminus = MeshGrid<R>::get_ConvolutionIndex1(*Operator_R.get_MeshGrid(), *FT_meshgrid_Rminus, *MeshGrid_Null);
+            for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
+                for(int ibnd1=0; ibnd1<Operator_R.get_nrows(); ++ibnd1){
+                    for(int ibnd2=ibnd1; ibnd2<Operator_R.get_ncols(); ++ibnd2){
+                        FTfriendly_Operator_R(static_cast<int>(bandindex.oneDband(ibnd1, ibnd2)), ci(iR,0));
+                    }
+                }
+            }
             for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
                 for(int ibnd1=0; ibnd1<Operator_R.get_nrows(); ++ibnd1){
                     for(int ibnd2=ibnd1; ibnd2<Operator_R.get_ncols(); ++ibnd2){
                         //std::cout  << " R " << iR << "ibnd1 " << ibnd1  << "ibnd2 "<< ibnd2  << " ci(iR,0) "<<   ci(iR,0) << std::endl;
                         Operator_R(iR, ibnd1, ibnd2) = FTfriendly_Operator_R(static_cast<int>(bandindex.oneDband(ibnd1, ibnd2)), ci(iR,0));
-                        Operator_R(iR, ibnd2, ibnd1) = conj(Operator_R(iR,ibnd1,ibnd2)); 
+                    }
+                }
+            }
+
+            //this  part is not working! Check ciminus
+            for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
+                for(int ibnd1=0; ibnd1<Operator_R.get_nrows(); ++ibnd1){
+                    for(int ibnd2=ibnd1+1; ibnd2<Operator_R.get_ncols(); ++ibnd2){
+                        Operator_R(iR, ibnd2, ibnd1) = std::conj(Operator_R(ciminus(iR,0), ibnd1, ibnd2));
                     }
                 }
             }

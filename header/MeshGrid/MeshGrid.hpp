@@ -65,13 +65,16 @@ class MeshGrid{
         
         template<Space space1, Space space2>
         friend MeshGrid<space2> fftPair(const MeshGrid<space1>& KnownMG);
+
+        template<Space space1>
+        friend MeshGrid<space1> Opposite(const MeshGrid<space1>& MG);
         
         Coordinate<space>& operator[](const int& i);
         const Coordinate<space>& operator[](const int& i) const;
 
         int find(const Coordinate<space>& v) const;
         Coordinate<space> reduce(const Coordinate<space>& v) const;
-
+        std::pair<int,int> get_shellindices(int shellNumber) const;
         const std::vector<Coordinate<space>>& get_mesh() const;
         const std::array<int,3>& get_Size() const;
         size_t get_TotalSize() const;

@@ -6,6 +6,7 @@
 #include <cassert>
 #include <iostream>
 #include <iomanip>
+#include <algorithm>
 #include <type_traits>
 
 //define mkl_complex16 to avoid incompatibilities
@@ -91,6 +92,11 @@ void Matrix_gemm(Matrix<T>& OutputMatrix, const T_& alpha, const Matrix<T>& Inpu
 //overloading writing matrix
 template<class T>
 std::ostream& operator<<(std::ostream& os, const Matrix<T>& m);
+
+template<class T>
+auto max(const Matrix<T>& M);
 #include "Matrix_definitions.hpp"
+
+
 
 #endif

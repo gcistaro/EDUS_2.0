@@ -114,7 +114,7 @@ template<class T, Space space>
 std::ostream& operator<<(std::ostream& os, const BlockMatrix<T, space>& m);
 
 template<typename T, Space space>
-double max(const BlockMatrix<T,space> m);
+auto max(const BlockMatrix<T,space>& m);
 
 template<typename T, Space space>
 void multiply(BlockMatrix<T,space>& Output, T Scalar, const BlockMatrix<T,space>& Input1, const BlockMatrix<T,space>& Input2, T Scalar2 );
