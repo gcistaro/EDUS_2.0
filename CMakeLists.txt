@@ -17,19 +17,19 @@ add_definitions(${GCC_FLAG} -DNEGF_PROFILE=ON)
 
 
 #compile sources as library INTERFACE (not a real library, just objects to be reused)
-include_directories(header/)
+include_directories(src/)
 
-set(_SOURCES header/ConvertUnits.cpp
-             header/StreamFile.cpp
-             header/Geometry/Matrix.cpp 
-             header/Geometry/Coordinate.cpp
-             header/Wannier/Wannier.cpp
-             header/Laser/Laser.cpp
-             header/fftPair/fftPair.cpp
-             header/Simulation/Simulation.cpp
-             header/core/profiler.cpp 
-             header/core/print_timing.cpp 
-             header/core/rt_graph.cpp
+set(_SOURCES src/ConvertUnits.cpp
+             src/StreamFile.cpp
+             src/Geometry/Matrix.cpp 
+             src/Geometry/Coordinate.cpp
+             src/Wannier/Wannier.cpp
+             src/Laser/Laser.cpp
+             src/fftPair/fftPair.cpp
+             src/Simulation/Simulation.cpp
+             src/core/profiler.cpp 
+             src/core/print_timing.cpp 
+             src/core/rt_graph.cpp
 			 )
 
 find_package(OpenMP)
@@ -56,9 +56,9 @@ add_executable(NEGF main.cpp)
 
 #headers
 target_precompile_headers(NEGF PUBLIC 
-	                 header/Geometry/Matrix.hpp
-	                 header/Geometry/Vector.hpp
- 			        header/mdContainers/mdContainers.hpp
+	                 src/Geometry/Matrix.hpp
+	                 src/Geometry/Vector.hpp
+ 			   src/mdContainers/mdContainers.hpp
  			 )
 
 #testing...

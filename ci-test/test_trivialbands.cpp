@@ -23,6 +23,6 @@ Rho[R] = |                              |
 int main()
 {            
     Simulation simulation("/home/gcistaro/NEGF/tb_models/2B_CosBand", 20.);
-    //assert dm has the expected form
+    //TODO: assert dm has the expected form
     print_timing(1);
 }
