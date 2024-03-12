@@ -43,9 +43,10 @@ class RungeKutta
         T AuxiliaryFunction;   //It has the function incremented by k, for the propagator in the 4 steps i.e. yn+h/2*k1
 	    T ReducingFunction;    //Adds up all the contributions to the function until the end of the step to get y(n+1) = yn+h/6*(k1+2*k2+2*k3+k4)
         T k;
-        double InitialTime;
-        double ResolutionTime;
-        double CurrentTime;
+        double InitialTime = 0.;
+        double ResolutionTime = 0.;
+        double CurrentTime = 0;
+        double FinalTime;
         //LambdaForSourceTerm EvaluateSourceFunction;
         //LambdaForInitialCondition EvaluateInitialCondition;
         std::function<void(T&)> EvaluateInitialCondition;
@@ -100,7 +101,6 @@ void RungeKutta<T>::Propagate()
 {
     //k1=f(tn,yn)
     EvaluateSourceFunction(k, CurrentTime, *Function);
-
     //k2=f(tn+h/2,yn+h/2*k1)
     SumWithProduct(AuxiliaryFunction, 1., *Function, ResolutionTime/2., k); 
     SumWithProduct(ReducingFunction, 1., *Function, ResolutionTime/6., k);  

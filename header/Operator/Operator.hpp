@@ -99,7 +99,6 @@ class Operator
         std::shared_ptr<MeshGrid<k>> FT_meshgrid_k;
         std::shared_ptr<MeshGrid<R>> FT_meshgrid_R;
         std::shared_ptr<MeshGrid<R>> FT_meshgrid_Rminus;
-        std::shared_ptr<MeshGrid<R>> MeshGrid_Null;
 
         static BandIndex bandindex;
         BandGauge bandgauge;
@@ -115,6 +114,7 @@ class Operator
     public:
         static BlockMatrix<T, k> temp_k;
         friend class Simulation;
+        static std::shared_ptr<MeshGrid<R>> MeshGrid_Null;
         static BlockMatrix<T,k> EigenVectors;
         static BlockMatrix<T,k> EigenVectors_dagger;
         Operator() : Operator_k(BlockMatrix<T,k>()), Operator_R(BlockMatrix<T,R>()){};
@@ -178,19 +178,11 @@ class Operator
                     exit(1);
                 }
             }
-            mdarray<double,2> bare_mg({1,3});
-            bare_mg.fill(0);
-            MeshGrid_Null = std::make_shared<MeshGrid<R>>(bare_mg, "Cartesian");
+            //mdarray<double,2> bare_mg({1,3});
+            //bare_mg.fill(0);
+            //MeshGrid_Null = std::make_shared<MeshGrid<R>>(bare_mg, "Cartesian");
             MeshGrid<R>::Calculate_ConvolutionIndex1(MG , *FT_meshgrid_R, *MeshGrid_Null);
-            std::cout << std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl;
-            std::cout << std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl;
-            std::cout << std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl;
-            std::cout << std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl;
             MeshGrid<R>::Calculate_ConvolutionIndex1(MG, *FT_meshgrid_Rminus, *MeshGrid_Null);
-            std::cout << std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl;
-            std::cout << std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl;
-            std::cout << std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl;
-            std::cout << std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl <<std::endl;
 
             //prove that is working
             std::ofstream MG1, MG2;
@@ -451,6 +443,10 @@ class Operator
 
 };
 
+
+
+
+
 template < typename T>
 BandIndex Operator<T>::bandindex;
 
@@ -463,5 +459,9 @@ BlockMatrix<T,k> Operator<T>::EigenVectors_dagger;
 
 template < typename T>
 BlockMatrix<T,k> Operator<T>::temp_k;
+
+template < typename T>
+std::shared_ptr<MeshGrid<R>> Operator<T>::MeshGrid_Null = std::make_shared<MeshGrid<R>>(MeshGrid<R>(std::vector<Coordinate<R>>({Coordinate<R>(0,0,0)})));
+
 
 #endif

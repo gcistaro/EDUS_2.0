@@ -115,6 +115,7 @@ void Envelope::set_InitialTime(const double& InitialTime_)
 
 Coordinate<k> Laser::operator()(const double& Time)
 {
+    //return Coordinate<k>(10.,10.,10.);//(Amplitude*envelope(Time)*PlaneWave(Time))*Polarization;
     return (Amplitude*envelope(Time)*PlaneWave(Time))*Polarization;
 }
 

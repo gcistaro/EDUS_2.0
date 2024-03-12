@@ -213,7 +213,6 @@ void BlockMatrix<T,space>::diagonalize(std::vector<mdarray<double,1>>& Eigenvalu
 {
     //assert(space_ == k);
     Eigenvectors.initialize(this->get_nblocks(), this->get_nrows(), this->get_ncols());
-    std::cout << "eigenvectors test : " << &(Eigenvectors[0](0,0)) << " "<< &(Eigenvectors(0,0,0)) << std::endl;
     Eigenvalues.resize(this->get_nblocks());
     for(int ik=0; ik<this->get_nblocks(); ik++){
         Eigenvalues[ik].initialize({this->get_nrows()});
@@ -243,7 +242,9 @@ template<class T, Space space>
 std::ostream& operator<<(std::ostream& os, const BlockMatrix<T, space>& m)
 {
     for(int i=0; i<m.get_nblocks(); i++){
-        std::cout << (*((const_cast<BlockMatrix<T,space>&>(m)).get_MeshGrid()))[i].get("LatticeVectors") << m[i] << std::endl;
+        os << (*((const_cast<BlockMatrix<T,space>&>(m)).get_MeshGrid()))[i].get("LatticeVectors") << m[i] << std::endl;
     }
     return os;
 }
+
+

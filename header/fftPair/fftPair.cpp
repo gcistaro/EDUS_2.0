@@ -12,7 +12,6 @@ FourierTransform::initialize
 {
     Array_x = &Array_x__;
     Array_k = &Array_k__;
-    std::cout << "INITIALIZE FFT. Array_k and Array_k__"<< &((*Array_k)(0,0)) << " " <<&((Array_k__)(0,0)); 
     howmany = Array_x->get_Size(0);
     TotalSize = Array_x->get_Size(1);
     SqrtTotalSize = std::sqrt(TotalSize);
@@ -63,7 +62,6 @@ void FourierTransform::fft(const int& sign)
 
 mdarray<std::complex<double>, 1> FourierTransform::dft(const std::vector<double>& Point, const int& sign) 
 {
-    std::cout << Point.size() << " " << dim << std::endl;
     assert(Point.size() == dim);
     mdarray<std::complex<double>, 1> FT({Array_x->get_Size()[0]});
     FT.fill(std::complex<double>(0.));
@@ -91,7 +89,6 @@ mdarray<std::complex<double>, 2> FourierTransform::dft(const std::vector<std::ve
         //copy to Array_k
         for(int h=0; h<howmany; ++h){
             (*Array_k)(h,ip) = FT(h);
-            //std::cout << "p: " << ip <<  "h " << h << "(*Array_k)(h,ip) " << (Array_k)(h,ip) << std::endl;
 	    }
     }
     return (*Array_k);

@@ -156,7 +156,7 @@ template<class T>
 std::ostream& operator<<(std::ostream& os, const Vector<T>& v)
 {
     for(int i=0; i<v.get_NumberOfElements(); i++){
-        os << std::setprecision(5) << std::setw(10) << v(i); 
+        os << std::setprecision(15) << std::setw(24) << v(i); 
     }
     os << std::endl;
     return os;

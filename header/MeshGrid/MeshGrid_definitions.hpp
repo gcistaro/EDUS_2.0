@@ -388,9 +388,9 @@ void MeshGrid<space>::Calculate_ConvolutionIndex1(const MeshGrid& m1, const Mesh
 
     #pragma omp parallel for schedule(dynamic)
     for(int iR1=0; iR1<m1.get_TotalSize(); iR1++){
-        if(!(iR1%200)){
-            std::cout << "Calculate_ci::: iR1: " << iR1 << " / " << m1.get_TotalSize() << std::endl;
-        }
+        //if(!(iR1%200)){
+        //    std::cout << "Calculate_ci::: iR1: " << iR1 << " / " << m1.get_TotalSize() << std::endl;
+        //}
         for(int iR3=0; iR3<m3.get_TotalSize(); iR3++){
             //std::cout << std::endl;
             //    std::cout << "iR1 << << iR3: " <<iR1 << " " << " " << iR3 << std::endl;
@@ -441,9 +441,9 @@ void MeshGrid<space>::Calculate_ConvolutionIndex2(const MeshGrid& m1, const Mesh
     //The following openmp statement has been tested in one case.
     #pragma omp parallel for schedule(dynamic)
     for(int iR1=0; iR1<m1.get_TotalSize(); iR1++){
-        if(!(iR1%200)){
-            std::cout << "Calculate_ci::: iR1: " << iR1 << " / " << m1.get_TotalSize() << std::endl;
-        }
+        //if(!(iR1%200)){
+        //    std::cout << "Calculate_ci::: iR1: " << iR1 << " / " << m1.get_TotalSize() << std::endl;
+        //}
         for(int iR2=0; iR2<m2.get_TotalSize(); iR2++){
         //    std::cout << std::endl;
         //        std::cout << "iR1 << << iR2: " <<iR1 << " " << " " << iR2 << std::endl;

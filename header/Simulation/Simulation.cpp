@@ -4,21 +4,20 @@ Simulation::Simulation(const std::string& FileName, const double& Radius)
 {
     PROFILE_START("Simulation::Initialize");
     material = Material(FileName);
-    laser.set_Intensity(0., Wcm2);//1.e+16, Wcm2);
+    
+    laser.set_Intensity(1.e+05, Wcm2);//1.e+16, Wcm2);
     laser.set_InitialTime(0., FemtoSeconds);
-    laser.set_Lambda(800, NanoMeters);
-    laser.set_NumberOfCycles(5);
-    laser.set_Polarization(Coordinate<k>(1,1,1));
+    laser.set_Lambda(3000, NanoMeters);
+    laser.set_NumberOfCycles(2);
+    laser.set_Polarization(Coordinate<k>(1,0,0));
     laser.print_info();
-    //Preparing grids and calculating eigenvectors
-    //std::array<int,3> Size = {20,20,1};
-    //auto MasterRgrid = std::make_shared<MeshGrid<R>>(Size);//MeshGrid<R>(Radius));//spherical grid for exponentially decaying DM
     auto MasterRgrid = std::make_shared<MeshGrid<R>>(Radius);//spherical grid for exponentially decaying DM
-    //get U and Udagger from Hamiltonian
+
     DensityMatrix.initialize_fft(*MasterRgrid, material.H.get_Operator_R().get_nrows());
 
     H = DensityMatrix; //to initialize dimensions
-    std::cout << std::endl;
+    //Calculate_Position();
+
     SettingUp_EigenSystem();
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
     auto& UkDagger = Operator<std::complex<double>>::EigenVectors_dagger;
@@ -38,7 +37,7 @@ Simulation::Simulation(const std::string& FileName, const double& Radius)
     os.close();
 
     RK_object.set_InitialTime(0.);
-    RK_object.set_ResolutionTime(0.01);
+    RK_object.set_ResolutionTime(0.4);
     print_recap();
     PROFILE_STOP("Simulation::Initialize");
     this->Propagate();
@@ -114,30 +113,43 @@ void Simulation::Calculate_TDHamiltonian(const double& time)
     auto& yR = material.r[1].get_Operator_R();
     auto& zR = material.r[2].get_Operator_R();
     auto las = laser(time).get("Cartesian");
-    HR.fill(0);
+    HR.fill(0.);
     //TODO: CREATE A COMMONG MESHGRID_NULL!!!! WASTE!!!!!!!!!!!!
-    mdarray<double,2> bare_mg({1,3});
-    bare_mg.fill(0);
-    auto MeshGrid_Null = std::make_shared<MeshGrid<R>>(bare_mg, "Cartesian");
+    //mdarray<double,2> bare_mg({1,3});
+    //bare_mg.fill(0);
+    //auto MeshGrid_Null = std::make_shared<MeshGrid<R>>(bare_mg, "Cartesian");
     ////////////////////////////////////////////////////////////
     auto& ci = MeshGrid<R>::ConvolutionIndex1[{HR.get_MeshGrid()->get_id(), 
                                               H0R.get_MeshGrid()->get_id(), 
-                                              MeshGrid_Null->get_id()}];
+                                              Operator<std::complex<double>>::MeshGrid_Null->get_id()}];
     if(ci.get_Size(0) == 0 ){
-        MeshGrid<R>::Calculate_ConvolutionIndex1(*(HR.get_MeshGrid()) , *(H0R.get_MeshGrid()), *MeshGrid_Null);
+        MeshGrid<R>::Calculate_ConvolutionIndex1(*(HR.get_MeshGrid()) , *(H0R.get_MeshGrid()), *(Operator<std::complex<double>>::MeshGrid_Null));
     }
 
-    //non-easy part
     for(int iblock=0; iblock<HR.get_nblocks(); ++iblock){
         for(int irow=0; irow<H.get_Operator_R().get_nrows(); ++irow){
             for(int icol=0; icol<H.get_Operator_R().get_ncols(); ++icol){
-                HR(iblock, irow, icol) = H0R(ci(iblock, 0), irow, icol);
-                                        + las[0]*xR(ci(iblock, 0), irow, icol);
-                                        + las[1]*yR(ci(iblock, 0), irow, icol);
+                HR(iblock, irow, icol) = H0R(ci(iblock, 0), irow, icol)
+                                        + las[0]*xR(ci(iblock, 0), irow, icol)
+                                        + las[1]*yR(ci(iblock, 0), irow, icol)
                                         + las[2]*zR(ci(iblock, 0), irow, icol);
             }
         }
     }
+
+/*
+    //non-easy part
+    for(int iblock=0; iblock<HR.get_nblocks(); ++iblock){
+        for(int irow=0; irow<H.get_Operator_R().get_nrows(); ++irow){
+            for(int icol=0; icol<H.get_Operator_R().get_ncols(); ++icol){
+                HR(iblock, irow, icol) = H0R(ci(iblock, 0), irow, icol)
+                                        + las[0]*xR(ci(iblock, 0), irow, icol)
+                                        + las[1]*yR(ci(iblock, 0), irow, icol)
+                                        + las[2]*zR(ci(iblock, 0), irow, icol);
+            }
+        }
+    }
+/*
     //R operator acts as R-R'rho(R')
     for(int iblock=0; iblock<H0R.get_nblocks(); ++iblock){
         auto& R = HR.get_MeshGrid()->get_mesh()[iblock].get("Cartesian");
@@ -147,12 +159,17 @@ void Simulation::Calculate_TDHamiltonian(const double& time)
             HR(iblock, irow, irow) += las[2]*R[2];
         }
     }
+    */
 }
 
 void Simulation::Propagate()
 {
-    for(int i=0; i<10; i++){
-        //std::cout << "i " << i << std::endl;
+    std::ofstream Pop, Las, os_Pos;
+    Pop.open("Population.txt");
+    Las.open("Laser.txt");
+    os_Pos.open("Position.txt");
+    for(int i=0; i<30000; i++){
+        if(i%50 == 0) std::cout << "i " << i << std::endl;
         PROFILE("RK_Propagate");
         DensityMatrix.go_to_k();
         DensityMatrix.go_to_bloch();
@@ -163,20 +180,23 @@ void Simulation::Propagate()
                 Population[ibnd] += DensityMatrix.get_Operator_k()[ik](ibnd,ibnd);
             }
         }
-        std::cout << std::endl << std::endl << std::endl << "POPULATION: ";
-        for(int ibnd=0; ibnd<Population.size(); ibnd++){
-            std::cout << Population[ibnd] << ' ';
-        }
+        Population[0] = 1.-Population[0]/double(DensityMatrix.get_Operator_k().get_MeshGrid()->get_TotalSize());
+        Population[1] /= double(DensityMatrix.get_Operator_k().get_MeshGrid()->get_TotalSize());
+        
+        Las << laser(i*RK_object.get_ResolutionTime()).get("Cartesian");
 
-        //std::cout << "Density Matrix R : " << DensityMatrix.get_Operator_R() << std::endl;
-        //std::cout << std::endl;
-        //exit(0);
-        //std::cout << i << std::endl;
+        for(int ibnd=0; ibnd<Population.size(); ibnd++){
+            Pop << std::setw(20) << std::setprecision(10) << Population[ibnd].real();
+            Pop << ' ';
+        }
+        Pop << std::endl;
+    
         DensityMatrix.go_to_wannier();
         DensityMatrix.go_to_R();
         RK_object.Propagate();
-        std::cout << std::endl << std::endl;
     }
+    Pop.close();
+    Las.close();
 }
 
 
@@ -199,3 +219,44 @@ void Simulation::print_recap()
     laser.print_info();
 }
 
+/*
+void Simulation::Calculate_Position()
+{
+    //this function is to calculate position = r + R
+    Position[0] = DensityMatrix;
+    Position[1] = DensityMatrix;
+    Position[2] = DensityMatrix;
+    auto& xR = Position[0].get_Operator_R();
+    auto& yR = Position[1].get_Operator_R();
+    auto& zR = Position[2].get_Operator_R();
+    auto& H0R = material.H.get_Operator_R();
+
+    auto& ci = MeshGrid<R>::ConvolutionIndex1[{xR.get_MeshGrid()->get_id(), 
+                                              H0R.get_MeshGrid()->get_id(), 
+                                              Operator<std::complex<double>>::MeshGrid_Null->get_id()}];
+    if(ci.get_Size(0) == 0 ){
+        MeshGrid<R>::Calculate_ConvolutionIndex1(*(xR.get_MeshGrid()) , *(H0R.get_MeshGrid()), *(Operator<std::complex<double>>::MeshGrid_Null));
+    }
+    for(int iblock=0; iblock<xR.get_nblocks(); ++iblock){
+        auto& R = xR.get_MeshGrid()->get_mesh()[iblock].get("Cartesian");
+        for(int irow=0; irow<H.get_Operator_R().get_nrows(); ++irow){
+            for(int icol=0; icol<H.get_Operator_R().get_ncols(); ++icol){
+                xR(iblock, irow, icol) = material.r[0].get_Operator_R()(ci(iblock, 0), irow, icol); 
+                yR(iblock, irow, icol) = material.r[1].get_Operator_R()(ci(iblock, 0), irow, icol); 
+                zR(iblock, irow, icol) = material.r[2].get_Operator_R()(ci(iblock, 0), irow, icol); 
+                if(irow == icol){
+                    xR(iblock, irow, icol) += R[0];
+                    yR(iblock, irow, icol) += R[1];
+                    zR(iblock, irow, icol) += R[2];
+                }
+            }
+        }
+    }
+    std::ofstream os;
+    os.open("PositionOperator.txt");
+    os << xR;
+    os << yR;
+    //Pos << zR;
+    os.close();
+}
+*/
