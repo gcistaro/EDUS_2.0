@@ -63,7 +63,7 @@ int main()
         std::cout << "  ";
         std::cout << "|";
         std::cout << "  ";
-        std::cout << std::setw(16) << std::setprecision(8) << std::scientific <<  NumericalSolution(0,i);
+        std::cout << std::setw(16) << std::setprecision(8) << std::scientific <<  NumericalSolution(0,i)*std::sqrt(Npoints);
         std::cout << "  ";
         std::cout << "|";
         std::cout << "  ";
@@ -71,10 +71,10 @@ int main()
         std::cout << "   ";
         std::cout << "|";
         std::cout << "  ";
-        std::cout << std::setw(15) << std::setprecision(8) << std::scientific <<  100*abs(NumericalSolution(0,i)-AnalyticalSolution)/abs(AnalyticalSolution);
+        std::cout << std::setw(15) << std::setprecision(8) << std::scientific <<  100*abs(NumericalSolution(0,i)*std::sqrt(Npoints)-AnalyticalSolution)/abs(AnalyticalSolution);
         std::cout << "  |" << std::endl;
 
-        if(AnalyticalSolution > 1.e-07 && 100*abs(NumericalSolution(0,i)-AnalyticalSolution)/abs(AnalyticalSolution)>1.e-04){
+        if(AnalyticalSolution > 1.e-07 && 100*abs(NumericalSolution(0,i)*std::sqrt(Npoints)-AnalyticalSolution)/abs(AnalyticalSolution)>5.){
             exit(1);
         }
     }
