@@ -9,7 +9,7 @@ Simulation::Simulation(const std::string& FileName, const double& Radius)
     laser.set_InitialTime(0., FemtoSeconds);
     laser.set_Lambda(3000, NanoMeters);
     laser.set_NumberOfCycles(2);
-    laser.set_Polarization(Coordinate<k>(1,0,0));
+    laser.set_Polarization(Coordinate<k>(0,1,0));
     laser.print_info();
     auto MasterRgrid = std::make_shared<MeshGrid<R>>(Radius);//spherical grid for exponentially decaying DM
 
@@ -212,15 +212,26 @@ void Simulation::Propagate()
 void Simulation::Calculate_Velocity()
 {
     for(int ix : {0, 1, 2}){
-        Velocity[ix] = DensityMatrix;
+        Velocity[ix].get_Operator_R() = DensityMatrix.get_Operator_R();
         Velocity[ix].get_Operator_R().fill(0.);
         commutator(Velocity[ix].get_Operator_R(), -im, material.r[ix].get_Operator_R(), material.H.get_Operator_R());
         //part with R
+        auto& ci = MeshGrid<R>::ConvolutionIndex1[{Velocity[ix].get_Operator_R().get_MeshGrid()->get_id(), 
+                                              material.H.get_Operator_R().get_MeshGrid()->get_id(), 
+                                              Operator<std::complex<double>>::MeshGrid_Null->get_id()}];
+        if(ci.get_Size(0) == 0 ){
+            MeshGrid<R>::Calculate_ConvolutionIndex1(*(Velocity[ix].get_Operator_R().get_MeshGrid()), 
+                                                     *(material.H.get_Operator_R().get_MeshGrid()), 
+                                                     *(Operator<std::complex<double>>::MeshGrid_Null));
+        }
+
         for(int iblock=0; iblock<Velocity[ix].get_Operator_R().get_nblocks(); ++iblock){
             auto& R =(*(Velocity[ix].get_Operator_R().get_MeshGrid()))[iblock].get("Cartesian"); 
             for(int irow=0; irow<Velocity[ix].get_Operator_R().get_nrows(); ++irow){
                 for(int icol=0; icol<Velocity[ix].get_Operator_R().get_ncols(); ++icol){
-                    Velocity[ix].get_Operator_R()(iblock, irow, icol) += -im*R[ix]*material.H.get_Operator_R()(iblock, irow, icol);
+                    if(ci(iblock, 0) != -1){
+                        Velocity[ix].get_Operator_R()(iblock, irow, icol) += -im*R[ix]*material.H.get_Operator_R()[ci(iblock,0)](irow, icol);
+                    }
                 }
             }
         }

@@ -195,7 +195,7 @@ template<typename T_, typename U>
 void commutator(BlockMatrix<T_,R>& Output, U Scalar, const BlockMatrix<T_,R>& Input1, const BlockMatrix<T_,R>& Input2 )
 {
     convolution1(Output, Scalar, Input1, Input2);
-    convolution1(Output, Scalar, Input2, Input1);
+    convolution1(Output, -Scalar, Input2, Input1);
 }
 
 

@@ -28,7 +28,8 @@ std::function<void(BlockMatrix<std::complex<double>, R>&, double const&, BlockMa
 
     Calculate_TDHamiltonian(time);
     Output.fill(0.*im);
-    commutator(Output, -im, H.get_Operator_R(), Input);
+    convolution1(Output, -im, H.get_Operator_R(), Input);
+    convolution1(Output, +im, Input, H.get_Operator_R() );
     
     //R operator 
     for(int iR=0; iR<Output.get_nblocks(); ++iR){
