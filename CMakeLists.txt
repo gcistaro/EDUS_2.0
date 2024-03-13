@@ -16,8 +16,30 @@ set(GCC_FLAG "-fconcepts -g")
 add_definitions(${GCC_FLAG} -DNEGF_PROFILE=ON)
 
 
+#git version
+# check if git command exists
+find_program(GIT_EXE NAMES git)
+
+# generate version header
+string(TIMESTAMP NEGF_TIMESTAMP "%Y-%m-%d %H:%M:%S")
+if(DEFINED GIT_EXE AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
+  execute_process(COMMAND git rev-parse HEAD
+                  OUTPUT_VARIABLE NEGF_SHA
+                  WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+                  ERROR_QUIET
+                  OUTPUT_STRIP_TRAILING_WHITESPACE)
+  execute_process(COMMAND git describe --all
+                  OUTPUT_VARIABLE NEGF_GIT_BRANCH
+                  WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+                  ERROR_QUIET
+                  OUTPUT_STRIP_TRAILING_WHITESPACE)
+  message(STATUS "git hash ${SIRIUS_SHA}")
+endif()
+
+configure_file("${PROJECT_SOURCE_DIR}/src/core/githash.h.in" "${PROJECT_SOURCE_DIR}/src/core/githash.hpp" @ONLY)
+
 #compile sources as library INTERFACE (not a real library, just objects to be reused)
-include_directories(src/)
+include_directories("${PROJECT_SOURCE_DIR}/src/")
 
 set(_SOURCES src/ConvertUnits.cpp
              src/StreamFile.cpp

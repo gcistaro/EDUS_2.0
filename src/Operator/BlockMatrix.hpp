@@ -94,7 +94,10 @@ class BlockMatrix{
         friend void convolution1(BlockMatrix<T_,space_>& Output, U Scalar, const BlockMatrix<T_,space_>& Input1, const BlockMatrix<T_,space_>& Input2 );
         template<typename T_, Space space_, typename U>
         friend void convolution2(BlockMatrix<T_,space_>& Output, U Scalar, const BlockMatrix<T_,space_>& Input1, const BlockMatrix<T_,space_>& Input2 );
-        
+
+        template<typename T_, typename U>
+        friend void commutator(BlockMatrix<T_,R>& Output, U Scalar, const BlockMatrix<T_,R>& Input1, const BlockMatrix<T_,R>& Input2 );
+
         void diagonalize(std::vector<mdarray<double,1>>& Eigenvalues,
                          BlockMatrix<std::complex<double>,space>& Eigenvectors) const;
 

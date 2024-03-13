@@ -1,0 +1,8 @@
+#ifndef GIT_HASH
+#define GIT_HASH 
+const char* const git_hash = "@NEGF_SHA@";
+const char* const git_branchname = "@NEGF_GIT_BRANCH@";
+const char* const build_date = "@NEGF_TIMESTAMP@";
+#endif
+
+

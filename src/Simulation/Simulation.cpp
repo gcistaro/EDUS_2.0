@@ -19,6 +19,7 @@ Simulation::Simulation(const std::string& FileName, const double& Radius)
     //Calculate_Position();
 
     SettingUp_EigenSystem();
+    Calculate_Velocity();
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
     auto& UkDagger = Operator<std::complex<double>>::EigenVectors_dagger;
    
@@ -114,11 +115,7 @@ void Simulation::Calculate_TDHamiltonian(const double& time)
     auto& zR = material.r[2].get_Operator_R();
     auto las = laser(time).get("Cartesian");
     HR.fill(0.);
-    //TODO: CREATE A COMMONG MESHGRID_NULL!!!! WASTE!!!!!!!!!!!!
-    //mdarray<double,2> bare_mg({1,3});
-    //bare_mg.fill(0);
-    //auto MeshGrid_Null = std::make_shared<MeshGrid<R>>(bare_mg, "Cartesian");
-    ////////////////////////////////////////////////////////////
+
     auto& ci = MeshGrid<R>::ConvolutionIndex1[{HR.get_MeshGrid()->get_id(), 
                                               H0R.get_MeshGrid()->get_id(), 
                                               Operator<std::complex<double>>::MeshGrid_Null->get_id()}];
@@ -130,9 +127,9 @@ void Simulation::Calculate_TDHamiltonian(const double& time)
         for(int irow=0; irow<H.get_Operator_R().get_nrows(); ++irow){
             for(int icol=0; icol<H.get_Operator_R().get_ncols(); ++icol){
                 HR(iblock, irow, icol) = H0R(ci(iblock, 0), irow, icol)
-                                        + las[0]*xR(ci(iblock, 0), irow, icol)
-                                        + las[1]*yR(ci(iblock, 0), irow, icol)
-                                        + las[2]*zR(ci(iblock, 0), irow, icol);
+                                       + las[0]*xR(ci(iblock, 0), irow, icol)
+                                       + las[1]*yR(ci(iblock, 0), irow, icol)
+                                       + las[2]*zR(ci(iblock, 0), irow, icol);
             }
         }
     }
@@ -190,13 +187,44 @@ void Simulation::Propagate()
             Pop << ' ';
         }
         Pop << std::endl;
-    
+
+        std::array<std::complex<double>, 3> v;
+        for(auto ix : {0, 1, 2}){
+            v[ix] = Trace(Velocity[ix].get_Operator_R(), DensityMatrix.get_Operator_R());
+        }
+        os_Pos << std::setw(20) << std::setprecision(8) << v[0].real();
+        os_Pos << std::setw(20) << std::setprecision(8) << v[0].imag();
+        os_Pos << std::setw(20) << std::setprecision(8) << v[1].real();
+        os_Pos << std::setw(20) << std::setprecision(8) << v[1].imag();
+        os_Pos << std::setw(20) << std::setprecision(8) << v[2].real();
+        os_Pos << std::setw(20) << std::setprecision(8) << v[2].imag();
+        os_Pos << std::endl;
+
         DensityMatrix.go_to_wannier();
         DensityMatrix.go_to_R();
         RK_object.Propagate();
     }
     Pop.close();
     Las.close();
+    os_Pos.close();
+}
+
+void Simulation::Calculate_Velocity()
+{
+    for(int ix : {0, 1, 2}){
+        Velocity[ix] = DensityMatrix;
+        Velocity[ix].get_Operator_R().fill(0.);
+        commutator(Velocity[ix].get_Operator_R(), -im, material.r[ix].get_Operator_R(), material.H.get_Operator_R());
+        //part with R
+        for(int iblock=0; iblock<Velocity[ix].get_Operator_R().get_nblocks(); ++iblock){
+            auto& R =(*(Velocity[ix].get_Operator_R().get_MeshGrid()))[iblock].get("Cartesian"); 
+            for(int irow=0; irow<Velocity[ix].get_Operator_R().get_nrows(); ++irow){
+                for(int icol=0; icol<Velocity[ix].get_Operator_R().get_ncols(); ++icol){
+                    Velocity[ix].get_Operator_R()(iblock, irow, icol) += -im*R[ix]*material.H.get_Operator_R()(iblock, irow, icol);
+                }
+            }
+        }
+    }
 }
 
 
@@ -218,45 +246,3 @@ void Simulation::print_recap()
     std::cout <<  std::setw(7) << DensityMatrix.get_Operator_k().get_MeshGrid()->get_mesh().size() << "|"<< std::endl;
     laser.print_info();
 }
-
-/*
-void Simulation::Calculate_Position()
-{
-    //this function is to calculate position = r + R
-    Position[0] = DensityMatrix;
-    Position[1] = DensityMatrix;
-    Position[2] = DensityMatrix;
-    auto& xR = Position[0].get_Operator_R();
-    auto& yR = Position[1].get_Operator_R();
-    auto& zR = Position[2].get_Operator_R();
-    auto& H0R = material.H.get_Operator_R();
-
-    auto& ci = MeshGrid<R>::ConvolutionIndex1[{xR.get_MeshGrid()->get_id(), 
-                                              H0R.get_MeshGrid()->get_id(), 
-                                              Operator<std::complex<double>>::MeshGrid_Null->get_id()}];
-    if(ci.get_Size(0) == 0 ){
-        MeshGrid<R>::Calculate_ConvolutionIndex1(*(xR.get_MeshGrid()) , *(H0R.get_MeshGrid()), *(Operator<std::complex<double>>::MeshGrid_Null));
-    }
-    for(int iblock=0; iblock<xR.get_nblocks(); ++iblock){
-        auto& R = xR.get_MeshGrid()->get_mesh()[iblock].get("Cartesian");
-        for(int irow=0; irow<H.get_Operator_R().get_nrows(); ++irow){
-            for(int icol=0; icol<H.get_Operator_R().get_ncols(); ++icol){
-                xR(iblock, irow, icol) = material.r[0].get_Operator_R()(ci(iblock, 0), irow, icol); 
-                yR(iblock, irow, icol) = material.r[1].get_Operator_R()(ci(iblock, 0), irow, icol); 
-                zR(iblock, irow, icol) = material.r[2].get_Operator_R()(ci(iblock, 0), irow, icol); 
-                if(irow == icol){
-                    xR(iblock, irow, icol) += R[0];
-                    yR(iblock, irow, icol) += R[1];
-                    zR(iblock, irow, icol) += R[2];
-                }
-            }
-        }
-    }
-    std::ofstream os;
-    os.open("PositionOperator.txt");
-    os << xR;
-    os << yR;
-    //Pos << zR;
-    os.close();
-}
-*/
