@@ -61,6 +61,7 @@ class Wave{
         double get_Lambda();
         double get_InitialTime();
         double get_Phase();
+        friend class Laser;
 };
 
 
@@ -74,6 +75,7 @@ class Envelope{
         double operator()(const double& time);
         void set_Duration(const double& Duration_);
         void set_InitialTime(const double& InitialTime_);
+        friend class Laser;
 };
 
 
@@ -93,7 +95,7 @@ class Laser{
     public:
         Laser(){};
         Coordinate<k> operator()(const double& Time);
-        
+        Coordinate<k> VectorPotential(const double& Time);
         //setters
         //only one of the following three calculates the others
         void set_Period(const double& Period_, const Unit& InputUnit);

@@ -106,12 +106,22 @@ add_executable(fft-many_test ci-test/test_fft_many.cpp)
 #find_package(fftw3 REQUIRED)
 target_link_libraries(fft-many_test PUBLIC fftw3)
 
+#TrivialBands 
+add_executable(TrivialH_test ci-test/test_TrivialHamiltonian.cpp)
+#find_package(fftw3 REQUIRED)
+target_link_libraries(TrivialH_test PUBLIC fftw3)
+
+#Noneq propagation 
+add_executable(NonEQ ci-test/test_NEQpop.cpp)
+#find_package(fftw3 REQUIRED)
+target_link_libraries(NonEQ PUBLIC fftw3)
+
 #simulation 
 add_executable(simulation_test ci-test/test_simulation.cpp)
 #find_package(fftw3 REQUIRED)
 target_link_libraries(simulation_test PUBLIC fftw3)
 
-#simulation 
+#Coulomb 
 add_executable(Coulomb_test ci-test/test_Coulomb.cpp)
 #find_package(fftw3 REQUIRED)
 target_link_libraries(Coulomb_test PUBLIC fftw3)
@@ -129,6 +139,7 @@ add_test(NAME Eigen_test COMMAND Eigen_test)
 add_test(NAME RK_test COMMAND RK_test)
 add_test(NAME fft_test COMMAND fft_test)
 add_test(NAME fft-many_test COMMAND fft-many_test)
+add_test(NAME TrivialH_test COMMAND TrivialH_test)
 add_test(NAME simulation_test COMMAND simulation_test)
 add_test(NAME Coulomb_test COMMAND Coulomb_test)
 add_test(NAME Bandstructure_test COMMAND 

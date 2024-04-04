@@ -8,14 +8,10 @@
 
 /*
     Equations implemented here: 
-    dy/dt= f(t,y) with y(t0) = y0  
-  k1=f(tn,yn)
-  k2=f(tn+h/2, yn+h/2*k1)
-  k3=f(tn+h/2, yn+h/2*k2)
-  k4=f(tn+h, yn+h*k3)
-  the calculation of k- is defined as EvaluateSourceTerm.
+    dy/dt= (A+B)y with y(t0) = y0  
 
-  y(n+1) = yn+h/6*(k1+2*k2+2*k3+k4)
+    The time propagation is described by
+    exp(f dt)
 
   f-> source term
 */
@@ -69,8 +65,6 @@ class RungeKutta
         const double& get_ResolutionTime() const {return ResolutionTime;};
         void set_InitialTime(const double& InitialTime_){InitialTime = InitialTime_;}
         void set_ResolutionTime(const double& ResolutionTime_){ResolutionTime = ResolutionTime_;}
-        void set_EvaluateInitialCondition(const std::function<void(T&)>& EvaluateInitialCondition_);
-
 };
 
 
@@ -96,35 +90,15 @@ void RungeKutta<T>::initialize(T& Function_, const std::function<void(T&)>& Eval
     k = *Function;  
 }
 
-template<typename T>
-void RungeKutta<T>::set_EvaluateInitialCondition(const std::function<void(T&)>& EvaluateInitialCondition_)
-{
-    EvaluateInitialCondition = EvaluateInitialCondition_;
-}
 
 
 template<typename T>
 void RungeKutta<T>::Propagate()
 {
-    //k1=f(tn,yn)
+    //k=f(tn,yn)
     EvaluateSourceFunction(k, CurrentTime, *Function);
-    //k2=f(tn+h/2,yn+h/2*k1)
-    SumWithProduct(AuxiliaryFunction, 1., *Function, ResolutionTime/2., k); 
-    SumWithProduct(ReducingFunction, 1., *Function, ResolutionTime/6., k);  
-    EvaluateSourceFunction(k, CurrentTime+ResolutionTime/2., AuxiliaryFunction);
 
-    //k3=f(tn+h/2, yn+h/2*k2)
-    SumWithProduct(AuxiliaryFunction, 1., *Function, ResolutionTime/2., k);
-    SumWithProduct(ReducingFunction, 1., ReducingFunction, ResolutionTime/3., k);   
-    EvaluateSourceFunction(k,CurrentTime+ResolutionTime/2., AuxiliaryFunction); 
 
-    //k4=f(tn+h,yn+h*k3)
-    SumWithProduct(AuxiliaryFunction, 1., *Function, ResolutionTime, k);
-    SumWithProduct(ReducingFunction, 1., ReducingFunction, ResolutionTime/3., k);  
-    EvaluateSourceFunction(k, CurrentTime+ResolutionTime, AuxiliaryFunction); 
-
-    //compute final function
-    SumWithProduct(*Function, 1., ReducingFunction, ResolutionTime/6., k);  
     CurrentTime += ResolutionTime;
 }
 

@@ -1,25 +1,3 @@
-std::function<void(BlockMatrix<std::complex<double>, R>&)> InitialCondition = [&](BlockMatrix<std::complex<double>, R>& DM)
-{
-    PROFILE("RK::InitialCondition");
-    //DM.Operator_k.initialize(Uk.get_nblocks(), Uk.get_nrows(), Uk.get_ncols());
-    DensityMatrix.Operator_k.fill(0.);
-    //filling matrix in Bloch gauge
-    for(int ik=0; ik<Uk.get_nblocks(); ++ik){
-        for(int iband=0; iband<Uk.get_nrows(); iband++){
-            if(this->Band_energies[ik](iband) < FermiEnergy-threshold){
-                DensityMatrix.Operator_k(ik, iband, iband) = 1.;
-            }
-        }
-    }
-    DensityMatrix.lock_gauge(bloch);
-    DensityMatrix.lock_space(k);
-    DensityMatrix.go_to_wannier();
-    DensityMatrix.go_to_R();
-
-
-};
-
-
 std::function<void(BlockMatrix<std::complex<double>, R>&, double const&, BlockMatrix<std::complex<double>, R> const&)> SourceTerm = 
 [&](BlockMatrix<std::complex<double>, R>& Output, const double& time, const BlockMatrix<std::complex<double>, R>& Input)
 {
@@ -28,17 +6,26 @@ std::function<void(BlockMatrix<std::complex<double>, R>&, double const&, BlockMa
 
     Calculate_TDHamiltonian(time);
     Output.fill(0.*im);
-    convolution1(Output, -im, H.get_Operator_R(), Input);
-    convolution1(Output, +im, Input, H.get_Operator_R() );
+    commutator(Output, -im, H.get_Operator_R(), Input);
+    //convolution1(Output, -im, H.get_Operator_R(), Input);
+    //convolution1(Output, +im, Input, H.get_Operator_R() );
     
     //R operator 
     for(int iR=0; iR<Output.get_nblocks(); ++iR){
         auto& R = (*(Output.get_MeshGrid()))[iR].get("Cartesian");
         auto las = laser(time).get("Cartesian");
         auto DotProduct = las[0]*R[0] + las[1]*R[1] + las[2]*R[2];
+        //auto R = (*(Output.get_MeshGrid()))[iR].get("LatticeVectors");
+        //auto R0 = R[0]-20./2.;
+        //auto R1 = R[1]-20./2.;
+        //auto R_ = Coordinate<k>(R0,R1,0,"LatticeVectors");
+        //auto& RR = R_.get("Cartesian");
+        //auto DotProduct = las[0]*RR[0] + las[1]*RR[1] + las[2]*RR[2];
+
+
         for(int irow=0; irow<Output.get_nrows(); ++irow){
             for(int icol=0; icol<Output.get_ncols(); ++icol){
-                Output(iR,irow, icol) += im*Input(iR,irow, icol)*DotProduct;
+                Output(iR,irow, icol) += -im*Input(iR,irow, icol)*DotProduct;
             }
         }
     }

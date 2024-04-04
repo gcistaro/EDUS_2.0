@@ -9,9 +9,11 @@ Simulation::Simulation(const std::string& FileName, const double& Radius)
     laser.set_InitialTime(0., FemtoSeconds);
     laser.set_Lambda(3000, NanoMeters);
     laser.set_NumberOfCycles(2);
-    laser.set_Polarization(Coordinate<k>(0,1,0));
-    laser.print_info();
-    auto MasterRgrid = std::make_shared<MeshGrid<R>>(Radius);//spherical grid for exponentially decaying DM
+    laser.set_Polarization(Coordinate<k>(1,0,0));
+
+    //auto MasterRgrid = std::make_shared<MeshGrid<R>>(Radius);//spherical grid for exponentially decaying DM
+    //auto MasterRgrid = std::make_shared<MeshGrid<R>>(std::array<int,3>{30,30,1});//spherical grid for exponentially decaying DM
+    auto MasterRgrid = std::make_shared<MeshGrid<R>>(std::array<int,3>{5,5,1});//spherical grid for exponentially decaying DM
 
     DensityMatrix.initialize_fft(*MasterRgrid, material.H.get_Operator_R().get_nrows());
 
@@ -23,7 +25,8 @@ Simulation::Simulation(const std::string& FileName, const double& Radius)
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
     auto& UkDagger = Operator<std::complex<double>>::EigenVectors_dagger;
    
-    #include "Functionals.hpp"
+    #include "Functional_InitialCondition.hpp"
+    #include "Functional_SourceTerm.hpp"
     //RK_object.initialize(DensityMatrix.get_Operator_k(), 
     //                    InitialCondition_k, SourceTerm_k);
     RK_object.initialize(DensityMatrix.get_Operator_R(), 
@@ -38,10 +41,10 @@ Simulation::Simulation(const std::string& FileName, const double& Radius)
     os.close();
 
     RK_object.set_InitialTime(0.);
-    RK_object.set_ResolutionTime(0.4);
+    RK_object.set_ResolutionTime(0.01);
     print_recap();
     PROFILE_STOP("Simulation::Initialize");
-    this->Propagate();
+    //this->Propagate();
 }
 
 void Simulation::SettingUp_EigenSystem()
@@ -116,103 +119,79 @@ void Simulation::Calculate_TDHamiltonian(const double& time)
     auto las = laser(time).get("Cartesian");
     HR.fill(0.);
 
-    auto& ci = MeshGrid<R>::ConvolutionIndex1[{HR.get_MeshGrid()->get_id(), 
-                                              H0R.get_MeshGrid()->get_id(), 
+    auto& ci = MeshGrid<R>::ConvolutionIndex1[{H0R.get_MeshGrid()->get_id(), 
+                                              HR.get_MeshGrid()->get_id(), 
                                               Operator<std::complex<double>>::MeshGrid_Null->get_id()}];
     if(ci.get_Size(0) == 0 ){
-        MeshGrid<R>::Calculate_ConvolutionIndex1(*(HR.get_MeshGrid()) , *(H0R.get_MeshGrid()), *(Operator<std::complex<double>>::MeshGrid_Null));
+        MeshGrid<R>::Calculate_ConvolutionIndex1( *(H0R.get_MeshGrid()), *(HR.get_MeshGrid()), *(Operator<std::complex<double>>::MeshGrid_Null));
     }
 
-    for(int iblock=0; iblock<HR.get_nblocks(); ++iblock){
-        for(int irow=0; irow<H.get_Operator_R().get_nrows(); ++irow){
-            for(int icol=0; icol<H.get_Operator_R().get_ncols(); ++icol){
-                HR(iblock, irow, icol) = H0R(ci(iblock, 0), irow, icol)
-                                       + las[0]*xR(ci(iblock, 0), irow, icol)
-                                       + las[1]*yR(ci(iblock, 0), irow, icol)
-                                       + las[2]*zR(ci(iblock, 0), irow, icol);
-            }
-        }
-    }
-
-/*
-    //non-easy part
-    for(int iblock=0; iblock<HR.get_nblocks(); ++iblock){
-        for(int irow=0; irow<H.get_Operator_R().get_nrows(); ++irow){
-            for(int icol=0; icol<H.get_Operator_R().get_ncols(); ++icol){
-                HR(iblock, irow, icol) = H0R(ci(iblock, 0), irow, icol)
-                                        + las[0]*xR(ci(iblock, 0), irow, icol)
-                                        + las[1]*yR(ci(iblock, 0), irow, icol)
-                                        + las[2]*zR(ci(iblock, 0), irow, icol);
-            }
-        }
-    }
-/*
-    //R operator acts as R-R'rho(R')
     for(int iblock=0; iblock<H0R.get_nblocks(); ++iblock){
-        auto& R = HR.get_MeshGrid()->get_mesh()[iblock].get("Cartesian");
-        for(int irow=0; irow<H.get_Operator_R().get_nrows(); ++irow){
-            HR(iblock, irow, irow) += las[0]*R[0];
-            HR(iblock, irow, irow) += las[1]*R[1];
-            HR(iblock, irow, irow) += las[2]*R[2];
+        for(int irow=0; irow<H0R.get_nrows(); ++irow){
+            for(int icol=0; icol<H0R.get_ncols(); ++icol){
+                HR(ci(iblock, 0), irow, icol) = H0R(iblock, irow, icol)
+                                       + las[0]*xR(iblock, irow, icol)
+                                       + las[1]*yR(iblock, irow, icol)
+                                       + las[2]*zR(iblock, irow, icol);
+            }
         }
     }
-    */
 }
 
 void Simulation::Propagate()
 {
     std::ofstream Pop, Las, os_Pos;
-    Pop.open("Population.txt");
-    Las.open("Laser.txt");
-    os_Pos.open("Position.txt");
-    for(int i=0; i<30000; i++){
-        if(i%50 == 0) std::cout << "i " << i << std::endl;
+    //Pop.open("Population.txt");
+    //Las.open("Laser.txt");
+    //os_Pos.open("Position.txt");
+
         PROFILE("RK_Propagate");
-        DensityMatrix.go_to_k();
-        DensityMatrix.go_to_bloch();
+        //DensityMatrix.go_to_k();
+        //DensityMatrix.go_to_bloch();
+        //
+        //std::vector<std::complex<double>> Population(DensityMatrix.get_Operator_k().get_nrows(), 0.);
+        //for(int ik=0; ik<DensityMatrix.get_Operator_k().get_nblocks(); ik++){
+        //    for(int ibnd=0; ibnd<Population.size(); ibnd++){
+        //        Population[ibnd] += DensityMatrix.get_Operator_k()[ik](ibnd,ibnd);
+        //    }
+        //}
+        //Population[0] = 1.-Population[0]/double(DensityMatrix.get_Operator_k().get_MeshGrid()->get_TotalSize());
+        //Population[1] /= double(DensityMatrix.get_Operator_k().get_MeshGrid()->get_TotalSize());
         
-        std::vector<std::complex<double>> Population(DensityMatrix.get_Operator_k().get_nrows(), 0.);
-        for(int ik=0; ik<DensityMatrix.get_Operator_k().get_nblocks(); ik++){
-            for(int ibnd=0; ibnd<Population.size(); ibnd++){
-                Population[ibnd] += DensityMatrix.get_Operator_k()[ik](ibnd,ibnd);
-            }
-        }
-        Population[0] = 1.-Population[0]/double(DensityMatrix.get_Operator_k().get_MeshGrid()->get_TotalSize());
-        Population[1] /= double(DensityMatrix.get_Operator_k().get_MeshGrid()->get_TotalSize());
-        
-        Las << laser(i*RK_object.get_ResolutionTime()).get("Cartesian");
+        //Las << laser(i*RK_object.get_ResolutionTime()).get("Cartesian");
 
-        for(int ibnd=0; ibnd<Population.size(); ibnd++){
-            Pop << std::setw(20) << std::setprecision(10) << Population[ibnd].real();
-            Pop << ' ';
-        }
-        Pop << std::endl;
+        //for(int ibnd=0; ibnd<Population.size(); ibnd++){
+        //    Pop << std::setw(20) << std::setprecision(10) << Population[ibnd].real();
+        //    Pop << ' ';
+        //}
+        //Pop << std::endl;
+//
+        //std::array<std::complex<double>, 3> v;
+        //for(auto ix : {0, 1, 2}){
+        //    v[ix] = Trace(Velocity[ix].get_Operator_R(), DensityMatrix.get_Operator_R());
+        //}
+        //os_Pos << std::setw(20) << std::setprecision(8) << v[0].real();
+        //os_Pos << std::setw(20) << std::setprecision(8) << v[0].imag();
+        //os_Pos << std::setw(20) << std::setprecision(8) << v[1].real();
+        //os_Pos << std::setw(20) << std::setprecision(8) << v[1].imag();
+        //os_Pos << std::setw(20) << std::setprecision(8) << v[2].real();
+        //os_Pos << std::setw(20) << std::setprecision(8) << v[2].imag();
+        //os_Pos << std::endl;
 
-        std::array<std::complex<double>, 3> v;
-        for(auto ix : {0, 1, 2}){
-            v[ix] = Trace(Velocity[ix].get_Operator_R(), DensityMatrix.get_Operator_R());
-        }
-        os_Pos << std::setw(20) << std::setprecision(8) << v[0].real();
-        os_Pos << std::setw(20) << std::setprecision(8) << v[0].imag();
-        os_Pos << std::setw(20) << std::setprecision(8) << v[1].real();
-        os_Pos << std::setw(20) << std::setprecision(8) << v[1].imag();
-        os_Pos << std::setw(20) << std::setprecision(8) << v[2].real();
-        os_Pos << std::setw(20) << std::setprecision(8) << v[2].imag();
-        os_Pos << std::endl;
-
-        DensityMatrix.go_to_wannier();
-        DensityMatrix.go_to_R();
+        //DensityMatrix.go_to_wannier();
+        //DensityMatrix.go_to_R();
         RK_object.Propagate();
-    }
-    Pop.close();
-    Las.close();
-    os_Pos.close();
+
+    //Pop.close();
+    //Las.close();
+    //os_Pos.close();
 }
 
 void Simulation::Calculate_Velocity()
 {
     for(int ix : {0, 1, 2}){
         Velocity[ix].get_Operator_R() = DensityMatrix.get_Operator_R();
+    
         Velocity[ix].get_Operator_R().fill(0.);
         commutator(Velocity[ix].get_Operator_R(), -im, material.r[ix].get_Operator_R(), material.H.get_Operator_R());
         //part with R

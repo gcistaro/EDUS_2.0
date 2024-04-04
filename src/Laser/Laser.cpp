@@ -119,6 +119,19 @@ Coordinate<k> Laser::operator()(const double& Time)
     return (Amplitude*envelope(Time)*PlaneWave(Time))*Polarization;
 }
 
+Coordinate<k> Laser::VectorPotential(const double& Time)
+{
+    //integral of the electric field with a - sign 
+    auto a = pi/envelope.Duration;
+    auto b = PlaneWave.Omega;
+    auto one_ = 2.*a-b;
+    auto two_ = 2*a+b;
+    auto three_  = b;
+    auto& t0 = envelope.InitialTime;
+    return -(.25*Amplitude*(-std::cos(one_*Time)/(one_)+std::cos(two_*Time)/(two_)-2.*std::cos(three_*Time)/(three_))
+            -.25*Amplitude*(-std::cos(one_*t0)/(one_)+std::cos(two_*t0)/(two_)-2.*std::cos(three_*t0)/(three_)))*Polarization;
+}
+
 //only one of the following three calculates the others
 void Laser::set_Period(const double& Period_, const Unit& InputUnit) 
 {

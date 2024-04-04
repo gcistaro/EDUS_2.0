@@ -98,7 +98,6 @@ class Operator
         mdarray<std::complex<double>, 2> FTfriendly_Operator_k;
         std::shared_ptr<MeshGrid<k>> FT_meshgrid_k;
         std::shared_ptr<MeshGrid<R>> FT_meshgrid_R;
-        std::shared_ptr<MeshGrid<R>> FT_meshgrid_Rminus;
 
         static BandIndex bandindex;
         BandGauge bandgauge;
@@ -167,7 +166,6 @@ class Operator
                     Rgrid = std::make_shared<MeshGrid<R>>(MG);
                     FT_meshgrid_k = std::make_shared<MeshGrid<k>>(fftPair<R,k>(MG));
                     FT_meshgrid_R = std::make_shared<MeshGrid<R>>(fftPair<k,R>(*FT_meshgrid_k));
-                    FT_meshgrid_Rminus = std::make_shared<MeshGrid<R>>(Opposite(MG));
                     break;
                 }
                 case k:
@@ -182,7 +180,7 @@ class Operator
             //bare_mg.fill(0);
             //MeshGrid_Null = std::make_shared<MeshGrid<R>>(bare_mg, "Cartesian");
             MeshGrid<R>::Calculate_ConvolutionIndex1(MG , *FT_meshgrid_R, *MeshGrid_Null);
-            MeshGrid<R>::Calculate_ConvolutionIndex1(MG, *FT_meshgrid_Rminus, *MeshGrid_Null);
+            MeshGrid<R>::Calculate_ConvolutionIndex1(*MeshGrid_Null, MG, MG);
 
             //prove that is working
             std::ofstream MG1, MG2;
@@ -332,7 +330,7 @@ class Operator
         void shuffle_from_fft_R()
         {
             auto ci = MeshGrid<R>::get_ConvolutionIndex1(*Operator_R.get_MeshGrid(), *FT_meshgrid_R, *MeshGrid_Null);
-            auto ciminus = MeshGrid<R>::get_ConvolutionIndex1(*Operator_R.get_MeshGrid(), *FT_meshgrid_Rminus, *MeshGrid_Null);
+            auto ciminus = MeshGrid<R>::get_ConvolutionIndex1(*MeshGrid_Null, *Operator_R.get_MeshGrid(), *Operator_R.get_MeshGrid());
             for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
                 for(int ibnd1=0; ibnd1<Operator_R.get_nrows(); ++ibnd1){
                     for(int ibnd2=ibnd1; ibnd2<Operator_R.get_ncols(); ++ibnd2){
@@ -353,7 +351,8 @@ class Operator
             for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
                 for(int ibnd1=0; ibnd1<Operator_R.get_nrows(); ++ibnd1){
                     for(int ibnd2=ibnd1+1; ibnd2<Operator_R.get_ncols(); ++ibnd2){
-                        Operator_R(iR, ibnd2, ibnd1) = std::conj(Operator_R(ciminus(iR,0), ibnd1, ibnd2));
+                        //std::cout << iR << " " << (*(Operator_R.get_MeshGrid()))[iR] <<
+                        Operator_R(iR, ibnd2, ibnd1) = std::conj(Operator_R(ciminus(0,iR), ibnd1, ibnd2));
                     }
                 }
             }
@@ -411,6 +410,8 @@ class Operator
             //}
             shuffle_to_fft_k();
             ft_.fft(-1);       
+
+            //apply sharp exponential in blind region
             shuffle_from_fft_R();  
 
             //space = R;
