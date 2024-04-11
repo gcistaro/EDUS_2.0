@@ -11,9 +11,9 @@ Simulation::Simulation(const std::string& FileName, const double& Radius)
     laser.set_NumberOfCycles(2);
     laser.set_Polarization(Coordinate<k>(1,0,0));
 
-    //auto MasterRgrid = std::make_shared<MeshGrid<R>>(Radius);//spherical grid for exponentially decaying DM
+    auto MasterRgrid = std::make_shared<MeshGrid<R>>(Radius);//spherical grid for exponentially decaying DM
     //auto MasterRgrid = std::make_shared<MeshGrid<R>>(std::array<int,3>{30,30,1});//spherical grid for exponentially decaying DM
-    auto MasterRgrid = std::make_shared<MeshGrid<R>>(std::array<int,3>{5,5,1});//spherical grid for exponentially decaying DM
+    //auto MasterRgrid = std::make_shared<MeshGrid<R>>(std::array<int,3>{5,5,1});//spherical grid for exponentially decaying DM
 
     DensityMatrix.initialize_fft(*MasterRgrid, material.H.get_Operator_R().get_nrows());
 
@@ -41,7 +41,7 @@ Simulation::Simulation(const std::string& FileName, const double& Radius)
     os.close();
 
     RK_object.set_InitialTime(0.);
-    RK_object.set_ResolutionTime(0.01);
+    RK_object.set_ResolutionTime(0.001);
     print_recap();
     PROFILE_STOP("Simulation::Initialize");
     //this->Propagate();

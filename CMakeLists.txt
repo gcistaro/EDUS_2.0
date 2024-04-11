@@ -112,7 +112,7 @@ add_executable(TrivialH_test ci-test/test_TrivialHamiltonian.cpp)
 target_link_libraries(TrivialH_test PUBLIC fftw3)
 
 #Noneq propagation 
-add_executable(NonEQ ci-test/test_NEQpop.cpp)
+add_executable(NonEQ ci-test/test_NEQpop2.cpp)
 #find_package(fftw3 REQUIRED)
 target_link_libraries(NonEQ PUBLIC fftw3)
 
