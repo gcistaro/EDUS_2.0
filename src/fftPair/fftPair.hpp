@@ -22,7 +22,7 @@ class FourierTransform
         int dim;
         std::vector<int> Dimensions;
         int TotalSize;
-        int SqrtTotalSize;
+        double SqrtTotalSize;
         int istride = 1;
         int ostride = 1;
         int idist;

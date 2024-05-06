@@ -14,7 +14,7 @@ FourierTransform::initialize
     Array_k = &Array_k__;
     howmany = Array_x->get_Size(0);
     TotalSize = Array_x->get_Size(1);
-    SqrtTotalSize = std::sqrt(TotalSize);
+    SqrtTotalSize = std::sqrt(double(TotalSize));
     dim = Dimensions__.size();
     Dimensions = Dimensions__;
     idist = TotalSize;
@@ -29,7 +29,7 @@ FourierTransform::initialize
     howmany = Array_x__.get_Size(0);
     dim = Mesh[0].size();
     TotalSize = Array_x__.get_Size(1);
-    SqrtTotalSize = std::sqrt(TotalSize);
+    SqrtTotalSize = std::sqrt(double(TotalSize));
     Array_x = &Array_x__;
 }
 

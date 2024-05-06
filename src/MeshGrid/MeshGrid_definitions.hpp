@@ -413,7 +413,7 @@ void MeshGrid<space>::Calculate_ConvolutionIndex1(const MeshGrid& m1, const Mesh
             //else{
             //    std::cout << "NOT FOUND\n";
             //}
-
+//
             //    std::cout << iR1 << " " << iR3 << " ci(iR1,iR3): " << ci(iR1,iR3) << std::endl;
         }
     }

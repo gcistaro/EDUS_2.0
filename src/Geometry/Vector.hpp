@@ -66,6 +66,7 @@ class Vector{
         Vector& operator+=(const Vector& v);
         Vector& operator-=(const Vector& v);
 
+        double norm() const;
 
         const T* data() const {return Values.data();};
         T* data() {return const_cast<T*>((static_cast<const Vector<T>&>(*this)).Values.data());};

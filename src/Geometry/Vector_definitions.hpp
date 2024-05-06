@@ -150,6 +150,15 @@ Vector<T>::~Vector()
     (*this).Values.~mdarray<T,1>();
 }
 
+template<class T>
+double Vector<T>::norm() const
+{
+    double norm = 0.;
+    for( auto& v : *this ) {
+        norm += std::abs(v)*std::abs(v);
+    }
+    return std::sqrt(norm);
+}
 
 
 template<class T>

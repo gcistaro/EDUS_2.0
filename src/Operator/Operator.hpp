@@ -179,7 +179,9 @@ class Operator
             //mdarray<double,2> bare_mg({1,3});
             //bare_mg.fill(0);
             //MeshGrid_Null = std::make_shared<MeshGrid<R>>(bare_mg, "Cartesian");
+            std::cout << "Calculate convolution index MG, FT_meshgrid_R, MeshGrid_null\n";
             MeshGrid<R>::Calculate_ConvolutionIndex1(MG , *FT_meshgrid_R, *MeshGrid_Null);
+            std::cout << "Calculate convolution index MeshGrid_null, MG, MG\n";
             MeshGrid<R>::Calculate_ConvolutionIndex1(*MeshGrid_Null, MG, MG);
 
             //prove that is working
@@ -305,6 +307,7 @@ class Operator
         {
             auto ci = MeshGrid<R>::get_ConvolutionIndex1(*Operator_R.get_MeshGrid() , *FT_meshgrid_R, *MeshGrid_Null);
             for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
+                assert(ci(iR,0) != -1);
                 for(int ibnd1=0; ibnd1<Operator_R.get_nrows(); ++ibnd1){
                     for(int ibnd2=ibnd1; ibnd2<Operator_R.get_ncols(); ++ibnd2){
                         //std::cout  << " R " << iR << "ibnd1 " << ibnd1  << "ibnd2 "<< ibnd2  << " ci(iR,0) "<<   ci(iR,0) << std::endl;
@@ -331,14 +334,9 @@ class Operator
         {
             auto ci = MeshGrid<R>::get_ConvolutionIndex1(*Operator_R.get_MeshGrid(), *FT_meshgrid_R, *MeshGrid_Null);
             auto ciminus = MeshGrid<R>::get_ConvolutionIndex1(*MeshGrid_Null, *Operator_R.get_MeshGrid(), *Operator_R.get_MeshGrid());
+
             for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
-                for(int ibnd1=0; ibnd1<Operator_R.get_nrows(); ++ibnd1){
-                    for(int ibnd2=ibnd1; ibnd2<Operator_R.get_ncols(); ++ibnd2){
-                        FTfriendly_Operator_R(static_cast<int>(bandindex.oneDband(ibnd1, ibnd2)), ci(iR,0));
-                    }
-                }
-            }
-            for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
+                assert(ci(iR,0) != -1);
                 for(int ibnd1=0; ibnd1<Operator_R.get_nrows(); ++ibnd1){
                     for(int ibnd2=ibnd1; ibnd2<Operator_R.get_ncols(); ++ibnd2){
                         //std::cout  << " R " << iR << "ibnd1 " << ibnd1  << "ibnd2 "<< ibnd2  << " ci(iR,0) "<<   ci(iR,0) << std::endl;
@@ -349,6 +347,7 @@ class Operator
 
             //this  part is not working! Check ciminus
             for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
+                assert(ciminus(0,iR) != -1);
                 for(int ibnd1=0; ibnd1<Operator_R.get_nrows(); ++ibnd1){
                     for(int ibnd2=ibnd1+1; ibnd2<Operator_R.get_ncols(); ++ibnd2){
                         //std::cout << iR << " " << (*(Operator_R.get_MeshGrid()))[iR] <<
@@ -410,8 +409,6 @@ class Operator
             //}
             shuffle_to_fft_k();
             ft_.fft(-1);       
-
-            //apply sharp exponential in blind region
             shuffle_from_fft_R();  
 
             //space = R;

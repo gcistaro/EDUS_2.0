@@ -89,6 +89,12 @@ class MeshGrid{
         static mdarray<int,2>& get_ConvolutionIndex2(const MeshGrid& m1, const MeshGrid& m2, const MeshGrid& m3){
             return ConvolutionIndex2[{m1.get_id(), m2.get_id(), m3.get_id()}];
         }
+
+        TypeMeshGrid get_type() const
+        {
+            return type;
+        } 
+
 };
 
 #include "MeshGrid_definitions.hpp"

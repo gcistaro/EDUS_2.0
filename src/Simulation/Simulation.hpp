@@ -24,8 +24,8 @@ class Simulation
 
 
 
-
-        Simulation(const std::string& FileName, const double& Radius);
+        template<class T>
+        Simulation(const std::string& FileName, const T& arg_meshinit);
         void SettingUp_EigenSystem();
         void print_grids();
         void Calculate_TDHamiltonian(const double& time);
@@ -54,3 +54,6 @@ std::complex<double> Trace(BlockMatrix<T, R>& O1, BlockMatrix<T, R>& O2)
     }
     return Trace;
 }
+
+
+#include "Simulation_definitions.hpp"

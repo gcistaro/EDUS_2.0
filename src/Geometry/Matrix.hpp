@@ -57,10 +57,12 @@ class Matrix{
         friend Matrix<U> operator*(U Scalar, const Matrix<U> M);
 
         Matrix<T> inverse() const;
+        Matrix<T> pseudoinv();
         Matrix<T> transpose() const;
         void LUdecompose(Matrix<T>& LU, lapack_int** pointer_to_ipiv) const;
 
         void diagonalize(Matrix<std::complex<double>>& Eigenvectors, mdarray<double,1>& EigenValues) const;
+        void svd(Matrix<T>& u, Matrix<T>& vt, mdarray<T,1>& s);
         double norm() const;
 	//Matrix<T> LUdecompose() const;
 	T determinant() const;
