@@ -1,6 +1,5 @@
 #include "Simulation/Simulation.hpp"
 
-
 void Simulation::SettingUp_EigenSystem()
 {
     PROFILE("Simulation::SetEigensystem");
@@ -100,25 +99,25 @@ void Simulation::Propagate()
     //os_Pos.open("Position.txt");
 
         PROFILE("RK_Propagate");
-        //DensityMatrix.go_to_k();
-        //DensityMatrix.go_to_bloch();
-        //
-        //std::vector<std::complex<double>> Population(DensityMatrix.get_Operator_k().get_nrows(), 0.);
-        //for(int ik=0; ik<DensityMatrix.get_Operator_k().get_nblocks(); ik++){
-        //    for(int ibnd=0; ibnd<Population.size(); ibnd++){
-        //        Population[ibnd] += DensityMatrix.get_Operator_k()[ik](ibnd,ibnd);
-        //    }
-        //}
-        //Population[0] = 1.-Population[0]/double(DensityMatrix.get_Operator_k().get_MeshGrid()->get_TotalSize());
-        //Population[1] /= double(DensityMatrix.get_Operator_k().get_MeshGrid()->get_TotalSize());
+        DensityMatrix.go_to_k();
+        DensityMatrix.go_to_bloch();
+        
+        std::vector<std::complex<double>> Population(DensityMatrix.get_Operator_k().get_nrows(), 0.);
+        for(int ik=0; ik<DensityMatrix.get_Operator_k().get_nblocks(); ik++){
+            for(int ibnd=0; ibnd<Population.size(); ibnd++){
+                Population[ibnd] += DensityMatrix.get_Operator_k()[ik](ibnd,ibnd);
+            }
+        }
+        Population[0] = 1.-Population[0]/double(DensityMatrix.get_Operator_k().get_MeshGrid()->get_TotalSize());
+        Population[1] /= double(DensityMatrix.get_Operator_k().get_MeshGrid()->get_TotalSize());
         
         //Las << laser(i*RK_object.get_ResolutionTime()).get("Cartesian");
 
-        //for(int ibnd=0; ibnd<Population.size(); ibnd++){
-        //    Pop << std::setw(20) << std::setprecision(10) << Population[ibnd].real();
-        //    Pop << ' ';
-        //}
-        //Pop << std::endl;
+        for(int ibnd=0; ibnd<Population.size(); ibnd++){
+            std::cout << std::setw(20) << std::setprecision(10) << Population[ibnd].real();
+            std::cout << ' ';
+        }
+        std::cout << std::endl;
 //
         //std::array<std::complex<double>, 3> v;
         //for(auto ix : {0, 1, 2}){
@@ -132,8 +131,8 @@ void Simulation::Propagate()
         //os_Pos << std::setw(20) << std::setprecision(8) << v[2].imag();
         //os_Pos << std::endl;
 
-        //DensityMatrix.go_to_wannier();
-        //DensityMatrix.go_to_R();
+        DensityMatrix.go_to_wannier();
+        DensityMatrix.go_to_R();
         RK_object.Propagate();
 
     //Pop.close();

@@ -43,5 +43,4 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
     RK_object.set_ResolutionTime(0.001);
     print_recap();
     PROFILE_STOP("Simulation::Initialize");
-    //this->Propagate();
 }
