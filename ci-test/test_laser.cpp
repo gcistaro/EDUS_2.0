@@ -11,6 +11,6 @@ int main()
     laser.set_NumberOfCycles(10);
 
     std::ofstream os_Laser("Laser_test.txt");
-    os_Laser << laser;
+    //os_Laser << laser;
     os_Laser.close();
 }

@@ -28,13 +28,14 @@ class Operator;
 //we need two different styles
 //1 - O(nk, nk') = O(n,n')(k) delta(k-k')
 //2 - O(nR, nR') = O(n,n')(R-R') 
-template<typename T=std::complex<double>, Space space=R>
+template<typename T=std::complex<double>>
 class BlockMatrix{
     private:
 
         std::vector<Matrix<T>> submatrix;
-        std::shared_ptr<MeshGrid<space>> meshgrid;    
+        std::shared_ptr<MeshGrid> meshgrid;    
         static Matrix<T> EmptyMatrix;    
+        Space space;
         T NullValue = 0;
         void initialize_submatrix();
     public:
@@ -43,14 +44,15 @@ class BlockMatrix{
 
         mdarray<T,3> Values; //first index -> block, others -> matrix
         BlockMatrix() : Values(mdarray<T,3>()){};
-        BlockMatrix(const size_t& nblocks, const size_t& nrows, const size_t& ncols){this->initialize(nblocks, nrows, ncols);}
-        void initialize(mdarray<T,3>& Values);
-        void initialize(const size_t& nblocks, const size_t& nrows, const size_t& ncols);
-        BlockMatrix(const BlockMatrix<T, space>& A);
-        BlockMatrix<T, space>& operator=(const BlockMatrix<T, space>& m);
+        BlockMatrix(const Space& space__, const size_t& nblocks, const size_t& nrows, const size_t& ncols)
+            {this->initialize(space__, nblocks, nrows, ncols);}
+        void initialize(const Space& space__, mdarray<T,3>& Values);
+        void initialize(const Space& space__, const size_t& nblocks, const size_t& nrows, const size_t& ncols);
+        BlockMatrix(const BlockMatrix<T>& A);
+        BlockMatrix<T>& operator=(const BlockMatrix<T>& m);
         
-        BlockMatrix(BlockMatrix<T, space>&& A);
-        BlockMatrix<T, space>& operator=(BlockMatrix<T, space>&& m);
+        BlockMatrix(BlockMatrix<T>&& A);
+        BlockMatrix<T>& operator=(BlockMatrix<T>&& m);
 
         const T& operator()(const int& nk1, const int& mk2) const; //full index
         T& operator()(const int& nk1, const int& mk2);             //full index
@@ -63,13 +65,13 @@ class BlockMatrix{
         Matrix<T>& operator[](const int& iblock);
         const Matrix<T>& operator[](const int& iblock) const;
 
-        Matrix<T>& operator[](const Coordinate<space>& Point);
-        const Matrix<T>& operator[](const Coordinate<space>& Point) const;
+        Matrix<T>& operator[](const Coordinate& Point);
+        const Matrix<T>& operator[](const Coordinate& Point) const;
 
         BlockMatrix<T> operator*(const BlockMatrix<T>& B);
 
         const T* data() const {return Values.data();};
-        T* data() {return const_cast<T*>((static_cast<const BlockMatrix<T,space>&>(*this)).Values.data());};
+        T* data() {return const_cast<T*>((static_cast<const BlockMatrix<T>&>(*this)).Values.data());};
         //friend void multiply(Matrix<T>& OutputMatrix, const auto& Scalar1, const Matrix<T>& Matrix1, 
         //                                              const auto& Scalar2, const Matrix<T>& Matrix2);
 
@@ -78,53 +80,47 @@ class BlockMatrix{
         size_t get_nblocks() const{return Values.get_Size(0);};
         size_t get_nrows() const{return Values.get_Size(1);};
         size_t get_ncols() const{return Values.get_Size(2);};
-	    std::shared_ptr<MeshGrid<space>>& get_MeshGrid(){return this->meshgrid;};
+        std::shared_ptr<MeshGrid>& get_MeshGrid(){return this->meshgrid;};
 
-        void set_MeshGrid(const MeshGrid<space>& meshgrid_)
+        void set_MeshGrid(const MeshGrid& meshgrid_)
         {
-            this->meshgrid = std::make_shared<MeshGrid<space>>(meshgrid_);
+            this->meshgrid = std::make_shared<MeshGrid>(meshgrid_);
         };
 
         bool has_meshgrid()
         {
-            return (*meshgrid != nullptr);
+            return (meshgrid != nullptr);
         }
         
-        template<typename T_, Space space_, typename U>
-        friend void convolution1(BlockMatrix<T_,space_>& Output, U Scalar, const BlockMatrix<T_,space_>& Input1, const BlockMatrix<T_,space_>& Input2 );
-        template<typename T_, Space space_, typename U>
-        friend void convolution2(BlockMatrix<T_,space_>& Output, U Scalar, const BlockMatrix<T_,space_>& Input1, const BlockMatrix<T_,space_>& Input2 );
-
         template<typename T_, typename U>
-        friend void commutator(BlockMatrix<T_,R>& Output, U Scalar, const BlockMatrix<T_,R>& Input1, const BlockMatrix<T_,R>& Input2 );
+        friend void convolution(BlockMatrix<T_>& Output, U Scalar, const BlockMatrix<T_>& Input1, const BlockMatrix<T_>& Input2 );
+        template<typename T_, typename U>
+        friend void commutator(BlockMatrix<T_>& Output, U Scalar, const BlockMatrix<T_>& Input1, const BlockMatrix<T_>& Input2 );
 
         void diagonalize(std::vector<mdarray<double,1>>& Eigenvalues,
-                         BlockMatrix<std::complex<double>,space>& Eigenvectors) const;
+                         BlockMatrix<std::complex<double>>& Eigenvectors) const;
 
 
         void test_submatrix();
+
+        auto get_space() const{return space; };
+        auto get_space() {return space; };
 
         //destructor
         ~BlockMatrix();	
 };
 
 
-template<typename T, Space space>
-Matrix<T> BlockMatrix<T,space>::EmptyMatrix = Matrix<T>();
 
 //overloading writing matrix
-template<class T, Space space>
-std::ostream& operator<<(std::ostream& os, const BlockMatrix<T, space>& m);
+template<class T>
+std::ostream& operator<<(std::ostream& os, const BlockMatrix<T>& m);
 
-template<typename T, Space space>
-auto max(const BlockMatrix<T,space>& m);
+template<typename T>
+auto max(const BlockMatrix<T>& m);
 
-template<typename T, Space space>
-void multiply(BlockMatrix<T,space>& Output, T Scalar, const BlockMatrix<T,space>& Input1, const BlockMatrix<T,space>& Input2, T Scalar2 );
-
-
-template<typename T, Space space>
-void multiply(BlockMatrix<T,space>& Output, T Scalar, const BlockMatrix<T,space>& Input1, const BlockMatrix<T,space>& Input2);
+template<typename T>
+void multiply(BlockMatrix<T>& Output, T Scalar, const BlockMatrix<T>& Input1, const BlockMatrix<T>& Input2, T Scalar2 );
 
 #include "BlockMatrix_definitions.hpp"
 

@@ -5,6 +5,7 @@
 
 #include "mkl.h"
 #include "Geometry/Matrix.hpp"
+
 template<>
 void Matrix<std::complex<double>>::diagonalize(Matrix<std::complex<double>>& EigenVectors, mdarray<double,1>& EigenValues) const
 {

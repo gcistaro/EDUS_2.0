@@ -24,6 +24,7 @@ constexpr double threshold = 1.e-08;
 enum Space{k,R};
 enum BandGauge{bloch, wannier};
 
-auto LatticeVectors(const Space& space) { return ( space == k ? "k_LatticeVectors" : "R_LatticeVectors" ); };
+//Global functions
+std::string LatticeVectors(const Space& space);
 
 #endif

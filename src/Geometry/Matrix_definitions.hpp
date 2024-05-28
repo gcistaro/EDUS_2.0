@@ -193,6 +193,24 @@ Matrix<T> Matrix<T>::operator-(const Matrix<T>& B) const
     return (*this) + (-B);
 }
 
+template<class T>
+Matrix<T>& Matrix<T>::operator+=(const Matrix<T>& B) 
+{   
+    Matrix<T> C(this->get_nrows(), this->get_ncols());
+    for(int irow=0; irow<C.get_nrows(); ++irow){
+        for(int icol=0; icol<C.get_ncols(); ++icol){
+            (*this)(irow, icol) += B(irow, icol);
+        }
+    }
+    return *this;
+}
+
+template<class T>
+Matrix<T>& Matrix<T>::operator-=(const Matrix<T>& B) 
+{   
+    return ( *this += (-B) );
+}
+
 
 
 
@@ -208,10 +226,10 @@ Matrix<T> Matrix<T>::operator*(T Scalar) const
     return C;
 }
 
-template<class T>
-Matrix<T> operator*(T Scalar, const Matrix<T> A)
+template<class T, class U>
+Matrix<T> operator*(U Scalar, const Matrix<T> A)
 {
-    return A*Scalar;
+    return A*T(Scalar);
 }
 
 template<class T>

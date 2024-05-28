@@ -39,17 +39,17 @@ class Material
             Basis ReciprocalLatticeVectors(2.*pi*Matrix<double>(wannier_.UnitCell).inverse());
             Coordinate::add_Basis(ReciprocalLatticeVectors, LatticeVectors(k));
             
-            r[0].get_Operator_R().initialize(wannier_.r[0]);
-            r[1].get_Operator_R().initialize(wannier_.r[1]);
-            r[2].get_Operator_R().initialize(wannier_.r[2]);
-            H.get_Operator_R().initialize(wannier_.H);
+            r[0].get_Operator_R().initialize(R, wannier_.r[0]);
+            r[1].get_Operator_R().initialize(R, wannier_.r[1]);
+            r[2].get_Operator_R().initialize(R, wannier_.r[2]);
+            H.get_Operator_R().initialize(R, wannier_.H);
 
             Convert_iterable(r[0].get_Operator_R(), Angstrom, AuLength);
             Convert_iterable(r[1].get_Operator_R(), Angstrom, AuLength);
             Convert_iterable(r[2].get_Operator_R(), Angstrom, AuLength);
             Convert_iterable(H.get_Operator_R(), ElectronVolt, AuEnergy);
 
-            MeshGrid aux_mg(wannier_.Rmesh, LatticeVectors(R));
+            MeshGrid aux_mg(R, wannier_.Rmesh, LatticeVectors(R));
 
             H.get_Operator_R().set_MeshGrid(aux_mg);
             r[0].get_Operator_R().set_MeshGrid(aux_mg);

@@ -5,32 +5,34 @@
 #include "Operator/BlockMatrix.hpp"
 #include "fftPair/fftPair.hpp"
 
+#include <vector>
+
+/*********************************************************************************************
+ *   numbering:
+ *   [0   1   2    3 ]
+ *   [.   4   5    6 ]
+ *   [.   .   7    8 ]
+ *   [.   .   .    9 ]
+ *
+ *   ......
+ *   Total number of elements before row m:
+ *   b + (b-1) + ... + (b-m-1) = \sum_{i=0}^{m-1} (b-i) = m*b-(m-1)*(m)/2  .... VALID FOR m>1
+ *   This is the starting index of row m.
+ *
+ *   The final index is
+ *   StartingIndex + #elements in row = m*b-(m-1)*m/2 + (b-m-1) 
+ *
+*/ 
+
 class BandIndex
 {
     private:
         size_t NumberOfBands;
         size_t oneDNumberOfBands;
-
         std::vector< std::pair<size_t,size_t> > RowIndexBoundary;
 
-/*
-    numbering:
-    [0   1   2    3 ]
-    [.   4   5    6 ]
-    [.   .   7    8 ]
-    [.   .   .    9 ]
-
-    ......
-    Total number of elements before row m:
-    b + (b-1) + ... + (b-m-1) = \sum_{i=0}^{m-1} (b-i) = m*b-(m-1)*(m)/2  .... VALID FOR m>1
-    This is the starting index of row m.
-
-    The final index is
-    StartingIndex + #elements in row = m*b-(m-1)*m/2 + (b-m-1) 
-
-*/ 
     public:
-    size_t StartingIndex(const auto& row_)
+        size_t StartingIndex(const auto& row_)
     {
         size_t StartingIndex = (row_ == 0) ? 0 
                                            :row_*NumberOfBands - row_*(row_-1)/2;
@@ -86,22 +88,22 @@ class BandIndex
 
 
 
-
 template < typename T=std::complex<double> >
 class Operator
 {
     private:
-	    BlockMatrix<T,k> Operator_k;
-        BlockMatrix<T,R> Operator_R;
+	    BlockMatrix<T> Operator_k;
+        BlockMatrix<T> Operator_R;
 
         mdarray<std::complex<double>, 2> FTfriendly_Operator_R;
         mdarray<std::complex<double>, 2> FTfriendly_Operator_k;
-        std::shared_ptr<MeshGrid<k>> FT_meshgrid_k;
-        std::shared_ptr<MeshGrid<R>> FT_meshgrid_R;
+        std::shared_ptr<MeshGrid> FT_meshgrid_k;
+        std::shared_ptr<MeshGrid> FT_meshgrid_R;
 
         static BandIndex bandindex;
         BandGauge bandgauge;
         Space space;
+        Space SpaceOfPropagation;
 
         bool locked_bandgauge = false;
         bool locked_space = false;
@@ -111,12 +113,12 @@ class Operator
         
 
     public:
-        static BlockMatrix<T, k> temp_k;
+        static BlockMatrix<T> temp_k;
         friend class Simulation;
-        static std::shared_ptr<MeshGrid<R>> MeshGrid_Null;
-        static BlockMatrix<T,k> EigenVectors;
-        static BlockMatrix<T,k> EigenVectors_dagger;
-        Operator() : Operator_k(BlockMatrix<T,k>()), Operator_R(BlockMatrix<T,R>()){};
+        static std::shared_ptr<MeshGrid> MeshGrid_Null;
+        static BlockMatrix<T> EigenVectors;
+        static BlockMatrix<T> EigenVectors_dagger;
+        Operator() : Operator_k(BlockMatrix<T>()), Operator_R(BlockMatrix<T>()){};
 
 
         Operator(const Operator<T>& Op_) = default;
@@ -125,29 +127,49 @@ class Operator
         Operator(Operator<T>&& Op_)  = default;
         Operator<T>& operator=(Operator<T>&& Op_) = default;
 
-        BlockMatrix<T,k>& get_Operator_k()
+        BlockMatrix<T>& get_Operator_k()
         {
-            return const_cast<BlockMatrix<T,k>&>(static_cast<const Operator<T>&>(*this).get_Operator_k());
+            return const_cast<BlockMatrix<T>&>(static_cast<const Operator<T>&>(*this).get_Operator_k());
         };       
         
-        const BlockMatrix<T,k>& get_Operator_k() const
+        const BlockMatrix<T>& get_Operator_k() const
         {
             return Operator_k;
         };      
         
-        BlockMatrix<T,R>& get_Operator_R()
+        BlockMatrix<T>& get_Operator_R()
         {
-            return const_cast<BlockMatrix<T,R>&>(static_cast<const Operator<T>&>(*this).get_Operator_R());
+            return const_cast<BlockMatrix<T>&>(static_cast<const Operator<T>&>(*this).get_Operator_R());
         };      
         
-        const BlockMatrix<T,R>& get_Operator_R() const
+        const BlockMatrix<T>& get_Operator_R() const
         {
             return Operator_R;
         };
 
+        BlockMatrix<T>& get_Operator(const Space& space__)
+        {
+            return const_cast<BlockMatrix<T>&>(static_cast<const Operator<T>&>(*this).get_Operator(space__));
+        };       
+        
+        const BlockMatrix<T>& get_Operator(const Space& space__) const
+        {
+            auto& Operator_to_return = space__ == k ? Operator_k : Operator_R;
+            return Operator_to_return;
+        };      
 
-        template<Space space>
-        void initialize_fft(const MeshGrid<space>& MG, const size_t& nbnd)
+        void set_SpaceOfPropagation(const Space& space__)
+        {
+            SpaceOfPropagation = space__;
+        };
+
+        auto get_SpaceOfPropagation()
+        {
+            return SpaceOfPropagation;
+        };
+
+
+        void initialize_fft(const MeshGrid& MG, const size_t& nbnd)
         {
             //for now this is the only case implemented. it will be more general.
             //we enter in this function only once
@@ -156,16 +178,16 @@ class Operator
             }
             initialized_fft = true;
             
-            Operator_R = BlockMatrix<std::complex<double>,R>(MG.get_mesh().size(), nbnd, nbnd);
+            Operator_R = BlockMatrix<std::complex<double>>(MG.get_mesh().size(), nbnd, nbnd);
 
-            switch(space)
+            switch(MG.space)
             {
                 case R:
                 {
                     auto& Rgrid = Operator_R.get_MeshGrid();
-                    Rgrid = std::make_shared<MeshGrid<R>>(MG);
-                    FT_meshgrid_k = std::make_shared<MeshGrid<k>>(fftPair<R,k>(MG));
-                    FT_meshgrid_R = std::make_shared<MeshGrid<R>>(fftPair<k,R>(*FT_meshgrid_k));
+                    Rgrid = std::make_shared<MeshGrid>(MG);
+                    FT_meshgrid_k = std::make_shared<MeshGrid>(fftPair(MG));
+                    FT_meshgrid_R = std::make_shared<MeshGrid>(fftPair(*FT_meshgrid_k));
                     break;
                 }
                 case k:
@@ -180,11 +202,12 @@ class Operator
             //bare_mg.fill(0);
             //MeshGrid_Null = std::make_shared<MeshGrid<R>>(bare_mg, "Cartesian");
             std::cout << "Calculate convolution index MG, FT_meshgrid_R, MeshGrid_null\n";
-            MeshGrid<R>::Calculate_ConvolutionIndex1(MG , *FT_meshgrid_R, *MeshGrid_Null);
+            MeshGrid::Calculate_ConvolutionIndex(MG , *FT_meshgrid_R, *MeshGrid_Null);
             std::cout << "Calculate convolution index MeshGrid_null, MG, MG\n";
-            MeshGrid<R>::Calculate_ConvolutionIndex1(*MeshGrid_Null, MG, MG);
+            MeshGrid::Calculate_ConvolutionIndex(*MeshGrid_Null, MG, MG);
 
             //prove that is working
+            /*
             std::ofstream MG1, MG2;
             MG1.open("Mg1.txt");
             MG2.open("Mg2.txt");
@@ -200,10 +223,10 @@ class Operator
             MG1.close();
             MG2.close();
             //endofproof
-            
+            */
             auto nk = FT_meshgrid_R->get_mesh().size();
 
-            Operator_k = BlockMatrix<std::complex<double>,k>(nk, nbnd, nbnd);
+            Operator_k = BlockMatrix<std::complex<double>>(nk, nbnd, nbnd);
             auto& kgrid = Operator_k.get_MeshGrid();
             kgrid = FT_meshgrid_k;
             bandindex.initialize(nbnd);
@@ -224,12 +247,8 @@ class Operator
         };
 
 
-        void dft(const std::vector<Coordinate<k>>& path, const int& sign)
+        void dft(const std::vector<Coordinate>& path, const int& sign)
         {
-            //for(auto& k : path){
-            //    auto& kk = k.get("LatticeVectors");
-            //    std::cout << kk[0] << " " << kk[1] << " " << kk[2] << std::endl;
-            //}
             initialize_dft();
             execute_dft(path, sign);
             shuffle_to_RK();
@@ -277,7 +296,7 @@ class Operator
         }
 
 
-        void execute_dft(const std::vector<Coordinate<k>>& path, const int& sign)
+        void execute_dft(const std::vector<Coordinate>& path, const int& sign)
         {
             std::vector< std::vector<double>> path_bare(path.size());
             for(int i=0; i<path.size(); ++i){
@@ -292,7 +311,7 @@ class Operator
 
         void shuffle_to_RK()
         {
-            Operator_k.initialize(FTfriendly_Operator_k.get_Size(1), Operator_R.get_nrows(), Operator_R.get_ncols());
+            //Operator_k.initialize(k, FTfriendly_Operator_k.get_Size(1), Operator_R.get_nrows(), Operator_R.get_ncols());
             for(int ik=0; ik<Operator_k.get_nblocks(); ++ik){
                 for(int ibnd1=0; ibnd1<Operator_k.get_nrows(); ++ibnd1){
                     for(int ibnd2=ibnd1; ibnd2<Operator_k.get_nrows(); ++ibnd2){ 
@@ -305,7 +324,7 @@ class Operator
 
         void shuffle_to_fft_R()
         {
-            auto ci = MeshGrid<R>::get_ConvolutionIndex1(*Operator_R.get_MeshGrid() , *FT_meshgrid_R, *MeshGrid_Null);
+            auto ci = MeshGrid::get_ConvolutionIndex(*Operator_R.get_MeshGrid() , *FT_meshgrid_R, *MeshGrid_Null);
             for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
                 assert(ci(iR,0) != -1);
                 for(int ibnd1=0; ibnd1<Operator_R.get_nrows(); ++ibnd1){
@@ -332,8 +351,8 @@ class Operator
 
         void shuffle_from_fft_R()
         {
-            auto ci = MeshGrid<R>::get_ConvolutionIndex1(*Operator_R.get_MeshGrid(), *FT_meshgrid_R, *MeshGrid_Null);
-            auto ciminus = MeshGrid<R>::get_ConvolutionIndex1(*MeshGrid_Null, *Operator_R.get_MeshGrid(), *Operator_R.get_MeshGrid());
+            auto ci = MeshGrid::get_ConvolutionIndex(*Operator_R.get_MeshGrid(), *FT_meshgrid_R, *MeshGrid_Null);
+            auto ciminus = MeshGrid::get_ConvolutionIndex(*MeshGrid_Null, *Operator_R.get_MeshGrid(), *Operator_R.get_MeshGrid());
 
             for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
                 assert(ci(iR,0) != -1);
@@ -449,17 +468,17 @@ template < typename T>
 BandIndex Operator<T>::bandindex;
 
 template < typename T>
-BlockMatrix<T,k> Operator<T>::EigenVectors;
+BlockMatrix<T> Operator<T>::EigenVectors;
 
 template < typename T>
-BlockMatrix<T,k> Operator<T>::EigenVectors_dagger;
+BlockMatrix<T> Operator<T>::EigenVectors_dagger;
 
 
 template < typename T>
-BlockMatrix<T,k> Operator<T>::temp_k;
+BlockMatrix<T> Operator<T>::temp_k;
 
 template < typename T>
-std::shared_ptr<MeshGrid<R>> Operator<T>::MeshGrid_Null = std::make_shared<MeshGrid<R>>(MeshGrid<R>(std::vector<Coordinate<R>>({Coordinate<R>(0,0,0)})));
+std::shared_ptr<MeshGrid> Operator<T>::MeshGrid_Null = std::make_shared<MeshGrid>(MeshGrid(k, std::vector<Coordinate>({Coordinate(0,0,0)})));
 
 
 #endif

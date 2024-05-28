@@ -41,17 +41,17 @@ configure_file("${PROJECT_SOURCE_DIR}/src/core/githash.h.in" "${PROJECT_SOURCE_D
 #compile sources as library INTERFACE (not a real library, just objects to be reused)
 include_directories("${PROJECT_SOURCE_DIR}/src/")
 
-set(_SOURCES src/ConvertUnits.cpp
-	           src/ostream.cpp
+set(_SOURCES src/GlobalFunctions.cpp
+             src/ConvertUnits.cpp
+	     src/ostream.cpp
              src/StreamFile.cpp
              src/Geometry/Matrix.cpp 
              src/Geometry/Coordinate.cpp
-             src/MeshGrid/MeshGrid.cpp
+	     src/MeshGrid/MeshGrid.cpp
              src/Wannier/Wannier.cpp
              src/Laser/Laser.cpp
              src/fftPair/fftPair.cpp
-             src/Operator/BlockMatrix.cpp
-             src/kGradient/kGradient.cpp
+	     src/kGradient/kGradient.cpp
              src/Simulation/Simulation.cpp
              src/core/profiler.cpp 
              src/core/print_timing.cpp 
