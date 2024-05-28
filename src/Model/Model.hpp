@@ -33,11 +33,11 @@ class Material
             //we move the resources from wannier.r and wannier.H, anyway we throw wannier right after.   
             auto UC = Matrix<double>(wannier_.UnitCell).transpose();
             Convert_iterable(UC, Angstrom, AuLength);   
-            Basis LatticeVectors(UC);
-            Coordinate<R>::add_Basis(LatticeVectors, "LatticeVectors");
+            Basis LatticeVectors_(UC);
+            Coordinate::add_Basis(LatticeVectors_, LatticeVectors(R));
             
             Basis ReciprocalLatticeVectors(2.*pi*Matrix<double>(wannier_.UnitCell).inverse());
-            Coordinate<k>::add_Basis(ReciprocalLatticeVectors, "LatticeVectors");
+            Coordinate::add_Basis(ReciprocalLatticeVectors, LatticeVectors(k));
             
             r[0].get_Operator_R().initialize(wannier_.r[0]);
             r[1].get_Operator_R().initialize(wannier_.r[1]);
@@ -49,7 +49,7 @@ class Material
             Convert_iterable(r[2].get_Operator_R(), Angstrom, AuLength);
             Convert_iterable(H.get_Operator_R(), ElectronVolt, AuEnergy);
 
-            MeshGrid<R> aux_mg(wannier_.Rmesh, "LatticeVectors");
+            MeshGrid aux_mg(wannier_.Rmesh, LatticeVectors(R));
 
             H.get_Operator_R().set_MeshGrid(aux_mg);
             r[0].get_Operator_R().set_MeshGrid(aux_mg);
@@ -60,15 +60,12 @@ class Material
             r[1].lock_gauge(wannier);      r[1].lock_space(R);        
             r[2].lock_gauge(wannier);      r[2].lock_space(R);        
             H.lock_gauge(wannier);         H.lock_space(R);         
-
-
-
         }
 
 	void print_info()
 	{
-        std::cout << Coordinate<R>::get_Basis("LatticeVectors");
-	    std::cout << Coordinate<k>::get_Basis("LatticeVectors");
+        std::cout << Coordinate::get_Basis(LatticeVectors(R));
+	    std::cout << Coordinate::get_Basis(LatticeVectors(k));
 	}
 
 
