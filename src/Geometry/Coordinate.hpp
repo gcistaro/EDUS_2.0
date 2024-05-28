@@ -44,7 +44,6 @@ std::ostream& operator<<(std::ostream& os, const Basis& basis);
 
 
 
-template<Space space>
 class Coordinate{
     private:
         Dictionary<Vector<double>> CoordinateDictionary;
@@ -75,30 +74,48 @@ class Coordinate{
         Coordinate operator*(const double& alpha) const;
         Coordinate operator/(const double& alpha) const;
 
-        template<Space space_>
-        friend Coordinate<space_> operator*(const double& alpha, const Coordinate<space_>& v);
+        friend Coordinate operator*(const double& alpha, const Coordinate& v);
 
         void add_Coordinate(const std::string& KeyForBasis);
         inline const Vector<double>& get(const std::string& KeyForBasis) const;
         inline Vector<double>& get(const std::string& KeyForBasis);
         inline double norm() const;
+        inline double dot(const Coordinate& v1) const;
         
-        template<Space space_>
-        friend std::ostream& operator<<(std::ostream& os, const Coordinate<space_>& v);
+        friend std::ostream& operator<<(std::ostream& os, const Coordinate& v);
 
 };  
 
 
-template<Space space>
-Dictionary<Basis> Coordinate<space>::BasisDictionary;
-
-
-template<Space space>
-void Coordinate<space>::add_Basis(const Basis& Basis_to_add, const std::string& KeyForBasis)
+//inline functions defined here in hpp
+void Coordinate::add_Basis(const Basis& Basis_to_add, const std::string& KeyForBasis)
 {
     BasisDictionary[KeyForBasis] = Basis_to_add;
 }
 
-#include "Coordinate_definitions.hpp"
+const Vector<double>& Coordinate::get(const std::string& KeyForBasis) const
+{
+    (const_cast<Coordinate&>(*this)).add_Coordinate(KeyForBasis);
+    return CoordinateDictionary.at(KeyForBasis);
+}
+
+Vector<double>& Coordinate::get(const std::string& KeyForBasis)
+{
+    this->add_Coordinate(KeyForBasis);
+    return CoordinateDictionary[KeyForBasis];
+}
+
+double Coordinate::norm() const
+{
+    auto& cart = CoordinateDictionary.at("Cartesian");
+    return (std::sqrt(cart(0)*cart(0)+cart(1)*cart(1)+cart(2)*cart(2)));
+}
+
+double Coordinate::dot(const Coordinate& v) const 
+{
+    auto& x = this->get("Cartesian");
+    auto& y = v.get("Cartesian");
+    return ( x[0] * y[0] + x[1] * y[1] + x[2] * y[2] );
+}
 
 #endif

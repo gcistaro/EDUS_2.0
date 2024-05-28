@@ -33,7 +33,7 @@ if(DEFINED GIT_EXE AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
                   WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
                   ERROR_QUIET
                   OUTPUT_STRIP_TRAILING_WHITESPACE)
-  message(STATUS "git hash ${SIRIUS_SHA}")
+  message(STATUS "git hash ${NEGF_SHA}")
 endif()
 
 configure_file("${PROJECT_SOURCE_DIR}/src/core/githash.h.in" "${PROJECT_SOURCE_DIR}/src/core/githash.hpp" @ONLY)
@@ -42,12 +42,16 @@ configure_file("${PROJECT_SOURCE_DIR}/src/core/githash.h.in" "${PROJECT_SOURCE_D
 include_directories("${PROJECT_SOURCE_DIR}/src/")
 
 set(_SOURCES src/ConvertUnits.cpp
+	           src/ostream.cpp
              src/StreamFile.cpp
              src/Geometry/Matrix.cpp 
              src/Geometry/Coordinate.cpp
+             src/MeshGrid/MeshGrid.cpp
              src/Wannier/Wannier.cpp
              src/Laser/Laser.cpp
              src/fftPair/fftPair.cpp
+             src/Operator/BlockMatrix.cpp
+             src/kGradient/kGradient.cpp
              src/Simulation/Simulation.cpp
              src/core/profiler.cpp 
              src/core/print_timing.cpp 
@@ -89,6 +93,9 @@ add_executable(Containers_test ci-test/test_mdarray.cpp)
 
 #Matrix
 add_executable(Matrix_test ci-test/test_matrix.cpp)
+
+#Laser
+add_executable(Laser_test ci-test/test_laser.cpp)
 
 #Eigenvalues
 add_executable(Eigen_test ci-test/test_eigen.cpp) 
@@ -135,6 +142,7 @@ target_link_libraries(Bandstructure_test PUBLIC fftw3)
 enable_testing()
 add_test(NAME Containers_test COMMAND Containers_test)
 add_test(NAME Matrix_test COMMAND Matrix_test)
+add_test(NAME Laser_test COMMAND Laser_test)
 add_test(NAME Eigen_test COMMAND Eigen_test)
 add_test(NAME RK_test COMMAND RK_test)
 add_test(NAME fft_test COMMAND fft_test)
