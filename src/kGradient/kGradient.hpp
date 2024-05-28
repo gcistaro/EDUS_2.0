@@ -1,25 +1,36 @@
+#ifndef KGRADIENT_HPP
+#define KGRADIENT_HPP
 
 #include "mdContainers/mdContainers.hpp"
 #include "MeshGrid/MeshGrid.hpp"
 
-
-
 class kGradient {
     private:
         mdarray<double, 1> Weight;    
-        mdarray<std::vector<int>, 2> ikpb;
-        std::shared_ptr<MeshGrid<k>> kmesh;
+        std::vector<std::vector<std::vector<int>>> ikpb;
+        std::shared_ptr<MeshGrid> kmesh;
         std::vector<std::vector<int>> ikshell;
         int nshells = 0;
     public:
-        kGradient(const MeshGrid<k> kmesh__);
+        kGradient(){};
+        kGradient(const MeshGrid& kmesh__);
+        
+        void initialize(const MeshGrid& kmesh__);
         void initialize();
 
+        template<typename T, typename U>
+        void Calculate(T& DerivativeFunction, const T& Function, 
+                          const U& direction, const bool& EraseOutput) const;
 };
 
 int alpha( const size_t& j );
 int beta( const size_t& j );
 void Calculate_nshellsAndweights(int& nshells, mdarray<double,1>& Weight, 
-                                 const MeshGrid<k>& kmesh, const std::vector<std::vector<int>>& ikshell);
-auto GradientMatrix(const size_t& nshells, const MeshGrid<k>& kmesh, const std::vector<std::vector<int>>& ik_sorted);
-mdarray<std::vector<int>, 2> Find_kpb(const MeshGrid<k>& kmesh, const std::vector<std::vector<int>>& ikshell);
+                                 const MeshGrid& kmesh, const std::vector<std::vector<int>>& ikshell);
+Matrix<double> GradientMatrix(const size_t& nshells, const MeshGrid& kmesh, const std::vector<std::vector<int>>& ik_sorted);
+std::vector<std::vector<int>> SortInShells(const MeshGrid& kmesh);
+std::vector<std::vector<std::vector<int>>> Find_kpb(const MeshGrid& kmesh, const std::vector<std::vector<int>>& ikshell);
+
+#include "kGradient_definitions.hpp"
+
+#endif

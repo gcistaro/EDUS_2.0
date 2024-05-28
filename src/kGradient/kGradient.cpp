@@ -1,13 +1,18 @@
 #include "kGradient.hpp"
 
 
-kGradient::kGradient(const MeshGrid<k> kmesh__) 
+kGradient::kGradient(const MeshGrid& kmesh__) 
+{
+    this->initialize(kmesh__);
+}
+
+void kGradient::initialize(const MeshGrid& kmesh__)
 {
     assert(kmesh__.get_type() == cube);
-    kmesh = std::make_shared<MeshGrid<k>>(kmesh__);
-
+    kmesh = std::make_shared<MeshGrid>(kmesh__);
     initialize();
 }
+
 
 
 void kGradient::initialize()
@@ -22,7 +27,7 @@ void kGradient::initialize()
     ikpb = Find_kpb(*kmesh, ikshell);
 }
 
-auto SortInShells(const MeshGrid<k>& kmesh)
+std::vector<std::vector<int>> SortInShells(const MeshGrid& kmesh)
 {
     std::vector<std::vector<int>> ikshell;
     //find all norms of k vectors
@@ -58,7 +63,7 @@ auto SortInShells(const MeshGrid<k>& kmesh)
 
 
 void Calculate_nshellsAndweights(int& nshells, mdarray<double,1>& Weight, 
-                                 const MeshGrid<k>& kmesh, const std::vector<std::vector<int>>& ikshell)
+                                 const MeshGrid& kmesh, const std::vector<std::vector<int>>& ikshell)
 {    
     auto q = Matrix<double>({6,1});
     q(0,0) = ( kmesh.get_Size()[0] > 1);     
@@ -129,7 +134,7 @@ int beta( const size_t& j )
  * This routine evalues A(j,s) = sum_{i\in s} b^{i}_\alpha b^{i}_\beta
  *
 */
-auto GradientMatrix(const size_t& nshells, const MeshGrid<k>& kmesh, const std::vector<std::vector<int>>& ik_sorted)
+Matrix<double> GradientMatrix(const size_t& nshells, const MeshGrid& kmesh, const std::vector<std::vector<int>>& ik_sorted)
 {
     Matrix<double> A(6, nshells);
     A.fill(0.);
@@ -148,17 +153,19 @@ auto GradientMatrix(const size_t& nshells, const MeshGrid<k>& kmesh, const std::
     return A;
 }
 
-mdarray<std::vector<int>, 2> Find_kpb(const MeshGrid<k>& kmesh, const std::vector<std::vector<int>>& ikshell)
+std::vector<std::vector<std::vector<int>>> Find_kpb(const MeshGrid& kmesh, const std::vector<std::vector<int>>& ikshell)
 {
-    mdarray<std::vector<int>, 2> ikpb({kmesh.get_TotalSize(), ikshell.size()});
+    std::vector<std::vector<std::vector<int>>> ikpb(kmesh.get_TotalSize());
 
     //find k+b in kmesh for every k, every b
     for( int ik = 0; ik < kmesh.get_TotalSize(); ++ik) {
+        ikpb[ik].resize(ikshell.size());
         for( int ishell = 0; ishell < ikshell.size(); ++ishell ) {
-            ikpb(ik, ishell).resize( ikshell[ishell].size() );
+            ikpb[ik][ishell].resize( ikshell[ishell].size() );
             for( int ib = 0; ib < ikshell[ishell].size(); ++ib ) {
-                ikpb( ik, ishell )[ib] = kmesh.find(kmesh[ik] + kmesh[ikshell[ishell][ib]]);
+                ikpb[ik][ishell][ib] = kmesh.find(kmesh[ik] + kmesh[ikshell[ishell][ib]]);
             }
         }
     }
+    return ikpb;
 }
