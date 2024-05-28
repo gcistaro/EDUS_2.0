@@ -48,7 +48,7 @@ void Coordinate::initialize(const double& c1, const double& c2, const double& c3
     }
 }
 
-Coordinate::Coordinate(const Coordinate<space>& v)
+Coordinate::Coordinate(const Coordinate& v)
 {
     *this = v;
 }
@@ -73,7 +73,7 @@ Coordinate& Coordinate::operator=(Coordinate&& v)
 Coordinate Coordinate::operator-() const
 {
     auto& cart = CoordinateDictionary.at("Cartesian");
-    return(Coordinate<space>(-cart(0),
+    return(Coordinate(-cart(0),
                              -cart(1),
                              -cart(2)));
 }
