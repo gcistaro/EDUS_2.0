@@ -251,6 +251,7 @@ class Operator
         {
             initialize_dft();
             execute_dft(path, sign);
+            Operator_k.initialize(k, FTfriendly_Operator_k.get_Size(1), Operator_R.get_nrows(), Operator_R.get_ncols());
             shuffle_to_RK();
         }
 
@@ -281,13 +282,14 @@ class Operator
             }
             std::vector< std::vector<double> > Mesh_FT;
             auto& mesh_operator = Operator_R.get_MeshGrid()->get_mesh();
+            std::cout << "Mesh of Operator_R: "<< *(Operator_R.get_MeshGrid()) << std::endl;
             Mesh_FT.resize(mesh_operator.size());        
 
             for(int im=0; im<mesh_operator.size(); im++){
                 Mesh_FT[im].resize(3);
-                Mesh_FT[im][0] = mesh_operator[im].get("LatticeVectors")[0];
-                Mesh_FT[im][1] = mesh_operator[im].get("LatticeVectors")[1];
-                Mesh_FT[im][2] = mesh_operator[im].get("LatticeVectors")[2];
+                Mesh_FT[im][0] = mesh_operator[im].get(LatticeVectors(R))[0];
+                Mesh_FT[im][1] = mesh_operator[im].get(LatticeVectors(R))[1];
+                Mesh_FT[im][2] = mesh_operator[im].get(LatticeVectors(R))[2];
                 //std::cout <<"MESH_FT: "<< Mesh_FT[im][0] <<" " << Mesh_FT[im][1] << " " << Mesh_FT[im][2] << std::endl;
                 //std::cout << Mesh_FT[im][0] << " " << Mesh_FT[im][1] << Mesh_FT[im][2] << std::endl;
             }
@@ -301,9 +303,10 @@ class Operator
             std::vector< std::vector<double>> path_bare(path.size());
             for(int i=0; i<path.size(); ++i){
                 path_bare[i].resize(3);
-                path_bare[i][0] = path[i].get("LatticeVectors")[0];
-                path_bare[i][1] = path[i].get("LatticeVectors")[1];
-                path_bare[i][2] = path[i].get("LatticeVectors")[2];
+                path_bare[i][0] = path[i].get(LatticeVectors(k))[0];
+                path_bare[i][1] = path[i].get(LatticeVectors(k))[1];
+                path_bare[i][2] = path[i].get(LatticeVectors(k))[2];
+                std::cout << path_bare[i][0] << " " << path_bare[i][1] << " "<< path_bare[i][2] << std::endl;
             }
             FTfriendly_Operator_k = ft_.dft(path_bare, +1);
         }
@@ -311,7 +314,6 @@ class Operator
 
         void shuffle_to_RK()
         {
-            //Operator_k.initialize(k, FTfriendly_Operator_k.get_Size(1), Operator_R.get_nrows(), Operator_R.get_ncols());
             for(int ik=0; ik<Operator_k.get_nblocks(); ++ik){
                 for(int ibnd1=0; ibnd1<Operator_k.get_nrows(); ++ibnd1){
                     for(int ibnd2=ibnd1; ibnd2<Operator_k.get_nrows(); ++ibnd2){ 

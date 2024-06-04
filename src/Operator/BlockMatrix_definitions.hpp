@@ -231,7 +231,7 @@ template<class T>
 std::ostream& operator<<(std::ostream& os, const BlockMatrix<T>& m)
 {
     for(int i=0; i<m.get_nblocks(); i++){
-        os << (*((const_cast<BlockMatrix<T>&>(m)).get_MeshGrid()))[i].get(LatticeVectors(m.space)) << m[i] << std::endl;
+        os << (*((const_cast<BlockMatrix<T>&>(m)).get_MeshGrid()))[i].get(LatticeVectors(m.get_space())) << m[i] << std::endl;
     }
     return os;
 }

@@ -35,11 +35,12 @@ class Matrix{
         void initialize(const size_t& nrows, const size_t& ncols);
 
         Matrix(T* Ptr, const std::array<size_t,2>& dims);
-        Matrix(const Matrix& A);
-        Matrix& operator=(const Matrix& m);
         
-        Matrix(Matrix&& A);
-        Matrix& operator=(Matrix&& m);
+        Matrix(const Matrix& A) = default;
+        Matrix& operator=(const Matrix& m) = default;
+        
+        Matrix(Matrix&& A) = default;
+        Matrix& operator=(Matrix&& m) = default;
 
         const T& operator()(const int& n, const int& m) const;
         T& operator()(const int& n, const int& m);

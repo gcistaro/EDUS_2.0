@@ -9,7 +9,7 @@ kGradient::kGradient(const MeshGrid& kmesh__)
 void kGradient::initialize(const MeshGrid& kmesh__)
 {
     assert(kmesh__.get_type() == cube);
-    kmesh = std::make_shared<MeshGrid>(kmesh__);
+    kmesh = std::make_shared<MeshGrid>( get_GammaCentered_grid(kmesh__) );
     initialize();
 }
 
@@ -21,7 +21,6 @@ void kGradient::initialize()
     if(!kmesh) {
         return;
     }
-
     ikshell = SortInShells(*kmesh);
     Calculate_nshellsAndweights(nshells, Weight, *kmesh, ikshell);
     ikpb = Find_kpb(*kmesh, ikshell);
@@ -29,35 +28,45 @@ void kGradient::initialize()
 
 std::vector<std::vector<int>> SortInShells(const MeshGrid& kmesh)
 {
-    std::vector<std::vector<int>> ikshell;
+    std::vector<std::vector<int>> ikshell; //[ishell][ik] contains all ik with norm ishell
     //find all norms of k vectors
-    std::vector<double> knorms;
+    std::vector<double> knorms; //array with norm of k vectors (not repeated)
     for( auto& k_ : kmesh.get_mesh() ) {
         auto k_norm = k_.norm();
         auto it = std::find_if(knorms.begin(), knorms.end(), 
-                               [&k_norm](const auto& norm) { return ( norm - k_norm ) < threshold; });
+                               [&k_norm](const auto& norm) { return std::abs( norm - k_norm ) < threshold; });
         bool found = ( it != knorms.end() );
         if( !found ) {
             knorms.push_back( k_norm );
         }                 
     }
-
-    //now we finally know how many shells we have
-    ikshell.resize(knorms.size());
-    //sort knorms in ascending order
     std::sort( knorms.begin(), knorms.end() );
-
+    ikshell.resize(knorms.size());
     //find indices of each shell
     for( size_t ik=0; ik< kmesh.get_TotalSize(); ++ik ) {
         //find what shell k_ belongs to
         auto k_norm = kmesh[ik].norm();
         auto it = std::find_if(knorms.begin(), knorms.end(), 
-                               [&k_norm](const auto& norm) { return ( norm - k_norm ) < threshold; });
-        auto ishell = knorms.end() - it;
-
+                               [&k_norm](const auto& norm) { return std::abs( norm - k_norm ) < 1.e-07; });
+        assert(it != knorms.end());
+        auto ishell = it - knorms.begin();
         //push back the index in ikshell
         ikshell[ishell].push_back(ik);
     }
+    //remove 0 from kshells 
+    assert( std::abs(knorms[0]) < threshold );
+    ikshell.erase(ikshell.begin());
+    knorms.erase(knorms.begin());
+
+    //recap
+    std::ofstream of("Cartesian.txt");
+    for(int ishell=0; ishell<ikshell.size(); ishell++) {
+        for(int ik=0; ik<ikshell[ishell].size(); ik++) {
+            of << ishell << " " <<knorms[ishell] << " " <<  ikshell[ishell][ik] << " " << kmesh[ikshell[ishell][ik]].get("Cartesian");//get(LatticeVectors(k));
+        }
+    }
+    of.close();
+
     return ikshell;
 }
 
@@ -66,9 +75,10 @@ void Calculate_nshellsAndweights(int& nshells, mdarray<double,1>& Weight,
                                  const MeshGrid& kmesh, const std::vector<std::vector<int>>& ikshell)
 {    
     auto q = Matrix<double>({6,1});
-    q(0,0) = ( kmesh.get_Size()[0] > 1);     
-    q(1,0) = ( kmesh.get_Size()[1] > 1);    
-    q(2,0) = ( kmesh.get_Size()[2] > 1);
+
+    q(0,0) = ( kmesh.get_Size()[0] > 1 ? 1 : 0 ) ;     
+    q(1,0) = ( kmesh.get_Size()[1] > 1 ? 1 : 0 ) ;   
+    q(2,0) = ( kmesh.get_Size()[2] > 1 ? 1 : 0 ) ; 
     q(3,0) = 0.;     
     q(4,0) = 0.;    
     q(5,0) = 0.;
@@ -96,6 +106,7 @@ void Calculate_nshellsAndweights(int& nshells, mdarray<double,1>& Weight,
     assert(w.get_nrows() == nshells);
     assert(w.get_ncols() == 1);
 
+    Weight = mdarray<double, 1>({size_t(nshells)});
     for(int ishell = 0; ishell < nshells; ++ishell) {
         Weight(ishell) = w(ishell, 0);
     }
@@ -169,3 +180,4 @@ std::vector<std::vector<std::vector<int>>> Find_kpb(const MeshGrid& kmesh, const
     }
     return ikpb;
 }
+

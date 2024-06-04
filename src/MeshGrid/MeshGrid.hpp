@@ -43,11 +43,11 @@ class MeshGrid{
         static std::map<std::array<size_t,3>, mdarray<int,2> > ConvolutionIndex;//to call it: [{id1,id2,id3}][{iR1,iR3}]
 
         MeshGrid(){};
-        MeshGrid(const MeshGrid& m);
-        MeshGrid& operator=(const MeshGrid& mg);
+        MeshGrid(const MeshGrid& m) = default;
+        MeshGrid& operator=(const MeshGrid& mg) = default;
 
-        MeshGrid(MeshGrid&& m);
-        MeshGrid& operator=(MeshGrid&& mg);
+        MeshGrid(MeshGrid&& m) = default;
+        MeshGrid& operator=(MeshGrid&& mg) = default;
 
         MeshGrid(const Space& space__, const std::vector<Coordinate>& ReadMesh); 
         MeshGrid(const Space& space__, const mdarray<double,2>& bare_mg, const std::string& KeyForBasis);
@@ -71,6 +71,7 @@ class MeshGrid{
 
         int find(const Coordinate& v) const;
         Coordinate reduce(const Coordinate& v) const;
+        Coordinate reduce(Coordinate& v, const double& low_limit, const double& up_limit) const;
         std::pair<int,int> get_shellindices(int shellNumber) const;
         const std::vector<Coordinate>& get_mesh() const;
         const std::array<int,3>& get_Size() const;
@@ -87,8 +88,10 @@ class MeshGrid{
             return type;
         } 
 
+        friend std::ostream& operator<<(std::ostream& os, const MeshGrid& MG_);
         auto get_space() const { return space; };
 
+        friend MeshGrid get_GammaCentered_grid(const MeshGrid& kmesh__);
 };
 
 
