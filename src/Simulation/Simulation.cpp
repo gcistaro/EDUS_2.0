@@ -18,8 +18,6 @@ void Simulation::SettingUp_EigenSystem()
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
     auto& UkDagger = Operator<std::complex<double>>::EigenVectors_dagger;
 
-    std::cout << "material.H.get_Operator_R()\n" << material.H.get_Operator_R() << std::endl;
-    std::cout << "material.H.get_Operator_k()\n" << material.H.get_Operator_k() << std::endl;
     material.H.get_Operator_k().diagonalize(Band_energies, Uk);
     //------------------------------------------------------------------------------
 
@@ -63,7 +61,7 @@ void Simulation::Calculate_TDHamiltonian(const double& time)
     //---------------------------------------------------------------------------------
 
     //------------------------H(R) = H0(R) + E.r(R)-------------------------------------
-    #pragma omp parallel for schedule(dynamic)
+    #pragma omp parallel for schedule(static) collapse(3)
     for(int iblock=0; iblock<H0_.get_nblocks(); ++iblock){
         for(int irow=0; irow<H0_.get_nrows(); ++irow){
             for(int icol=0; icol<H0_.get_ncols(); ++icol){
