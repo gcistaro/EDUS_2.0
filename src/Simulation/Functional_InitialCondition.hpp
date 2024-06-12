@@ -16,7 +16,9 @@ InitialCondition =
     DM.lock_gauge(bloch);
     DM.lock_space(k);
     DM.go_to_wannier();
-    DM.go_to_R();
+
+    //assert(DM.get_Operator_k().is_hermitian());
+    if(SpaceOfPropagation == R) DM.go_to_R();
 };
 
 

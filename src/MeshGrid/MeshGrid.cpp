@@ -98,11 +98,11 @@ void MeshGrid::initialize(const Space& space__, const std::array<int,3>& Size_)
 
     space = space__;
     type=cube;
-    std::cout << "Size_: " << Size_[0] << " " << Size_[1] << " " << Size_[2] << std::endl;
+
     Size[0] = Size_[0];
     Size[1] = Size_[1];
     Size[2] = Size_[2];
-    std::cout << "Size: " << Size[0] << " " << Size[1] << " " << Size[2] << std::endl;
+
     TotalSize = Size[0]*Size[1]*Size[2];
     mesh.resize(TotalSize);
 
@@ -281,6 +281,12 @@ int MeshGrid::find(const Coordinate& v) const
         {
             auto v_reduced = reduce(v);
             auto notcart = v_reduced.get(LatticeVectors(space));
+            
+            if ( space == k ) {
+                for ( auto& ix : { 0, 1, 2 } ) {
+                    notcart[ix]*=Size[ix];
+                }
+            } 
             index = int(round(notcart[2] + Size[2] * (notcart[1] + Size[1] * notcart[0])));//warning! round is important, if not it will get the integer part, usually wrong.
             break;
 	    }
@@ -329,7 +335,7 @@ Coordinate MeshGrid::reduce(const Coordinate& v) const
     v_reduced.initialize(std::fmod(notcart[0], grid_limit[0]),
                          std::fmod(notcart[1], grid_limit[1]),
                          std::fmod(notcart[2], grid_limit[2]),
-                         LatticeVectors(space));
+                         LatticeVectors(space));    
     return v_reduced;
 }
 

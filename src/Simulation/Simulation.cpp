@@ -17,6 +17,9 @@ void Simulation::SettingUp_EigenSystem()
     //--------------------solve eigen problem---------------------------------------
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
     auto& UkDagger = Operator<std::complex<double>>::EigenVectors_dagger;
+
+    std::cout << "material.H.get_Operator_R()\n" << material.H.get_Operator_R() << std::endl;
+    std::cout << "material.H.get_Operator_k()\n" << material.H.get_Operator_k() << std::endl;
     material.H.get_Operator_k().diagonalize(Band_energies, Uk);
     //------------------------------------------------------------------------------
 
@@ -69,6 +72,7 @@ void Simulation::Calculate_TDHamiltonian(const double& time)
                                        + las[0]*x_(iblock, irow, icol)
                                        + las[1]*y_(iblock, irow, icol)
                                        + las[2]*z_(iblock, irow, icol);
+                //std::cout << iblock << " " << irow << " " << icol << " " << H_(Hblock, irow, icol)-H0_(iblock, irow, icol) << std::endl;
             }
         }
     }
@@ -80,7 +84,7 @@ void Simulation::Propagate()
     PROFILE("Simulation::Propagate");
     auto CurrentTime = RK_object.get_CurrentTime();
     //------------------------Print population-------------------------------------
-    DensityMatrix.go_to_k();
+    if(SpaceOfPropagation == R) DensityMatrix.go_to_k();
     DensityMatrix.go_to_bloch();
     
     /*
@@ -96,6 +100,7 @@ void Simulation::Propagate()
         //print time 
         os_Time << CurrentTime << std::endl;
          //print population
+/*
         std::vector<std::complex<double>> Population(DensityMatrix.get_Operator_k().get_nrows(), 0.);
         for(int ik=0; ik<DensityMatrix.get_Operator_k().get_nblocks(); ik++) {
             for(int ibnd=0; ibnd<Population.size(); ibnd++) {
@@ -111,7 +116,24 @@ void Simulation::Propagate()
             os_Pop << ' ';
         }
         os_Pop << std::endl;
-        
+*/
+        mdarray<std::complex<double>,2> Population;
+        Population.initialize({DensityMatrix.get_Operator_k().get_nrows(), DensityMatrix.get_Operator_k().get_ncols()});
+        Population.fill(0.);
+        for(int ik=0; ik<DensityMatrix.get_Operator_k().get_nblocks(); ik++) {
+            for(int irow=0; irow <DensityMatrix.get_Operator_k().get_nrows(); ++irow ) {
+                for(int icol=0; icol <DensityMatrix.get_Operator_k().get_ncols(); ++icol ) {
+                    Population(irow, icol) += DensityMatrix.get_Operator_k()[ik](irow, icol);
+                }
+            }
+        }
+        for(int irow=0; irow <DensityMatrix.get_Operator_k().get_nrows(); ++irow ) {
+            for(int icol=0; icol <DensityMatrix.get_Operator_k().get_ncols(); ++icol ) {
+                os_Pop << Population(irow, icol);
+                os_Pop << ' ';
+            }
+        }
+        os_Pop << std::endl;
         //print laser
         os_Laser << laser(RK_object.get_CurrentTime()).get("Cartesian");
 	    //print stuff

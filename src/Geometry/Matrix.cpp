@@ -95,7 +95,6 @@ Matrix<double> Matrix<double>::pseudoinv()
             }
         }
     }
-    std::cout << "pseudoinverse: \n" << pseudoinv;
     //1. A*A^{-1}*A = A
     //std::cout << ((*this)*pseudoinv*(*this) - (*this)).norm()<<std::endl ;
     //std::cout <<  ( pseudoinv*(*this)*pseudoinv - pseudoinv ).norm() << std::endl;

@@ -178,9 +178,9 @@ class Operator
             }
             initialized_fft = true;
             
-            Operator_R = BlockMatrix<std::complex<double>>(MG.get_mesh().size(), nbnd, nbnd);
+            Operator_R = BlockMatrix<std::complex<double>>(R, MG.get_mesh().size(), nbnd, nbnd);
 
-            switch(MG.space)
+            switch(MG.get_space())
             {
                 case R:
                 {
@@ -226,7 +226,7 @@ class Operator
             */
             auto nk = FT_meshgrid_R->get_mesh().size();
 
-            Operator_k = BlockMatrix<std::complex<double>>(nk, nbnd, nbnd);
+            Operator_k = BlockMatrix<std::complex<double>>(k, nk, nbnd, nbnd);
             auto& kgrid = Operator_k.get_MeshGrid();
             kgrid = FT_meshgrid_k;
             bandindex.initialize(nbnd);
@@ -252,7 +252,14 @@ class Operator
             initialize_dft();
             execute_dft(path, sign);
             Operator_k.initialize(k, FTfriendly_Operator_k.get_Size(1), Operator_R.get_nrows(), Operator_R.get_ncols());
+            Operator_k.set_MeshGrid(MeshGrid(k, path));
             shuffle_to_RK();
+        }
+
+
+        MeshGrid& get_FT_meshgrid_k() 
+        {
+            return *FT_meshgrid_k;
         }
 
 /*
@@ -282,7 +289,7 @@ class Operator
             }
             std::vector< std::vector<double> > Mesh_FT;
             auto& mesh_operator = Operator_R.get_MeshGrid()->get_mesh();
-            std::cout << "Mesh of Operator_R: "<< *(Operator_R.get_MeshGrid()) << std::endl;
+
             Mesh_FT.resize(mesh_operator.size());        
 
             for(int im=0; im<mesh_operator.size(); im++){
@@ -306,7 +313,7 @@ class Operator
                 path_bare[i][0] = path[i].get(LatticeVectors(k))[0];
                 path_bare[i][1] = path[i].get(LatticeVectors(k))[1];
                 path_bare[i][2] = path[i].get(LatticeVectors(k))[2];
-                std::cout << path_bare[i][0] << " " << path_bare[i][1] << " "<< path_bare[i][2] << std::endl;
+//                std::cout << path_bare[i][0] << " " << path_bare[i][1] << " "<< path_bare[i][2] << std::endl;
             }
             FTfriendly_Operator_k = ft_.dft(path_bare, +1);
         }
@@ -425,27 +432,27 @@ class Operator
         void go_to_R()
         {
             assert(locked_space && initialized_fft);
-            //if(space == R){
-            //    return;
-            //}
+            if(space == R){
+                return;
+            }
             shuffle_to_fft_k();
             ft_.fft(-1);       
             shuffle_from_fft_R();  
 
-            //space = R;
+            space = R;
         }
 
         void go_to_k()
         {
             assert(locked_space && initialized_fft);
-            //if(space == k){
-            //    return;
-            //}
+            if(space == k){
+                return;
+            }
             shuffle_to_fft_R();
             ft_.fft(+1);          
             shuffle_from_fft_k();  
 
-            //space = k;
+            space = k;
         }
 
         void lock_gauge(const BandGauge& bandgauge__)

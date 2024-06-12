@@ -14,11 +14,14 @@ SourceTerm =
     auto& Output_ = Output.get_Operator(SpaceOfPropagation);
     auto& Input_ = Input.get_Operator(SpaceOfPropagation);
     auto& H_ = H.get_Operator(SpaceOfPropagation);
+    
     Output_.fill(0.*im);
     commutator(Output_, -im, H_, Input_);
-    
-    // Output += i * (E.R) * Input
+    //assert(Output_.is_hermitian());
+
+
     if( SpaceOfPropagation == R ) {
+    // Output += i * (E.R) * Input
         #pragma omp parallel for schedule(dynamic)
         for(int iR=0; iR<Output_.get_nblocks(); ++iR){        
             auto& R = (*(Output_.get_MeshGrid()))[iR];
@@ -27,7 +30,11 @@ SourceTerm =
         }
     }
     else if ( SpaceOfPropagation == k ) {
+    // Output +=   (E.Nabla) * Input
         kgradient.Calculate(Output_, Input_, 
                             laser(time), false);
     }
+    //assert(Output_.is_hermitian());
+
+    //std::cout << *max(Output_) << std::endl;
 };

@@ -106,6 +106,8 @@ class BlockMatrix{
         auto get_space() const{return space; };
         auto get_space() {return space; };
 
+        bool is_hermitian();
+        
         //destructor
         ~BlockMatrix();	
 };

@@ -192,7 +192,7 @@ void commutator(BlockMatrix<T_>& Output, U Scalar, const BlockMatrix<T_>& Input1
         case(k):
         {
             multiply(Output, Scalar, Input1, Input2);
-            multiply(Output, -Scalar, Input2, Input1);
+            multiply(Output, -Scalar, Input2, Input1, 1.+im*0.);
             break;
         }
     }
@@ -220,6 +220,23 @@ void BlockMatrix<T>::diagonalize(std::vector<mdarray<double,1>>& Eigenvalues,
     }
 }
 
+template<typename T>
+bool BlockMatrix<T>::is_hermitian()
+{
+    assert(space == k);
+    bool hermitian = true;
+    for(int ik=0; ik<this->get_nblocks(); ++ik) {
+        for( int irow=0; irow<this->get_nrows(); irow++ ) {
+            for(int icol=irow; icol < this->get_nrows(); ++icol ) {
+                //std::cout << (*this)[ik](irow, icol) << "    " << (*this)[ik](icol, irow) << "  " ;
+                //std::cout << std::abs( (*this)[ik](irow, icol) - std::conj((*this)[ik](icol, irow)) ) << std::endl;  
+                hermitian = hermitian && ( std::abs( (*this)[ik](irow, icol) - std::conj((*this)[ik](icol, irow)) ) < 1.e-14) ;
+            }
+        }
+    }
+    //std::cout <<  ( hermitian ? "IS HERMITIAN!!":"IS NOT HERMITIAN :(" ) << std::endl;
+    return hermitian;
+}
 
 template<typename T>
 auto max(const BlockMatrix<T>& m)

@@ -7,19 +7,26 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
     //---------------------------------------------------------------------------------------
     
     //------------------------------initializing laser---------------------------------------
-    laser.set_Intensity(1.e+05, Wcm2);//1.e+16, Wcm2);
+    laser.set_Intensity(1.e+11, Wcm2);//1.e+16, Wcm2);
     laser.set_InitialTime(0., FemtoSeconds);
-    laser.set_Lambda(3000, NanoMeters);
-    laser.set_NumberOfCycles(2);
+    laser.set_Intensity(1.e+05, Wcm2);
+    laser.set_Lambda(800, NanoMeters);
+    laser.set_NumberOfCycles(10);    
     laser.set_Polarization(Coordinate(1,0,0));
     //---------------------------------------------------------------------------------------
 
     //--------------------------initializing grids and arrays--------------------------------
     auto MasterRgrid = std::make_shared<MeshGrid>(R, arg_meshinit);
     DensityMatrix.initialize_fft(*MasterRgrid, material.H.get_Operator_R().get_nrows());
+    DensityMatrix.set_SpaceOfPropagation(SpaceOfPropagation);
+
+    material.H.dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
+    material.r[0].dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
+    material.r[1].dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
+    material.r[2].dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
     H = DensityMatrix; //to initialize dimensions
     SettingUp_EigenSystem();
-    Calculate_Velocity();
+    //Calculate_Velocity();
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
     auto& UkDagger = Operator<std::complex<double>>::EigenVectors_dagger;
     //---------------------------------------------------------------------------------------
@@ -31,11 +38,11 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
                         InitialCondition, SourceTerm);
     RK_object.set_InitialTime(0.);
     RK_object.set_ResolutionTime(0.01);
-    PrintResolution = 100;
-    kgradient.initialize();
+    PrintResolution = 1;
+    kgradient.initialize(*(DensityMatrix.get_Operator(k).get_MeshGrid()));
 
-    DensityMatrix.set_SpaceOfPropagation(SpaceOfPropagation);
     
+
     print_recap();
     //---------------------------------------------------------------------------------------
 
@@ -66,6 +73,8 @@ void SumWithProduct(Operator<std::complex<double>>& Output,
                     const Operator<std::complex<double>>& SecondAddend)
 {
     auto SpaceOfPropagation = Output.get_SpaceOfPropagation();
+
+    //std::cout << "space of propagation: "<< (SpaceOfPropagation==k? "k":"R") << std::endl;
     auto& Output_ = Output.get_Operator( SpaceOfPropagation );
     auto& FirstAddend_ = FirstAddend.get_Operator( SpaceOfPropagation );
     auto& SecondAddend_ = SecondAddend.get_Operator( SpaceOfPropagation );

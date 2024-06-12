@@ -161,9 +161,8 @@ Matrix<T> Matrix<T>::operator-(const Matrix<T>& B) const
 template<class T>
 Matrix<T>& Matrix<T>::operator+=(const Matrix<T>& B) 
 {   
-    Matrix<T> C(this->get_nrows(), this->get_ncols());
-    for(int irow=0; irow<C.get_nrows(); ++irow){
-        for(int icol=0; icol<C.get_ncols(); ++icol){
+    for(int irow=0; irow<this->get_nrows(); ++irow){
+        for(int icol=0; icol<this->get_ncols(); ++icol){
             (*this)(irow, icol) += B(irow, icol);
         }
     }
