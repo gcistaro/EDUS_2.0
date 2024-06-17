@@ -400,7 +400,7 @@ void MeshGrid::Calculate_ConvolutionIndex(const MeshGrid& m1, const MeshGrid& m2
     ci = mdarray<int,2>({m1.get_TotalSize(), m3.get_TotalSize()});
     std::cout << "Calculating convolution indices for " << i1 << " " << i2 << " " << i3 << std::endl;
 
-    #pragma omp parallel for schedule(dynamic)
+    #pragma omp parallel for schedule(static)
     for(int iR1=0; iR1<m1.get_TotalSize(); iR1++){
         for(int iR3=0; iR3<m3.get_TotalSize(); iR3++){
                 ci(iR1, iR3) = m2.find(m1[iR1]-m3[iR3]);

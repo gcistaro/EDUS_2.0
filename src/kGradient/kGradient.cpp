@@ -168,16 +168,22 @@ Matrix<double> GradientMatrix(const size_t& nshells, const MeshGrid& kmesh, cons
 
 std::vector<std::vector<std::vector<int>>> Find_kpb(const MeshGrid& kmesh, const std::vector<std::vector<int>>& ikshell)
 {
+    PROFILE("kgradient::Find_kpb");
     std::vector<std::vector<std::vector<int>>> ikpb(kmesh.get_TotalSize());
 
+    #pragma omp parallel for schedule(static)
+    for( int ik = 0; ik < kmesh.get_TotalSize(); ++ik) {
+        ikpb[ik].resize(ikshell.size());
+        for( int ishell = 0; ishell < ikshell.size(); ++ishell ) {
+            ikpb[ik][ishell].resize( ikshell[ishell].size() );
+        }
+    }
     std::cout << "Calculating map ik, ib ---> ikpb...\n";
     //find k+b in kmesh for every k, every b
     #pragma omp parallel for schedule(static)
     for( int ik = 0; ik < kmesh.get_TotalSize(); ++ik) {
-        std::cout << "ik: " << ik << "/" << kmesh.get_TotalSize() << " in thread " << omp_get_thread_num() << "/" << omp_get_num_threads() << std::endl;
-        ikpb[ik].resize(ikshell.size());
+        //std::cout << "ik: " << ik << "/" << kmesh.get_TotalSize() << " in thread " << omp_get_thread_num() << "/" << omp_get_num_threads() << std::endl;
         for( int ishell = 0; ishell < ikshell.size(); ++ishell ) {
-            ikpb[ik][ishell].resize( ikshell[ishell].size() );
             for( int ib = 0; ib < ikshell[ishell].size(); ++ib ) {
                 ikpb[ik][ishell][ib] = kmesh.find(kmesh[ik] + kmesh[ikshell[ishell][ib]]);
             }

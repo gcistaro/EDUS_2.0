@@ -401,7 +401,7 @@ class Operator
         void go_to_wannier()
         {
             assert(locked_bandgauge);
-            //assert(space == k);
+            assert(space == k);
             if (bandgauge == wannier){
                 return;
             }
@@ -417,7 +417,7 @@ class Operator
         void go_to_bloch()
         {
             assert(locked_bandgauge);
-            //assert(space == k);
+            assert(space == k);
             if(bandgauge == bloch){
                 return;
             }

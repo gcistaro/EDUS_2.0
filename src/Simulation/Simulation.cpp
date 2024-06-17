@@ -83,7 +83,7 @@ void Simulation::Propagate()
     auto CurrentTime = RK_object.get_CurrentTime();
     //------------------------Print population-------------------------------------
     if(SpaceOfPropagation == R) DensityMatrix.go_to_k();
-    DensityMatrix.go_to_bloch();
+    //DensityMatrix.go_to_bloch();
     
     /*
     auto Population = TraceK(DensityMatrix.get_Operator_k());
@@ -116,6 +116,7 @@ void Simulation::Propagate()
         os_Pop << std::endl;
 */
         mdarray<std::complex<double>,2> Population;
+        DensityMatrix.go_to_bloch();
         Population.initialize({DensityMatrix.get_Operator_k().get_nrows(), DensityMatrix.get_Operator_k().get_ncols()});
         Population.fill(0.);
         for(int ik=0; ik<DensityMatrix.get_Operator_k().get_nblocks(); ik++) {
@@ -127,7 +128,8 @@ void Simulation::Propagate()
         }
         for(int irow=0; irow <DensityMatrix.get_Operator_k().get_nrows(); ++irow ) {
             for(int icol=0; icol <DensityMatrix.get_Operator_k().get_ncols(); ++icol ) {
-                os_Pop << Population(irow, icol);
+                if(irow == 0 && icol == 0) Population(irow, icol) = double(DensityMatrix.get_Operator_k().get_nblocks())-Population(irow, icol);
+                os_Pop << std::scientific <<  Population(irow, icol)/double(DensityMatrix.get_Operator_k().get_nblocks());
                 os_Pop << ' ';
             }
         }
@@ -135,6 +137,8 @@ void Simulation::Propagate()
         //print laser
         os_Laser << laser(RK_object.get_CurrentTime()).get("Cartesian");
 	    //print stuff
+
+        DensityMatrix.go_to_wannier();
     }
 
     //------------------------------------------------------------------------------
@@ -153,8 +157,8 @@ void Simulation::Propagate()
     //os_Pos << std::setw(20) << std::setprecision(8) << v[2].imag();
     //os_Pos << std::endl;
 
-    DensityMatrix.go_to_wannier();
-    DensityMatrix.go_to_R();
+    //DensityMatrix.go_to_wannier();
+    //DensityMatrix.go_to_R();
     RK_object.Propagate();
 }
 

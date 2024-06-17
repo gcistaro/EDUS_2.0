@@ -8,7 +8,7 @@ void kGradient::Calculate(T& DerivativeFunction, const T& Function,
     }
 
 
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(static)
     for( int ik = 0; ik < kmesh->get_TotalSize(); ++ik ) {
         for( int ishell = 0; ishell < Weight.get_Size(0); ++ishell ) {
             for( int ib = 0; ib < ikshell[ishell].size(); ++ib ) {

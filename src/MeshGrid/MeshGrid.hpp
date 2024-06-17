@@ -70,8 +70,8 @@ class MeshGrid{
         const Coordinate& operator[](const int& i) const;
 
         int find(const Coordinate& v) const;
-        Coordinate reduce(const Coordinate& v) const;
-        Coordinate reduce(Coordinate& v, const double& low_limit, const double& up_limit) const;
+        inline Coordinate reduce(const Coordinate& v) const;
+        inline Coordinate reduce(Coordinate& v, const double& low_limit, const double& up_limit) const;
         std::pair<int,int> get_shellindices(int shellNumber) const;
         const std::vector<Coordinate>& get_mesh() const;
         const std::array<int,3>& get_Size() const;

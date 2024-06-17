@@ -72,6 +72,7 @@ void SumWithProduct(Operator<std::complex<double>>& Output,
                     const Scalar_T& SecondScalar, 
                     const Operator<std::complex<double>>& SecondAddend)
 {
+    PROFILE("SumWithProduct");
     auto SpaceOfPropagation = Output.get_SpaceOfPropagation();
 
     //std::cout << "space of propagation: "<< (SpaceOfPropagation==k? "k":"R") << std::endl;

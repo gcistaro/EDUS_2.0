@@ -20,9 +20,10 @@ SourceTerm =
     //assert(Output_.is_hermitian());
 
 
+    PROFILE_START("i*(E.R)*Input");
     if( SpaceOfPropagation == R ) {
     // Output += i * (E.R) * Input
-        #pragma omp parallel for schedule(dynamic)
+        #pragma omp parallel for schedule(static)
         for(int iR=0; iR<Output_.get_nblocks(); ++iR){        
             auto& R = (*(Output_.get_MeshGrid()))[iR];
             auto imDotProduct = im*R.dot( laser(time) );
@@ -34,6 +35,8 @@ SourceTerm =
         kgradient.Calculate(Output_, Input_, 
                             laser(time), false);
     }
+    PROFILE_STOP("i*(E.R)*Input");
+
     //assert(Output_.is_hermitian());
 
     //std::cout << *max(Output_) << std::endl;

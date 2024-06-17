@@ -179,6 +179,7 @@ void convolution(BlockMatrix<T>& Output, U Scalar, const BlockMatrix<T>& Input1,
 template<typename T_, typename U>
 void commutator(BlockMatrix<T_>& Output, U Scalar, const BlockMatrix<T_>& Input1, const BlockMatrix<T_>& Input2 )
 {
+    PROFILE("Commutator");
     assert( Output.get_space() == Input1.get_space() );
     assert( Input2.get_space() == Input1.get_space() );
 
