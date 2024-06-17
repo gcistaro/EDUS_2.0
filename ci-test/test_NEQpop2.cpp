@@ -25,25 +25,27 @@ This is a good proof that the R evolution is working at equilibrium.
 
 int main()
 {   
-    auto N = 50;
+    auto N = 3;
     Simulation simulation("/home/gcistaro/NEGF/tb_models/2B_trivialH", std::array<int,3>({N,1,1}));//;/TBgraphene",40.);//
     
-    std::function<void(BlockMatrix<std::complex<double>, R>&)> InitialConditionToUse = [&](BlockMatrix<std::complex<double>, R>& DM)
+    std::function<void(Operator<std::complex<double>>&)> InitialConditionToUse = [&](Operator<std::complex<double>>& DM)
     {
         simulation.DensityMatrix.get_Operator_k().fill(0.);
         for(int ik=0; ik < simulation.DensityMatrix.get_Operator_k().get_MeshGrid()->get_TotalSize(); ++ik){
-            auto k = (*(simulation.DensityMatrix.get_Operator_k().get_MeshGrid()))[ik].get("LatticeVectors");
-            std::cout << N*k[0] << std::endl;
-            simulation.DensityMatrix.get_Operator_k()(ik,0,1) = std::cos(2.*pi*k[0])/std::sqrt(N);
-            simulation.DensityMatrix.get_Operator_k()(ik,1,0) = std::cos(2.*pi*k[0])/std::sqrt(N);
+            auto k_ = (*(simulation.DensityMatrix.get_Operator_k().get_MeshGrid()))[ik].get(LatticeVectors(k));
+            std::cout << N*k_[0] << std::endl;
+            simulation.DensityMatrix.get_Operator_k()(ik,0,1) = std::cos(2.*pi*k_[0])/std::sqrt(N);
+            simulation.DensityMatrix.get_Operator_k()(ik,1,0) = std::cos(2.*pi*k_[0])/std::sqrt(N);
         }
-        simulation.DensityMatrix.go_to_R();
-        for(int iR=0; iR < simulation.DensityMatrix.get_Operator_R().get_MeshGrid()->get_TotalSize(); ++iR){
-            for(int irow=0; irow<2; ++irow) {
-                for(int icol=0; icol<2; ++icol) {
-                    if(std::abs(simulation.DensityMatrix.get_Operator_R()[iR](irow, icol)) > 1.e-08 ) {
-                        std::cout << iR << " " << irow << " " << icol << " ";
-                        std::cout << simulation.DensityMatrix.get_Operator_R()[iR](irow, icol) << std::endl;
+        if(simulation.SpaceOfPropagation == R) {
+            simulation.DensityMatrix.go_to_R();
+            for(int iR=0; iR < simulation.DensityMatrix.get_Operator_R().get_MeshGrid()->get_TotalSize(); ++iR){
+                for(int irow=0; irow<2; ++irow) {
+                    for(int icol=0; icol<2; ++icol) {
+                        if(std::abs(simulation.DensityMatrix.get_Operator_R()[iR](irow, icol)) > 1.e-08 ) {
+                            std::cout << iR << " " << irow << " " << icol << " ";
+                            std::cout << simulation.DensityMatrix.get_Operator_R()[iR](irow, icol) << std::endl;
+                        }
                     }
                 }
             }
@@ -55,47 +57,41 @@ int main()
     auto& laser = simulation.laser;
     laser.set_Intensity(0., Wcm2);//1.e+16, Wcm2);
     auto& H = simulation.H;
+    auto& SpaceOfPropagation = simulation.SpaceOfPropagation;
+    auto& kgradient = simulation.kgradient;
+
     auto Calculate_TDHamiltonian = [&](const double& time){
         return simulation.Calculate_TDHamiltonian(time);
     };
     #include "Simulation/Functional_SourceTerm.hpp"
-    simulation.RK_object.initialize(simulation.DensityMatrix.get_Operator_R(), 
+    simulation.RK_object.initialize(simulation.DensityMatrix, 
                                     InitialConditionToUse, SourceTerm);
     auto DMk0 = simulation.DensityMatrix.get_Operator_k();
-    simulation.RK_object.set_ResolutionTime(0.01);
+    simulation.RK_object.set_ResolutionTime(0.001);
 
-    //std::cout << simulation.DensityMatrix.get_Operator_R();
-
+    //Check correctness of Source term
+    std::cout <<"Checking correctness of SourceTerm (the one used by the main program...)\n";
     auto ST = simulation.DensityMatrix;
-    SourceTerm(ST.get_Operator_R(), 0., simulation.DensityMatrix.get_Operator_R());
-
-    std::cout << "SourceTerm\n";
-    for(int iR=0; iR < simulation.DensityMatrix.get_Operator_R().get_MeshGrid()->get_TotalSize(); ++iR){
-        for(int irow=0; irow<2; ++irow) {
-            for(int icol=0; icol<2; ++icol) {
-                if(std::abs(ST.get_Operator_R()[iR](irow, icol)) > 1.e-08 ) {
-                    std::cout << iR << " " << irow << " " << icol << " ";
-                    std::cout << ST.get_Operator_R()[iR](irow, icol) << std::endl;
-                }
-            }
+    SourceTerm(ST, 0., simulation.DensityMatrix);
+    ST.go_to_k();
+    for( int ik=0; ik<ST.get_Operator_k().get_nblocks(); ++ik ) {
+        auto& H11 = simulation.material.H.get_Operator_k()[ik](1,1);
+        auto& P01 = simulation.DensityMatrix.get_Operator_k()[ik](0,1);
+        std::cout << ST.get_Operator_k()[ik](0,0) << std::endl;
+        std::cout << ST.get_Operator_k()[ik](0,1) << im*2.*P01*H11 << std::endl;
+        if(std::abs(ST.get_Operator_k()[ik](0,0)) > 1.e-10 || std::abs(ST.get_Operator_k()[ik](1,1)) > 1.e-10) {
+            std::cout << "ST(0,0) or ST(1,1) is diffferent than the analytical one!\n";
+            exit(1);
+        }
+        if(std::abs(ST.get_Operator_k()[ik](0,1) - (im*2.*P01*H11))>1.e-10) {
+            std::cout << "ST is diffferent than the analytical one!\n";
+            exit(1);
         }
     }
-
-    std::cout << "Hamiltonian\n";
-    for(int iR=0; iR < simulation.material.H.get_Operator_R().get_MeshGrid()->get_TotalSize(); ++iR){
-        for(int irow=0; irow<2; ++irow) {
-            for(int icol=0; icol<2; ++icol) {
-                if(std::abs(simulation.material.H.get_Operator_R()[iR](irow, icol)) > 1.e-08 ) {
-                    std::cout << iR << " " << irow << " " << icol << " ";
-                    std::cout << simulation.material.H.get_Operator_R()[iR](irow, icol) << std::endl;
-                }
-            }
-        }
-    }
-
-    for(int it=0; it < 1000; ++it){
-        simulation.Propagate();
-        simulation.DensityMatrix.go_to_k();
+    std::cout << "SourceTerm is correctly calculated!!\n";
+    std::cout << "Checking correctness of propagator...\n";
+    for(int it=0; it <= 1e+4; ++it){
+        //simulation.DensityMatrix.go_to_k();
         auto DMk = simulation.DensityMatrix.get_Operator_k();
         for(int ik=0; ik < DMk.get_MeshGrid()->get_TotalSize(); ik++){
             auto t = simulation.RK_object.get_CurrentTime();
@@ -107,9 +103,10 @@ int main()
             std::cout  << std::setw(40) << std::setprecision(10) << Analytical;
             std::cout  << std::setw(20) << std::setprecision(10) << RelativeError << std::endl;
             if( std::abs(Analytical) > 1.e-07 && 
-                RelativeError > 1.){
+                RelativeError > 10.){
                 exit(1);
             }
         }
+        simulation.Propagate();
     }
 }

@@ -81,7 +81,7 @@ class Envelope{
 
 class Laser{
     private:    
-        std::vector<Coordinate<k>> Values;
+        std::vector<Coordinate> Values;
         std::shared_ptr<TimeGrid> timegrid;
 
         Wave PlaneWave;
@@ -90,12 +90,12 @@ class Laser{
         double NumberOfCycles = 0;
         double Intensity = 0;
         double Amplitude = 0;
-        Coordinate<k> Polarization;//you need this only in cartesian coordinates.
+        Coordinate Polarization;//you need this only in cartesian coordinates.
 
     public:
         Laser(){};
-        Coordinate<k> operator()(const double& Time);
-        Coordinate<k> VectorPotential(const double& Time);
+        Coordinate operator()(const double& Time);
+        Coordinate VectorPotential(const double& Time);
         //setters
         //only one of the following three calculates the others
         void set_Period(const double& Period_, const Unit& InputUnit);
@@ -106,7 +106,7 @@ class Laser{
         void set_Phase(const double& Phase_);
         void set_NumberOfCycles(const double& NumberOfCycles_);
         void set_Intensity(const double& Intensity_, const Unit& InputUnit);
-        void set_Polarization(const Coordinate<k>& Polarization_);
+        void set_Polarization(const Coordinate& Polarization_);
         void set_TimeGrid(const TimeGrid& TimeGrid_);
         void print_info();
 };
@@ -129,7 +129,7 @@ class SetOfLaser
 
         auto operator()(const double& Time)
         {
-            Coordinate<k> result({0,0,0});
+            Coordinate result({0,0,0});
             for(auto& laser : LaserArray){
                 result += laser(Time);
             }

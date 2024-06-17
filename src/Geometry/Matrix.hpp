@@ -35,11 +35,12 @@ class Matrix{
         void initialize(const size_t& nrows, const size_t& ncols);
 
         Matrix(T* Ptr, const std::array<size_t,2>& dims);
-        Matrix(const Matrix& A);
-        Matrix& operator=(const Matrix& m);
         
-        Matrix(Matrix&& A);
-        Matrix& operator=(Matrix&& m);
+        Matrix(const Matrix& A) = default;
+        Matrix& operator=(const Matrix& m) = default;
+        
+        Matrix(Matrix&& A) = default;
+        Matrix& operator=(Matrix&& m) = default;
 
         const T& operator()(const int& n, const int& m) const;
         T& operator()(const int& n, const int& m);
@@ -47,14 +48,17 @@ class Matrix{
         void fill(const T& filling_constant);
         Matrix<T> operator*(const Matrix<T>& B) const;
         Matrix<T> operator*(T Scalar) const;
+
         Vector<T> operator*(const Vector<T>& v) const;
         
         Matrix<T> operator+(const Matrix<T>& B) const;
         Matrix<T> operator-() const;
         Matrix<T> operator-(const Matrix<T>& B) const;
+        Matrix<T>& operator+=(const Matrix<T>& B);
+        Matrix<T>& operator-=(const Matrix<T>& B);
 
-        template<typename U>
-        friend Matrix<U> operator*(U Scalar, const Matrix<U> M);
+        template<typename U, typename V>
+        friend Matrix<U> operator*(V Scalar, const Matrix<U> M);
 
         Matrix<T> inverse() const;
         Matrix<T> pseudoinv();

@@ -113,13 +113,13 @@ void Envelope::set_InitialTime(const double& InitialTime_)
     InitialTime = InitialTime_;
 }
 
-Coordinate<k> Laser::operator()(const double& Time)
+Coordinate Laser::operator()(const double& Time)
 {
     //return Coordinate<k>(10.,10.,10.);//(Amplitude*envelope(Time)*PlaneWave(Time))*Polarization;
     return (Amplitude*envelope(Time)*PlaneWave(Time))*Polarization;
 }
 
-Coordinate<k> Laser::VectorPotential(const double& Time)
+Coordinate Laser::VectorPotential(const double& Time)
 {
     //integral of the electric field with a - sign 
     auto a = pi/envelope.Duration;
@@ -175,7 +175,7 @@ void Laser::set_Intensity(const double& Intensity_, const Unit& InputUnit)
     Amplitude = sqrt(Intensity);
 }
 
-void Laser::set_Polarization(const Coordinate<k>& Polarization_)
+void Laser::set_Polarization(const Coordinate& Polarization_)
 {
     Polarization = Polarization_/Polarization_.norm(); 
 }

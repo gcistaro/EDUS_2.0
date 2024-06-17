@@ -1,13 +1,16 @@
-template<typename T, Space space>
-void BlockMatrix<T,space>::initialize(mdarray<T,3>& Values_)//, MeshGrid& meshgrid_)
+template<typename T>
+Matrix<T> BlockMatrix<T>::EmptyMatrix = Matrix<T>();
+
+template<typename T>
+void BlockMatrix<T>::initialize(const Space& space, mdarray<T,3>& Values_)//, MeshGrid& meshgrid_)
 {
     Values = std::move(Values_);
     //meshgrid = std::make_shared<MeshGrid>(meshgrid_);
     initialize_submatrix();
 }
 
-template<typename T, Space space>
-void BlockMatrix<T,space>::initialize_submatrix()
+template<typename T>
+void BlockMatrix<T>::initialize_submatrix()
 {
         submatrix.resize(Values.get_Size(0));
         for(auto iblock=0; iblock<Values.get_Size(0); iblock++){
@@ -16,15 +19,16 @@ void BlockMatrix<T,space>::initialize_submatrix()
 }
 
 
-template<typename T, Space space>
-void BlockMatrix<T,space>::initialize(const size_t& nblocks, const size_t& nrows, const size_t& ncols)
+template<typename T>
+void BlockMatrix<T>::initialize(const Space& space__, const size_t& nblocks, const size_t& nrows, const size_t& ncols)
 {
     Values.initialize({nblocks, nrows, ncols});
+    space = space__;
     initialize_submatrix();
 }
 
-template<typename T, Space space>
-void BlockMatrix<T,space>::test_submatrix()
+template<typename T>
+void BlockMatrix<T>::test_submatrix()
 {
     for(int ib=0; ib<this->get_nblocks(); ib++){
         for(int ir=0; ir<this->get_nrows(); ir++){
@@ -39,14 +43,14 @@ void BlockMatrix<T,space>::test_submatrix()
 }
 
 
-template<typename T, Space space>
-BlockMatrix<T, space>::BlockMatrix(const BlockMatrix<T, space>& A)
+template<typename T>
+BlockMatrix<T>::BlockMatrix(const BlockMatrix<T>& A)
 {
     *this = A;
 }
 
-template<typename T, Space space>
-const T& BlockMatrix<T, space>::operator()(const int& iblock, const int& n, const int& m) const
+template<typename T>
+const T& BlockMatrix<T>::operator()(const int& iblock, const int& n, const int& m) const
 {
     if(iblock == -1){
         return NullValue;
@@ -54,54 +58,57 @@ const T& BlockMatrix<T, space>::operator()(const int& iblock, const int& n, cons
     return this->Values(iblock, n, m);
 }
 
-template<typename T, Space space>
-T& BlockMatrix<T, space>::operator()(const int& iblock, const int& n, const int& m)
+template<typename T>
+T& BlockMatrix<T>::operator()(const int& iblock, const int& n, const int& m)
 {
-    return (const_cast<T&>(static_cast<BlockMatrix<T, space> const&>(*this)(iblock, n, m)));
+    return (const_cast<T&>(static_cast<BlockMatrix<T> const&>(*this)(iblock, n, m)));
 }
 
-template<typename T, Space space>
-BlockMatrix<T, space>& BlockMatrix<T, space>::operator=(const BlockMatrix<T, space>& A)
+template<typename T>
+BlockMatrix<T>& BlockMatrix<T>::operator=(const BlockMatrix<T>& A)
 {
     Values = A.Values;
+    space = A.space;
     initialize_submatrix();
     meshgrid = A.meshgrid;
     return *this;
 }
 
-template<typename T, Space space>
-BlockMatrix<T, space>::BlockMatrix(BlockMatrix<T, space>&& A)
+template<typename T>
+BlockMatrix<T>::BlockMatrix(BlockMatrix<T>&& A)
 {
     Values = std::move(A.Values);
+    space = std::move(A.space);
     initialize_submatrix();
     meshgrid = std::move(A.meshgrid);
 }
 
 
-template<typename T, Space space>
-BlockMatrix<T, space>& BlockMatrix<T, space>::operator=(BlockMatrix<T, space>&& A)
+template<typename T>
+BlockMatrix<T>& BlockMatrix<T>::operator=(BlockMatrix<T>&& A)
 {
     Values = std::move(A.Values);
+    space = std::move(A.space);
     initialize_submatrix();
     meshgrid = std::move(A.meshgrid);
     return *this;
 }
 
-template<typename T, Space space>
-void BlockMatrix<T,space>::fill(const T& Scalar)
+template<typename T>
+void BlockMatrix<T>::fill(const T& Scalar)
 {
     PROFILE("BlockMatrix::fill");
     std::fill(this->Values.begin(), this->Values.end(), Scalar);
 }
 
-template<typename T, Space space>
-Matrix<T>& BlockMatrix<T,space>::operator[](const int& iblock)
+template<typename T>
+Matrix<T>& BlockMatrix<T>::operator[](const int& iblock)
 {
-    return const_cast<Matrix<T>&>(static_cast<const BlockMatrix<T,space>&>(*this)[iblock]);
+    return const_cast<Matrix<T>&>(static_cast<const BlockMatrix<T>&>(*this)[iblock]);
 }
 
-template<typename T, Space space>
-const Matrix<T>& BlockMatrix<T,space>::operator[](const int& iblock) const
+template<typename T>
+const Matrix<T>& BlockMatrix<T>::operator[](const int& iblock) const
 {
     if(iblock < 0){
         return EmptyMatrix;
@@ -109,30 +116,30 @@ const Matrix<T>& BlockMatrix<T,space>::operator[](const int& iblock) const
     return submatrix[iblock];
 }
 
-template<typename T, Space space>
-Matrix<T>& BlockMatrix<T,space>::operator[](const Coordinate<space>& Point)
+template<typename T>
+Matrix<T>& BlockMatrix<T>::operator[](const Coordinate& Point)
 {
-    return const_cast<Matrix<T>&>(static_cast<const BlockMatrix<T,space>&>(*this)[Point]);
+    return const_cast<Matrix<T>&>(static_cast<const BlockMatrix<T>&>(*this)[Point]);
 }
 
-template<typename T, Space space>
-const Matrix<T>& BlockMatrix<T,space>::operator[](const Coordinate<space>& Point) const
+template<typename T>
+const Matrix<T>& BlockMatrix<T>::operator[](const Coordinate& Point) const
 {
     int iblock = (*meshgrid).find(Point);
     return (*this)[iblock];
 }
 
 
-template<typename T, Space space>
-void multiply(BlockMatrix<T,space>& Output, T Scalar, const BlockMatrix<T,space>& Input1, const BlockMatrix<T,space>& Input2 )
+template<typename T>
+void multiply(BlockMatrix<T>& Output, T Scalar, const BlockMatrix<T>& Input1, const BlockMatrix<T>& Input2 )
 {
     for(int iblock=0; iblock<Output.get_nblocks(); iblock++){
         Matrix_gemm(Output[iblock], Scalar, Input1[iblock], Input2[iblock], T(0.));
     }
 }
 
-template<typename T, Space space>
-void multiply(BlockMatrix<T,space>& Output, T Scalar, const BlockMatrix<T,space>& Input1, const BlockMatrix<T,space>& Input2, T Scalar2 )
+template<typename T>
+void multiply(BlockMatrix<T>& Output, T Scalar, const BlockMatrix<T>& Input1, const BlockMatrix<T>& Input2, T Scalar2 )
 {
     for(int iblock=0; iblock<Output.get_nblocks(); iblock++){
         Matrix_gemm(Output[iblock], Scalar, Input1[iblock], Input2[iblock], Scalar2);
@@ -140,16 +147,16 @@ void multiply(BlockMatrix<T,space>& Output, T Scalar, const BlockMatrix<T,space>
 }
 
 
-template<typename T, Space space, typename U>
-void convolution1(BlockMatrix<T,space>& Output, U Scalar, const BlockMatrix<T,space>& Input1, const BlockMatrix<T,space>& Input2 )
+template<typename T, typename U>
+void convolution(BlockMatrix<T>& Output, U Scalar, const BlockMatrix<T>& Input1, const BlockMatrix<T>& Input2 )
 {
     assert(Output.get_nblocks()!=0);
 
     //Output.fill(0.);
-    auto& ci = MeshGrid<space>::ConvolutionIndex1[{Output.meshgrid->get_id(), Input1.meshgrid->get_id(), Input2.meshgrid->get_id()}];
+    auto& ci = MeshGrid::ConvolutionIndex[{Output.meshgrid->get_id(), Input1.meshgrid->get_id(), Input2.meshgrid->get_id()}];
 
     if(ci.get_Size(0) == 0 ){
-        MeshGrid<space>::Calculate_ConvolutionIndex1(*(Output.meshgrid), *(Input1.meshgrid), *(Input2.meshgrid));
+        MeshGrid::Calculate_ConvolutionIndex(*(Output.meshgrid), *(Input1.meshgrid), *(Input2.meshgrid));
 
     }
     PROFILE_START("BlockMatrix::convolution");
@@ -169,50 +176,44 @@ void convolution1(BlockMatrix<T,space>& Output, U Scalar, const BlockMatrix<T,sp
     PROFILE_STOP("BlockMatrix::convolution");
 }
 
-template<typename T, Space space, typename U>
-void convolution2(BlockMatrix<T,space>& Output, U Scalar, const BlockMatrix<T,space>& Input1, const BlockMatrix<T,space>& Input2 )
+template<typename T_, typename U>
+void commutator(BlockMatrix<T_>& Output, U Scalar, const BlockMatrix<T_>& Input1, const BlockMatrix<T_>& Input2 )
 {
-    assert(Output.get_nblocks()!=0);
+    PROFILE("Commutator");
+    assert( Output.get_space() == Input1.get_space() );
+    assert( Input2.get_space() == Input1.get_space() );
 
-    //Output.fill(0.);
-    auto& ci = MeshGrid<space>::ConvolutionIndex2[{Output.meshgrid->get_id(), Input1.meshgrid->get_id(), Input2.meshgrid->get_id()}];
-
-    if(ci.get_Size(0) == 0 ){
-        MeshGrid<space>::Calculate_ConvolutionIndex2(*(Output.meshgrid), *(Input1.meshgrid), *(Input2.meshgrid));
-
-    }
-    PROFILE_START("BlockMatrix::convolution");
-    for(int iblock_o=0; iblock_o<Output.get_nblocks(); iblock_o++){
-        for(int iblock_i1=0; iblock_i1<Input1.get_nblocks(); iblock_i1++){
-            auto& iblock_i2 = ci(iblock_o, iblock_i1);
-            Matrix_gemm(Output[iblock_o], Scalar+im*0., Input1[iblock_i1], Input2[iblock_i2], 1.+im*0.);
+    switch( Output.get_space() ){
+        case(R):
+        {
+            convolution(Output, Scalar, Input1, Input2);
+            convolution(Output, -Scalar, Input2, Input1);
+            break;
+        }
+        case(k):
+        {
+            multiply(Output, Scalar, Input1, Input2);
+            multiply(Output, -Scalar, Input2, Input1, 1.+im*0.);
+            break;
         }
     }
-    PROFILE_STOP("BlockMatrix::convolution");
-}
-
-template<typename T_, typename U>
-void commutator(BlockMatrix<T_,R>& Output, U Scalar, const BlockMatrix<T_,R>& Input1, const BlockMatrix<T_,R>& Input2 )
-{
-    convolution1(Output, Scalar, Input1, Input2);
-    convolution1(Output, -Scalar, Input2, Input1);
 }
 
 
 
-template<typename T, Space space>
-BlockMatrix<T,space>::~BlockMatrix()
+template<typename T>
+BlockMatrix<T>::~BlockMatrix()
 {
     Values.~mdarray<T,3>();
 }
 
 
-template<typename T, Space space>
-void BlockMatrix<T,space>::diagonalize(std::vector<mdarray<double,1>>& Eigenvalues,
-                 BlockMatrix<std::complex<double>,space>& Eigenvectors) const
+template<typename T>
+void BlockMatrix<T>::diagonalize(std::vector<mdarray<double,1>>& Eigenvalues,
+                 BlockMatrix<std::complex<double>>& Eigenvectors) const
 {
     //assert(space_ == k);
-    Eigenvectors.initialize(this->get_nblocks(), this->get_nrows(), this->get_ncols());
+    Eigenvectors.initialize(k, this->get_nblocks(), this->get_nrows(), this->get_ncols());
     Eigenvalues.resize(this->get_nblocks());
     for(int ik=0; ik<this->get_nblocks(); ik++){
         Eigenvalues[ik].initialize({this->get_nrows()});
@@ -220,18 +221,35 @@ void BlockMatrix<T,space>::diagonalize(std::vector<mdarray<double,1>>& Eigenvalu
     }
 }
 
+template<typename T>
+bool BlockMatrix<T>::is_hermitian()
+{
+    assert(space == k);
+    bool hermitian = true;
+    for(int ik=0; ik<this->get_nblocks(); ++ik) {
+        for( int irow=0; irow<this->get_nrows(); irow++ ) {
+            for(int icol=irow; icol < this->get_nrows(); ++icol ) {
+                //std::cout << (*this)[ik](irow, icol) << "    " << (*this)[ik](icol, irow) << "  " ;
+                //std::cout << std::abs( (*this)[ik](irow, icol) - std::conj((*this)[ik](icol, irow)) ) << std::endl;  
+                hermitian = hermitian && ( std::abs( (*this)[ik](irow, icol) - std::conj((*this)[ik](icol, irow)) ) < 1.e-14) ;
+            }
+        }
+    }
+    //std::cout <<  ( hermitian ? "IS HERMITIAN!!":"IS NOT HERMITIAN :(" ) << std::endl;
+    return hermitian;
+}
 
-template<typename T, Space space>
-auto max(const BlockMatrix<T,space>& m)
+template<typename T>
+auto max(const BlockMatrix<T>& m)
 {
     return std::max_element(m.begin(), m.end(), [&](const T& a1, const T& a2){ return std::abs(a1) < std::abs(a2);});
 }
 
-template<class T, Space space>
-std::ostream& operator<<(std::ostream& os, const BlockMatrix<T, space>& m)
+template<class T>
+std::ostream& operator<<(std::ostream& os, const BlockMatrix<T>& m)
 {
     for(int i=0; i<m.get_nblocks(); i++){
-        os << (*((const_cast<BlockMatrix<T,space>&>(m)).get_MeshGrid()))[i].get("LatticeVectors") << m[i] << std::endl;
+        os << (*((const_cast<BlockMatrix<T>&>(m)).get_MeshGrid()))[i].get(LatticeVectors(m.get_space())) << m[i] << std::endl;
     }
     return os;
 }

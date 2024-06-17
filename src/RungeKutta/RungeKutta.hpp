@@ -108,6 +108,7 @@ void RungeKutta<T>::Propagate()
 {
     //k1=f(tn,yn)
     EvaluateSourceFunction(k, CurrentTime, *Function);
+
     //k2=f(tn+h/2,yn+h/2*k1)
     SumWithProduct(AuxiliaryFunction, 1., *Function, ResolutionTime/2., k); 
     SumWithProduct(ReducingFunction, 1., *Function, ResolutionTime/6., k);  

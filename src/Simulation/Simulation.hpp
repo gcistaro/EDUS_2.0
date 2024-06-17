@@ -1,8 +1,8 @@
 #include "Model/Model.hpp"
 #include "RungeKutta/RungeKutta.hpp"
 #include "Laser/Laser.hpp"
-
-
+#include "ostream.hpp"
+#include "kGradient/kGradient.hpp"
 
 class Simulation
 {
@@ -16,14 +16,15 @@ class Simulation
         double FermiEnergy;
         Laser laser;
         Operator<std::complex<double>> DensityMatrix;
-        //RungeKutta<BlockMatrix<std::complex<double>, k>> RK_object;
-        RungeKutta<BlockMatrix<std::complex<double>, R>> RK_object;
-        std::ofstream OutLaser;
-        std::ofstream OutPos;
+        RungeKutta<Operator<std::complex<double>>> RK_object;
+        int PrintResolution; //steps needed to print a variable
+        kGradient kgradient;
+        Space SpaceOfPropagation = k;
 
-
-
-
+        std::ofstream os_Laser;
+        std::ofstream os_Pop;
+        std::ofstream os_Time;
+        
         template<class T>
         Simulation(const std::string& FileName, const T& arg_meshinit);
         void SettingUp_EigenSystem();
@@ -32,16 +33,29 @@ class Simulation
         void Calculate_Velocity();
         void Propagate();
         void print_recap();
+        bool PrintObservables(const double& time) const;
+
+
+        template <typename Scalar_T>
+        friend void SumWithProduct(Operator<std::complex<double>>& Output, 
+                    const Scalar_T& FirstScalar, 
+                    const Operator<std::complex<double>>& FirstAddend, 
+                    const Scalar_T& SecondScalar, 
+                    const Operator<std::complex<double>>& SecondAddend);
+
 };
+
 template<typename T>
-std::complex<double> Trace(BlockMatrix<T, R>& O1, BlockMatrix<T, R>& O2)
+std::complex<double> Trace(BlockMatrix<T>& O1, BlockMatrix<T>& O2)
 {
-    //auto Minus_MG = std::make_shared<MeshGrid<R>>(Opposite(*(O1.get_MeshGrid())));
-    auto& ci = MeshGrid<R>::ConvolutionIndex1[{Operator<std::complex<double>>::MeshGrid_Null->get_id(), 
+    //calculate trace of product of two operators in R space as \sum_(n,R) (O1(R)O2(-R))_(nn)
+    auto& ci = MeshGrid::ConvolutionIndex[{Operator<std::complex<double>>::MeshGrid_Null->get_id(), 
                                               O1.get_MeshGrid()->get_id(), 
                                               O2.get_MeshGrid()->get_id()}];
     if(ci.get_Size(0) == 0 ){
-        MeshGrid<R>::Calculate_ConvolutionIndex1(*(Operator<std::complex<double>>::MeshGrid_Null), *(O1.get_MeshGrid()), *(O2.get_MeshGrid()));
+        MeshGrid::Calculate_ConvolutionIndex(*(Operator<std::complex<double>>::MeshGrid_Null), 
+                                                 *(O1.get_MeshGrid()), 
+                                                 *(O2.get_MeshGrid()));
     }
 
     std::complex<double> Trace = 0.;
@@ -53,6 +67,21 @@ std::complex<double> Trace(BlockMatrix<T, R>& O1, BlockMatrix<T, R>& O2)
         }
     }
     return Trace;
+}
+
+
+template<typename T>
+std::vector<std::complex<double>> TraceK(BlockMatrix<T>& O__)
+{
+    //calculate trace over k P(n) = \sum_k O(k)_{nn}
+    std::vector<std::complex<double>> TraceK_(O__.get_nrows(), 0.);
+    for(int iblock=0; iblock<O__.get_nblocks(); ++iblock){
+        for(int ibnd=0; ibnd<O__.get_nrows(); ++ibnd){
+            TraceK_[ibnd] += O__[iblock](ibnd, ibnd);
+        }
+    }
+    std::cout << TraceK_ << std::endl;
+    return TraceK_;
 }
 
 

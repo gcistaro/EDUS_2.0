@@ -1,23 +1,21 @@
-template<Space space>
-size_t MeshGrid<space>::counter_id = 0;
-template<Space space>
-std::map<std::array<size_t,3>, mdarray<int,2> > MeshGrid<space>::ConvolutionIndex1;
-template<Space space>
-std::map<std::array<size_t,3>, mdarray<int,2> > MeshGrid<space>::ConvolutionIndex2;
+#include "MeshGrid.hpp"
 
-template<Space space>
-MeshGrid<space>::MeshGrid(const MeshGrid<space>& mg)
+size_t MeshGrid::counter_id = 0;
+std::map<std::array<size_t,3>, mdarray<int,2> > MeshGrid::ConvolutionIndex;
+
+/*
+MeshGrid::MeshGrid(const MeshGrid& mg)
 {
     *this = mg;
 }
 
-template<Space space>
-MeshGrid<space>& MeshGrid<space>::operator=(const MeshGrid<space>& mg)
+MeshGrid& MeshGrid::operator=(const MeshGrid& mg)
 {
     mesh.resize(mg.mesh.size());
     std::copy(&(mg.mesh[0]),&(mg.mesh[0])+mg.mesh.size(),&(mesh[0]));
     std::copy(&(mg.Size[0]),&(mg.Size[0])+3,&(Size[0]));
     std::copy(&(mg.type),&(mg.type)+1,&type);
+    std::copy(&(mg.space),&(mg.space)+1,&space);
     std::copy(&(mg.maxRadius), &(mg.maxRadius)+1, &(maxRadius));
     shellinfo.resize(mg.shellinfo.size());
     std::copy(mg.shellinfo.begin(), mg.shellinfo.end(), shellinfo.begin());
@@ -27,19 +25,17 @@ MeshGrid<space>& MeshGrid<space>::operator=(const MeshGrid<space>& mg)
     return *this;
 }
 
-
-template<Space space>
-MeshGrid<space>::MeshGrid(MeshGrid<space>&& mg)
+MeshGrid::MeshGrid(MeshGrid&& mg)
 {
     *this = mg;
 }
 
-template<Space space>
-MeshGrid<space>& MeshGrid<space>::operator=(MeshGrid<space>&& mg)
+MeshGrid& MeshGrid::operator=(MeshGrid&& mg)
 {
     mesh = std::move(mg.mesh);
     Size = std::move(mg.Size);
     type = std::move(mg.type);
+    space = std::move(mg.space);
     maxRadius = std::move(mg.maxRadius);
     shellinfo = std::move(mg.shellinfo);
     EmptyVector = std::move(EmptyVector);
@@ -47,43 +43,40 @@ MeshGrid<space>& MeshGrid<space>::operator=(MeshGrid<space>&& mg)
     id = std::move(mg.id);
     return *this;
 }
+*/
 
-template<Space space>
-MeshGrid<space>::MeshGrid(const std::vector<Coordinate<space>>& ReadMesh) : type(read_), mesh(ReadMesh)
+
+MeshGrid::MeshGrid(const Space& space__, const std::vector<Coordinate>& ReadMesh) :
+type(read_), mesh(ReadMesh), space(space__)
 {
     TotalSize = mesh.size();
     ++counter_id;
     id = counter_id;
 }
 
-template<Space space>
-MeshGrid<space>::MeshGrid(const std::array<int,3>& Size_)
+MeshGrid::MeshGrid(const Space& space__, const std::array<int,3>& Size_)
 {
-    this->initialize(Size_);
+    this->initialize(space__, Size_);
 }
 
-template<Space space>
-MeshGrid<space>::MeshGrid(const mdarray<double,2>& bare_mg, const std::string& KeyForBasis)
+MeshGrid::MeshGrid(const Space& space__, const mdarray<double,2>& bare_mg, const std::string& KeyForBasis)
 {
-    this->initialize(bare_mg, KeyForBasis);
+    this->initialize(space__, bare_mg, KeyForBasis);
 }
 
-
-template<Space space>
-MeshGrid<space>::MeshGrid(const double& Radius_, const std::array<double, 3>& resolution)
+MeshGrid::MeshGrid(const Space& space__, const double& Radius_, const std::array<double, 3>& resolution)
 {
-    this->initialize(Radius_, resolution);
+    this->initialize(space__, Radius_, resolution);
 }
 
-template<Space space>
-MeshGrid<space>::MeshGrid(const std::vector<Coordinate<space>>& PathPoint, const double& resolution)
+MeshGrid::MeshGrid(const Space& space__, const std::vector<Coordinate>& PathPoint, const double& resolution)
 {
-    this->initialize(PathPoint, resolution);
+    this->initialize(space__, PathPoint, resolution);
 }
 
-template<Space space>
-void MeshGrid<space>::initialize(const std::vector<Coordinate<space>>& PathPoint, const double& resolution)
+void MeshGrid::initialize(const Space& space__, const std::vector<Coordinate>& PathPoint, const double& resolution)
 {
+    space = space__;
     int NumberOfLines = PathPoint.size()-1;
     type = path;
 
@@ -98,19 +91,21 @@ void MeshGrid<space>::initialize(const std::vector<Coordinate<space>>& PathPoint
     TotalSize = mesh.size();
 }
 
-template<Space space>
-void MeshGrid<space>::initialize(const std::array<int,3>& Size_)
+void MeshGrid::initialize(const Space& space__, const std::array<int,3>& Size_)
 {
     //cubic grids are always [0, Size-1] so that are fft friendly
     id = ++counter_id;
 
+    space = space__;
     type=cube;
-    Size=Size_;
+
+    Size[0] = Size_[0];
+    Size[1] = Size_[1];
+    Size[2] = Size_[2];
+
     TotalSize = Size[0]*Size[1]*Size[2];
     mesh.resize(TotalSize);
-    //std::cout << "TotalSize: " << TotalSize << std::endl;
-    //std::cout << "Size: " << Size[0] << " " << Size[1] << " " << Size[2]<<std::endl;
-    auto KeyForBasis = "LatticeVectors";
+
     //defining vectors of the mesh
     switch(space){
         case(k):
@@ -122,7 +117,7 @@ void MeshGrid<space>::initialize(const std::array<int,3>& Size_)
                         mesh[index].initialize(double(ix0)/Size[0],
                                                double(ix1)/Size[1],
                                                double(ix2)/Size[2],
-                                               KeyForBasis);
+                                               LatticeVectors(space));
                     }
                 }
             }
@@ -137,7 +132,7 @@ void MeshGrid<space>::initialize(const std::array<int,3>& Size_)
                         mesh[index].initialize(double(ix0),
                                                double(ix1),
                                                double(ix2),
-                                               KeyForBasis);
+                                               LatticeVectors(space));
                     }
                 }
             }
@@ -146,25 +141,25 @@ void MeshGrid<space>::initialize(const std::array<int,3>& Size_)
     }
 }
 
-template<Space space>
-void MeshGrid<space>::initialize(const mdarray<double,2>& bare_mg, const std::string& KeyForBasis)
+void MeshGrid::initialize(const Space& space__, const mdarray<double,2>& bare_mg, const std::string& KeyForBasis)
 {
     id = ++counter_id;
+    space = space__;
     type = read_;
 
     assert( bare_mg.get_Size(1) == 3 );
     for(int i=0; i<bare_mg.get_Size(0); ++i){
-        mesh.push_back(Coordinate<space>(bare_mg(i,0), bare_mg(i,1), bare_mg(i,2), KeyForBasis));
+        mesh.push_back(Coordinate(bare_mg(i,0), bare_mg(i,1), bare_mg(i,2), KeyForBasis));
     }
     TotalSize = mesh.size();
 }
 
-template<Space space>
-void MeshGrid<space>::initialize(const double& Radius_, const std::array<double, 3>& resolution)
+void MeshGrid::initialize(const Space& space__, const double& Radius_, const std::array<double, 3>& resolution)
 {
     PROFILE("MeshGrid::initializeSphere");
     //assert(space == R);
     id = ++counter_id;
+    space = space__;
     type = sphere;
 
     //defining vectors of the mesh
@@ -176,7 +171,8 @@ void MeshGrid<space>::initialize(const double& Radius_, const std::array<double,
     for(int i0=-i0_threshold; i0<=i0_threshold; i0++){
         for(int i1=-i1_threshold; i1<=i1_threshold; i1++){
             for(int i2=-i2_threshold; i2<=i2_threshold; i2++){
-                auto v = Coordinate<space>(double(i0)/resolution[0], double(i1)/resolution[1], double(i2)/resolution[2], "LatticeVectors");
+                auto v = Coordinate(double(i0)/resolution[0], double(i1)/resolution[1], double(i2)/resolution[2],
+                                           LatticeVectors(space));
                 if(v.norm() < Radius_+threshold){
                     mesh.push_back(v);
                 }
@@ -205,16 +201,14 @@ void MeshGrid<space>::initialize(const double& Radius_, const std::array<double,
     }
 }
 
-
-template<Space space>
-std::array<double,3> MeshGrid<space>::get_absmax() const
+std::array<double,3> MeshGrid::get_absmax() const
 {
     std::array< std::vector<double>, 3> absCoord;
     for (auto& absCoord_ : absCoord){
         absCoord_.reserve(mesh.size());
     }
     for(auto& vector : mesh){
-        auto& CrystalCoordinate = vector.get("LatticeVectors");
+        auto& CrystalCoordinate = vector.get(LatticeVectors(space));
         absCoord[0].push_back(abs(CrystalCoordinate[0]));
         absCoord[1].push_back(abs(CrystalCoordinate[1]));
         absCoord[2].push_back(abs(CrystalCoordinate[2]));
@@ -227,14 +221,12 @@ std::array<double,3> MeshGrid<space>::get_absmax() const
 }
 
 
-template<Space space, Space space_>
-MeshGrid<space_> fftPair(const MeshGrid<space>& KnownMG)
+MeshGrid fftPair(const MeshGrid& KnownMG)
 {
     PROFILE("MeshGrid::fftPair");
-    assert(space_ != space);
 
-    MeshGrid<space_> fftMeshGrid;
-
+    MeshGrid fftMeshGrid;
+    auto fftSpace = (KnownMG.get_space() == k ? R : k);
     switch(KnownMG.type)
     {
         case(sphere): case (read_):
@@ -245,30 +237,28 @@ MeshGrid<space_> fftPair(const MeshGrid<space>& KnownMG)
                 maxCoordInt[ix] = 2*int(maxCoord[ix])+1;
 		        maxCoordInt[ix] += (maxCoordInt[ix]==0);
             }
-            fftMeshGrid.initialize(maxCoordInt);
+            fftMeshGrid.initialize(fftSpace, maxCoordInt);
             break;
         }
         case(cube):
         {
-            fftMeshGrid.initialize(KnownMG.get_Size());
+            fftMeshGrid.initialize(fftSpace, KnownMG.get_Size());
             break;
         }
     }
     return fftMeshGrid;
 }
 
-template<Space space>
-MeshGrid<space> Opposite(const MeshGrid<space>& MG)
+MeshGrid Opposite(const MeshGrid& MG)
 {
-    std::vector<Coordinate<space>> MGminus(MG.get_TotalSize());
+    std::vector<Coordinate> MGminus(MG.get_TotalSize());
     for(int i=0; i<MG.get_TotalSize(); i++){
         MGminus[i] = -MG[i];//MG.reduce(-MG[i]);
     }
-    return MeshGrid<space>(MGminus);
+    return MeshGrid(MG.get_space(), MGminus);
 }
 
-template<Space space>
-const Coordinate<space>& MeshGrid<space>::operator[](const int& i) const
+const Coordinate& MeshGrid::operator[](const int& i) const
 {
     if(i < 0){
         return EmptyVector;
@@ -276,15 +266,12 @@ const Coordinate<space>& MeshGrid<space>::operator[](const int& i) const
     return mesh[i];
 }
 
-template<Space space>
-Coordinate<space>& MeshGrid<space>::operator[](const int& i)
+Coordinate& MeshGrid::operator[](const int& i)
 {
-    return const_cast<Coordinate<space>&>(static_cast<const MeshGrid<space>&>(*this)[i]);
+    return const_cast<Coordinate&>(static_cast<const MeshGrid&>(*this)[i]);
 }
 
-
-template<Space space>
-int MeshGrid<space>::find(const Coordinate<space>& v) const
+int MeshGrid::find(const Coordinate& v) const
 {
     int index = -1;
     //std::cout << "TYPE:: "<< type << std::endl;
@@ -293,7 +280,13 @@ int MeshGrid<space>::find(const Coordinate<space>& v) const
         case cube:
         {
             auto v_reduced = reduce(v);
-            auto notcart = v_reduced.get("LatticeVectors");
+            auto notcart = v_reduced.get(LatticeVectors(space));
+            
+            if ( space == k ) {
+                for ( auto& ix : { 0, 1, 2 } ) {
+                    notcart[ix]*=Size[ix];
+                }
+            } 
             index = int(round(notcart[2] + Size[2] * (notcart[1] + Size[1] * notcart[0])));//warning! round is important, if not it will get the integer part, usually wrong.
             break;
 	    }
@@ -325,11 +318,10 @@ int MeshGrid<space>::find(const Coordinate<space>& v) const
     return index;
 }
 
-template<Space space>
-Coordinate<space> MeshGrid<space>::reduce(const Coordinate<space>& v) const
+Coordinate MeshGrid::reduce(const Coordinate& v) const
 {
     assert(type == cube);
-    auto notcart = v.get("LatticeVectors");
+    auto notcart = v.get(LatticeVectors(space));
     std::array<int,3> grid_limit = (space==k) ? std::array<int,3>{1, 1, 1}
                                               : Size;
 
@@ -339,140 +331,84 @@ Coordinate<space> MeshGrid<space>::reduce(const Coordinate<space>& v) const
         }
     }
 
-    Coordinate<space> v_reduced;
+    Coordinate v_reduced;
     v_reduced.initialize(std::fmod(notcart[0], grid_limit[0]),
                          std::fmod(notcart[1], grid_limit[1]),
                          std::fmod(notcart[2], grid_limit[2]),
-                         "LatticeVectors");
+                         LatticeVectors(space));    
     return v_reduced;
 }
 
-template<Space space>
-const std::vector<Coordinate<space>>& MeshGrid<space>::get_mesh() const
+Coordinate MeshGrid::reduce(Coordinate& v, const double& low_limit, const double& up_limit) const
+{
+    assert(space == k); //for now this implementation works with space k, with grid_limit=1 1 1 
+    assert(type == cube);
+
+    std::array<int,3> grid_limit = (space==k) ? std::array<int,3>{1, 1, 1}
+                                              : Size;
+    assert(std::abs(up_limit - low_limit - grid_limit[0]) < threshold );
+    auto notcart = v.get(LatticeVectors(space));
+
+    for(int ix=0; ix<3; ix++){
+        while( notcart[ix] < low_limit && std::abs( notcart[ix]-low_limit ) > threshold ){
+            notcart[ix] += grid_limit[ix];
+        }
+        while( notcart[ix] >= up_limit ){
+            notcart[ix] -= grid_limit[ix];
+        }
+    }
+
+    Coordinate v_reduced;
+    v_reduced.initialize(std::fmod(notcart[0], grid_limit[0]),
+                         std::fmod(notcart[1], grid_limit[1]),
+                         std::fmod(notcart[2], grid_limit[2]),
+                         LatticeVectors(space));
+    return v_reduced;
+
+}
+
+const std::vector<Coordinate>& MeshGrid::get_mesh() const
 {
     return mesh;
 }
 
 
-template<Space space>
-const std::array<int,3>& MeshGrid<space>::get_Size() const
+const std::array<int,3>& MeshGrid::get_Size() const
 {
     return Size;
 }
 
-template<Space space>
-size_t MeshGrid<space>::get_TotalSize() const
+size_t MeshGrid::get_TotalSize() const
 {
     return TotalSize;
 }
 
-template<Space space>
-size_t MeshGrid<space>::get_id() const
+size_t MeshGrid::get_id() const
 {
     return id;
 }
 
-
-template<Space space>
-void MeshGrid<space>::Calculate_ConvolutionIndex1(const MeshGrid& m1, const MeshGrid& m2, const MeshGrid& m3)
+void MeshGrid::Calculate_ConvolutionIndex(const MeshGrid& m1, const MeshGrid& m2, const MeshGrid& m3)
 {
     PROFILE("MeshGrid::CalculateConvolutionIndex");
     auto i1 = m1.get_id();
     auto i2 = m2.get_id();
     auto i3 = m3.get_id();
 
-    auto& ci = ConvolutionIndex1[{i1,i2,i3}];
+    auto& ci = ConvolutionIndex[{i1,i2,i3}];
 
     ci = mdarray<int,2>({m1.get_TotalSize(), m3.get_TotalSize()});
     std::cout << "Calculating convolution indices for " << i1 << " " << i2 << " " << i3 << std::endl;
 
-//    #pragma omp parallel for schedule(dynamic)
+    #pragma omp parallel for schedule(static)
     for(int iR1=0; iR1<m1.get_TotalSize(); iR1++){
-        //if(!(iR1%200)){
-        //    std::cout << "Calculate_ci::: iR1: " << iR1 << " / " << m1.get_TotalSize() << std::endl;
-        //}
         for(int iR3=0; iR3<m3.get_TotalSize(); iR3++){
-            //std::cout << std::endl;
-            //    std::cout << "iR1 << << iR3: " <<iR1 << " " << " " << iR3 << std::endl;
-            //    std::cout << "m1[iR1]        : ";
-            //    std::cout << m1[iR1].get("LatticeVectors");
-            //    std::cout << "m3[iR3]        : ";
-            //    std::cout << m3[iR3].get("LatticeVectors");
-            //    std::cout << "m1[iR1]-m3[iR3]: ";
-            //    std::cout << std::setprecision(15) << (m1[iR1]-m3[iR3]).get("LatticeVectors");
-
                 ci(iR1, iR3) = m2.find(m1[iR1]-m3[iR3]);
-            //auto& ciiR = ci(iR1,iR3);
-            //    std::cout << "m2[ci]         : ";
-            //if(ciiR >=0){
-            //    std::cout << m2[ciiR].get("LatticeVectors");
-            //    if((m1[iR1]-m3[iR3]-m2[ciiR]).norm() > threshold){
-            //        std::cout << "HAVE A CONTROL OF THIS!\n";
-            //    }
-            //}
-            //else{
-            //    std::cout << "NOT FOUND\n";
-            //}
-//
-            //    std::cout << iR1 << " " << iR3 << " ci(iR1,iR3): " << ci(iR1,iR3) << std::endl;
         }
     }
 }
 
-
-template<Space space>
-void MeshGrid<space>::Calculate_ConvolutionIndex2(const MeshGrid& m1, const MeshGrid& m2, const MeshGrid& m3)
-{
-
-    PROFILE("MeshGrid::CalculateConvolutionIndex");
-    auto i1 = m1.get_id();
-    //std::cout << "Calculate_ConvolutionIndex " << i1<< std::endl;
-    auto i2 = m2.get_id();
-    //std::cout << "Calculate_ConvolutionIndex " << i2<< std::endl;
-    auto i3 = m3.get_id();
-    //std::cout << "Calculate_ConvolutionIndex " << i3<< std::endl;
-
-    auto& ci = ConvolutionIndex2[{i1,i2,i3}];
-
-    ci = mdarray<int,2>({m1.get_TotalSize(), m2.get_TotalSize()});
-    std::cout << "Calculating convolution indices 2 for " << i1 << " " << i2 << " " << i3 << std::endl;
-    //std::cout << "m1.get_TotalSize( ) " << m1.get_TotalSize() << " m3.get_TotalSize( ) " << m3.get_TotalSize() << std::endl;
-    //std::cout << "Done.\n"<< std::endl;
-    //The following openmp statement has been tested in one case.
-    #pragma omp parallel for schedule(dynamic)
-    for(int iR1=0; iR1<m1.get_TotalSize(); iR1++){
-        //if(!(iR1%200)){
-        //    std::cout << "Calculate_ci::: iR1: " << iR1 << " / " << m1.get_TotalSize() << std::endl;
-        //}
-        for(int iR2=0; iR2<m2.get_TotalSize(); iR2++){
-        //    std::cout << std::endl;
-        //        std::cout << "iR1 << << iR2: " <<iR1 << " " << " " << iR2 << std::endl;
-        //        std::cout << "m1[iR1]        : ";
-        //        std::cout << m1[iR1].get("LatticeVectors");
-        //        std::cout << "m2[iR2]        : ";
-        //        std::cout << m2[iR2].get("LatticeVectors");
-        //        std::cout << "m1[iR1]+m2[iR2]: ";
-        //        std::cout << std::setprecision(15) << (m1[iR1]+m2[iR2]).get("LatticeVectors");
-
-                ci(iR1, iR2) = m3.find(m1[iR1]-m2[iR2]);//m3.find(m1[iR1]+m2[iR2]);
-        //    auto& ciiR = ci(iR1,iR2);
-        //        std::cout << "m2[ci]         : ";
-        //    if(ciiR >=0){
-        //        std::cout << m3[ciiR].get("LatticeVectors");
-        //        if((m1[iR1]+m2[iR2]-m3[ciiR]).norm() > threshold){
-        //            std::cout << "HAVE A CONTROL OF THIS!\n";
-        //        }
-        //    }
-        //    else{
-        //        std::cout << "NOT FOUND\n";
-        //    }
-
-            //    std::cout << iR1 << " " << iR3 << " ci(iR1,iR3): " << ci(iR1,iR3) << std::endl;
-        }
-    }}
-
-template<Space space>
-std::pair<int,int> MeshGrid<space>::get_shellindices(int shellNumber) const
+std::pair<int,int> MeshGrid::get_shellindices(int shellNumber) const
 {
     std::pair<int,int> indices;
     if(shellNumber < 0){
@@ -485,4 +421,32 @@ std::pair<int,int> MeshGrid<space>::get_shellindices(int shellNumber) const
 
     return indices;
 
+}
+
+
+std::ostream& operator<<(std::ostream& os, const MeshGrid& MG_)
+{
+    for( auto& v : MG_.mesh ){
+        os << v.get(LatticeVectors(MG_.get_space())) ;
+    }
+    os << std::endl;
+    return os;
+}
+
+MeshGrid get_GammaCentered_grid(const MeshGrid& kmesh__)
+{
+    MeshGrid mg;
+    mdarray<double, 2> bare_mg( { kmesh__.get_mesh().size(), 3 } );
+    for( int ik=0; ik<kmesh__.get_mesh().size(); ++ik ) {
+        auto k_ = kmesh__[ik];
+        k_ = kmesh__.reduce(k_, -0.5, 0.5);
+        auto kcrys = k_.get( LatticeVectors(k) );
+        for( auto& ix : { 0, 1, 2 } ) {
+            bare_mg( ik, ix ) = kcrys[ix];
+        }
+    } 
+    mg.initialize( k, bare_mg, LatticeVectors(k) );
+    mg.type = kmesh__.type;
+    mg.Size = kmesh__.Size;
+    return mg;
 }

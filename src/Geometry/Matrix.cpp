@@ -5,6 +5,7 @@
 
 #include "mkl.h"
 #include "Geometry/Matrix.hpp"
+
 template<>
 void Matrix<std::complex<double>>::diagonalize(Matrix<std::complex<double>>& EigenVectors, mdarray<double,1>& EigenValues) const
 {
@@ -60,7 +61,10 @@ void Matrix<double>::svd(Matrix<double>& u, Matrix<double>& vt, mdarray<double,1
     u.initialize(ldu, m);               //left eigenvectors
     vt.initialize(ldvt, n);             //right eigenvectors (already transpose)
     mdarray<double,1> superb({size_t(std::min(m,n)-1)});
-    auto info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', m, n, &((*this)(0,0)),
+    
+    //copy *this to avoid overwriting
+    auto A_svd = *this;        
+    auto info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', m, n, &(A_svd(0,0)),
                                lda, s.begin().data(), &(u(0,0)), ldu,
                                &(vt(0,0)), ldvt, superb.begin().data());
     assert(info == 0);
@@ -91,6 +95,14 @@ Matrix<double> Matrix<double>::pseudoinv()
             }
         }
     }
+    //1. A*A^{-1}*A = A
+    //std::cout << ((*this)*pseudoinv*(*this) - (*this)).norm()<<std::endl ;
+    //std::cout <<  ( pseudoinv*(*this)*pseudoinv - pseudoinv ).norm() << std::endl;
+    //assert ( ( (*this)*pseudoinv*(*this) - (*this) ).norm() < 1.e-07 );
+    //2. A^{-1}*A*A^{-1} = A^{-1}
+    //assert ( ( pseudoinv*(*this)*pseudoinv - pseudoinv ).norm() < 1.e-07 );
+    //3. (A*A^{-1})^H = A*A^{-1}
+    //4. (A^{-1}*A)^H = A^{-1}*A
     
     return pseudoinv;
 }

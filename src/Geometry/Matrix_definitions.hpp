@@ -13,41 +13,6 @@ void Matrix<T>::initialize(const size_t& nrows, const size_t& ncols)
 }
 
 
-//copy constructor
-template<class T>
-Matrix<T>::Matrix(const Matrix<T>& A){
-    *this = A;
-}
-
-
-//copy assigment
-template<class T>
-Matrix<T>& Matrix<T>::operator=(const Matrix<T>& m){
-    if( this->get_nrows() != m.get_nrows() || this->get_ncols() != m.get_ncols() ){
-        (*this).~Matrix<T>();
-    }
-    this->Values = m.Values;
-    return *this;
-}
-
-
-//move constructor
-template<class T>
-Matrix<T>::Matrix(Matrix&& A){
-    *this = A;
-}
-
-
-//move assignment
-template<class T>
-Matrix<T>& Matrix<T>::operator=(Matrix<T>&& m)
-{
-    (*this).~Matrix<T>();
-    (*this).Values = std::move(m.Values);
-    return *this;
-}
-
-
 template<class T>
 Matrix<T>::Matrix(T* Ptr, const std::array<size_t,2>& Size_)
 {
@@ -96,7 +61,6 @@ void Matrix_gemm(Matrix<T>& OutputMatrix, const T_& alpha, const Matrix<T>& Inpu
     auto n = InputMatrix2.get_ncols();
     auto k = InputMatrix1.get_ncols();
     //////////////////////////////////////////////////////
-
     gemm(m, n, k, alpha, &(InputMatrix1(0,0)), k, &(InputMatrix2(0,0)), n, beta, &(OutputMatrix(0,0)), n);
 }
 
@@ -136,6 +100,7 @@ T Matrix<T>::determinant() const
     for(int i=0; i < (*this).get_nrows(); ++i){
         determinant *= LU(i,i);
     }
+    delete[] ipiv;
     return determinant;
 }
 
@@ -193,6 +158,23 @@ Matrix<T> Matrix<T>::operator-(const Matrix<T>& B) const
     return (*this) + (-B);
 }
 
+template<class T>
+Matrix<T>& Matrix<T>::operator+=(const Matrix<T>& B) 
+{   
+    for(int irow=0; irow<this->get_nrows(); ++irow){
+        for(int icol=0; icol<this->get_ncols(); ++icol){
+            (*this)(irow, icol) += B(irow, icol);
+        }
+    }
+    return *this;
+}
+
+template<class T>
+Matrix<T>& Matrix<T>::operator-=(const Matrix<T>& B) 
+{   
+    return ( *this += (-B) );
+}
+
 
 
 
@@ -208,20 +190,21 @@ Matrix<T> Matrix<T>::operator*(T Scalar) const
     return C;
 }
 
-template<class T>
-Matrix<T> operator*(T Scalar, const Matrix<T> A)
+template<class T, class U>
+Matrix<T> operator*(U Scalar, const Matrix<T> A)
 {
-    return A*Scalar;
+    return A*T(Scalar);
 }
 
 template<class T>
 Vector<T> Matrix<T>::operator*(const Vector<T>& v) const
 {
     assert(v.get_NumberOfElements() == (*this).get_ncols());
-    Vector<T> result(v.get_NumberOfElements());
+    Vector<T> result(this->get_nrows());
     int m = this->get_nrows();
     int k = this->get_ncols();
     int n = 1;
+
     gemm(m, n, k, 1., &(*this)(0,0), k, &v(0), n, 0., &result(0), n);
     return result;
 
@@ -280,7 +263,7 @@ std::ostream& operator<<(std::ostream& os, const Matrix<T>& m)
 {
     for(int irow=0; irow<m.get_nrows(); irow++){
         for(int icol=0; icol<m.get_ncols(); icol++){
-            os << std::setprecision(5) << std::setw(15) << m(irow,icol); 
+            os << std::setprecision(14) << std::setw(20) << m(irow,icol);
         }
         os << std::endl;
     }
