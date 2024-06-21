@@ -166,9 +166,10 @@ add_test(NAME fft_test COMMAND fft_test)
 add_test(NAME fft-many_test COMMAND fft-many_test)
 add_test(NAME fft_Gradient_test COMMAND fft_Gradient_test)
 #add_test(NAME TrivialH_test COMMAND TrivialH_test)
-add_test(NAME simulation_test COMMAND simulation_test)
-add_test(NAME NonEQ_test COMMAND NonEQ_test)
-add_test(NAME Coulomb_test COMMAND Coulomb_test)
 add_test(NAME Bandstructure_test COMMAND 
 					bash -c "${CMAKE_CURRENT_BINARY_DIR}/Bandstructure_test ; \
 					python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py BANDSTRUCTURE.txt ${CMAKE_SOURCE_DIR}/ci-test/Reference/BANDSTRUCTURE.txt")
+add_test(NAME simulation_test COMMAND simulation_test)
+add_test(NAME NonEQ_test COMMAND NonEQ_test)
+add_test(NAME Coulomb_test COMMAND Coulomb_test)
+
