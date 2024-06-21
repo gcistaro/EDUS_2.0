@@ -339,21 +339,28 @@ Coordinate MeshGrid::reduce(const Coordinate& v) const
     return v_reduced;
 }
 
-Coordinate MeshGrid::reduce(Coordinate& v, const double& low_limit, const double& up_limit) const
+Coordinate MeshGrid::reduce(Coordinate& v, const std::array<double,3>& low_limit, const std::array<double,3>& up_limit) const
 {
-    assert(space == k); //for now this implementation works with space k, with grid_limit=1 1 1 
+    //assert(space == k); //for now this implementation works with space k, with grid_limit=1 1 1 
     assert(type == cube);
 
     std::array<int,3> grid_limit = (space==k) ? std::array<int,3>{1, 1, 1}
                                               : Size;
-    assert(std::abs(up_limit - low_limit - grid_limit[0]) < threshold );
+    for( auto& ix : {0,1,2} ) { 
+        std::cout << std::setw(10) << low_limit[ix];
+        std::cout << std::setw(10) << up_limit[ix];
+        std::cout << std::setw(10) << grid_limit[ix];
+        std::cout << std::setw(10) << std::endl;
+        std::cout << std::setw(10) << std::abs(up_limit[ix] - low_limit[ix] - grid_limit[ix]) << std::endl;
+        assert(std::abs(up_limit[ix] - low_limit[ix] - grid_limit[ix]) < threshold );
+    }
     auto notcart = v.get(LatticeVectors(space));
 
     for(int ix=0; ix<3; ix++){
-        while( notcart[ix] < low_limit && std::abs( notcart[ix]-low_limit ) > threshold ){
+        while( notcart[ix] < low_limit[ix] && std::abs( notcart[ix]-low_limit[ix] ) > threshold ){
             notcart[ix] += grid_limit[ix];
         }
-        while( notcart[ix] >= up_limit ){
+        while( notcart[ix] >= up_limit[ix] ){
             notcart[ix] -= grid_limit[ix];
         }
     }
@@ -364,6 +371,15 @@ Coordinate MeshGrid::reduce(Coordinate& v, const double& low_limit, const double
                          std::fmod(notcart[2], grid_limit[2]),
                          LatticeVectors(space));
     return v_reduced;
+
+}
+
+Coordinate MeshGrid::reduce(Coordinate& v, const double& low_limit, const double& up_limit) const
+{
+    assert( space == k ||  ( Size[0] == Size[1] && Size[1] == Size[2] ) );
+    std::array<double,3> low_limit_array = {low_limit, low_limit, low_limit};
+    std::array<double,3> up_limit_array = {up_limit, up_limit, up_limit};
+    return this->reduce(v, low_limit_array, up_limit_array);
 
 }
 
@@ -433,20 +449,31 @@ std::ostream& operator<<(std::ostream& os, const MeshGrid& MG_)
     return os;
 }
 
-MeshGrid get_GammaCentered_grid(const MeshGrid& kmesh__)
+MeshGrid get_GammaCentered_grid(const MeshGrid& mesh__)
 {
+    auto space = mesh__.get_space();
+    auto size_mg = mesh__.get_mesh().size();
     MeshGrid mg;
-    mdarray<double, 2> bare_mg( { kmesh__.get_mesh().size(), 3 } );
-    for( int ik=0; ik<kmesh__.get_mesh().size(); ++ik ) {
-        auto k_ = kmesh__[ik];
-        k_ = kmesh__.reduce(k_, -0.5, 0.5);
-        auto kcrys = k_.get( LatticeVectors(k) );
+    std::array<double,3> low_limit;
+    std::array<double,3> up_limit;
+    for(auto& ix : {0,1,2}) {
+        low_limit[ix] = ( space == k ? -0.5 : -mesh__.get_Size()[ix]/2 );
+        up_limit[ix] = ( space == k ? 0.5 : (mesh__.get_Size()[ix])/2 );
+        if(up_limit[ix] == 0) {
+            up_limit[ix] = 1;
+        }
+    } 
+    mdarray<double, 2> bare_mg( { size_mg, 3 } );
+    for( int ik=0; ik<size_mg; ++ik ) {
+        auto k_ = mesh__[ik];
+        k_ = mesh__.reduce(k_, low_limit, up_limit);
+        auto kcrys = k_.get( LatticeVectors(space) );
         for( auto& ix : { 0, 1, 2 } ) {
             bare_mg( ik, ix ) = kcrys[ix];
         }
     } 
-    mg.initialize( k, bare_mg, LatticeVectors(k) );
-    mg.type = kmesh__.type;
-    mg.Size = kmesh__.Size;
+    mg.initialize( k, bare_mg, LatticeVectors(space) );
+    mg.type = mesh__.type;
+    mg.Size = mesh__.Size;
     return mg;
 }

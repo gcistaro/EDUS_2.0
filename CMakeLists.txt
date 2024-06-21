@@ -120,6 +120,10 @@ target_link_libraries(fft-many_test PUBLIC fftw3)
 add_executable(Gradient_test ci-test/test_Gradient.cpp)
 target_link_libraries(Gradient_test PUBLIC fftw3)
 
+#fft+gradient
+add_executable(fft_Gradient_test ci-test/test_fft+gradient.cpp)
+target_link_libraries(fft_Gradient_test PUBLIC fftw3)
+
 #TrivialBands 
 #add_executable(TrivialH_test ci-test/test_TrivialHamiltonian.cpp)
 #find_package(fftw3 REQUIRED)
@@ -160,6 +164,7 @@ add_test(NAME RK_test COMMAND RK_test)
 add_test(NAME RK2_test COMMAND RK2_test)
 add_test(NAME fft_test COMMAND fft_test)
 add_test(NAME fft-many_test COMMAND fft-many_test)
+add_test(NAME fft_Gradient_test COMMAND fft_Gradient_test)
 #add_test(NAME TrivialH_test COMMAND TrivialH_test)
 add_test(NAME simulation_test COMMAND simulation_test)
 add_test(NAME NonEQ_test COMMAND NonEQ_test)

@@ -4,11 +4,13 @@
 #include "mdContainers/mdContainers.hpp"
 #include "MeshGrid/MeshGrid.hpp"
 
+
 class kGradient {
     private:
         mdarray<double, 1> Weight;    
         std::vector<std::vector<std::vector<int>>> ikpb;
         std::shared_ptr<MeshGrid> kmesh;
+        std::shared_ptr<MeshGrid> Rmesh;
         std::vector<std::vector<int>> ikshell;
         int nshells = 0;
     public:
