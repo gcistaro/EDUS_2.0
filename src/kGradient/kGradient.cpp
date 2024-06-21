@@ -8,10 +8,15 @@ kGradient::kGradient(const MeshGrid& kmesh__)
     this->initialize(kmesh__);
 }
 
-void kGradient::initialize(const MeshGrid& kmesh__)
+void kGradient::initialize(const MeshGrid& mesh__)
 {
-    assert(kmesh__.get_type() == cube);
-    kmesh = std::make_shared<MeshGrid>( get_GammaCentered_grid(kmesh__) );
+    assert(mesh__.get_type() == cube);
+    if(mesh__.get_space() == k) {
+        kmesh = std::make_shared<MeshGrid>( get_GammaCentered_grid(mesh__) );
+    }
+    else if(mesh__.get_space() == R) {
+        Rmesh = std::make_shared<MeshGrid>( get_GammaCentered_grid(mesh__) );  //TODO:: Maybe we can always have the two meshes?
+    }
     initialize();
 }
 
@@ -20,12 +25,17 @@ void kGradient::initialize(const MeshGrid& kmesh__)
 void kGradient::initialize()
 {
     //evaluates weights, number of shells, k+b indices.
-    if(!kmesh) {
-        return;
+    if(kmesh && !Rmesh) {
+        ikshell = SortInShells(*kmesh);
+        Calculate_nshellsAndweights(nshells, Weight, *kmesh, ikshell);
+        ikpb = Find_kpb(*kmesh, ikshell);
     }
-    ikshell = SortInShells(*kmesh);
-    Calculate_nshellsAndweights(nshells, Weight, *kmesh, ikshell);
-    ikpb = Find_kpb(*kmesh, ikshell);
+    else if(Rmesh && !kmesh) {
+        //in this case, we already have everything
+    }
+    else {
+        std::cout << "Something went wrong in kGradient::initialize() -> either both or none Rmesh and kmesh are initialized\n";
+    }
 }
 
 std::vector<std::vector<int>> SortInShells(const MeshGrid& kmesh)

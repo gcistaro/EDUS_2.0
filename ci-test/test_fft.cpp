@@ -1,12 +1,14 @@
 #include <math.h>
 #include "Constants.hpp"
+#include "ostream.hpp"
+
 #include "fftPair/fftPair.hpp"
 
 
 /* we use the fourier transform of 
-     std::exp(-a*i*i)
+     f(i) = std::exp(-a*i*i)
    given by 
-     std::exp(-pi*pi*w*w/a)    
+     F(w) = std::exp(-pi*pi*w*w/a)    
      
 */
 int main()
@@ -16,8 +18,8 @@ int main()
     mdarray<std::complex<double>,2> Array_k({1,Npoints});
     std::vector<int> dimensions = {int(Npoints)};
     
-    double i0 = 0;
     double a = 1./double(Npoints);
+    std::ofstream os_x("Array_x.txt");
     for(int i=0; i<Npoints; i++){
         double x;
         if(i<=Npoints/2){
@@ -27,8 +29,9 @@ int main()
             x = Npoints-i;
         }
         Array_x(0,i) = std::exp(-a*std::pow(x, 2));
-        std::cout << i << " " << x << " " <<  Array_x(0,i) << std::endl;
+        os_x << x << " " <<  Array_x(0,i) << std::endl;
     }
+    os_x.close();
 
     std::cout << "Setting up Fourier Transform..\n";
     FourierTransform fftm(Array_x, Array_k, dimensions);
@@ -36,9 +39,13 @@ int main()
     std::cout << "Doing Fourier transform...\n";
     fftm.fft(-1);
     std::cout << "DONE!\n";
+    std::ofstream os_k("Array_k.txt");
+    for(int i=0; i<Npoints; i++){
+        os_k << Array_k(0,i) << std::endl;
+    }
+    os_k.close();
 
     double DeltaW = 1./double(Npoints);
-    double maxW = 1./1.;
 
     std::cout << "+------------+--------------------+---------------------+-------------------+\n";
     std::cout << "|    freq    | Numerical solution | Analytical solution |      Error(%)     |\n";
