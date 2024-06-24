@@ -5,10 +5,11 @@ project(NEGF VERSION 1.0)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 option(NEGF_PROFILE "Profiling function timings" ON)
-option(NEGF_MPI "Enabling MPI" OFF)
+option(NEGF_MPI "Enabling MPI" ON)
 
 if(NEGF_MPI)
   add_definitions(-DNEGF_MPI)
+  set(MPI_CPP_COMPILER mpiicpc)
 endif()
 
 
@@ -74,7 +75,12 @@ link_libraries(OBJECTS)
 #adding OpenMP
 find_package(OpenMP)
 link_libraries(OpenMP::OpenMP_CXX)
-                      
+
+#adding MPI
+if(NEGF_MPI)
+  find_package(MPI REQUIRED)
+  link_libraries(MPI::MPI_CXX)
+endif()
 
 
 #adding mkl (can it be replaced with lapack?)
@@ -90,11 +96,10 @@ message(STATUS "Imported oneMKL targets: ${MKL_IMPORTED_TARGETS}")
 
 #fftw3
 find_package(fftw3 REQUIRED)
+link_libraries(fftw3)
 
 if (NEGF_MPI)
   link_libraries(fftw3_mpi)
-else()
-  link_libraries(fftw3)
 endif()
 
 # add the executable
@@ -157,6 +162,10 @@ add_executable(fft_test ci-test/test_fft.cpp)
 add_executable(fft-many_test ci-test/test_fft_many.cpp)
 #target_precompile_headers(fft-many_test REUSE_FROM NEGF)
 
+#fft+mpi
+add_executable(fft_mpi_test ci-test/test_fft_mpi.cpp)
+#target_precompile_headers(fft_Gradient_test REUSE_FROM NEGF)
+
 #Gradient
 add_executable(Gradient_test ci-test/test_Gradient.cpp)
 #target_precompile_headers(Gradient_test REUSE_FROM NEGF)
@@ -197,6 +206,7 @@ add_test(NAME RK_test COMMAND RK_test)
 add_test(NAME RK2_test COMMAND RK2_test)
 add_test(NAME fft_test COMMAND fft_test)
 add_test(NAME fft-many_test COMMAND fft-many_test)
+add_test(NAME fft_mpi_test COMMAND fft_mpi_test)
 add_test(NAME fft_Gradient_test COMMAND fft_Gradient_test)
 #add_test(NAME TrivialH_test COMMAND TrivialH_test)
 add_test(NAME Bandstructure_test COMMAND 
