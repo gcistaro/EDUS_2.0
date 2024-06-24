@@ -2,18 +2,24 @@ cmake_minimum_required(VERSION 3.16) #last feature: target_precompile_header
 
 # set the project name and version
 project(NEGF VERSION 1.0)
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
 option(NEGF_PROFILE "Profiling function timings" ON)
+option(NEGF_MPI "Enabling MPI" OFF)
 
-set(CMAKE_VERBOSE_MAKEFILE ON)
+if(NEGF_MPI)
+  add_definitions(-DNEGF_MPI)
+endif()
+
+
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /lib/x86_64-linux-gnu/)
-#set(CMAKE_REQUIRED_FLAGS -fconcepts)
-#list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules")
-set(GCC_FLAG "-fconcepts -g")
-add_definitions(${GCC_FLAG} -DNEGF_PROFILE=ON)
+add_compile_options(-fconcepts -g)
+
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
+
 
 
 #git version
@@ -43,29 +49,35 @@ include_directories("${PROJECT_SOURCE_DIR}/src/")
 
 set(_SOURCES src/GlobalFunctions.cpp
              src/ConvertUnits.cpp
-	     src/ostream.cpp
+	           src/ostream.cpp
              src/StreamFile.cpp
              src/Geometry/Matrix.cpp 
              src/Geometry/Coordinate.cpp
-	     src/MeshGrid/MeshGrid.cpp
+	           src/MeshGrid/MeshGrid.cpp
              src/Wannier/Wannier.cpp
              src/Laser/Laser.cpp
              src/fftPair/fftPair.cpp
-	     src/kGradient/kGradient.cpp
+	           src/kGradient/kGradient.cpp
              src/Simulation/Simulation.cpp
              src/core/profiler.cpp 
              src/core/print_timing.cpp 
              src/core/rt_graph.cpp
 			 )
 
+
+
+
+#adding all sources to target
+add_library(OBJECTS OBJECT ${_SOURCES})
+link_libraries(OBJECTS)
+
+#adding OpenMP
 find_package(OpenMP)
 link_libraries(OpenMP::OpenMP_CXX)
                       
-add_library(OBJECTS OBJECT ${_SOURCES})
-#target_sources(OBJECTS PUBLIC ${_SOURCES})
-link_libraries(OBJECTS)
 
-#mkl
+
+#adding mkl (can it be replaced with lapack?)
 set(MKL_ARCH intel64)
 set(MKL_THREADING sequential)
 set(MKL_INTERFACE lp64)
@@ -73,86 +85,107 @@ find_package(MKL CONFIG REQUIRED PATHS $ENV{MKLROOT})
 add_compile_options($<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
 include_directories($<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
 link_libraries($<LINK_ONLY:MKL::MKL>)
-
 message(STATUS "Imported oneMKL targets: ${MKL_IMPORTED_TARGETS}")
+
+
+#fftw3
+find_package(fftw3 REQUIRED)
+
+if (NEGF_MPI)
+  link_libraries(fftw3_mpi)
+else()
+  link_libraries(fftw3)
+endif()
 
 # add the executable
 add_executable(NEGF main.cpp)
 
+#precompile headers to speed up compilation
+#target_precompile_headers( NEGF 
+#                              PUBLIC src/core/print_timing.hpp
+#                              PUBLIC src/core/profiler.hpp
+#                              PUBLIC src/core/rt_graph.hpp
+#                              PUBLIC src/fftPair/fftPair.hpp
+#                              PUBLIC src/Geometry/Coordinate.hpp
+#                              PUBLIC src/Geometry/Matrix.hpp
+#                              PUBLIC src/Geometry/Vector.hpp
+#                              PUBLIC src/kGradient/kGradient.hpp
+#                              PUBLIC src/Laser/Laser.hpp
+#                              PUBLIC src/LinearAlgebra/gemm.hpp
+#                              PUBLIC src/mdContainers/mdContainers.hpp
+#                              PUBLIC src/MeshGrid/MeshGrid.hpp
+#                              PUBLIC src/Model/Model.hpp
+#                              PUBLIC src/Operator/BlockMatrix.hpp
+#                              PUBLIC src/Operator/Operator.hpp
+#                              PUBLIC src/RungeKutta/RungeKutta.hpp
+#                              PUBLIC src/Simulation/Simulation.hpp
+#                              PUBLIC src/Wannier/Wannier.hpp
+#                              PUBLIC src/Constants.hpp
+#                              PUBLIC src/ConvertUnits.hpp
+#                              PUBLIC src/ostream.hpp
+#                              PUBLIC src/StreamFile.hpp)
 
-#headers
-target_precompile_headers(NEGF PUBLIC 
-	                 src/Geometry/Matrix.hpp
-	                 src/Geometry/Vector.hpp
- 			   src/mdContainers/mdContainers.hpp
- 			 )
+
+
 
 #testing...
 #mdcontainers
 add_executable(Containers_test ci-test/test_mdarray.cpp) 
+#target_precompile_headers(Containers_test REUSE_FROM NEGF)
 
 #Matrix
 add_executable(Matrix_test ci-test/test_matrix.cpp)
-
-#Laser
-add_executable(Laser_test ci-test/test_laser.cpp)
+#target_precompile_headers(Laser_test REUSE_FROM NEGF)
 
 #Eigenvalues
 add_executable(Eigen_test ci-test/test_eigen.cpp) 
+#target_precompile_headers(Eigen_test REUSE_FROM NEGF)
 
 #RK
 add_executable(RK_test ci-test/test_RK.cpp)
+#target_precompile_headers(RK_test REUSE_FROM NEGF)
 
 #RK2
 add_executable(RK2_test ci-test/test_RK2.cpp)
+#target_precompile_headers(RK2_test REUSE_FROM NEGF)
 
 #fft
 add_executable(fft_test ci-test/test_fft.cpp)
-#find_package(fftw3 REQUIRED)
-target_link_libraries(fft_test PUBLIC fftw3)
+#target_precompile_headers(fft_test REUSE_FROM NEGF)
 
 #fft-many
 add_executable(fft-many_test ci-test/test_fft_many.cpp)
-#find_package(fftw3 REQUIRED)
-target_link_libraries(fft-many_test PUBLIC fftw3)
+#target_precompile_headers(fft-many_test REUSE_FROM NEGF)
 
 #Gradient
 add_executable(Gradient_test ci-test/test_Gradient.cpp)
-target_link_libraries(Gradient_test PUBLIC fftw3)
+#target_precompile_headers(Gradient_test REUSE_FROM NEGF)
 
 #fft+gradient
 add_executable(fft_Gradient_test ci-test/test_fft+gradient.cpp)
-target_link_libraries(fft_Gradient_test PUBLIC fftw3)
+#target_precompile_headers(fft_Gradient_test REUSE_FROM NEGF)
 
 #TrivialBands 
 #add_executable(TrivialH_test ci-test/test_TrivialHamiltonian.cpp)
-#find_package(fftw3 REQUIRED)
-#target_link_libraries(TrivialH_test PUBLIC fftw3)
 
 #Noneq propagation 
 add_executable(NonEQ ci-test/test_NEQpop2.cpp)
-#find_package(fftw3 REQUIRED)
-target_link_libraries(NonEQ PUBLIC fftw3)
+#target_precompile_headers(NonEQ REUSE_FROM NEGF)
 
 #simulation 
 add_executable(simulation_test ci-test/test_simulation.cpp)
-#find_package(fftw3 REQUIRED)
-target_link_libraries(simulation_test PUBLIC fftw3)
+#target_precompile_headers(simulation_test REUSE_FROM NEGF)
 
 #Coulomb 
 #add_executable(Coulomb_test ci-test/test_Coulomb.cpp)
-#find_package(fftw3 REQUIRED)
-#target_link_libraries(Coulomb_test PUBLIC fftw3)
 
 #bandstructure
 add_executable(Bandstructure_test ci-test/test_bandstructure.cpp)
-#find_package(fftw3 REQUIRED)
-target_link_libraries(Bandstructure_test PUBLIC fftw3)
+#target_precompile_headers(Bandstructure_test REUSE_FROM NEGF)
 
 #pseudoinverse
 add_executable(Pseudoinv_test ci-test/test_pseudoinverse.cpp)
-#find_package(fftw3 REQUIRED)
-target_link_libraries(Pseudoinv_test PUBLIC fftw3)
+#target_precompile_headers(Pseudoinv_test REUSE_FROM NEGF)
 
 #build for ctest
 enable_testing()

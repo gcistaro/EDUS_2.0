@@ -4,7 +4,12 @@
 #include <vector>
 #include <memory>
 #include <complex>
+
+#ifdef NEGF_MPI
+#include <fftw3-mpi.h>
+#else
 #include <fftw3.h>
+#endif 
 
 #include "mdContainers/mdContainers.hpp"
 #include "Constants.hpp"
@@ -30,7 +35,8 @@ class FourierTransform
         int* inembed = nullptr;
         int* onembed = nullptr;
         int howmany = 1;
-        fftw_plan MyPlan;
+        fftw_plan MyPlan_FWD;
+        fftw_plan MyPlan_BWD;
     public:
         FourierTransform(){};
 
@@ -48,6 +54,8 @@ class FourierTransform
         mdarray<std::complex<double>, 2> dft(const std::vector<std::vector<double>>& ArrayOfPoints, const int& sign);
         inline const mdarray<std::complex<double>, 2>& get_Array_k() const { return (*Array_k);};
         inline const mdarray<std::complex<double>, 2>& get_Array_x() const { return (*Array_x);};
+
+        ~FourierTransform();
 };
 
 #endif

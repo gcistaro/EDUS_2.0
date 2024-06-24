@@ -1,9 +1,14 @@
+#ifndef MODEL_HPP
+#define MODEL_HPP
+
+
 #include <cassert>
 #include "ConvertUnits.hpp"
 #include "core/profiler.hpp"
 #include "Wannier/Wannier.hpp"
 
 #include "Operator/Operator.hpp"
+
 
 class Material
 {
@@ -67,8 +72,7 @@ class Material
         std::cout << Coordinate::get_Basis(LatticeVectors(R));
 	    std::cout << Coordinate::get_Basis(LatticeVectors(k));
 	}
-
-
-
-
 };
+
+
+#endif
