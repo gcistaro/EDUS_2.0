@@ -19,6 +19,22 @@ FourierTransform::initialize
     Dimensions = Dimensions__;
     idist = TotalSize;
     odist = TotalSize;
+
+//initializing plans, two for each object for +1 and -1 transforms.
+#ifdef NEGF_MPI
+//TODO!! HERE YOU NEED TO ADD THE CONSTRUCTION OF THE PLAN!!!!!
+#else
+    //from x to k (fft to Fourier space)
+    MyPlan_FWD = fftw_plan_many_dft(dim, &Dimensions[0], howmany,
+                                    reinterpret_cast<fftw_complex*>(&(*Array_x)[0]), inembed, istride, idist, 
+                                    reinterpret_cast<fftw_complex*>(&(*Array_k)[0]), onembed, ostride, odist,
+                                    -1, FFTW_ESTIMATE);
+    //from k to x (fft to original space) -> sign = +1 correspond to ifft -> f(x) = sum_n c_n e^{+inx}
+    MyPlan_BWD = fftw_plan_many_dft(dim, &Dimensions[0], howmany,
+                                    reinterpret_cast<fftw_complex*>(&(*Array_k)[0]), inembed, istride, idist, 
+                                    reinterpret_cast<fftw_complex*>(&(*Array_x)[0]), onembed, ostride, odist,
+                                    +1, FFTW_ESTIMATE);
+#endif
 }
 
 void 
@@ -35,28 +51,15 @@ FourierTransform::initialize
 
 void FourierTransform::fft(const int& sign)
 {
-    //TODO: be sure Data is allocated till the end
-    auto& input = (sign == +1 ? (*Array_k) : (*Array_x) );//sign = +1 correspond to ifft -> f(x) = sum_n c_n e^{+inx}
     auto& output = (sign == +1 ? (*Array_x) : (*Array_k) ); 
+    auto& MyPlan = (sign == +1 ? (MyPlan_BWD) : (MyPlan_FWD) );
 
-    MyPlan = fftw_plan_many_dft(dim, //Dimension of the fft
-	                       &Dimensions[0],   
-                           howmany,       
-                           reinterpret_cast<fftw_complex*>(&input[0]),                    //row-major ordered 
-                           inembed,
-                           istride,
-                           idist,
-                           reinterpret_cast<fftw_complex*>(&output[0]),                   //row-major ordered 
-                           onembed,
-                           ostride,
-                           odist,
-                           sign,
-			               FFTW_ESTIMATE);
     fftw_execute(MyPlan);
+
+    #pragma omp parallel for schedule(static)
     for(auto& output_el : output){
         output_el /= SqrtTotalSize;
     }
-    fftw_destroy_plan(MyPlan);
 }
 
 
@@ -92,4 +95,11 @@ mdarray<std::complex<double>, 2> FourierTransform::dft(const std::vector<std::ve
 	    }
     }
     return (*Array_k);
+}
+
+
+FourierTransform::~FourierTransform()
+{
+    fftw_destroy_plan(MyPlan_FWD);
+    fftw_destroy_plan(MyPlan_BWD);
 }
