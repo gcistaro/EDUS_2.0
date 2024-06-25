@@ -1,3 +1,6 @@
+#ifndef SIMULATION_HPP
+#define SIMULATION_HPP
+
 #include "Model/Model.hpp"
 #include "RungeKutta/RungeKutta.hpp"
 #include "Laser/Laser.hpp"
@@ -86,3 +89,5 @@ std::vector<std::complex<double>> TraceK(BlockMatrix<T>& O__)
 
 
 #include "Simulation_definitions.hpp"
+
+#endif

@@ -4,12 +4,13 @@ cmake_minimum_required(VERSION 3.16) #last feature: target_precompile_header
 project(NEGF VERSION 1.0)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
+
 option(NEGF_PROFILE "Profiling function timings" ON)
 option(NEGF_MPI "Enabling MPI" ON)
 
 if(NEGF_MPI)
   add_definitions(-DNEGF_MPI)
-  set(MPI_CPP_COMPILER mpiicpc)
+  set(MPI_CXX_COMPILER mpiicpc)
 endif()
 
 
@@ -80,7 +81,15 @@ link_libraries(OpenMP::OpenMP_CXX)
 if(NEGF_MPI)
   find_package(MPI REQUIRED)
   link_libraries(MPI::MPI_CXX)
+  message(STATUS "Run: ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS} ${MPIEXEC_PREFLAGS} EXECUTABLE ${MPIEXEC_POSTFLAGS} ARGS")
+  if(MPI_COMPILE_FLAGS)
+    set(COMPILE_FLAGS "${MPI_COMPILE_FLAGS}")
+  endif()
+  if(MPI_LINK_FLAGS)
+    set(LINK_FLAGS "${MPI_LINK_FLAGS}")
+  endif()
 endif()
+
 
 
 #adding mkl (can it be replaced with lapack?)

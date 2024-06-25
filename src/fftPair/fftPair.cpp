@@ -13,7 +13,10 @@ FourierTransform::initialize
     Array_x = &Array_x__;
     Array_k = &Array_k__;
     howmany = Array_x->get_Size(0);
-    TotalSize = Array_x->get_Size(1);
+    TotalSize = 1;
+    for(auto& dim__ : Dimensions__) {
+        TotalSize *= dim__;//to be valid also with mpi you can't use Array_x->get_Size(1)!
+    }
     SqrtTotalSize = std::sqrt(double(TotalSize));
     dim = Dimensions__.size();
     Dimensions = Dimensions__;
@@ -22,7 +25,25 @@ FourierTransform::initialize
 
 //initializing plans, two for each object for +1 and -1 transforms.
 #ifdef NEGF_MPI
-//TODO!! HERE YOU NEED TO ADD THE CONSTRUCTION OF THE PLAN!!!!!
+    std::ptrdiff_t* Dimensions_ptr = new std::ptrdiff_t[Dimensions.size()];
+    for( auto idim = 0; idim < Dimensions.size(); ++idim ) {
+        Dimensions_ptr[idim] = Dimensions[idim];
+    }
+    //auxiliary variable needed 
+    //from x to k (fft to Fourier space)
+    MyPlan_FWD = fftw_mpi_plan_many_dft(dim, Dimensions_ptr,
+                                 howmany, FFTW_MPI_DEFAULT_BLOCK, FFTW_MPI_DEFAULT_BLOCK,
+                                 reinterpret_cast<fftw_complex*>(&(*Array_x)[0]),
+                                 reinterpret_cast<fftw_complex*>(&(*Array_k)[0]), 
+                                 MPI_COMM_WORLD, -1, FFTW_ESTIMATE);
+
+    //from k to x (fft to original space) -> sign = +1 correspond to ifft -> f(x) = sum_n c_n e^{+inx}
+    MyPlan_BWD = fftw_mpi_plan_many_dft(dim, Dimensions_ptr,
+                                 howmany, FFTW_MPI_DEFAULT_BLOCK, FFTW_MPI_DEFAULT_BLOCK,
+                                 reinterpret_cast<fftw_complex*>(&(*Array_k)[0]),
+                                 reinterpret_cast<fftw_complex*>(&(*Array_x)[0]), 
+                                 MPI_COMM_WORLD, +1, FFTW_ESTIMATE);
+    delete[] Dimensions_ptr;
 #else
     //from x to k (fft to Fourier space)
     MyPlan_FWD = fftw_plan_many_dft(dim, &Dimensions[0], howmany,
