@@ -373,7 +373,6 @@ class Operator
                 }
             }
 
-            //this  part is not working! Check ciminus
             for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
                 assert(ciminus(0,iR) != -1);
                 for(int ibnd1=0; ibnd1<Operator_R.get_nrows(); ++ibnd1){

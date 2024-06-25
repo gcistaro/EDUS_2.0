@@ -20,8 +20,8 @@
 class FourierTransform
 {
     private:
-        mdarray<std::complex<double>, 2>* Array_x;
-        mdarray<std::complex<double>, 2>* Array_k;
+        mdarray<std::complex<double>, 2>* Array_x; // Only the local array
+        mdarray<std::complex<double>, 2>* Array_k; // Only the local array
         std::vector< std::vector<double> > Mesh;
         std::vector< std::vector<double> > Mesh_fft;
         int dim;
