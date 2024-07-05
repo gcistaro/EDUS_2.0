@@ -15,7 +15,7 @@ FourierTransform::initialize
     howmany = Array_x->get_Size(0);
     TotalSize = 1;
     for(auto& dim__ : Dimensions__) {
-        TotalSize *= dim__;//to be valid also with mpi you can't use Array_x->get_Size(1)!
+        TotalSize *= dim__;  //to be valid also with mpi you can't use Array_x->get_Size(1)!
     }
     SqrtTotalSize = std::sqrt(double(TotalSize));
     dim = Dimensions__.size();

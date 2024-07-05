@@ -6,7 +6,7 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 
 
 option(NEGF_PROFILE "Profiling function timings" ON)
-option(NEGF_MPI "Enabling MPI" ON)
+option(NEGF_MPI "Enabling MPI" OFF)
 
 if(NEGF_MPI)
   add_definitions(-DNEGF_MPI)
@@ -51,19 +51,20 @@ include_directories("${PROJECT_SOURCE_DIR}/src/")
 
 set(_SOURCES src/GlobalFunctions.cpp
              src/ConvertUnits.cpp
-	           src/ostream.cpp
+             src/ostream.cpp
              src/StreamFile.cpp
              src/Geometry/Matrix.cpp 
              src/Geometry/Coordinate.cpp
-	           src/MeshGrid/MeshGrid.cpp
+             src/MeshGrid/MeshGrid.cpp
              src/Wannier/Wannier.cpp
              src/Laser/Laser.cpp
              src/fftPair/fftPair.cpp
-	           src/kGradient/kGradient.cpp
+             src/kGradient/kGradient.cpp
              src/Simulation/Simulation.cpp
              src/core/profiler.cpp 
              src/core/print_timing.cpp 
              src/core/rt_graph.cpp
+
 			 )
 
 
@@ -147,6 +148,10 @@ add_executable(NEGF main.cpp)
 add_executable(Containers_test ci-test/test_mdarray.cpp) 
 #target_precompile_headers(Containers_test REUSE_FROM NEGF)
 
+#MultiIndex
+add_executable(MultiIndex_test ci-test/test_MultiIndex.cpp) 
+#target_precompile_headers(Containers_test REUSE_FROM NEGF)
+
 #Matrix
 add_executable(Matrix_test ci-test/test_matrix.cpp)
 #target_precompile_headers(Laser_test REUSE_FROM NEGF)
@@ -208,6 +213,7 @@ add_executable(Pseudoinv_test ci-test/test_pseudoinverse.cpp)
 #build for ctest
 enable_testing()
 add_test(NAME Containers_test COMMAND Containers_test)
+add_test(NAME MultiIndex_test COMMAND MultiIndex_test)
 add_test(NAME Matrix_test COMMAND Matrix_test)
 add_test(NAME Laser_test COMMAND Laser_test)
 add_test(NAME Eigen_test COMMAND Eigen_test)

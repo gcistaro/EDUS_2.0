@@ -13,35 +13,35 @@ void Vector<T>::initialize(const size_t& n)
 
 
 //copy constructor
-template<class T>
-Vector<T>::Vector(const Vector<T>& v){
-    *this = v;
-}
-
-
-//copy assigment
-template<class T>
-Vector<T>& Vector<T>::operator=(const Vector<T>& v){
-    (*this).~Vector<T>();
-    this->Values = v.Values;
-    return *this;
-}
-
-
-//move constructor
-template<class T>
-Vector<T>::Vector(Vector&& v){
-    *this = v;
-}
-
-
-//move assignment
-template<class T>
-Vector<T>& Vector<T>::operator=(Vector<T>&& v){
-    (*this).~Vector<T>();
-    (*this).Values = v.Values;
-    return *this;
-}
+//template<class T>
+//Vector<T>::Vector(const Vector<T>& v){
+//    *this = v;
+//}
+//
+//
+////copy assigment
+//template<class T>
+//Vector<T>& Vector<T>::operator=(const Vector<T>& v){
+//    (*this).~Vector<T>();
+//    this->Values = v.Values;
+//    return *this;
+//}
+//
+//
+////move constructor
+//template<class T>
+//Vector<T>::Vector(Vector&& v){
+//    *this = v;
+//}
+//
+//
+////move assignment
+//template<class T>
+//Vector<T>& Vector<T>::operator=(Vector<T>&& v){
+//    (*this).~Vector<T>();
+//    (*this).Values = v.Values;
+//    return *this;
+//}
 
 
 template<class T>
