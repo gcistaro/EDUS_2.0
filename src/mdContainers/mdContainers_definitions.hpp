@@ -8,7 +8,6 @@ mdarray<T,dim>::mdarray(const mdarray<T,dim>& ToBeCopied)
 template<typename T, size_t dim> 
 mdarray<T,dim>& mdarray<T,dim>::operator=(const mdarray<T,dim>& ToBeCopied)
 {
-    //this->Ptr = std::make_unique<T[]>(ToBeCopied.TotalSize);
     if( this->Size != ToBeCopied.Size || Ptr == nullptr){
         (*this).~mdarray<T,dim>();
         this->Ptr = new T[ToBeCopied.TotalSize];
@@ -17,6 +16,7 @@ mdarray<T,dim>& mdarray<T,dim>::operator=(const mdarray<T,dim>& ToBeCopied)
         this->Offset = ToBeCopied.Offset;        
     }
     std::copy(ToBeCopied.begin(), ToBeCopied.end(), this->begin());
+    this->multindex = ToBeCopied.multindex;
     return *this;
 }
 
@@ -26,6 +26,7 @@ mdarray<T,dim>::mdarray(mdarray<T,dim>&& ToBeMoved)
 {
     (*this).~mdarray<T,dim>();
     this->Ptr = std::move(ToBeMoved.Ptr);
+    this->multindex = std::move(ToBeMoved.multindex);
     this->Size = std::move(ToBeMoved.Size);
     this->TotalSize = std::move(ToBeMoved.TotalSize);
     if(this->TotalSize>0)    
@@ -41,6 +42,7 @@ mdarray<T,dim>& mdarray<T,dim>::operator=(mdarray<T,dim>&& ToBeMoved)
 {
     (*this).~mdarray<T,dim>();
     this->Ptr = std::move(ToBeMoved.Ptr);
+    this->multindex = std::move(ToBeMoved.multindex);
     this->Size = std::move(ToBeMoved.Size);
     this->TotalSize = std::move(ToBeMoved.TotalSize);
     if(this->TotalSize>0)    
@@ -55,12 +57,15 @@ template<typename T, size_t dim>
 mdarray<T,dim>::mdarray(const std::array<size_t,dim>& Size_) 
 {
     this->initialize(Size_);
+    this->multindex.initialize(Size_);
+
 }
 
 template<typename T, size_t dim> 
 mdarray<T,dim>::mdarray(T* Ptr_, const std::array<size_t,dim>& Size_)
 {
     this->initialize(Ptr_, Size_);
+    this->multindex.initialize(Size_);
 }
 
 template<typename T, size_t dim> 
@@ -81,6 +86,7 @@ void mdarray<T,dim>::initialize(const std::array<size_t,dim>& Size_)
 {
     (*this).~mdarray<T,dim>();
     Size = Size_;
+    this->multindex.initialize(Size_);
     TotalSizeAndOffset();
 
     //allocate contiguous memory ot totalsize
@@ -95,7 +101,7 @@ void mdarray<T,dim>::initialize(T* Ptr_, const std::array<size_t,dim>& Size_)
     Ptr = Ptr_; 
     Size = Size_; 
     NotDestruct=true;    //The Ptr_ must be destructed by the other owners. care!
- 
+    this->multindex.initialize(Size_); 
     TotalSizeAndOffset();
 }
 
@@ -109,28 +115,14 @@ template <typename T, size_t dim>
 template <typename... Args>
 int mdarray<T,dim>::oneDindex(Args... args) const
 {
-    assert(dim == sizeof...(args));
-    std::array<int ,dim> i = {args...};
-    for(int idim=0; idim<dim; idim++){
-        assert(i[idim] >=0 && i[idim] < Size[idim]);
-    }
-    int oneDindex = i[dim-1]*Offset[dim-1];
-    for(int idim=int(dim)-2; idim>=0; idim--){
-        oneDindex += Offset[idim]*i[idim];               
-    }
-    return oneDindex;
+    return static_cast<mdarray<T,dim>>(*this).multindex.oneDindex(args...);
 }
 
 
 template <typename T, size_t dim>
-std::array<int,dim> mdarray<T,dim>::nDindex(const auto& oneDindex) const
+std::vector<int> mdarray<T,dim>::nDindex(const auto& oneDindex) const
 {
-    std::array<int,dim> nDindex;
-    int remainder = oneDindex;
-    for(int idim=dim-1; idim>=0; idim--){
-        nDindex[idim] = remainder/Offset[idim];
-        remainder = remainder%Offset[idim];
-    }
+    return this->multindex.nDindex(oneDindex);
 }
 
 

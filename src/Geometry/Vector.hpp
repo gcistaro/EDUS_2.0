@@ -24,7 +24,14 @@ class Vector{
     private:
         mdarray<T,1> Values;
     public:
-        Vector(){Values = mdarray<T,1>();};
+        Vector(){};
+
+        Vector(const Vector& v) = default;
+        Vector& operator=(const Vector& v) = default;
+        
+        Vector(Vector&& v) = default;
+        Vector& operator=(Vector&& v) = default;
+
         Vector(mdarray<T,1> Values_) : Values(std::move(Values_)){};
         
         Vector(const size_t& n);
@@ -40,13 +47,6 @@ class Vector{
                 Values[ix] = aux[ix];
             }
         }
-
-
-        Vector(const Vector& v);
-        Vector& operator=(const Vector& v);
-        
-        Vector(Vector&& v);
-        Vector& operator=(Vector&& v);
 
         const T& operator()(const int& n) const;
         T& operator()(const int& n);

@@ -12,6 +12,8 @@
 #include <iterator> // For std::forward_iterator_tag
 #include <cstddef>  // For std::ptrdiff_t
 
+#include "MultiIndex/MultiIndex.hpp"
+
 template<typename T, size_t dim> //requires ( dim>0 && dim<7 )
 class mdarray
 {
@@ -21,6 +23,7 @@ class mdarray
         std::array<size_t, dim> Size{0};
         size_t TotalSize=0;
         std::array<int, dim> Offset{0};
+        MultiIndex<dim> multindex;
         bool NotDestruct = false;
         void TotalSizeAndOffset();
 
@@ -76,7 +79,7 @@ class mdarray
         template <typename... Args>
         inline int oneDindex(Args... args) const;
         
-        inline std::array<int,dim> nDindex(const auto& oneDindex) const;
+        inline std::vector<int> nDindex(const auto& oneDindex) const;
 
         template <typename... Args>
         inline T const& operator()(Args... args) const;
