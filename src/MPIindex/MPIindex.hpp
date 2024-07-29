@@ -3,6 +3,7 @@
 #define MPIINDEX_HPP
 
 #include "mpi.h"
+#include "fftw3-mpi.h"
 #include "MultiIndex/MultiIndex.hpp"
 
 template<size_t dim>
@@ -12,16 +13,18 @@ class MPIindex
         std::pair<std::ptrdiff_t, std::ptrdiff_t> GlobalRange_1D;
         std::pair<std::ptrdiff_t, std::ptrdiff_t> LocalRange_1D;
         int RecommendedAllocate_fftw;
-        std::array<size_t, dim> ValuesToSplit;
+        std::array<int, dim> ValuesToSplit;
         std::array<int, dim> Offset;
         MultiIndex<dim> multindex;
 
     public:
+        int nlocal = 0; //number of local points
+
         MPIindex(){};
 
-        MPIindex( const std::array<size_t, 3>& ValuesToSplit__);
+        MPIindex( const std::array<int, 3>& ValuesToSplit__);
 
-        void initialize( const std::array<size_t, 3>& ValuesToSplit__ );
+        void initialize( const std::array<int, 3>& ValuesToSplit__ );
         
         inline std::ptrdiff_t glob1D_to_loc1D(const std::ptrdiff_t& global);
         inline std::ptrdiff_t loc1D_to_glob1D(const std::ptrdiff_t& local);
