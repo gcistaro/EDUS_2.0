@@ -6,6 +6,7 @@
 #include "mpi.h"
 #include "fftPair/fftPair.hpp"
 #include "MPIindex/MPIindex.hpp"
+#include "initialize.hpp"
 #include <fftw3-mpi.h>
 #include <ios> 
 /* we use the fourier transform of 
@@ -23,31 +24,33 @@ const double b = 1./double(N1);
 
 int main(int argc, char **argv)
 {
+    initialize();
     int irank, nproc;
     int howmany = 1;
-
 /*     ***********************get splitted arrays************************************************/
     std::ptrdiff_t alloc_local, local_n0, local_0_start;
-    std::ptrdiff_t dimensions[] = {int(N0), int(N1), 1};
-    std::array<size_t,3> dims = {int(N0), int(N1), 1};
+    std::ptrdiff_t dimensions[] = {N0, N1, 1};
+    std::array<int,3> dims = {N0, N1, 1};
 
 #ifdef NEGF_MPI
-    int required = MPI_THREAD_SINGLE;
-    int provided;
-    auto ierr = MPI_Init_thread ( &argc, &argv, required, &provided );
-    std::cout << "initialized.\n";
-    if ( ierr != 0 )
-    {
-        std::cout << "\n";
-        std::cout << "BONES - Fatal error!\n";
-        std::cout << "MPI_Init returned ierr = " << ierr << "\n";
-        return 0;
-    }    
-    MPI_Comm_size(MPI_COMM_WORLD, &nproc);
-    MPI_Comm_rank(MPI_COMM_WORLD, &irank);
-
-    std::cout << " I am rank " << irank << ". total number = " << nproc << std::endl;
-    fftw_mpi_init();    
+    irank = mpi::Communicator::world().rank();
+    nproc = mpi::Communicator::world().size();
+    //int required = MPI_THREAD_SINGLE;
+    //int provided;
+    //auto ierr = MPI_Init_thread ( &argc, &argv, required, &provided );
+    //std::cout << "initialized.\n";
+    //if ( ierr != 0 )
+    //{
+    //    std::cout << "\n";
+    //    std::cout << "BONES - Fatal error!\n";
+    //    std::cout << "MPI_Init returned ierr = " << ierr << "\n";
+    //    return 0;
+    //}    
+    //MPI_Comm_size(MPI_COMM_WORLD, &nproc);
+    //MPI_Comm_rank(MPI_COMM_WORLD, &irank);
+//
+    //std::cout << " I am rank " << irank << ". total number = " << nproc << std::endl;
+    //fftw_mpi_init();    
 #else 
     irank =0;
     nproc = 1;
@@ -60,14 +63,14 @@ int main(int argc, char **argv)
 /*     ***********************end of get splitted arrays************************************************/
 
     //allocate array with recommended size
-    mdarray<std::complex<double>,2> Array_x( { 1, size_t( mpindex.get_RecommendedAllocate_fftw() ) } );//({1,size_t(N0)*size_t(N1)});
-    mdarray<std::complex<double>,2> Array_k( { 1, size_t( mpindex.get_RecommendedAllocate_fftw() ) } );//({1,size_t(N0)*size_t(N1)});
+    mdarray<std::complex<double>,2> Array_x( { 1, mpindex.get_RecommendedAllocate_fftw()  } );//({1,int(N0)*int(N1)});
+    mdarray<std::complex<double>,2> Array_k( { 1, mpindex.get_RecommendedAllocate_fftw()  } );//({1,int(N0)*int(N1)});
 
     //filling Array_x
     //loop over local indices
     auto& LocalRange = mpindex.get_LocalRange();
     //#pragma omp parallel for
-    for( int oneDindex_loc = 0; oneDindex_loc <= LocalRange.second - LocalRange.first; ++oneDindex_loc ) {
+    for( int oneDindex_loc = 0; oneDindex_loc < mpindex.nlocal; ++oneDindex_loc ) {
         auto aux_ = mpindex.loc1D_to_globnD(oneDindex_loc);
         //std::cout << oneDindex_loc << "/" << LocalRange.second << std::endl;
         double x, y;
@@ -82,9 +85,9 @@ int main(int argc, char **argv)
 {
     FourierTransform fftm(Array_x, Array_k, {int(N0),int(N1),1});
     std::cout << "Rank " << irank <<  " Constructed Fourier Transform..\n";
-    std::cout << "Doing Fourier transform...\n";
+    std::cout << "Rank " << irank <<  "Doing Fourier transform...\n";
     fftm.fft(-1);
-    std::cout << "DONE!\n";
+    std::cout << "Rank " << irank <<  "DONE Fourier transform!\n";
 
 #ifdef NEGF_MPI
     MPI_Barrier(MPI_COMM_WORLD);
