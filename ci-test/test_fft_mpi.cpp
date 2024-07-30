@@ -35,22 +35,6 @@ int main(int argc, char **argv)
 #ifdef NEGF_MPI
     irank = mpi::Communicator::world().rank();
     nproc = mpi::Communicator::world().size();
-    //int required = MPI_THREAD_SINGLE;
-    //int provided;
-    //auto ierr = MPI_Init_thread ( &argc, &argv, required, &provided );
-    //std::cout << "initialized.\n";
-    //if ( ierr != 0 )
-    //{
-    //    std::cout << "\n";
-    //    std::cout << "BONES - Fatal error!\n";
-    //    std::cout << "MPI_Init returned ierr = " << ierr << "\n";
-    //    return 0;
-    //}    
-    //MPI_Comm_size(MPI_COMM_WORLD, &nproc);
-    //MPI_Comm_rank(MPI_COMM_WORLD, &irank);
-//
-    //std::cout << " I am rank " << irank << ". total number = " << nproc << std::endl;
-    //fftw_mpi_init();    
 #else 
     irank =0;
     nproc = 1;
