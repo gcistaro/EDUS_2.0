@@ -37,8 +37,16 @@ class FourierTransform
         int howmany = 1;
         fftw_plan MyPlan_FWD;
         fftw_plan MyPlan_BWD;
+
+        std::string tagname="";
+        bool IsFFT = false;
+        bool destruct = true;
     public:
         FourierTransform(){};
+        FourierTransform(const FourierTransform& ) = delete;
+        FourierTransform& operator=(const FourierTransform& ) = delete;
+        FourierTransform(FourierTransform&& ) = default;
+        FourierTransform& operator=( FourierTransform&& ) = default;
 
         FourierTransform(mdarray<std::complex<double>, 2>& Array_x__, 
                          mdarray<std::complex<double>, 2>& Array_k__, 
@@ -46,7 +54,7 @@ class FourierTransform
 
         void initialize(mdarray<std::complex<double>, 2>& Array_x__, 
                         mdarray<std::complex<double>, 2>& Array_k__, 
-                        const std::vector<int>& Dimensions__);
+                        const std::vector<int>& Dimensions__, const std::string tagname_="");
         void initialize(mdarray<std::complex<double>, 2>& Array_x__, 
                         const std::vector<std::vector<double>>& Mesh__);
         void fft(const int& sign);

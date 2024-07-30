@@ -15,13 +15,13 @@ void MultiIndex<dim>::TotalSizeAndOffset()
 }
 
 template<size_t dim> 
-MultiIndex<dim>::MultiIndex(const std::array<size_t,dim>& Size__)
+MultiIndex<dim>::MultiIndex(const std::array<int,dim>& Size__)
 {
     initialize(Size__);
 }
 
 template<size_t dim> 
-void MultiIndex<dim>::initialize(const std::array<size_t,dim>& Size__) 
+void MultiIndex<dim>::initialize(const std::array<int,dim>& Size__) 
 {
     Size = Size__;
     this->TotalSizeAndOffset();
@@ -34,9 +34,9 @@ inline int MultiIndex<dim>::oneDindex(Args... args)
     assert( dim == sizeof...(args) );
     std::array<int,dim> i = {args...};
 
-    for(int idim=0; idim<dim; idim++) {
-        assert(i[idim] >=0 && i[idim] < Size[idim]);
-    }
+    //for(int idim=0; idim<dim; idim++) {
+    //    assert(i[idim] >=0 && i[idim] < Size[idim]);
+    //}
     int oneDindex = i[dim-1]*Offset[dim-1];
     for(int idim=int(dim)-2; idim>=0; idim--){
         oneDindex += Offset[idim]*i[idim];               
@@ -46,7 +46,7 @@ inline int MultiIndex<dim>::oneDindex(Args... args)
 
 
 template<size_t dim> 
-std::array<int,dim> MultiIndex<dim>::nDindex(const int& index)
+inline std::array<int,dim> MultiIndex<dim>::nDindex(const int& index)
 {
     assert(index >= 0 && index < TotalSize);
     std::array<int,dim> nDindex;

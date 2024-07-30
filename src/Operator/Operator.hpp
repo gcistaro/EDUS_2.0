@@ -4,7 +4,7 @@
 #include "cassert"
 #include "Operator/BlockMatrix.hpp"
 #include "fftPair/fftPair.hpp"
-
+#include "MPIindex/MPIindex.hpp"
 #include <vector>
 
 /*********************************************************************************************
@@ -27,34 +27,34 @@
 class BandIndex
 {
     private:
-        size_t NumberOfBands;
-        size_t oneDNumberOfBands;
-        std::vector< std::pair<size_t,size_t> > RowIndexBoundary;
+        int NumberOfBands;
+        int oneDNumberOfBands;
+        std::vector< std::pair<int,int> > RowIndexBoundary;
 
     public:
-        size_t StartingIndex(const auto& row_)
+        int StartingIndex(const auto& row_)
     {
-        size_t StartingIndex = (row_ == 0) ? 0 
+        int StartingIndex = (row_ == 0) ? 0 
                                            :row_*NumberOfBands - row_*(row_-1)/2;
         return StartingIndex;
     };
 
-    size_t RowIndex(const size_t& oneDband)
+    int RowIndex(const int& oneDindex)
     {
         auto RowIndexIterator_ = std::find_if(RowIndexBoundary.begin(), RowIndexBoundary.end(),
-                                             [&](const auto& RowPair){return oneDband >= RowPair.first && 
-                                                                             oneDband <= RowPair.second;
+                                             [&](const auto& RowPair){return oneDindex >= RowPair.first && 
+                                                                             oneDindex <= RowPair.second;
                                                                       });
         return RowIndexIterator_ - RowIndexBoundary.begin();
     };
 
     BandIndex(){};
-    BandIndex(const size_t& NumberOfBands__)
+    BandIndex(const int& NumberOfBands__)
     {
         initialize(NumberOfBands__);
     };
 
-    void initialize(const size_t& NumberOfBands__)
+    void initialize(const int& NumberOfBands__)
     {
         NumberOfBands = NumberOfBands__;
         oneDNumberOfBands = StartingIndex(NumberOfBands);
@@ -66,7 +66,7 @@ class BandIndex
         }
 
     }
-    size_t oneDband(const size_t& bnd1, const size_t& bnd2)
+    int oneDindex(const int& bnd1, const int& bnd2)
     {
         assert(bnd1 <= bnd2);
         assert(bnd1 <= NumberOfBands && bnd2 <= NumberOfBands);
@@ -74,16 +74,16 @@ class BandIndex
         return RowIndexBoundary[bnd1].first + (bnd2-bnd1);
     };
 
-    std::pair<size_t, size_t> twoDband(const size_t& oneDband__)
+    std::pair<int, int> twoDband(const int& oneDindex__)
     {
-        assert(oneDband__ < oneDNumberOfBands);
-        std::pair<size_t, size_t> twoDband_;
-        twoDband_.first = RowIndex(oneDband__);
-        twoDband_.second = oneDband__ - RowIndexBoundary[twoDband_.first].first + twoDband_.first;
+        assert(oneDindex__ < oneDNumberOfBands);
+        std::pair<int, int> twoDband_;
+        twoDband_.first = RowIndex(oneDindex__);
+        twoDband_.second = oneDindex__ - RowIndexBoundary[twoDband_.first].first + twoDband_.first;
         return twoDband_;
     };
 
-    size_t& get_oneDNumberOfBands(){ return oneDNumberOfBands; };
+    int& get_oneDNumberOfBands(){ return oneDNumberOfBands; };
 };
 
 
@@ -100,29 +100,46 @@ class Operator
         std::shared_ptr<MeshGrid> FT_meshgrid_k;
         std::shared_ptr<MeshGrid> FT_meshgrid_R;
 
-        static BandIndex bandindex;
+        //static BandIndex bandindex;
+        static MultiIndex<2> bandindex;
         BandGauge bandgauge;
         Space space;
-        Space SpaceOfPropagation;
 
         bool locked_bandgauge = false;
         bool locked_space = false;
         bool initialized_dft = false;
         bool initialized_fft = false;
         FourierTransform ft_;
-        
+
+        std::string tagname = "";
+
 
     public:
+        static Space SpaceOfPropagation;
         static BlockMatrix<T> temp_k;
         friend class Simulation;
         static std::shared_ptr<MeshGrid> MeshGrid_Null;
         static BlockMatrix<T> EigenVectors;
         static BlockMatrix<T> EigenVectors_dagger;
+        static MPIindex<3> mpindex;
         Operator() : Operator_k(BlockMatrix<T>()), Operator_R(BlockMatrix<T>()){};
 
 
         Operator(const Operator<T>& Op_) = default;
-        Operator<T>& operator=(const Operator<T>& Op_) = default;
+        Operator<T>& operator=(const Operator<T>& Op_) 
+        {
+            this->Operator_k = Op_.get_Operator(k);
+            this->Operator_R = Op_.get_Operator(R);
+            this->FTfriendly_Operator_R = Op_.FTfriendly_Operator_R;
+            this->FTfriendly_Operator_k = Op_.FTfriendly_Operator_k;
+            this->bandgauge = Op_.bandgauge;
+            this->space = Op_.space;
+            this->SpaceOfPropagation = Op_.SpaceOfPropagation;
+            this->locked_bandgauge = Op_.locked_bandgauge;
+            this->locked_space = Op_.locked_space;
+            //this->ft_ = Op_.ft_; //Warning!! Never copy ft!! is deleted anyway
+            return *this;
+        }
         
         Operator(Operator<T>&& Op_)  = default;
         Operator<T>& operator=(Operator<T>&& Op_) = default;
@@ -169,8 +186,9 @@ class Operator
         };
 
 
-        void initialize_fft(const MeshGrid& MG, const size_t& nbnd)
+        void initialize_fft(const MeshGrid& MG, const int& nbnd, const std::string& tagname_="")
         {
+            tagname = tagname_;
             //for now this is the only case implemented. it will be more general.
             //we enter in this function only once
             if(initialized_fft){
@@ -178,8 +196,11 @@ class Operator
             }
             initialized_fft = true;
             
+#ifdef NEGF_MPI
+            Operator_R = BlockMatrix<std::complex<double>>(R, mpindex.get_RecommendedAllocate_fftw(), nbnd, nbnd);
+#else
             Operator_R = BlockMatrix<std::complex<double>>(R, MG.get_mesh().size(), nbnd, nbnd);
-
+#endif
             switch(MG.get_space())
             {
                 case R:
@@ -225,35 +246,59 @@ class Operator
             //endofproof
             */
             auto nk = FT_meshgrid_R->get_mesh().size();
-
+#ifdef NEGF_MPI
+            Operator_k = BlockMatrix<std::complex<double>>(k, mpindex.get_RecommendedAllocate_fftw(), nbnd, nbnd);
+#else
             Operator_k = BlockMatrix<std::complex<double>>(k, nk, nbnd, nbnd);
+#endif
             auto& kgrid = Operator_k.get_MeshGrid();
             kgrid = FT_meshgrid_k;
-            bandindex.initialize(nbnd);
-            
+            //bandindex.initialize(nbnd);
+            bandindex.initialize({nbnd, nbnd});
 
-            
-            FTfriendly_Operator_k = mdarray<std::complex<double>, 2>({nbnd*(nbnd+1)/2, nk});
-            FTfriendly_Operator_R = mdarray<std::complex<double>, 2>({nbnd*(nbnd+1)/2, nk});
-
+#ifdef NEGF_MPI
+            //bandindex FTfriendly_Operator_k = mdarray<std::complex<double>, 2>({nbnd*(nbnd+1)/2, mpindex.get_RecommendedAllocate_fftw()});
+            //bandindex FTfriendly_Operator_R = mdarray<std::complex<double>, 2>({nbnd*(nbnd+1)/2, mpindex.get_RecommendedAllocate_fftw()});
+            FTfriendly_Operator_k = mdarray<std::complex<double>, 2>({nbnd*nbnd, mpindex.get_RecommendedAllocate_fftw()});
+            FTfriendly_Operator_R = mdarray<std::complex<double>, 2>({nbnd*nbnd, mpindex.get_RecommendedAllocate_fftw()});
+#else     
+            //bandindex FTfriendly_Operator_k = mdarray<std::complex<double>, 2>({nbnd*(nbnd+1)/2, nk});
+            //bandindex FTfriendly_Operator_k = mdarray<std::complex<double>, 2>({nbnd*(nbnd+1)/2, nk});
+            FTfriendly_Operator_k = mdarray<std::complex<double>, 2>({nbnd*nbnd, nk});
+            FTfriendly_Operator_R = mdarray<std::complex<double>, 2>({nbnd*nbnd, nk});
+#endif
             //use convolution index for shuffle index.
             std::vector<int> Dimensions(3);
             for(int ix=0; ix<3; ix++){
                 Dimensions[ix] = FT_meshgrid_k->get_Size()[ix];
             }
 
-            ft_.initialize(FTfriendly_Operator_k, FTfriendly_Operator_R, Dimensions);
+            ft_.initialize(FTfriendly_Operator_k, FTfriendly_Operator_R, Dimensions, tagname);
             //shuffle_to_fft();
+            this->space = R;
+            locked_space = true;
         };
 
 
         void dft(const std::vector<Coordinate>& path, const int& sign)
         {
             initialize_dft();
+#ifdef NEGF_MPI
+            std::vector<Coordinate> path_local;
+            auto& LocalRange = mpindex.get_LocalRange();
+            for ( int index_local = 0; index_local < LocalRange.second-LocalRange.first+1; index_local++ ) {
+                path_local.push_back( path[ mpindex.loc1D_to_glob1D( index_local )] );
+            }
+            execute_dft(path_local, sign);
+            Operator_k.initialize(k, path_local.size(), Operator_R.get_nrows(), Operator_R.get_ncols());
+            Operator_k.set_MeshGrid(MeshGrid(k, path));
+            shuffle_to_RK();
+#else                        
             execute_dft(path, sign);
             Operator_k.initialize(k, FTfriendly_Operator_k.get_Size(1), Operator_R.get_nrows(), Operator_R.get_ncols());
             Operator_k.set_MeshGrid(MeshGrid(k, path));
             shuffle_to_RK();
+#endif
         }
 
 
@@ -276,13 +321,16 @@ class Operator
             }
             initialized_dft = true;
             auto nbnd = Operator_R.get_nrows();
-            bandindex.initialize(nbnd);
+            //bandindex.initialize(nbnd);
+            bandindex.initialize({nbnd, nbnd});
             //initialize input of fft
-            FTfriendly_Operator_R = mdarray<std::complex<double>, 2>({nbnd*(nbnd+1)/2, Operator_R.get_nblocks()});
+            //bandindex FTfriendly_Operator_R = mdarray<std::complex<double>, 2>({nbnd*(nbnd+1)/2, Operator_R.get_nblocks()});
+            FTfriendly_Operator_R = mdarray<std::complex<double>, 2>({nbnd*nbnd, Operator_R.get_nblocks()});
             for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
                 for(int ibnd1=0; ibnd1<nbnd; ++ibnd1){
-                    for(int ibnd2=ibnd1; ibnd2<nbnd; ++ibnd2){
-                        FTfriendly_Operator_R(static_cast<int>(bandindex.oneDband(ibnd1, ibnd2)), iR) = 
+                    //bandindex for(int ibnd2=ibnd1; ibnd2<nbnd; ++ibnd2){
+                    for(int ibnd2=0; ibnd2<nbnd; ++ibnd2){
+                        FTfriendly_Operator_R(static_cast<int>(bandindex.oneDindex(ibnd1, ibnd2)), iR) = 
                                                                             Operator_R(iR, ibnd1, ibnd2);
                     }
                 }
@@ -323,9 +371,10 @@ class Operator
         {
             for(int ik=0; ik<Operator_k.get_nblocks(); ++ik){
                 for(int ibnd1=0; ibnd1<Operator_k.get_nrows(); ++ibnd1){
-                    for(int ibnd2=ibnd1; ibnd2<Operator_k.get_nrows(); ++ibnd2){ 
-                        Operator_k(ik, ibnd1, ibnd2) = FTfriendly_Operator_k(static_cast<int>(bandindex.oneDband(ibnd1,ibnd2)),ik);            
-                        Operator_k(ik, ibnd2, ibnd1) = std::conj(Operator_k(ik,ibnd1, ibnd2));
+                    //bandindex for(int ibnd2=ibnd1; ibnd2<Operator_k.get_nrows(); ++ibnd2){ 
+                    for(int ibnd2=0; ibnd2<Operator_k.get_nrows(); ++ibnd2){ 
+                        Operator_k(ik, ibnd1, ibnd2) = FTfriendly_Operator_k(static_cast<int>(bandindex.oneDindex(ibnd1,ibnd2)),ik);            
+                        //bandindex Operator_k(ik, ibnd2, ibnd1) = std::conj(Operator_k(ik,ibnd1, ibnd2));
         		    }
                 }
             }
@@ -337,9 +386,9 @@ class Operator
             for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
                 assert(ci(iR,0) != -1);
                 for(int ibnd1=0; ibnd1<Operator_R.get_nrows(); ++ibnd1){
-                    for(int ibnd2=ibnd1; ibnd2<Operator_R.get_ncols(); ++ibnd2){
-                        //std::cout  << " R " << iR << "ibnd1 " << ibnd1  << "ibnd2 "<< ibnd2  << " ci(iR,0) "<<   ci(iR,0) << std::endl;
-                        FTfriendly_Operator_R(static_cast<int>(bandindex.oneDband(ibnd1, ibnd2)), ci(iR,0)) = Operator_R(iR, ibnd1, ibnd2);
+                    // bandindex for(int ibnd2=ibnd1; ibnd2<Operator_R.get_ncols(); ++ibnd2){
+                    for(int ibnd2=0; ibnd2<Operator_R.get_ncols(); ++ibnd2){
+                        FTfriendly_Operator_R(static_cast<int>(bandindex.oneDindex(ibnd1, ibnd2)), ci(iR,0)) = Operator_R(iR, ibnd1, ibnd2);
                     }
                 }
             }
@@ -349,10 +398,9 @@ class Operator
         {
             for(int ik=0; ik<Operator_k.get_nblocks(); ik++){
                 for(int ibnd1=0; ibnd1<Operator_k.get_nrows(); ++ibnd1){
-                    for(int ibnd2=ibnd1; ibnd2<Operator_k.get_ncols(); ++ibnd2){
-                        FTfriendly_Operator_k(static_cast<int>(bandindex.oneDband(ibnd1, ibnd2)), ik) = Operator_k(ik, ibnd1, ibnd2);
-                        //std::cout << bandindex.oneDband(ibnd1, ibnd2) << " " << ik;
-                        //std::cout << Operator_k(ik, ibnd1, ibnd2) << std::endl;
+                    // bandindex for(int ibnd2=ibnd1; ibnd2<Operator_R.get_ncols(); ++ibnd2){
+                    for(int ibnd2=0; ibnd2<Operator_k.get_ncols(); ++ibnd2){
+                        FTfriendly_Operator_k(static_cast<int>(bandindex.oneDindex(ibnd1, ibnd2)), ik) = Operator_k(ik, ibnd1, ibnd2);
                     }
                 }
             }
@@ -361,36 +409,38 @@ class Operator
         void shuffle_from_fft_R()
         {
             auto ci = MeshGrid::get_ConvolutionIndex(*Operator_R.get_MeshGrid(), *FT_meshgrid_R, *MeshGrid_Null);
-            auto ciminus = MeshGrid::get_ConvolutionIndex(*MeshGrid_Null, *Operator_R.get_MeshGrid(), *Operator_R.get_MeshGrid());
+            // bandindex auto ciminus = MeshGrid::get_ConvolutionIndex(*MeshGrid_Null, *Operator_R.get_MeshGrid(), *Operator_R.get_MeshGrid());
 
             for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
                 assert(ci(iR,0) != -1);
                 for(int ibnd1=0; ibnd1<Operator_R.get_nrows(); ++ibnd1){
-                    for(int ibnd2=ibnd1; ibnd2<Operator_R.get_ncols(); ++ibnd2){
-                        //std::cout  << " R " << iR << "ibnd1 " << ibnd1  << "ibnd2 "<< ibnd2  << " ci(iR,0) "<<   ci(iR,0) << std::endl;
-                        Operator_R(iR, ibnd1, ibnd2) = FTfriendly_Operator_R(static_cast<int>(bandindex.oneDband(ibnd1, ibnd2)), ci(iR,0));
+                    // bandindex for(int ibnd2=ibnd1; ibnd2<Operator_R.get_ncols(); ++ibnd2){
+                    for(int ibnd2=0; ibnd2<Operator_R.get_ncols(); ++ibnd2){
+                        Operator_R(iR, ibnd1, ibnd2) = FTfriendly_Operator_R(static_cast<int>(bandindex.oneDindex(ibnd1, ibnd2)), ci(iR,0));
                     }
                 }
             }
 
-            for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
-                assert(ciminus(0,iR) != -1);
-                for(int ibnd1=0; ibnd1<Operator_R.get_nrows(); ++ibnd1){
-                    for(int ibnd2=ibnd1+1; ibnd2<Operator_R.get_ncols(); ++ibnd2){
-                        //std::cout << iR << " " << (*(Operator_R.get_MeshGrid()))[iR] <<
-                        Operator_R(iR, ibnd2, ibnd1) = std::conj(Operator_R(ciminus(0,iR), ibnd1, ibnd2));
-                    }
-                }
-            }
+            // bandindex for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
+            // bandindex     assert(ciminus(0,iR) != -1);
+            // bandindex     for(int ibnd1=0; ibnd1<Operator_R.get_nrows(); ++ibnd1){
+            // bandindex         for(int ibnd2=ibnd1+1; ibnd2<Operator_R.get_ncols(); ++ibnd2){
+            // bandindex             //std::cout << iR << " " << (*(Operator_R.get_MeshGrid()))[iR] <<
+            // bandindex             Operator_R(iR, ibnd2, ibnd1) = std::conj(Operator_R(ciminus(0,iR), ibnd1, ibnd2));
+            // bandindex         }
+            // bandindex     }
+            // bandindex }
         }
 
         void shuffle_from_fft_k()
         {
             for(int ik=0; ik<Operator_k.get_nblocks(); ik++){
                 for(int ibnd1=0; ibnd1<Operator_k.get_nrows(); ++ibnd1){
-                    for(int ibnd2=ibnd1; ibnd2<Operator_k.get_ncols(); ++ibnd2){
-                        Operator_k(ik, ibnd1, ibnd2) = FTfriendly_Operator_k(static_cast<int>(bandindex.oneDband(ibnd1, ibnd2)), ik);
-                        Operator_k(ik, ibnd2, ibnd1) = conj(Operator_k(ik, ibnd1, ibnd2));
+                    // bandindex for(int ibnd2=ibnd1; ibnd2<Operator_k.get_ncols(); ++ibnd2){
+                    for(int ibnd2=0; ibnd2<Operator_k.get_ncols(); ++ibnd2){
+                        Operator_k(ik, ibnd1, ibnd2) = 
+                            FTfriendly_Operator_k(static_cast<int>(bandindex.oneDindex(ibnd1, ibnd2)), ik);
+                        //Operator_k(ik, ibnd2, ibnd1) = conj(Operator_k(ik, ibnd1, ibnd2));
                     }
                 }
             }
@@ -415,6 +465,7 @@ class Operator
 
         void go_to_bloch()
         {
+            // O_{bloch} = U^\dagger O_{wannier} U
             assert(locked_bandgauge);
             assert(space == k);
             if(bandgauge == bloch){
@@ -466,14 +517,32 @@ class Operator
             locked_space = true;
         };
 
+
+        void initialize_dims(const Operator<T>& Allocated_Op)
+        {
+            this->Operator_k.initialize(k, Allocated_Op.get_Operator_k().get_nblocks(), 
+                Allocated_Op.get_Operator_k().get_nrows(),  Allocated_Op.get_Operator_k().get_ncols() );
+            this->Operator_R.initialize(k, Allocated_Op.get_Operator_R().get_nblocks(), 
+                Allocated_Op.get_Operator_R().get_nrows(),  Allocated_Op.get_Operator_R().get_ncols() );
+            FTfriendly_Operator_R.initialize(Allocated_Op.FTfriendly_Operator_R.get_Size());
+            FTfriendly_Operator_k.initialize(Allocated_Op.FTfriendly_Operator_k.get_Size());
+            FT_meshgrid_k = Allocated_Op.FT_meshgrid_k;
+            FT_meshgrid_R = Allocated_Op.FT_meshgrid_R;
+            this->Operator_k.set_MeshGrid(*FT_meshgrid_k);
+            this->Operator_R.set_MeshGrid(*FT_meshgrid_R);
+            SpaceOfPropagation = Allocated_Op.SpaceOfPropagation;            
+        }
+
 };
 
 
 
 
 
+// bandindex template < typename T>
+// bandindex BandIndex Operator<T>::bandindex;
 template < typename T>
-BandIndex Operator<T>::bandindex;
+MultiIndex<2> Operator<T>::bandindex;
 
 template < typename T>
 BlockMatrix<T> Operator<T>::EigenVectors;
@@ -488,5 +557,10 @@ BlockMatrix<T> Operator<T>::temp_k;
 template < typename T>
 std::shared_ptr<MeshGrid> Operator<T>::MeshGrid_Null = std::make_shared<MeshGrid>(MeshGrid(k, std::vector<Coordinate>({Coordinate(0,0,0)})));
 
+template < typename T>
+MPIindex<3> Operator<T>::mpindex;
+
+template < typename T>
+Space Operator<T>::SpaceOfPropagation;
 
 #endif

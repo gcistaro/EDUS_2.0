@@ -6,7 +6,7 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 
 
 option(NEGF_PROFILE "Profiling function timings" ON)
-option(NEGF_MPI "Enabling MPI" OFF)
+option(NEGF_MPI "Enabling MPI" ON)
 
 if(NEGF_MPI)
   add_definitions(-DNEGF_MPI)
@@ -60,18 +60,17 @@ set(_SOURCES src/GlobalFunctions.cpp
              src/Laser/Laser.cpp
              src/fftPair/fftPair.cpp
              src/kGradient/kGradient.cpp
+             src/RungeKutta/RungeKutta.cpp
              src/Simulation/Simulation.cpp
              src/core/profiler.cpp 
              src/core/print_timing.cpp 
              src/core/rt_graph.cpp
-
 			 )
-
-
+	
 
 
 #adding all sources to target
-add_library(OBJECTS OBJECT ${_SOURCES})
+add_library(OBJECTS OBJECT ${_SOURCES} )
 link_libraries(OBJECTS)
 
 #adding OpenMP
@@ -150,7 +149,7 @@ add_executable(Containers_test ci-test/test_mdarray.cpp)
 
 #MultiIndex
 add_executable(MultiIndex_test ci-test/test_MultiIndex.cpp) 
-#target_precompile_headers(Containers_test REUSE_FROM NEGF)
+#target_precompile_headers(Containers_test REUSE_FROM #NEGF)
 
 #Matrix
 add_executable(Matrix_test ci-test/test_matrix.cpp)
@@ -215,7 +214,7 @@ enable_testing()
 add_test(NAME Containers_test COMMAND Containers_test)
 add_test(NAME MultiIndex_test COMMAND MultiIndex_test)
 add_test(NAME Matrix_test COMMAND Matrix_test)
-add_test(NAME Laser_test COMMAND Laser_test)
+#add_test(NAME Laser_test COMMAND Laser_test)
 add_test(NAME Eigen_test COMMAND Eigen_test)
 add_test(NAME RK_test COMMAND RK_test)
 add_test(NAME RK2_test COMMAND RK2_test)

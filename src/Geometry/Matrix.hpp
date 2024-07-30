@@ -31,10 +31,10 @@ class Matrix{
         {
                 Values=std::move(Values_);
         };
-        Matrix(const size_t& nrows, const size_t& ncols);
-        void initialize(const size_t& nrows, const size_t& ncols);
+        Matrix(const int& nrows, const int& ncols);
+        void initialize(const int& nrows, const int& ncols);
 
-        Matrix(T* Ptr, const std::array<size_t,2>& dims);
+        Matrix(T* Ptr, const std::array<int,2>& dims);
         
         Matrix(const Matrix& A) = default;
         Matrix& operator=(const Matrix& m) = default;
@@ -77,8 +77,8 @@ class Matrix{
         
         auto begin() const { return Values.begin(); }
         auto end() const {return Values.end(); } 	
-        size_t get_nrows() const;
-        size_t get_ncols() const;
+        int get_nrows() const;
+        int get_ncols() const;
         
 	//destructor
         ~Matrix();	

@@ -1,4 +1,7 @@
 
+#ifndef BANDINDEX_HPP
+#define BANDINDEX_HPP
+
 /*********************************************************************************************
  *   numbering:
  *   [0   1   2    3 ]
@@ -79,3 +82,4 @@ class BandIndex
     size_t& get_oneDNumberOfBands(){ return oneDNumberOfBands; };
 };
 
+#endif

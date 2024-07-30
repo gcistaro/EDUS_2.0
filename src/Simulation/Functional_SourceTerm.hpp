@@ -9,11 +9,10 @@ SourceTerm =
 
     // H = H0 + E.r
     Calculate_TDHamiltonian(time);
-
     // Output = -i * [ H, Input ]
-    auto& Output_ = Output.get_Operator(SpaceOfPropagation);
-    auto& Input_ = Input.get_Operator(SpaceOfPropagation);
-    auto& H_ = H.get_Operator(SpaceOfPropagation);
+    auto& Output_ = Output.get_Operator(Space::k);
+    auto& Input_ = Input.get_Operator(Space::k);
+    auto& H_ = H.get_Operator(Space::k);
     
     Output_.fill(0.*im);
     commutator(Output_, -im, H_, Input_);
@@ -21,20 +20,14 @@ SourceTerm =
 
 
     PROFILE_START("i*(E.R)*Input");
-    if( SpaceOfPropagation == R ) {
-    // Output += i * (E.R) * Input
-        #pragma omp parallel for schedule(static)
-        for(int iR=0; iR<Output_.get_nblocks(); ++iR){        
-            auto& R = (*(Output_.get_MeshGrid()))[iR];
-            auto imDotProduct = im*R.dot( laser(time) );
-            Output_[iR] += imDotProduct * Input_[iR];
-        }
-    }
-    else if ( SpaceOfPropagation == k ) {
     // Output +=   (E.Nabla) * Input
-        kgradient.Calculate(Output_, Input_, 
-                            laser(time), false);
-    }
+    Output.go_to_R();
+    const_cast<Operator<std::complex<double>>&>(Input).go_to_R();
+    kgradient.Calculate(Output.get_Operator(Space::R), 
+                        Input.get_Operator(Space::R), 
+                        laser(time), false);
+    Output.go_to_k();
+    const_cast<Operator<std::complex<double>>&>(Input).go_to_k();
     PROFILE_STOP("i*(E.R)*Input");
 
     //assert(Output_.is_hermitian());

@@ -20,8 +20,8 @@ class Wannier{
         mdarray<double,2> Rmesh;
         mdarray<double,2> UnitCell;
 
-        size_t NumberOfBands;
-        size_t NumberOfRpoints;
+        int NumberOfBands;
+        int NumberOfRpoints;
     public: 
         Wannier(const std::string& FileName);
         void Print(const std::string& FileName);

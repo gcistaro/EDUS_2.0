@@ -1,11 +1,11 @@
 template<class T>
-Matrix<T>::Matrix(const size_t& nrows, const size_t& ncols)
+Matrix<T>::Matrix(const int& nrows, const int& ncols)
 {
     this->initialize(nrows, ncols);
 }
 
 template<class T>
-void Matrix<T>::initialize(const size_t& nrows, const size_t& ncols)
+void Matrix<T>::initialize(const int& nrows, const int& ncols)
 {
     (*this).~Matrix<T>();
     assert(nrows > 0 && ncols > 0);
@@ -14,7 +14,7 @@ void Matrix<T>::initialize(const size_t& nrows, const size_t& ncols)
 
 
 template<class T>
-Matrix<T>::Matrix(T* Ptr, const std::array<size_t,2>& Size_)
+Matrix<T>::Matrix(T* Ptr, const std::array<int,2>& Size_)
 {
     Values.initialize(Ptr, Size_);
 }
@@ -72,8 +72,8 @@ void Matrix<T>::LUdecompose(Matrix<T>& LU, lapack_int** pointer_to_ipiv) const
     //L has diagonal elements equal to 1 and are not saved; the diagonal elements are that of U.
     assert((std::is_same<T,double>::value));
     LU = *this;
-    size_t m = (*this).get_nrows();
-    size_t n = (*this).get_ncols();
+    int m = (*this).get_nrows();
+    int n = (*this).get_ncols();
     lapack_int lda = n;
     //if(*pointer_to_ipiv != nullptr){
     //	    delete[] *pointer_to_ipiv;
@@ -214,14 +214,14 @@ Vector<T> Matrix<T>::operator*(const Vector<T>& v) const
 
 
 template<class T>
-size_t Matrix<T>::get_nrows() const
+inline int Matrix<T>::get_nrows() const
 {
     return this->Values.get_Size(0);
 }
 
 
 template<class T>
-size_t Matrix<T>::get_ncols() const
+inline int Matrix<T>::get_ncols() const
 {
     return this->Values.get_Size(1);
 }
@@ -235,7 +235,7 @@ Matrix<T>::~Matrix()
 }
 
 template<typename T>
-double Matrix<T>::norm() const
+inline double Matrix<T>::norm() const
 {
     double Norm=0;
     for(auto& val : (*this)){

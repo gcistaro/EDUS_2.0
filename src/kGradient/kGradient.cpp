@@ -26,12 +26,16 @@ void kGradient::initialize()
 {
     //evaluates weights, number of shells, k+b indices.
     if(kmesh && !Rmesh) {
+        mpindex.initialize(kmesh->get_Size());
         ikshell = SortInShells(*kmesh);
         Calculate_nshellsAndweights(nshells, Weight, *kmesh, ikshell);
+        std::cout <<"nshells: " << nshells;
+        std::cout << "Weight: " << Weight;
         ikpb = Find_kpb(*kmesh, ikshell);
     }
     else if(Rmesh && !kmesh) {
         //in this case, we already have everything
+        mpindex.initialize(Rmesh->get_Size());
     }
     else {
         std::cout << "Something went wrong in kGradient::initialize() -> either both or none Rmesh and kmesh are initialized\n";
@@ -103,14 +107,15 @@ void Calculate_nshellsAndweights(int& nshells, mdarray<double,1>& Weight,
         nshells++;
         auto A_ = GradientMatrix(nshells, kmesh, ikshell); //computes A as in CPC 178 (2008) 685-599 between eq.25 and 26
         
-
+        std::cout << "A_:\n" << A_;
         //compute w = A^{-1}*q
         auto invA = A_.pseudoinv();
+        std::cout << "invA:\n" << invA;
         w = invA*q;
-
+        std::cout << "w\n" << w;
         //try A*w = qguess
         auto qguess = A_*w;
-
+        std::cout << "qguess\n"<<qguess;
         //we have enough shells only when qguess is equal to q.
         EnoughShells = ( ( qguess - q ).norm() < threshold );
     }
@@ -118,7 +123,7 @@ void Calculate_nshellsAndweights(int& nshells, mdarray<double,1>& Weight,
     assert(w.get_nrows() == nshells);
     assert(w.get_ncols() == 1);
 
-    Weight = mdarray<double, 1>({size_t(nshells)});
+    Weight = mdarray<double, 1>({nshells});
     for(int ishell = 0; ishell < nshells; ++ishell) {
         Weight(ishell) = w(ishell, 0);
     }
@@ -176,30 +181,39 @@ Matrix<double> GradientMatrix(const size_t& nshells, const MeshGrid& kmesh, cons
     return A;
 }
 
-std::vector<std::vector<std::vector<int>>> Find_kpb(const MeshGrid& kmesh, const std::vector<std::vector<int>>& ikshell)
+std::vector<std::vector<std::vector<int>>> kGradient::Find_kpb(const MeshGrid& kmesh, const std::vector<std::vector<int>>& ikshell)
 {
+#ifdef NEGF_MPI
+    std::cout << "find_kpb still not implemented in MPI. SUGGESTION: Propagate gradient in R!\n";
+    exit(1);
+#endif
     PROFILE("kgradient::Find_kpb");
-    std::vector<std::vector<std::vector<int>>> ikpb(kmesh.get_TotalSize());
+    std::vector<std::vector<std::vector<int>>> ikpb_local(mpindex.nlocal);
 
     #pragma omp parallel for schedule(static)
-    for( int ik = 0; ik < kmesh.get_TotalSize(); ++ik) {
-        ikpb[ik].resize(ikshell.size());
-        for( int ishell = 0; ishell < ikshell.size(); ++ishell ) {
+    for( int ik = 0; ik < mpindex.nlocal; ++ik) {
+        ikpb[ik].resize(nshells);
+        for( int ishell = 0; ishell < nshells; ++ishell ) {
             ikpb[ik][ishell].resize( ikshell[ishell].size() );
         }
     }
     std::cout << "Calculating map ik, ib ---> ikpb...\n";
     //find k+b in kmesh for every k, every b
+        std::stringstream name;
+        name << "os_rank" << mpi::Communicator::world().rank();//GIO
+        std::ofstream os_rank(name.str());//GIO
+
     #pragma omp parallel for schedule(static)
-    for( int ik = 0; ik < kmesh.get_TotalSize(); ++ik) {
+    for( int ik_loc = 0; ik_loc < mpindex.nlocal; ++ik_loc) {
+        auto ik_global = ik_loc;//mpindex.loc1D_to_glob1D(ik_loc);
         //std::cout << "ik: " << ik << "/" << kmesh.get_TotalSize() << " in thread " << omp_get_thread_num() << "/" << omp_get_num_threads() << std::endl;
-        for( int ishell = 0; ishell < ikshell.size(); ++ishell ) {
-            for( int ib = 0; ib < ikshell[ishell].size(); ++ib ) {
-                ikpb[ik][ishell][ib] = kmesh.find(kmesh[ik] + kmesh[ikshell[ishell][ib]]);
+        for( int ishell = 0; ishell < ikpb[ik_loc].size(); ++ishell ) {
+            for( int ib = 0; ib < ikpb[ik_loc][ishell].size(); ++ib ) {
+                ikpb[ik_loc][ishell][ib] = kmesh.find(kmesh[ik_global] + kmesh[ikshell[ishell][ib]]);
             }
         }
     }
     std::cout << "DONE!";
-    return ikpb;
+    return ikpb_local;
 }
 

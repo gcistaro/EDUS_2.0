@@ -17,7 +17,7 @@ void kGradient::Calculate(T& DerivativeFunction, const T& Function,
     /* case 1-> we calculate the gradient directly in k */
     if( kmesh && !Rmesh ) {
         #pragma omp parallel for schedule(static)
-        for( int ik = 0; ik < kmesh->get_TotalSize(); ++ik ) {
+        for( int ik = 0; ik < mpindex.nlocal; ++ik ) {
             for( int ishell = 0; ishell < Weight.get_Size(0); ++ishell ) {
                 for( int ib = 0; ib < ikshell[ishell].size(); ++ib ) {
                     auto& Bvector = (*kmesh)[ikshell[ishell][ib]];
@@ -33,8 +33,9 @@ void kGradient::Calculate(T& DerivativeFunction, const T& Function,
     */
     else if ( Rmesh && !kmesh ) {
         #pragma omp parallel for schedule(static)
-        for( int iR = 0; iR < Rmesh->get_TotalSize(); ++iR ) {
-            DerivativeFunction[iR] = im*2.*pi*(*Rmesh)[iR].dot(direction)*Function[iR];
+        for( int iR_loc = 0; iR_loc < mpindex.nlocal; ++iR_loc ) {
+            auto iR_global = (static_cast<MPIindex<3>>(mpindex)).loc1D_to_glob1D(iR_loc);
+            DerivativeFunction[iR_loc] += im*2.*pi*(*Rmesh)[iR_global].dot(direction)*Function[iR_loc];
         }
     }
 }
