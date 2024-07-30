@@ -28,11 +28,12 @@ int main()
     };
 
     auto SourceTerm = [&](auto& Output, const double InputTime, const auto& InputFunction){
-        for(auto OutputIterator=Output.begin(), InputFunctionIterator = InputFunction.begin();
-        (OutputIterator!=Output.end()) && (InputFunctionIterator != InputFunction.end());  
-          ++OutputIterator, ++InputFunctionIterator)
+        for(struct {std::vector<std::complex<double>>::iterator Output; std::vector<std::complex<double>>::iterator Input;}
+             loop = {Output.begin(), (const_cast<std::vector<std::complex<double>>&>(InputFunction)).begin()};
+        (loop.Output!=Output.end()) && (loop.Input != InputFunction.end());  
+          ++loop.Output, ++loop.Input)
         {
-            (*OutputIterator) = 2.*im*H00*(*InputFunctionIterator);
+            (*loop.Output) = 2.*im*H00*(*loop.Input);
         }
     };
 

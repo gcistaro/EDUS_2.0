@@ -6,6 +6,7 @@
 #ifdef NEGF_MPI
 
 #include "mpi.h"
+#include <cassert>
 
 namespace mpi
 {

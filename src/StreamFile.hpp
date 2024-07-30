@@ -1,3 +1,9 @@
+#ifndef STREAMFILE_HPP
+#define STREAMFILE_HPP
+
+#include <string>
+#include <vector>
+
 /*
  *   ReadFile
  *   Short description:
@@ -9,4 +15,6 @@
  *
 */
 auto ReadFile(const std::string& FileName) -> std::vector<std::vector<std::string>>;
-void WriteFile(const std::string& FileName, const auto& file_content);
+void WriteFile(const std::string& FileName, const std::vector<std::vector<std::string>>& file_content);
+
+#endif

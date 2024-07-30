@@ -246,6 +246,9 @@ MeshGrid fftPair(const MeshGrid& KnownMG)
             fftMeshGrid.initialize(fftSpace, KnownMG.get_Size());
             break;
         }
+        default:
+            break;
+
     }
     return fftMeshGrid;
 }
@@ -314,6 +317,8 @@ int MeshGrid::find(const Coordinate& v) const
             index = v_iterator-mesh.begin();
             break;
         }
+        default:
+            break;
     }
     if(index >= TotalSize) index = -1;
     return index;

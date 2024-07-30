@@ -34,7 +34,7 @@ auto ReadFile(const std::string& FileName) -> std::vector<std::vector<std::strin
 }
 
 
-void WriteFile(const std::string& FileName, const auto& file_content)
+void WriteFile(const std::string& FileName, const std::vector<std::vector<std::string>>& file_content)
 {
     std::ofstream FileName_Stream;
     FileName_Stream.open(FileName.c_str());

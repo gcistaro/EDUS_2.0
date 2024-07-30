@@ -26,10 +26,13 @@ void SumWithProduct(T& Output, const Scalar_T& FirstScalar, const T& FirstAddend
     assert(Output.end() - Output.begin() == FirstAddend.end() - FirstAddend.begin());
     assert(FirstAddend.end() - FirstAddend.begin() == SecondAddend.end() - SecondAddend.begin());
     
-    for(auto OutputIterator=Output.begin(), FirstAddendIterator = FirstAddend.begin(), SecondAddendIterator = SecondAddend.begin();
-        (OutputIterator!=Output.end()) && (FirstAddendIterator != FirstAddend.end()) && (SecondAddendIterator != SecondAddend.end());  
-          ++OutputIterator, ++FirstAddendIterator, ++SecondAddendIterator ){
-                *OutputIterator = FirstScalar*(*FirstAddendIterator) + SecondScalar*(*SecondAddendIterator);
+    typedef typename T::iterator iterator;
+    
+    for(struct{ iterator Output; iterator Input1; iterator Input2;} loop =
+            {Output.begin(), (const_cast<T&>(FirstAddend)).begin(), (const_cast<T&>(SecondAddend)).begin()};
+        (loop.Output!=Output.end()) && (loop.Input1 != FirstAddend.end()) && (loop.Input2 != SecondAddend.end());  
+          ++loop.Output, ++loop.Input1, ++loop.Input2 ){
+                *loop.Output = FirstScalar*(*loop.Input1) + SecondScalar*(*loop.Input2);
     }
 }
 

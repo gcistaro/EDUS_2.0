@@ -10,22 +10,32 @@
 
 //each function reads part of wannier "_tb.dat" file
 
-int ParseWannier_Degeneracies(const auto& LineIterator_Begin, auto& Degeneracy);
+int ParseWannier_Degeneracies(const std::vector<std::vector<std::string>>::iterator& LineIterator_Begin, 
+                              std::vector<int>& Degeneracy);
 
-int ParseWannier_MatrixElement(const auto& LineIterator, auto* Matrix_, const auto& NumberOfBands);
-int ParseWannier_MatrixElement(const auto& LineIterator, auto* Matrix0, auto* Matrix1, auto* Matrix2, const auto& NumberOfBands);
+int ParseWannier_MatrixElement(const std::vector<std::vector<std::string>>::iterator& LineIterator, 
+                                std::complex<double>* Matrix_, const int& NumberOfBands);
 
-int ParseWannier_Matrix(const auto LineIterator_begin, auto* R, auto* Matrix_, const auto& NumberOfBands);
-int ParseWannier_Matrix(const auto LineIterator_begin, auto* R, auto* Matrix0, auto* Matrix1, auto* Matrix2, const auto& NumberOfBands);
+int ParseWannier_MatrixElement(const std::vector<std::vector<std::string>>::iterator& LineIterator, 
+                                std::complex<double>* Matrix0, std::complex<double>* Matrix1, 
+                                std::complex<double>* Matrix2, const int& NumberOfBands);
 
-int ParseWannier_Hamiltonian(const auto LineIterator_begin, auto& Rmesh, auto& H, const auto& NumberOfBands);
-int ParseWannier_PositionOperator(const auto& LineIterator_begin, auto& temporary_Rvectors, auto& r, const auto& NumberOfBands);
+int ParseWannier_Matrix(const std::vector<std::vector<std::string>>::iterator LineIterator_begin, 
+                        double* R, std::complex<double>* Matrix_, const int& NumberOfBands);
 
-void ParseWannier(const std::string& FileNameTB, auto& NumberOfBands, auto& NumberOfRpoints,
-                  auto& UnitCell, auto& Degeneracy, auto& Rmesh, auto& H, auto& r);
+int ParseWannier_Matrix(const std::vector<std::vector<std::string>>::iterator LineIterator_begin, 
+                        double* R, std::complex<double>* Matrix0, std::complex<double>* Matrix1, 
+                        std::complex<double>* Matrix2, const int& NumberOfBands);
 
+int ParseWannier_Hamiltonian(const std::vector<std::vector<std::string>>::iterator LineIterator_begin, 
+                            mdarray<double,2>& Rmesh, mdarray<std::complex<double>, 3>& H, 
+                            const int& NumberOfBands);
 
+int ParseWannier_PositionOperator(const std::vector<std::vector<std::string>>::iterator& LineIterator_begin,
+                 mdarray<double,2>& temporary_Rvectors, std::array<mdarray<std::complex<double>,3>, 3>& r, 
+                 const int& NumberOfBands);
 
-#include "ReadWannier.cpp"
-
+void ParseWannier(const std::string& FileNameTB, int& NumberOfBands, int& NumberOfRpoints,
+                  mdarray<double,2>& UnitCell, std::vector<int>& Degeneracy, mdarray<double,2>& Rmesh, 
+                  mdarray<std::complex<double>, 3>& H, std::array<mdarray<std::complex<double>,3>, 3>& r);
 #endif
