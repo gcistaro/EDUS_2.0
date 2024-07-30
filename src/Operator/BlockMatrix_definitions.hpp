@@ -13,14 +13,22 @@ template<typename T>
 void BlockMatrix<T>::initialize_submatrix()
 {
         submatrix.resize(Values.get_Size(0));
+        std::stringstream name;
+        name << "os_rank" << mpi::Communicator::world().rank();//GIO
+        std::ofstream os_rank(name.str());//GIO
+
         for(auto iblock=0; iblock<Values.get_Size(0); iblock++){
+            os_rank << "Initializing submatrix...\n";
+            os_rank << "Values.get_Size(1) " << Values.get_Size(1) << " Values.get_Size(2) " << Values.get_Size(2) << std::endl;
             submatrix[iblock] =Matrix<T>(&(Values(iblock,0,0)),{Values.get_Size(1), Values.get_Size(2)});    
+            os_rank << "submatrix[iblock].Size " << submatrix[iblock].get_nrows() << " " << submatrix[iblock].get_ncols() << std::endl;
         }
+        os_rank.close();
 }
 
 
 template<typename T>
-void BlockMatrix<T>::initialize(const Space& space__, const size_t& nblocks, const size_t& nrows, const size_t& ncols)
+void BlockMatrix<T>::initialize(const Space& space__, const int& nblocks, const int& nrows, const int& ncols)
 {
     Values.initialize({nblocks, nrows, ncols});
     space = space__;
@@ -31,12 +39,12 @@ template<typename T>
 void BlockMatrix<T>::test_submatrix()
 {
     for(int ib=0; ib<this->get_nblocks(); ib++){
+        assert( (*this)[ib].get_nrows() == this->get_nrows() );
+        assert( (*this)[ib].get_ncols() == this->get_ncols() );
+
         for(int ir=0; ir<this->get_nrows(); ir++){
             for(int ic=0; ic<this->get_ncols(); ic++){
-                std::cout << std::setw(20) << &((*this)(ib,ir,ic)); 
-                std::cout << std::setw(20) << &(this->submatrix[ib](ir,ic));
-                std::cout << std::setw(20) << &((*this)(ib,ir,ic)) - &(this->submatrix[ib](ir,ic));
-                std::cout << std::endl;
+                assert( &((*this)(ib,ir,ic)) == &(this->submatrix[ib](ir,ic)) );
             }
         }
     }
@@ -133,14 +141,14 @@ const Matrix<T>& BlockMatrix<T>::operator[](const Coordinate& Point) const
 template<typename T>
 void multiply(BlockMatrix<T>& Output, T Scalar, const BlockMatrix<T>& Input1, const BlockMatrix<T>& Input2 )
 {
-    for(int iblock=0; iblock<Output.get_nblocks(); iblock++){
-        Matrix_gemm(Output[iblock], Scalar, Input1[iblock], Input2[iblock], T(0.));
-    }
+    multiply(Output, Scalar, Input1, Input2, T(0.));
 }
 
 template<typename T>
 void multiply(BlockMatrix<T>& Output, T Scalar, const BlockMatrix<T>& Input1, const BlockMatrix<T>& Input2, T Scalar2 )
 {
+    assert(Output.get_nblocks() == Input1.get_nblocks() && Input1.get_nblocks() == Input2.get_nblocks());
+    #pragma omp parallel for schedule(static)
     for(int iblock=0; iblock<Output.get_nblocks(); iblock++){
         Matrix_gemm(Output[iblock], Scalar, Input1[iblock], Input2[iblock], Scalar2);
     }
@@ -160,6 +168,8 @@ void convolution(BlockMatrix<T>& Output, U Scalar, const BlockMatrix<T>& Input1,
 
     }
     PROFILE_START("BlockMatrix::convolution");
+
+    #pragma omp parallel for schedule(static)
     for(int iblock_o=0; iblock_o<Output.get_nblocks(); iblock_o++){
         for(int iblock_i2=0; iblock_i2<Input2.get_nblocks(); iblock_i2++){
             auto& iblock_i1 = ci(iblock_o, iblock_i2);

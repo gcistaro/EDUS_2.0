@@ -1,5 +1,8 @@
 #include "fftPair/fftPair.hpp"
-
+#include <algorithm> 
+#include <functional> 
+#include <cctype>
+#include <locale>
 FourierTransform::FourierTransform
 (mdarray<std::complex<double>, 2>& Array_x__, mdarray<std::complex<double>, 2>& Array_k__, const std::vector<int>& Dimensions__)
 {
@@ -8,8 +11,11 @@ FourierTransform::FourierTransform
 
 void 
 FourierTransform::initialize
-(mdarray<std::complex<double>, 2>& Array_x__, mdarray<std::complex<double>, 2>& Array_k__, const std::vector<int>& Dimensions__)
+(mdarray<std::complex<double>, 2>& Array_x__, mdarray<std::complex<double>, 2>& Array_k__, const std::vector<int>& Dimensions__, 
+            const std::string tagname_)
 {
+    tagname = tagname_;
+    IsFFT = true;
     Array_x = &Array_x__;
     Array_k = &Array_k__;
     howmany = Array_x->get_Size(0);
@@ -62,6 +68,7 @@ void
 FourierTransform::initialize
 (mdarray<std::complex<double>, 2>& Array_x__, const std::vector<std::vector<double>>& Mesh__)
 {
+    IsFFT = false;
     Mesh = Mesh__;
     howmany = Array_x__.get_Size(0);
     dim = Mesh[0].size();
@@ -72,6 +79,7 @@ FourierTransform::initialize
 
 void FourierTransform::fft(const int& sign)
 {
+    assert(IsFFT);
     auto& output = (sign == +1 ? (*Array_x) : (*Array_k) ); 
     auto& MyPlan = (sign == +1 ? (MyPlan_BWD) : (MyPlan_FWD) );
 
@@ -106,7 +114,7 @@ mdarray<std::complex<double>, 1> FourierTransform::dft(const std::vector<double>
 
 mdarray<std::complex<double>, 2> FourierTransform::dft(const std::vector<std::vector<double>>& ArrayOfPoints, const int& sign)
 {
-    auto md_K = mdarray<std::complex<double>, 2>({Array_x->get_Size()[0], ArrayOfPoints.size()});
+    auto md_K = mdarray<std::complex<double>, 2>({Array_x->get_Size()[0], int(ArrayOfPoints.size())});
     Array_k = &md_K;
     for(int ip=0; ip<ArrayOfPoints.size(); ++ip){
         auto FT = dft(ArrayOfPoints[ip], sign);
@@ -121,6 +129,10 @@ mdarray<std::complex<double>, 2> FourierTransform::dft(const std::vector<std::ve
 
 FourierTransform::~FourierTransform()
 {
-    fftw_destroy_plan(MyPlan_FWD);
-    fftw_destroy_plan(MyPlan_BWD);
+    if( IsFFT && destruct )
+     {
+        fftw_destroy_plan(MyPlan_FWD);
+        fftw_destroy_plan(MyPlan_BWD);
+        destruct = false;
+    }
 }

@@ -3,6 +3,8 @@
 
 #include "mdContainers/mdContainers.hpp"
 #include "MeshGrid/MeshGrid.hpp"
+#include "MPIindex/MPIindex.hpp"
+#include "core/mpi/Communicator.hpp"
 
 
 class kGradient {
@@ -13,6 +15,12 @@ class kGradient {
         std::shared_ptr<MeshGrid> Rmesh;
         std::vector<std::vector<int>> ikshell;
         int nshells = 0;
+
+        std::vector<std::vector<std::vector<int>>> Find_kpb(const MeshGrid& kmesh, const std::vector<std::vector<int>>& ikshell);
+
+        //---mpi
+        MPIindex<3> mpindex;
+
     public:
         kGradient(){};
         kGradient(const MeshGrid& kmesh__);
@@ -31,7 +39,6 @@ void Calculate_nshellsAndweights(int& nshells, mdarray<double,1>& Weight,
                                  const MeshGrid& kmesh, const std::vector<std::vector<int>>& ikshell);
 Matrix<double> GradientMatrix(const size_t& nshells, const MeshGrid& kmesh, const std::vector<std::vector<int>>& ik_sorted);
 std::vector<std::vector<int>> SortInShells(const MeshGrid& kmesh);
-std::vector<std::vector<std::vector<int>>> Find_kpb(const MeshGrid& kmesh, const std::vector<std::vector<int>>& ikshell);
 
 #include "kGradient_definitions.hpp"
 

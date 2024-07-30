@@ -1,7 +1,7 @@
 #include "MeshGrid.hpp"
 
-size_t MeshGrid::counter_id = 0;
-std::map<std::array<size_t,3>, mdarray<int,2> > MeshGrid::ConvolutionIndex;
+int MeshGrid::counter_id = 0;
+std::map<std::array<int,3>, mdarray<int,2> > MeshGrid::ConvolutionIndex;
 
 /*
 MeshGrid::MeshGrid(const MeshGrid& mg)
@@ -139,6 +139,7 @@ void MeshGrid::initialize(const Space& space__, const std::array<int,3>& Size_)
             break;
         }
     }
+    mpindex.initialize(this->get_Size());
 }
 
 void MeshGrid::initialize(const Space& space__, const mdarray<double,2>& bare_mg, const std::string& KeyForBasis)
@@ -394,12 +395,12 @@ const std::array<int,3>& MeshGrid::get_Size() const
     return Size;
 }
 
-size_t MeshGrid::get_TotalSize() const
+int MeshGrid::get_TotalSize() const
 {
     return TotalSize;
 }
 
-size_t MeshGrid::get_id() const
+int MeshGrid::get_id() const
 {
     return id;
 }
@@ -463,7 +464,7 @@ MeshGrid get_GammaCentered_grid(const MeshGrid& mesh__)
             up_limit[ix] = 1;
         }
     } 
-    mdarray<double, 2> bare_mg( { size_mg, 3 } );
+    mdarray<double, 2> bare_mg( { int(size_mg), 3 } );
     for( int ik=0; ik<size_mg; ++ik ) {
         auto k_ = mesh__[ik];
         k_ = mesh__.reduce(k_, low_limit, up_limit);

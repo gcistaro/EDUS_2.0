@@ -12,8 +12,8 @@ template<size_t dim>
 class MultiIndex 
 {
     private:
-        std::array<size_t,dim> Size;
-        std::array<size_t,dim> Offset;
+        std::array<int,dim> Size;
+        std::array<int,dim> Offset;
         int TotalSize;
     public:
         MultiIndex(){};
@@ -23,8 +23,8 @@ class MultiIndex
         MultiIndex(MultiIndex&& ToBeMoved) = default;
         MultiIndex& operator=(MultiIndex&& ToBeMoved) = default;
 
-        MultiIndex(const std::array<size_t,dim>& Dimension__);        
-        void initialize(const std::array<size_t,dim>& Dimension__);   
+        MultiIndex(const std::array<int,dim>& Dimension__);        
+        void initialize(const std::array<int,dim>& Dimension__);   
         void TotalSizeAndOffset();
        
         template <typename... Args>

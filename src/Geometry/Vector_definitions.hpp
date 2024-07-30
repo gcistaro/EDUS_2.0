@@ -1,11 +1,11 @@
 template<class T>
-Vector<T>::Vector(const size_t& n)
+Vector<T>::Vector(const int& n)
 {
     this->initialize(n);
 }
 
 template<class T>
-void Vector<T>::initialize(const size_t& n)
+void Vector<T>::initialize(const int& n)
 {
     (*this).~Vector<T>();
     this->Values.initialize({n});
@@ -130,14 +130,14 @@ Vector<T>& Vector<T>::operator+=(const Vector& v)
 }
 
 template<class T>
-Vector<T>& Vector<T>::operator-=(const Vector& v)
+inline Vector<T>& Vector<T>::operator-=(const Vector& v)
 {
     return (*this) += (-v);
 }
 
 
 template<class T>
-size_t Vector<T>::get_NumberOfElements() const
+inline int Vector<T>::get_NumberOfElements() const
 {
     return this->Values.get_Size(0);
 }

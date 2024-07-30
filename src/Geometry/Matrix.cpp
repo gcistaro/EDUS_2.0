@@ -57,10 +57,10 @@ void Matrix<double>::svd(Matrix<double>& u, Matrix<double>& vt, mdarray<double,1
     lapack_int ldu = m;
     lapack_int ldvt = n;
 
-    s.initialize({size_t(std::min(m,n))});          //vector with pseudo-eigenvalues
+    s.initialize({std::min(m,n)});          //vector with pseudo-eigenvalues
     u.initialize(ldu, m);               //left eigenvectors
     vt.initialize(ldvt, n);             //right eigenvectors (already transpose)
-    mdarray<double,1> superb({size_t(std::min(m,n)-1)});
+    mdarray<double,1> superb({std::min(m,n)-1});
     
     //copy *this to avoid overwriting
     auto A_svd = *this;        

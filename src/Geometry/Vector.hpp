@@ -34,13 +34,13 @@ class Vector{
 
         Vector(mdarray<T,1> Values_) : Values(std::move(Values_)){};
         
-        Vector(const size_t& n);
-        void initialize(const size_t& n);
+        Vector(const int& n);
+        void initialize(const int& n);
 
         template <typename... Args>
         void initialize_n(Args... args)
         {
-            auto dim = sizeof...(args);
+            int dim = sizeof...(args);
             std::vector<std::common_type_t<Args...>> aux{args...};
             Values.initialize({dim});
             for(int ix=0; ix<dim; ix++){
@@ -73,7 +73,7 @@ class Vector{
 
         auto begin() const { return Values.begin(); }
         auto end() const {return Values.end(); } 	
-        size_t get_NumberOfElements() const;
+        int get_NumberOfElements() const;
         
 	//destructor
         ~Vector();	

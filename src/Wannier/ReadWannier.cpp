@@ -64,7 +64,7 @@ int ParseWannier_Matrix(const auto LineIterator_begin, auto* R, auto* Matrix0, a
     *(R+2) = std::atof((*LineIterator_aux)[2].c_str());
     
     LineIterator_aux++;
-    while((*LineIterator_aux).size()>0){
+    while((*LineIterator_aux).size() == 8){
         int SizeOfMatrixElement = ParseWannier_MatrixElement(LineIterator_aux, Matrix0, Matrix1, Matrix2, NumberOfBands);
         LineIterator_aux+=SizeOfMatrixElement;
     }

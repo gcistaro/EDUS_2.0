@@ -13,7 +13,7 @@
 #include "mdContainers/mdContainers.hpp"
 #include "MeshGrid/MeshGrid.hpp"
 #include "Geometry/Matrix.hpp"
-
+#include "core/mpi/Communicator.hpp"
 
 template<class T>
 class Operator;
@@ -44,10 +44,10 @@ class BlockMatrix{
 
         mdarray<T,3> Values; //first index -> block, others -> matrix
         BlockMatrix() : Values(mdarray<T,3>()){};
-        BlockMatrix(const Space& space__, const size_t& nblocks, const size_t& nrows, const size_t& ncols)
+        BlockMatrix(const Space& space__, const int& nblocks, const int& nrows, const int& ncols)
             {this->initialize(space__, nblocks, nrows, ncols);}
         void initialize(const Space& space__, mdarray<T,3>& Values);
-        void initialize(const Space& space__, const size_t& nblocks, const size_t& nrows, const size_t& ncols);
+        void initialize(const Space& space__, const int& nblocks, const int& nrows, const int& ncols);
         BlockMatrix(const BlockMatrix<T>& A);
         BlockMatrix<T>& operator=(const BlockMatrix<T>& m);
         
@@ -77,9 +77,9 @@ class BlockMatrix{
 
         auto begin() const { return Values.begin(); }
         auto end() const {return Values.end(); } 	
-        size_t get_nblocks() const{return Values.get_Size(0);};
-        size_t get_nrows() const{return Values.get_Size(1);};
-        size_t get_ncols() const{return Values.get_Size(2);};
+        int get_nblocks() const{return Values.get_Size(0);};
+        int get_nrows() const{return Values.get_Size(1);};
+        int get_ncols() const{return Values.get_Size(2);};
         std::shared_ptr<MeshGrid>& get_MeshGrid(){return this->meshgrid;};
 
         void set_MeshGrid(const MeshGrid& meshgrid_)
