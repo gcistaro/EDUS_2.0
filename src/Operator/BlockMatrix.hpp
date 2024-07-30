@@ -75,6 +75,7 @@ class BlockMatrix{
         //friend void multiply(Matrix<T>& OutputMatrix, const auto& Scalar1, const Matrix<T>& Matrix1, 
         //                                              const auto& Scalar2, const Matrix<T>& Matrix2);
 
+        typedef typename mdarray<T,3>::Iterator  iterator;
         auto begin() const { return Values.begin(); }
         auto end() const {return Values.end(); } 	
         int get_nblocks() const{return Values.get_Size(0);};

@@ -120,7 +120,7 @@ int mdarray<T,dim>::oneDindex(Args... args) const
 
 
 template <typename T, size_t dim>
-std::vector<int> mdarray<T,dim>::nDindex(const auto& oneDindex) const
+std::vector<int> mdarray<T,dim>::nDindex(const int& oneDindex) const
 {
     return this->multindex.nDindex(oneDindex);
 }

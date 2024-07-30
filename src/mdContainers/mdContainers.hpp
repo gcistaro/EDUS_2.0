@@ -79,7 +79,7 @@ class mdarray
         template <typename... Args>
         inline int oneDindex(Args... args) const;
         
-        inline std::vector<int> nDindex(const auto& oneDindex) const;
+        inline std::vector<int> nDindex(const int& oneDindex) const;
 
         template <typename... Args>
         inline T const& operator()(Args... args) const;

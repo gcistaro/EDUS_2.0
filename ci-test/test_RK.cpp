@@ -20,12 +20,14 @@ int main()
         std::fill(Function.begin(), Function.end(), InitialConstant);
     };
 
+
     auto SourceTerm = [&](auto& Output, const double InputTime, const auto& InputFunction){
-        for(auto OutputIterator=Output.begin(), InputFunctionIterator = InputFunction.begin();
-        (OutputIterator!=Output.end()) && (InputFunctionIterator != InputFunction.end());  
-          ++OutputIterator, ++InputFunctionIterator)
+        for(struct {std::vector<double>::iterator Output; std::vector<double>::iterator Input;}
+             loop = {Output.begin(), (const_cast<std::vector<double>&>(InputFunction)).begin()};
+        (loop.Output!=Output.end()) && (loop.Input != InputFunction.end());  
+          ++loop.Output, ++loop.Input)
         {
-            (*OutputIterator) = RateOfIncrease*(*InputFunctionIterator);
+            (*loop.Output) = RateOfIncrease*(*loop.Input);
         }
     };
 

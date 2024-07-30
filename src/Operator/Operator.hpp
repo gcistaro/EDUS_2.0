@@ -32,7 +32,7 @@ class BandIndex
         std::vector< std::pair<int,int> > RowIndexBoundary;
 
     public:
-        int StartingIndex(const auto& row_)
+        int StartingIndex(const int& row_)
     {
         int StartingIndex = (row_ == 0) ? 0 
                                            :row_*NumberOfBands - row_*(row_-1)/2;
