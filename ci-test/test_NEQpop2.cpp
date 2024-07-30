@@ -1,5 +1,8 @@
+#include <cassert>
+#include "initialize.hpp"
 #include "Simulation/Simulation.hpp"
 #include "core/print_timing.hpp"
+
 /*
  This test is used to test only the H0 term (no laser). We solve the differential equation:
  i dP(R)/dt = [H,P]
@@ -25,75 +28,68 @@ This is a good proof that the R evolution is working at equilibrium.
 
 int main()
 {   
-    auto N = 3;
-    Simulation simulation("/home/gcistaro/NEGF/tb_models/2B_trivialH", std::array<int,3>({N,1,1}));//;/TBgraphene",40.);//
-    
+    initialize();
+    //------------------------------------------initialize simulation------------------------------------------------------
+    auto N = 18;
+    Simulation simulation("/home/gcistaro/NEGF/tb_models/2B_trivialH", std::array<int,3>({N,N,1}));//;/TBgraphene",40.);//
+
+    //------------------------------------------get wanted initial condition------------------------------------------------
     std::function<void(Operator<std::complex<double>>&)> InitialConditionToUse = [&](Operator<std::complex<double>>& DM)
     {
         simulation.DensityMatrix.get_Operator_k().fill(0.);
-        for(int ik=0; ik < simulation.DensityMatrix.get_Operator_k().get_MeshGrid()->get_TotalSize(); ++ik){
-            auto k_ = (*(simulation.DensityMatrix.get_Operator_k().get_MeshGrid()))[ik].get(LatticeVectors(k));
-            std::cout << N*k_[0] << std::endl;
+        for(int ik=0; ik < simulation.DensityMatrix.mpindex.nlocal; ++ik){
+            auto ik_local = simulation.DensityMatrix.mpindex.loc1D_to_glob1D(ik);
+            auto k_ = (*(simulation.DensityMatrix.get_Operator_k().get_MeshGrid()))[ik_local].get(LatticeVectors(k));
             simulation.DensityMatrix.get_Operator_k()(ik,0,1) = std::cos(2.*pi*k_[0])/std::sqrt(N);
             simulation.DensityMatrix.get_Operator_k()(ik,1,0) = std::cos(2.*pi*k_[0])/std::sqrt(N);
         }
-        if(simulation.SpaceOfPropagation == R) {
-            simulation.DensityMatrix.go_to_R();
-            for(int iR=0; iR < simulation.DensityMatrix.get_Operator_R().get_MeshGrid()->get_TotalSize(); ++iR){
-                for(int irow=0; irow<2; ++irow) {
-                    for(int icol=0; icol<2; ++icol) {
-                        if(std::abs(simulation.DensityMatrix.get_Operator_R()[iR](irow, icol)) > 1.e-08 ) {
-                            std::cout << iR << " " << irow << " " << icol << " ";
-                            std::cout << simulation.DensityMatrix.get_Operator_R()[iR](irow, icol) << std::endl;
-                        }
-                    }
-                }
-            }
-        }
+        simulation.DensityMatrix.lock_space(Space::k);
     };
 
-
-    //including aliases for sourceterm
+    //---------------------------------reinitialize RK with that initial condition--------------------------------------
     auto& laser = simulation.laser;
     laser.set_Intensity(0., Wcm2);//1.e+16, Wcm2);
     auto& H = simulation.H;
     auto& SpaceOfPropagation = simulation.SpaceOfPropagation;
     auto& kgradient = simulation.kgradient;
-
     auto Calculate_TDHamiltonian = [&](const double& time){
         return simulation.Calculate_TDHamiltonian(time);
     };
     #include "Simulation/Functional_SourceTerm.hpp"
+    std::cout << "Initializing RK_object..\n";
     simulation.RK_object.initialize(simulation.DensityMatrix, 
                                     InitialConditionToUse, SourceTerm);
-    auto DMk0 = simulation.DensityMatrix.get_Operator_k();
-    simulation.RK_object.set_ResolutionTime(0.001);
-
-    //Check correctness of Source term
-    std::cout <<"Checking correctness of SourceTerm (the one used by the main program...)\n";
-    auto ST = simulation.DensityMatrix;
-    SourceTerm(ST, 0., simulation.DensityMatrix);
+    simulation.RK_object.set_ResolutionTime(0.1);
+    //---------------------------------check correctness of Source term--------------------------------------
+    Operator<std::complex<double>> ST;
+    ST.initialize_fft(*(simulation.DensityMatrix.get_Operator_R().get_MeshGrid()), 
+                                        simulation.DensityMatrix.get_Operator_R().get_nrows());
+    std::cout << "ST: " << &ST << std::endl; 
     ST.go_to_k();
+    SourceTerm(ST, 0., simulation.DensityMatrix);
     for( int ik=0; ik<ST.get_Operator_k().get_nblocks(); ++ik ) {
         auto& H11 = simulation.material.H.get_Operator_k()[ik](1,1);
         auto& P01 = simulation.DensityMatrix.get_Operator_k()[ik](0,1);
-        std::cout << ST.get_Operator_k()[ik](0,0) << std::endl;
-        std::cout << ST.get_Operator_k()[ik](0,1) << im*2.*P01*H11 << std::endl;
+        auto& ST_k = ST.get_Operator_k();
         if(std::abs(ST.get_Operator_k()[ik](0,0)) > 1.e-10 || std::abs(ST.get_Operator_k()[ik](1,1)) > 1.e-10) {
-            std::cout << "ST(0,0) or ST(1,1) is diffferent than the analytical one!\n";
+            std::cout << "ST(0,0) " << ST_k(ik,0,0) <<" or ST(1,1) "<< ST_k(ik,1,1) << " is diffferent than the analytical one!\n";
             exit(1);
         }
         if(std::abs(ST.get_Operator_k()[ik](0,1) - (im*2.*P01*H11))>1.e-10) {
-            std::cout << "ST is diffferent than the analytical one!\n";
+            std::cout << "ST(0,1) " << ST_k(ik,0,1) << " is diffferent than the analytical one "<< im*2.*P01*H11<<"!\n";
             exit(1);
         }
     }
     std::cout << "SourceTerm is correctly calculated!!\n";
+
+
+    //------------------------------- FINAL CHECK ON PROPAGATOR -----------------------------------------
     std::cout << "Checking correctness of propagator...\n";
-    for(int it=0; it <= 1e+4; ++it){
-        //simulation.DensityMatrix.go_to_k();
+    auto DMk0 = simulation.DensityMatrix.get_Operator_k();
+    for(int it=0; it <= 1000; ++it){
+        simulation.DensityMatrix.go_to_k();
         auto DMk = simulation.DensityMatrix.get_Operator_k();
-        for(int ik=0; ik < DMk.get_MeshGrid()->get_TotalSize(); ik++){
+        for(int ik=0; ik < DMk.get_nblocks(); ik++){
             auto t = simulation.RK_object.get_CurrentTime();
             auto Hk = simulation.Band_energies[ik](1);
             auto Analytical = DMk0[ik](0,1)*std::exp(im*2.*Hk*t);
