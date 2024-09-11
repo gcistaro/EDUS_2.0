@@ -64,7 +64,7 @@ void Matrix<double>::svd(Matrix<double>& u, Matrix<double>& vt, mdarray<double,1
     
     //copy *this to avoid overwriting
     auto A_svd = *this;        
-    auto info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', m, n, &(A_svd(0,0)),
+    auto info = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, jobu, jobvt, m, n, &(A_svd(0,0)),
                                lda, s.begin().data(), &(u(0,0)), ldu,
                                &(vt(0,0)), ldvt, superb.begin().data());
     assert(info == 0);

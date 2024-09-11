@@ -2,8 +2,6 @@
 #ifndef MPIINDEX_HPP
 #define MPIINDEX_HPP
 
-#include <memory>
-
 #include "mpi.h"
 #include "fftw3-mpi.h"
 #include "MultiIndex/MultiIndex.hpp"

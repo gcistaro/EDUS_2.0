@@ -13,7 +13,12 @@ void Simulation::SettingUp_EigenSystem()
     auto& MasterkGrid = DensityMatrix.get_Operator_k().get_MeshGrid()->get_mesh();
     material.H.dft(MasterkGrid, +1);
     //------------------------------------------------------------------------------
-
+    std::stringstream ss;
+    ss << "rank_"<< mpi::Communicator::world().rank();
+    std::ofstream processor_H(ss.str());
+    for(int ik_loc=0; ik_loc< material.H.get_Operator_k().get_nblocks(); ++ik_loc) {
+        processor_H << material.H.get_Operator_k()[ik_loc] << std::endl;
+    }
     //--------------------solve eigen problem---------------------------------------
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
     auto& UkDagger = Operator<std::complex<double>>::EigenVectors_dagger;
@@ -65,8 +70,9 @@ void Simulation::Calculate_TDHamiltonian(const double& time)
     for(int iblock=0; iblock<H0_.get_nblocks(); ++iblock){
         for(int irow=0; irow<H0_.get_nrows(); ++irow){
             for(int icol=0; icol<H0_.get_ncols(); ++icol){
-                auto Hblock = ( SpaceOfPropagation == k ? iblock : ci(iblock, 0) );
-                H_(Hblock, irow, icol) = H0_(iblock, irow, icol)
+                //auto Hblock = ( SpaceOfPropagation == k ? iblock : ci(iblock, 0) );
+                //H_(Hblock, irow, icol) = H0_(iblock, irow, icol)
+                H_(iblock, irow, icol) = H0_(icol+2*irow+2*iblock)//iblock, irow, icol)
                                        + las[0]*x_(iblock, irow, icol)
                                        + las[1]*y_(iblock, irow, icol)
                                        + las[2]*z_(iblock, irow, icol);

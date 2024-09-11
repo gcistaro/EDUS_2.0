@@ -23,7 +23,6 @@ enum TypeMeshGrid{cube, read_, sphere, path};
 class MeshGrid{
     private:
         std::vector<Coordinate> mesh;
-        Space space;
         
         //cube parameter
         std::array<int,3> Size;
@@ -37,6 +36,8 @@ class MeshGrid{
 
         int TotalSize=0;
         TypeMeshGrid type;
+        Space space;
+
         int id; //each MeshGrid has a unique id,  to exchange the indices with others
         static int counter_id; //neded to count objects
 

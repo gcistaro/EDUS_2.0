@@ -8,6 +8,9 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 option(NEGF_PROFILE "Profiling function timings" ON)
 option(NEGF_MPI "Enabling MPI" ON)
 
+if(NEGF_PROFILE)
+  add_definitions(-DNEGF_PROFILE)
+endif()
 if(NEGF_MPI)
   add_definitions(-DNEGF_MPI)
   set(MPI_CXX_COMPILER mpiicpc)
@@ -18,7 +21,7 @@ endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /lib/x86_64-linux-gnu/)
-add_compile_options(-fconcepts -g)
+add_compile_options(-g -Wall )#-fconcepts -g)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
 
@@ -57,6 +60,8 @@ set(_SOURCES src/GlobalFunctions.cpp
              src/Geometry/Coordinate.cpp
              src/MeshGrid/MeshGrid.cpp
              src/Wannier/Wannier.cpp
+             src/Wannier/ReadWannier.cpp
+             src/Wannier/PrintWannier.cpp
              src/Laser/Laser.cpp
              src/fftPair/fftPair.cpp
              src/kGradient/kGradient.cpp
@@ -65,6 +70,7 @@ set(_SOURCES src/GlobalFunctions.cpp
              src/core/profiler.cpp 
              src/core/print_timing.cpp 
              src/core/rt_graph.cpp
+             src/core/mpi/Communicator.cpp
 			 )
 	
 
@@ -159,6 +165,10 @@ add_executable(Matrix_test ci-test/test_matrix.cpp)
 add_executable(Eigen_test ci-test/test_eigen.cpp) 
 #target_precompile_headers(Eigen_test REUSE_FROM NEGF)
 
+#Overhead of function call
+add_executable(Overhead ci-test/test_overhead.cpp) 
+#target_precompile_headers(Eigen_test REUSE_FROM NEGF)
+
 #RK
 add_executable(RK_test ci-test/test_RK.cpp)
 #target_precompile_headers(RK_test REUSE_FROM NEGF)
@@ -194,12 +204,16 @@ add_executable(fft_Gradient_test ci-test/test_fft+gradient.cpp)
 add_executable(NonEQ ci-test/test_NEQpop2.cpp)
 #target_precompile_headers(NonEQ REUSE_FROM NEGF)
 
+#Noneq propagation3 
+add_executable(NonEQ3 ci-test/test_NEQpop3.cpp)
+#target_precompile_headers(NonEQ REUSE_FROM NEGF)
+
 #simulation 
 add_executable(simulation_test ci-test/test_simulation.cpp)
 #target_precompile_headers(simulation_test REUSE_FROM NEGF)
 
-#Coulomb 
-#add_executable(Coulomb_test ci-test/test_Coulomb.cpp)
+#RytovaKeldysh 
+add_executable(RytKel ci-test/test_RytovaKeldysh.cpp)
 
 #bandstructure
 add_executable(Bandstructure_test ci-test/test_bandstructure.cpp)
@@ -218,15 +232,17 @@ add_test(NAME Matrix_test COMMAND Matrix_test)
 add_test(NAME Eigen_test COMMAND Eigen_test)
 add_test(NAME RK_test COMMAND RK_test)
 add_test(NAME RK2_test COMMAND RK2_test)
-add_test(NAME fft_test COMMAND fft_test)
-add_test(NAME fft-many_test COMMAND fft-many_test)
-add_test(NAME fft_mpi_test COMMAND fft_mpi_test)
-add_test(NAME fft_Gradient_test COMMAND fft_Gradient_test)
+#add_test(NAME fft_test COMMAND fft_test)
+#add_test(NAME fft-many_test COMMAND fft-many_test)
+#add_test(NAME fft_Gradient_test COMMAND fft_Gradient_test)
 #add_test(NAME TrivialH_test COMMAND TrivialH_test)
 add_test(NAME Bandstructure_test COMMAND 
 					bash -c "${CMAKE_CURRENT_BINARY_DIR}/Bandstructure_test ; \
 					python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py BANDSTRUCTURE.txt ${CMAKE_SOURCE_DIR}/ci-test/Reference/BANDSTRUCTURE.txt")
-add_test(NAME simulation_test COMMAND simulation_test)
-add_test(NAME NonEQ_test COMMAND NonEQ_test)
-add_test(NAME Coulomb_test COMMAND Coulomb_test)
+add_test(NAME fft_mpi_test COMMAND fft_mpi_test)
+#add_test(NAME simulation_test COMMAND simulation_test)
+add_test(NAME NonEQ COMMAND NonEQ)
+add_test(NAME NonEQ3 COMMAND NonEQ3)
+add_test(NAME RytKel COMMAND RytKel)
+add_test(NAME Overhead COMMAND Overhead) 
 

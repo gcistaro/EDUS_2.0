@@ -126,7 +126,7 @@ Coordinate Laser::VectorPotential(const double& Time)
     auto b = PlaneWave.Omega;
     auto one_ = 2.*a-b;
     auto two_ = 2*a+b;
-    auto three_  = b;
+    auto three_ = b;
     auto& t0 = envelope.InitialTime;
     return -(.25*Amplitude*(-std::cos(one_*Time)/(one_)+std::cos(two_*Time)/(two_)-2.*std::cos(three_*Time)/(three_))
             -.25*Amplitude*(-std::cos(one_*t0)/(one_)+std::cos(two_*t0)/(two_)-2.*std::cos(three_*t0)/(three_)))*Polarization;
