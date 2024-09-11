@@ -72,7 +72,7 @@ template<typename T, size_t dim>
 void mdarray<T,dim>::TotalSizeAndOffset()
 {
     TotalSize = 1;
-    for(int idim=0; idim<dim; idim++){
+    for(size_t idim=0; idim<dim; idim++){
         TotalSize *= Size[idim]; 
     }
     Offset[dim-1] = 1;
@@ -113,14 +113,14 @@ void mdarray<T,dim>::fill(const T& FillingValue)
 
 template <typename T, size_t dim>
 template <typename... Args>
-int mdarray<T,dim>::oneDindex(Args... args) const
+inline int mdarray<T,dim>::oneDindex(Args... args) const
 {
-    return static_cast<mdarray<T,dim>>(*this).multindex.oneDindex(args...);
+    return this->multindex.oneDindex(args...);
 }
 
 
 template <typename T, size_t dim>
-std::vector<int> mdarray<T,dim>::nDindex(const int& oneDindex) const
+inline std::vector<int> mdarray<T,dim>::nDindex(const int& oneDindex) const
 {
     return this->multindex.nDindex(oneDindex);
 }
@@ -128,7 +128,7 @@ std::vector<int> mdarray<T,dim>::nDindex(const int& oneDindex) const
 
 template <typename T, size_t dim>
 template <typename... Args>
-T const& mdarray<T,dim>::operator()(Args... args) const 
+inline T const& mdarray<T,dim>::operator()(Args... args) const 
 {
     return Ptr[oneDindex(args...)]; 
 }

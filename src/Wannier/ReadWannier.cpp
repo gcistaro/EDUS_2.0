@@ -129,7 +129,7 @@ void ParseWannier(const std::string& FileNameTB, int& NumberOfBands, int& Number
 
     LineIterator = file_content.begin()+6;
     auto Line_EndDegeneracy = ParseWannier_Degeneracies(LineIterator, Degeneracy);    
-    assert(Degeneracy.size() == NumberOfRpoints);
+    assert(int(Degeneracy.size()) == NumberOfRpoints);
 
     ////now we are at the blank line before the beginning of matrix elements
     LineIterator+=Line_EndDegeneracy;
@@ -149,7 +149,7 @@ void ParseWannier(const std::string& FileNameTB, int& NumberOfBands, int& Number
 
 
     auto Line_endPositionOperator = ParseWannier_PositionOperator(LineIterator, Rmesh, r, NumberOfBands);
-    
+    Line_endPositionOperator++;
 }
 
 

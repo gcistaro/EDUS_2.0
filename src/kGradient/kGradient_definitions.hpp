@@ -19,7 +19,7 @@ void kGradient::Calculate(T& DerivativeFunction, const T& Function,
         #pragma omp parallel for schedule(static)
         for( int ik = 0; ik < mpindex.nlocal; ++ik ) {
             for( int ishell = 0; ishell < Weight.get_Size(0); ++ishell ) {
-                for( int ib = 0; ib < ikshell[ishell].size(); ++ib ) {
+                for( int ib = 0; ib < int( ikshell[ishell].size() ); ++ib ) {
                     auto& Bvector = (*kmesh)[ikshell[ishell][ib]];
                     auto bdotu = Bvector.dot(direction);
                     auto& ikpb_ = ikpb[ik][ishell][ib];

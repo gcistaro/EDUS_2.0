@@ -59,7 +59,7 @@ std::vector<std::vector<int>> SortInShells(const MeshGrid& kmesh)
     std::sort( knorms.begin(), knorms.end() );
     ikshell.resize(knorms.size());
     //find indices of each shell
-    for( size_t ik=0; ik< kmesh.get_TotalSize(); ++ik ) {
+    for( int ik=0; ik< kmesh.get_TotalSize(); ++ik ) {
         //find what shell k_ belongs to
         auto k_norm = kmesh[ik].norm();
         auto it = std::find_if(knorms.begin(), knorms.end(), 
@@ -76,8 +76,8 @@ std::vector<std::vector<int>> SortInShells(const MeshGrid& kmesh)
 
     //recap
     std::ofstream of("Cartesian.txt");
-    for(int ishell=0; ishell<ikshell.size(); ishell++) {
-        for(int ik=0; ik<ikshell[ishell].size(); ik++) {
+    for(int ishell=0; ishell < int( ikshell.size() ); ishell++) {
+        for(int ik=0; ik < int( ikshell[ishell].size() ); ik++) {
             of << ishell << " " <<knorms[ishell] << " " <<  ikshell[ishell][ik] << " " << kmesh[ikshell[ishell][ik]].get("Cartesian");//get(LatticeVectors(k));
         }
     }
@@ -199,16 +199,13 @@ std::vector<std::vector<std::vector<int>>> kGradient::Find_kpb(const MeshGrid& k
     }
     std::cout << "Calculating map ik, ib ---> ikpb...\n";
     //find k+b in kmesh for every k, every b
-        std::stringstream name;
-        name << "os_rank" << mpi::Communicator::world().rank();//GIO
-        std::ofstream os_rank(name.str());//GIO
 
     #pragma omp parallel for schedule(static)
     for( int ik_loc = 0; ik_loc < mpindex.nlocal; ++ik_loc) {
         auto ik_global = ik_loc;//mpindex.loc1D_to_glob1D(ik_loc);
         //std::cout << "ik: " << ik << "/" << kmesh.get_TotalSize() << " in thread " << omp_get_thread_num() << "/" << omp_get_num_threads() << std::endl;
-        for( int ishell = 0; ishell < ikpb[ik_loc].size(); ++ishell ) {
-            for( int ib = 0; ib < ikpb[ik_loc][ishell].size(); ++ib ) {
+        for( int ishell = 0; ishell < int( ikpb[ik_loc].size() ); ++ishell ) {
+            for( int ib = 0; ib < int( ikpb[ik_loc][ishell].size() ); ++ib ) {
                 ikpb[ik_loc][ishell][ib] = kmesh.find(kmesh[ik_global] + kmesh[ikshell[ishell][ib]]);
             }
         }

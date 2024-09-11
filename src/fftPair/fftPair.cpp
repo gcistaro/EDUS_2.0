@@ -32,7 +32,7 @@ FourierTransform::initialize
 //initializing plans, two for each object for +1 and -1 transforms.
 #ifdef NEGF_MPI
     std::ptrdiff_t* Dimensions_ptr = new std::ptrdiff_t[Dimensions.size()];
-    for( auto idim = 0; idim < Dimensions.size(); ++idim ) {
+    for( auto idim = 0; idim < int(Dimensions.size()); ++idim ) {
         Dimensions_ptr[idim] = Dimensions[idim];
     }
     //auxiliary variable needed 
@@ -94,14 +94,14 @@ void FourierTransform::fft(const int& sign)
 
 mdarray<std::complex<double>, 1> FourierTransform::dft(const std::vector<double>& Point, const int& sign) 
 {
-    assert(Point.size() == dim);
+    assert(int(Point.size()) == dim);
     mdarray<std::complex<double>, 1> FT({Array_x->get_Size()[0]});
     FT.fill(std::complex<double>(0.));
 
     //std::complex<double> FourierTransform = 0;
     static std::complex<double> im2pi = im*2.*pi;
     for(int h=0; h<howmany; h++){
-        for(int i=0; i<Mesh.size(); i++){
+        for(int i=0; i<int(Mesh.size()); i++){
             double DotProduct = 0;
             for(int ix=0; ix<dim; ix++){
                 DotProduct += Point[ix]*Mesh[i][ix];
@@ -116,7 +116,7 @@ mdarray<std::complex<double>, 2> FourierTransform::dft(const std::vector<std::ve
 {
     auto md_K = mdarray<std::complex<double>, 2>({Array_x->get_Size()[0], int(ArrayOfPoints.size())});
     Array_k = &md_K;
-    for(int ip=0; ip<ArrayOfPoints.size(); ++ip){
+    for(int ip=0; ip<int(ArrayOfPoints.size()); ++ip){
         auto FT = dft(ArrayOfPoints[ip], sign);
         //copy to Array_k
         for(int h=0; h<howmany; ++h){

@@ -28,9 +28,13 @@ class MultiIndex
         void TotalSizeAndOffset();
        
         template <typename... Args>
+        inline int oneDindex(Args... args) const;
+
+        template <typename... Args>
         inline int oneDindex(Args... args);
 
         inline std::array<int,dim> nDindex(const int& index);
+        inline std::array<int,dim> nDindex(const int& index) const;
 };
 
 #include "MultiIndex_definitions.hpp"

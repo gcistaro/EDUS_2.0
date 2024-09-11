@@ -20,8 +20,6 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
     std::array<int, 3> MG_size = {MasterRgrid->get_Size()[0], MasterRgrid->get_Size()[1], MasterRgrid->get_Size()[2]};
     Operator<std::complex<double>>::mpindex.initialize(MG_size);
     DensityMatrix.initialize_fft(*MasterRgrid, material.H.get_Operator_R().get_nrows());
-    DensityMatrix.get_Operator_k().test_submatrix();
-    DensityMatrix.get_Operator_R().test_submatrix();
     Operator<std::complex<double>>::SpaceOfPropagation = SpaceOfPropagation;
 
     material.H.dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
@@ -32,7 +30,7 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
     SettingUp_EigenSystem();
     //Calculate_Velocity();
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
-    auto& UkDagger = Operator<std::complex<double>>::EigenVectors_dagger;
+
     //---------------------------------------------------------------------------------------
 
     //------------------------setting up TD equations----------------------------------------
