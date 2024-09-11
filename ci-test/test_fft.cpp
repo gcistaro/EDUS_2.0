@@ -13,7 +13,7 @@
 */
 int main()
 {
-    size_t Npoints = 1000;
+    int Npoints = 1000;
     mdarray<std::complex<double>,2> Array_x({1,Npoints});
     mdarray<std::complex<double>,2> Array_k({1,Npoints});
     std::vector<int> dimensions = {int(Npoints)};

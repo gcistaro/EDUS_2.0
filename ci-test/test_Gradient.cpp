@@ -27,13 +27,13 @@ int main()
     kGradient gradient(mesh);
 
     //define function e(i 2\pi (k_0))+e(i 2\pi (k_1))
-    mdarray<std::complex<double>, 1> Function({size_t(mesh.get_TotalSize())});
+    mdarray<std::complex<double>, 1> Function({mesh.get_TotalSize()});
     for( int ik=0; ik<Function.get_TotalSize(); ++ik ) {
         auto& cart = mesh[ik].get("Cartesian");
         Function(ik) = std::exp( 2.*pi*im*(Binv(0,0)*cart[0]+Binv(0,1)*cart[1]) )+ 
                        std::exp( 2.*pi*im*(Binv(1,0)*cart[0]+Binv(1,1)*cart[1]) );
     }
-    mdarray<std::complex<double>, 1> Derivative({size_t(mesh.get_TotalSize())});
+    mdarray<std::complex<double>, 1> Derivative({mesh.get_TotalSize()});
     Coordinate direction(1,0,0, "Cartesian");
     gradient.Calculate(Derivative, Function, direction, true);
     for( int ik=0; ik<Function.get_TotalSize(); ++ik ) {

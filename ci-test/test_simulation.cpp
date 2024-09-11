@@ -1,10 +1,12 @@
 #include "Simulation/Simulation.hpp"
 #include "core/print_timing.hpp"
+#include "initialize.hpp"
 
 int main()
 {   
+    initialize();
     PROFILE_START("test_simulation");
-    auto Rgrid = std::array<int,3>({150,150,1});
+    auto Rgrid = std::array<int,3>({20,20,1});
     Simulation simulation("/home/gcistaro/NEGF/tb_models/hBN_gap7.25eV_a2.5A", Rgrid);
 
     simulation.laser.set_Intensity(1.e+05, Wcm2);
