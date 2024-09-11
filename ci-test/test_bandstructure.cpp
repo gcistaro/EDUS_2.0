@@ -1,7 +1,9 @@
 #include <iomanip>
+#include "initialize.hpp"
 #include "Model/Model.hpp"
 int main()
 {
+    initialize();
 
     Material model("/home/gcistaro/NEGF/tb_models/TBgraphene");
 
@@ -11,6 +13,7 @@ int main()
     path.push_back( Coordinate( 0.500, 0.500, 0.000, LatticeVectors(k) ));
     path.push_back( Coordinate( 1./3., 2./3., 0.000, LatticeVectors(k) ));
     path.push_back( Coordinate( 0.000, 0.000, 0.000, LatticeVectors(k) ));
+    
 
     MeshGrid MeshGridPath(k, path, 0.1);
     auto& vectors = MeshGridPath.get_mesh();
@@ -19,7 +22,7 @@ int main()
         std::cout << v.get(LatticeVectors(k));
     }
     
-    model.H.dft(MeshGridPath.get_mesh(),+1);
+    model.H.dft(MeshGridPath.get_mesh(),+1,false);
     std::cout << "dft executed.\n";
 
     std::vector<mdarray<double,1>> Eigenvalues;

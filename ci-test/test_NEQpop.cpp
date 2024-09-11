@@ -1,5 +1,8 @@
+
+#include "initialize.hpp"
 #include "Simulation/Simulation.hpp"
 #include "core/print_timing.hpp"
+
 /*
  This test is used to test only the H0 term (no laser). We solve the differential equation:
  i dP(R)/dt = [H,P]
@@ -25,6 +28,7 @@ This is a good proof that the R evolution is working at equilibrium.
 
 int main()
 {            
+    initialize();
     Simulation simulation("/home/gcistaro/NEGF/tb_models/2B_trivialH", 20.);//;/TBgraphene",40.);//
     
     //modify initialcondition, if not it is 1 for R=0, 0 otherwise

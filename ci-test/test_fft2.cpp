@@ -11,7 +11,7 @@
 */
 int main()
 {
-    size_t Npoints = 100;
+    int Npoints = 100;
     mdarray<std::complex<double>,2> Array_x({1,Npoints});
     mdarray<std::complex<double>,2> Array_k({1,Npoints});
     std::vector<int> dimensions = {int(Npoints)};

@@ -11,8 +11,8 @@
 */
 int main()
 {
-    size_t Npoints = 1000;
-    size_t howmany = 10;
+    int Npoints = 1000;
+    int howmany = 10;
     mdarray<std::complex<double>,2> Array_x({howmany,Npoints});
     mdarray<std::complex<double>,2> Array_k({howmany,Npoints});
     std::vector<int> dimensions = {int(Npoints)};

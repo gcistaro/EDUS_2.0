@@ -3,7 +3,6 @@
 #include "core/print_timing.hpp"
 
 #define watch(x)  (#x)
-constexpr std::complex<double> im(0.,1.);
 int main()
 {
     PROFILE_START("NEGF");
