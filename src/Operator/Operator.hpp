@@ -245,7 +245,6 @@ class Operator
             MG2.close();
             //endofproof
             */
-            auto nk = FT_meshgrid_R->get_mesh().size();
 #ifdef NEGF_MPI
             Operator_k = BlockMatrix<std::complex<double>>(k, mpindex.get_RecommendedAllocate_fftw(), nbnd, nbnd);
 #else
@@ -280,14 +279,19 @@ class Operator
         };
 
 
-        void dft(const std::vector<Coordinate>& path, const int& sign)
+        void dft(const std::vector<Coordinate>& path, const int& sign, const bool& UseMPI=true)
         {
             initialize_dft();
 #ifdef NEGF_MPI
             std::vector<Coordinate> path_local;
             auto& LocalRange = mpindex.get_LocalRange();
-            for ( int index_local = 0; index_local < LocalRange.second-LocalRange.first+1; index_local++ ) {
-                path_local.push_back( path[ mpindex.loc1D_to_glob1D( index_local )] );
+            if(UseMPI) {
+                for ( int index_local = 0; index_local < LocalRange.second-LocalRange.first+1; index_local++ ) {
+                    path_local.push_back( path[ mpindex.loc1D_to_glob1D( index_local )] );
+                }
+            }
+            else{
+                path_local = path;
             }
             execute_dft(path_local, sign);
             Operator_k.initialize(k, path_local.size(), Operator_R.get_nrows(), Operator_R.get_ncols());
@@ -340,7 +344,7 @@ class Operator
 
             Mesh_FT.resize(mesh_operator.size());        
 
-            for(int im=0; im<mesh_operator.size(); im++){
+            for(int im=0; im < int( mesh_operator.size() ); im++){
                 Mesh_FT[im].resize(3);
                 Mesh_FT[im][0] = mesh_operator[im].get(LatticeVectors(R))[0];
                 Mesh_FT[im][1] = mesh_operator[im].get(LatticeVectors(R))[1];
@@ -356,7 +360,7 @@ class Operator
         void execute_dft(const std::vector<Coordinate>& path, const int& sign)
         {
             std::vector< std::vector<double>> path_bare(path.size());
-            for(int i=0; i<path.size(); ++i){
+            for(int i=0; i < int( path.size() ); ++i){
                 path_bare[i].resize(3);
                 path_bare[i][0] = path[i].get(LatticeVectors(k))[0];
                 path_bare[i][1] = path[i].get(LatticeVectors(k))[1];
@@ -382,7 +386,10 @@ class Operator
 
         void shuffle_to_fft_R()
         {
+            PROFILE("Operator::shuffle_to_fft_R");
             auto ci = MeshGrid::get_ConvolutionIndex(*Operator_R.get_MeshGrid() , *FT_meshgrid_R, *MeshGrid_Null);
+
+            #pragma omp parallel for
             for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
                 assert(ci(iR,0) != -1);
                 for(int ibnd1=0; ibnd1<Operator_R.get_nrows(); ++ibnd1){
@@ -396,6 +403,9 @@ class Operator
 
         void shuffle_to_fft_k()
         {
+            PROFILE("Operator::shuffle_to_fft_k");
+
+            #pragma omp parallel for
             for(int ik=0; ik<Operator_k.get_nblocks(); ik++){
                 for(int ibnd1=0; ibnd1<Operator_k.get_nrows(); ++ibnd1){
                     // bandindex for(int ibnd2=ibnd1; ibnd2<Operator_R.get_ncols(); ++ibnd2){
@@ -408,9 +418,11 @@ class Operator
 
         void shuffle_from_fft_R()
         {
+            PROFILE("Operator::shuffle_from_fft_R");
             auto ci = MeshGrid::get_ConvolutionIndex(*Operator_R.get_MeshGrid(), *FT_meshgrid_R, *MeshGrid_Null);
             // bandindex auto ciminus = MeshGrid::get_ConvolutionIndex(*MeshGrid_Null, *Operator_R.get_MeshGrid(), *Operator_R.get_MeshGrid());
 
+            #pragma omp parallel for 
             for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
                 assert(ci(iR,0) != -1);
                 for(int ibnd1=0; ibnd1<Operator_R.get_nrows(); ++ibnd1){
@@ -434,6 +446,9 @@ class Operator
 
         void shuffle_from_fft_k()
         {
+            PROFILE("Operator::shuffle_from_fft_k");
+
+            #pragma omp parallel for 
             for(int ik=0; ik<Operator_k.get_nblocks(); ik++){
                 for(int ibnd1=0; ibnd1<Operator_k.get_nrows(); ++ibnd1){
                     // bandindex for(int ibnd2=ibnd1; ibnd2<Operator_k.get_ncols(); ++ibnd2){
@@ -449,6 +464,7 @@ class Operator
 
         void go_to_wannier()
         {
+            PROFILE("Operator::go_to_wannier");
             assert(locked_bandgauge);
             assert(space == k);
             if (bandgauge == wannier){
@@ -466,6 +482,7 @@ class Operator
         void go_to_bloch()
         {
             // O_{bloch} = U^\dagger O_{wannier} U
+            PROFILE("Operator::go_to_bloch");
             assert(locked_bandgauge);
             assert(space == k);
             if(bandgauge == bloch){
@@ -479,10 +496,16 @@ class Operator
             bandgauge = bloch;
         };
 
-        void go_to_R()
+        void go_to_R(const bool& do_fft = true)
         {
+            PROFILE("Operator::go_to_R");
             assert(locked_space && initialized_fft);
             if(space == R){
+                return;
+            }
+            if( !do_fft )
+            {
+                space = R;
                 return;
             }
             shuffle_to_fft_k();
@@ -492,10 +515,16 @@ class Operator
             space = R;
         }
 
-        void go_to_k()
+        void go_to_k(const bool& do_fft = true)
         {
+            PROFILE("Operator::go_to_k");
             assert(locked_space && initialized_fft);
             if(space == k){
+                return;
+            }
+            if( !do_fft )
+            {
+                space = k;
                 return;
             }
             shuffle_to_fft_R();

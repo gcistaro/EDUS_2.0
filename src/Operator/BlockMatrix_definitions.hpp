@@ -13,17 +13,10 @@ template<typename T>
 void BlockMatrix<T>::initialize_submatrix()
 {
         submatrix.resize(Values.get_Size(0));
-        std::stringstream name;
-        name << "os_rank" << mpi::Communicator::world().rank();//GIO
-        std::ofstream os_rank(name.str());//GIO
 
         for(auto iblock=0; iblock<Values.get_Size(0); iblock++){
-            os_rank << "Initializing submatrix...\n";
-            os_rank << "Values.get_Size(1) " << Values.get_Size(1) << " Values.get_Size(2) " << Values.get_Size(2) << std::endl;
             submatrix[iblock] =Matrix<T>(&(Values(iblock,0,0)),{Values.get_Size(1), Values.get_Size(2)});    
-            os_rank << "submatrix[iblock].Size " << submatrix[iblock].get_nrows() << " " << submatrix[iblock].get_ncols() << std::endl;
         }
-        os_rank.close();
 }
 
 
@@ -58,7 +51,7 @@ BlockMatrix<T>::BlockMatrix(const BlockMatrix<T>& A)
 }
 
 template<typename T>
-const T& BlockMatrix<T>::operator()(const int& iblock, const int& n, const int& m) const
+inline const T& BlockMatrix<T>::operator()(const int& iblock, const int& n, const int& m) const
 {
     if(iblock == -1){
         return NullValue;
@@ -67,9 +60,21 @@ const T& BlockMatrix<T>::operator()(const int& iblock, const int& n, const int& 
 }
 
 template<typename T>
-T& BlockMatrix<T>::operator()(const int& iblock, const int& n, const int& m)
+inline T& BlockMatrix<T>::operator()(const int& iblock, const int& n, const int& m)
 {
     return (const_cast<T&>(static_cast<BlockMatrix<T> const&>(*this)(iblock, n, m)));
+}
+
+template<typename T>
+inline T& BlockMatrix<T>::operator()(const int& i)
+{
+    return this->Values[i];
+}
+
+template<typename T>
+inline const T& BlockMatrix<T>::operator()(const int& i) const
+{
+    return (const_cast<T&>(static_cast<BlockMatrix<T> const&>(*this)(i)));
 }
 
 template<typename T>

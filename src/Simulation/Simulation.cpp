@@ -24,6 +24,14 @@ void Simulation::SettingUp_EigenSystem()
     auto& UkDagger = Operator<std::complex<double>>::EigenVectors_dagger;
 
     material.H.get_Operator_k().diagonalize(Band_energies, Uk);
+
+    std::stringstream rank;
+    rank << "bands" << mpi::Communicator::world().rank() << ".txt";
+    std::ofstream os_band(rank.str());
+    for(int ik=0; ik<Band_energies.size(); ++ik) {
+        os_band << Band_energies[ik](0) << " " << Band_energies[ik](1) << std::endl;
+    }
+    os_band.close();
     //------------------------------------------------------------------------------
 
     //-------------------get U dagger-----------------------------------------------
@@ -72,7 +80,7 @@ void Simulation::Calculate_TDHamiltonian(const double& time)
             for(int icol=0; icol<H0_.get_ncols(); ++icol){
                 //auto Hblock = ( SpaceOfPropagation == k ? iblock : ci(iblock, 0) );
                 //H_(Hblock, irow, icol) = H0_(iblock, irow, icol)
-                H_(iblock, irow, icol) = H0_(icol+2*irow+2*iblock)//iblock, irow, icol)
+                H_(iblock, irow, icol) = H0_(iblock, irow, icol)
                                        + las[0]*x_(iblock, irow, icol)
                                        + las[1]*y_(iblock, irow, icol)
                                        + las[2]*z_(iblock, irow, icol);
