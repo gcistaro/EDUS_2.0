@@ -57,8 +57,11 @@ class BlockMatrix{
         const T& operator()(const int& nk1, const int& mk2) const; //full index
         T& operator()(const int& nk1, const int& mk2);             //full index
 
-        const T& operator()(const int& iblock, const int& n, const int& m) const; //block-like index
-        T& operator()(const int& iblock, const int& n, const int& m);             //block-like index
+        inline const T& operator()(const int& iblock, const int& n, const int& m) const; //block-like index
+        inline T& operator()(const int& iblock, const int& n, const int& m);             //block-like index
+        
+        inline const T& operator()(const int& i) const;
+        inline T& operator()(const int& i) ;
 
         void fill(const T& Scalar);
 
@@ -82,6 +85,7 @@ class BlockMatrix{
         int get_nrows() const{return Values.get_Size(1);};
         int get_ncols() const{return Values.get_Size(2);};
         std::shared_ptr<MeshGrid>& get_MeshGrid(){return this->meshgrid;};
+        const std::shared_ptr<MeshGrid>& get_MeshGrid() const {return this->meshgrid;} ;
 
         void set_MeshGrid(const MeshGrid& meshgrid_)
         {

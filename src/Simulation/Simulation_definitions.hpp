@@ -26,6 +26,30 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
     material.r[0].dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
     material.r[1].dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
     material.r[2].dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
+
+    std::stringstream rank_H;
+    rank_H << "H" << mpi::Communicator::world().rank() << ".txt";
+    std::ofstream os_H;
+    os_H.open(rank_H.str());
+    for(int i=0; i< H.get_Operator_k().get_nblocks(); ++i){
+        os_H << material.H.get_Operator_k()[i] << std::endl;
+    }
+    std::stringstream rank_x;
+    rank_x << "x" << mpi::Communicator::world().rank() << ".txt";
+    std::ofstream os_x;
+    os_x.open(rank_x.str());
+    for(int i=0; i< material.r[0].get_Operator_k().get_nblocks(); ++i){
+        os_x << material.r[0].get_Operator_k()[i] << std::endl;
+    }
+    std::stringstream rank_y;
+    rank_y << "y" << mpi::Communicator::world().rank() << ".txt";
+    std::ofstream os_y;
+    os_y.open(rank_y.str());
+    for(int i=0; i< material.r[1].get_Operator_k().get_nblocks(); ++i){
+        os_H << material.r[1].get_Operator_k()[i] << std::endl;
+    }
+
+
     H.initialize_dims(DensityMatrix);
     SettingUp_EigenSystem();
     //Calculate_Velocity();
@@ -49,11 +73,14 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
     //---------------------------------------------------------------------------------------
 
     //print DM in R to prove it decays and is zero for large R
+    std::stringstream rank;
+    rank << "DM" << mpi::Communicator::world().rank() << ".txt";
     std::ofstream os;
-    os.open("DM.txt");
-    for(int i=0; i< DensityMatrix.get_Operator_R().get_nblocks(); ++i){
-        os << DensityMatrix.get_Operator_R().get_MeshGrid()->get_mesh()[i].norm();
-        os << " " << std::abs(max(DensityMatrix.get_Operator_R()[i])) << std::endl;
+    os.open(rank.str());
+    for(int i=0; i< DensityMatrix.get_Operator_k().get_nblocks(); ++i){
+        os << DensityMatrix.get_Operator_k()[i] << std::endl;
+        //os << DensityMatrix.get_Operator_R().get_MeshGrid()->get_mesh()[i].norm();
+        //os << " " << std::abs(max(DensityMatrix.get_Operator_R()[i])) << std::endl;
     }
     os.close();
     //---------------------------------------------------------------------------------------

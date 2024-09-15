@@ -27,7 +27,7 @@ SourceTerm =
                         Input.get_Operator(Space::R), 
                         laser(time), false);
     Output.go_to_k();
-    const_cast<Operator<std::complex<double>>&>(Input).go_to_k();
+    const_cast<Operator<std::complex<double>>&>(Input).go_to_k(false);
     PROFILE_STOP("i*(E.R)*Input");
 
     //assert(Output_.is_hermitian());

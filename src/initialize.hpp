@@ -13,7 +13,7 @@
 
 mpi::Communicator kpool_comm;
 mpi::Communicator band_comm;
-int NumberKpools = 2;
+int NumberKpools;
 
 
 
@@ -37,6 +37,7 @@ void initialize()
     if( mpi::Communicator::world().rank() == 0 ) {
         std::cout << "MPI Communicator world size: " << mpi::Communicator::world().size() << "processors\n";
     }
+    NumberKpools = mpi::Communicator::world().size();
     fftw_mpi_init();  
 
     assert( mpi::Communicator::world().size()%NumberKpools == 0 );//for now i just implemented a rectangular MPI grid

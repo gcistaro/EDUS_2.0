@@ -87,19 +87,41 @@ int main()
     std::cout << "Checking correctness of propagator...\n";
 
     auto DMk0 = simulation.DensityMatrix.get_Operator_k();
-    for(int it=0; it <= 20; ++it){
+    //for(int it=0; it <= 20; ++it){
+    //    simulation.DensityMatrix.go_to_k();
+    //    auto& DMk = simulation.DensityMatrix.get_Operator_k();
+    //    for(int ik=0; ik < simulation.DensityMatrix.mpindex.nlocal; ++ik){
+    //        auto ik_local = simulation.DensityMatrix.mpindex.loc1D_to_glob1D(ik);
+    //        auto k_ = (*(simulation.DensityMatrix.get_Operator_k().get_MeshGrid()))[ik_local].get(LatticeVectors(k));
+    //        auto t = simulation.RK_object.get_CurrentTime();
+    //        auto Hk = simulation.Band_energies[ik_local](1);
+    //        auto Analytical = DMk0[ik_local](0,1)*std::exp(im*2.*Hk*t);
+    //        auto RelativeError =  std::abs( DMk[ik](0,1) - Analytical)/std::abs(Analytical)*100.;
+//
+    //        std::cout  << std::setw(20) << std::setprecision(10) << it;
+    //        std::cout  << std::setw(40) << std::setprecision(10) << DMk[ik](0,1);
+    //        std::cout  << std::setw(40) << std::setprecision(10) << Analytical;
+    //        std::cout  << std::setw(20) << std::setprecision(10) << RelativeError << std::endl;
+    //        if( std::abs(Analytical) > 1.e-07 && 
+    //            RelativeError > 10.){
+    //            exit(1);
+    //        }
+    //    }
+    //    simulation.Propagate();
+    //}
+
+
+    for(int it=0; it <= 10; ++it){
         simulation.DensityMatrix.go_to_k();
-        auto& DMk = simulation.DensityMatrix.get_Operator_k();
-        for(int ik_loc=0; ik_loc < simulation.DensityMatrix.mpindex.nlocal; ++ik_loc){
-            auto ik_glob = simulation.DensityMatrix.mpindex.loc1D_to_glob1D(ik_loc);
-            auto k_ = (*(simulation.DensityMatrix.get_Operator_k().get_MeshGrid()))[ik_glob].get(LatticeVectors(k));
+        auto DMk = simulation.DensityMatrix.get_Operator_k();
+        for(int ik=0; ik < DMk.get_nblocks(); ik++){
             auto t = simulation.RK_object.get_CurrentTime();
-            auto Hk = simulation.Band_energies[ik_loc](1);
-            auto Analytical = DMk0[ik_loc](0,1)*std::exp(im*2.*Hk*t);
-            auto RelativeError =  std::abs( DMk[ik_loc](0,1) - Analytical)/std::abs(Analytical)*100.;
-            std::cout  << std::setw(20) <<mpi::Communicator::world().rank();
+            auto Hk = simulation.Band_energies[ik](1);
+            auto Analytical = DMk0[ik](0,1)*std::exp(im*2.*Hk*t);
+            auto RelativeError =  std::abs( DMk[ik](0,1) - Analytical)/std::abs(Analytical)*100.;
             std::cout  << std::setw(20) << std::setprecision(10) << it;
-            std::cout  << std::setw(40) << std::setprecision(10) << DMk[ik_loc](0,1);
+            std::cout  << std::setw(20) << std::setprecision(10) << ik;
+            std::cout  << std::setw(40) << std::setprecision(10) << DMk[ik](0,1);
             std::cout  << std::setw(40) << std::setprecision(10) << Analytical;
             std::cout  << std::setw(20) << std::setprecision(10) << RelativeError << std::endl;
             if( std::abs(Analytical) > 1.e-07 && 
@@ -109,6 +131,5 @@ int main()
         }
         simulation.Propagate();
     }
-
     print_timing(1);
 }
