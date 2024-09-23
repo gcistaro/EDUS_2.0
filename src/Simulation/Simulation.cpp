@@ -28,7 +28,7 @@ void Simulation::SettingUp_EigenSystem()
     std::stringstream rank;
     rank << "bands" << mpi::Communicator::world().rank() << ".txt";
     std::ofstream os_band(rank.str());
-    for(int ik=0; ik<Band_energies.size(); ++ik) {
+    for(int ik=0; ik<int(Band_energies.size()); ++ik) {
         os_band << Band_energies[ik](0) << " " << Band_energies[ik](1) << std::endl;
     }
     os_band.close();

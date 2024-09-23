@@ -24,8 +24,8 @@ void print_header()
     std::cout << "*     |___| \\__||         |_______|| |_______//    \\_______//    |_______//     *\n";
     std::cout << "*                                                                               *\n";
     std::cout << "*********************************************************************************\n";
-    std::cout << "Git hash:            " << git::hash << "\n";
-    std::cout << "Git branch:          " << git::branchname << "\n";
+    std::cout << "Git hash:            " << git_hash << "\n";
+    std::cout << "Git branch:          " << git_branchname << "\n";
     std::cout << "*********************************************************************************\n";
 }
 

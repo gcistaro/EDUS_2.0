@@ -22,7 +22,6 @@ int main()
         a[i] = 1./(i*Npoints);
     }
 
-    double i0 = 0;
     for(int h=0; h<howmany; h++){
         for(int i=0; i<Npoints; i++){
             double x;
@@ -45,7 +44,6 @@ int main()
     std::cout << "DONE!\n";
 
     double DeltaW = 1./double(Npoints);
-    double maxW = 1./1.;
 
     std::cout << "+---+------------+--------------------+---------------------+-------------------+\n";
     std::cout << "| h | freq    | Numerical solution | Analytical solution |      Error(%)     |\n";

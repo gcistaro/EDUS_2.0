@@ -22,7 +22,7 @@ int main()
 
     auto InitialCondition = [&](auto& Function){
         Function.resize(N);
-        for( int ik=0; ik<Function.size(); ik++ ) {
+        for( int ik=0; ik<int(Function.size()); ik++ ) {
             Function[ik] = std::cos(2.*pi*ik/N)/std::sqrt(N);
         }
     };

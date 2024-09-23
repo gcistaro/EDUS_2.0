@@ -17,7 +17,7 @@ class TimeGrid{
     public:
         TimeGrid(){};
         TimeGrid(const double& InitialTime_, const double& FinalTime_, const double& ResolutionTime_)
-        : InitialTime(InitialTime_), FinalTime(FinalTime_), ResolutionTime(ResolutionTime_)
+        : ResolutionTime(ResolutionTime_), InitialTime(InitialTime_), FinalTime(FinalTime_)
         {
             this->initialize();
         }        
