@@ -27,5 +27,5 @@ class RytovaKeldysh
         //std::complex<double> W(const Coordinate& q);
         std::complex<double> Potential(const Coordinate& r);
 
-        mdarray<std::complex<double>,4> TB;
+        mdarray<std::complex<double>,3> TB;
 };

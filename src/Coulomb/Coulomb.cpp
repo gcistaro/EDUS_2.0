@@ -40,6 +40,7 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
     for( int irow = 0; irow < nbnd; ++irow ){
         HF( index_origin, irow, irow ) += 2.*RytKel.TB( index_origin, irow, irow );
     }
+    std::cout << "Done HF!\n";
 }
 
 void Coulomb::EffectiveHamiltonian(BlockMatrix<std::complex<double>>& H_, const BlockMatrix<std::complex<double>>& DM,
