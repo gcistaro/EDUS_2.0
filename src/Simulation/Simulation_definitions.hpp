@@ -67,7 +67,8 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
     PrintResolution = 1;
     kgradient.initialize(*(DensityMatrix.get_Operator(R).get_MeshGrid()));
 
-    
+    coulomb.initialize(material.H.get_Operator_R().get_nrows(), DensityMatrix.get_Operator(R).get_MeshGrid(), material.r);
+
 
     print_recap();
     //---------------------------------------------------------------------------------------

@@ -71,7 +71,9 @@ set(_SOURCES src/GlobalFunctions.cpp
              src/core/print_timing.cpp 
              src/core/rt_graph.cpp
              src/core/mpi/Communicator.cpp
-			 )
+             src/Coulomb/Coulomb.cpp
+             src/RytovaKeldysh/RytovaKeldysh.cpp
+    )
 	
 
 

@@ -6,6 +6,7 @@
 #include "Laser/Laser.hpp"
 #include "ostream.hpp"
 #include "kGradient/kGradient.hpp"
+#include "Coulomb/Coulomb.hpp"
 
 class Simulation
 {
@@ -22,6 +23,7 @@ class Simulation
         RungeKutta<Operator<std::complex<double>>> RK_object;
         int PrintResolution; //steps needed to print a variable
         kGradient kgradient;
+        Coulomb coulomb;
         Space SpaceOfPropagation = k;
 
         std::ofstream os_Laser;
