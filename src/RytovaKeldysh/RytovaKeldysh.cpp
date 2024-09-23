@@ -51,13 +51,13 @@ void RytovaKeldysh::initialize(const std::array<Operator<std::complex<double>>,3
         auto& Rcart = (*Rgrid)[iR].get("Cartesian");
         //for(int iS=0; iS<TB.get_Size(1); ++iS) {
         //    auto& Scart = (*Rgrid)[iS].get("Cartesian");
-            for(int in=0; in<TB.get_Size(2); in++){
+            for(int in=0; in<TB.get_Size(1); in++){
                 //ratom_n = rn + R
                 auto ratom_n = Coordinate(x0(in,in).real() - Rcart[0],
                                           y0(in,in).real() - Rcart[1],
                                           z0(in,in).real() - Rcart[2]);
 
-                for(int im=0; im<TB.get_Size(3); im++){
+                for(int im=0; im<TB.get_Size(2); im++){
                     //ratom_m = rm + S
                     auto ratom_m = Coordinate(x0(im,im).real(),//+Scart[0],
                                               y0(im,im).real(),//+Scart[1],
