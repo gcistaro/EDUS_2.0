@@ -81,6 +81,7 @@ class BlockMatrix{
         size_t get_nrows() const{return Values.get_Size(1);};
         size_t get_ncols() const{return Values.get_Size(2);};
         std::shared_ptr<MeshGrid>& get_MeshGrid(){return this->meshgrid;};
+        const std::shared_ptr<MeshGrid>& get_MeshGrid() const {return this->meshgrid;};
 
         void set_MeshGrid(const MeshGrid& meshgrid_)
         {
