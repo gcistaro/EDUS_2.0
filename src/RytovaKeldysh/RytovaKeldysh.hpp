@@ -1,5 +1,6 @@
 #include <math.h>
 #include "Constants.hpp"
+#include "ConvertUnits.hpp"
 #include "Geometry/Coordinate.hpp"
 #include "Operator/Operator.hpp"
 #include "fftPair/fftPair.hpp"
@@ -13,7 +14,7 @@ class RytovaKeldysh
 {
     private:
         enum Dimensionality {twoD, threeD} dim;
-        double r0=10.;
+        double r0=Convert(10.,Angstrom,AuLength);
         double epsilon = 2.;
         double Area=1.;
 

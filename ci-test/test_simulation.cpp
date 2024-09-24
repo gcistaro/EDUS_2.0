@@ -14,7 +14,7 @@ int main()
     //simulation.laser.set_NumberOfCycles(10);
     simulation.RK_object.set_ResolutionTime(0.1);//0.0003);
 
-   for(int it=0; it<10; ++it) {//simulation.RK_object.get_CurrentTime() < 100) {
+   for(int it=0; it<1.e+04; ++it) {//simulation.RK_object.get_CurrentTime() < 100) {
         simulation.Propagate();
     }
     PROFILE_STOP("test_simulation");

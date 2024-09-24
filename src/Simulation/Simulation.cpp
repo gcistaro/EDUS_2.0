@@ -47,7 +47,7 @@ void Simulation::SettingUp_EigenSystem()
 };   
 
 
-void Simulation::Calculate_TDHamiltonian(const double& time)
+void Simulation::Calculate_TDHamiltonian(const double& time, const bool& erase_H)
 {
     PROFILE("SourceTerm::Calculate_TDHamiltonian");
     //--------------------get aliases for nested variables--------------------------------
@@ -64,7 +64,9 @@ void Simulation::Calculate_TDHamiltonian(const double& time)
     //-----------------------------------------------------------------------------------
 
     //--------------------------do initializations---------------------------------------
-    H_.fill(0.);
+    if(erase_H) {
+        H_.fill(0.);
+    }
 
     if(ci.get_Size(0) == 0 && SpaceOfPropagation == R) {
         MeshGrid::Calculate_ConvolutionIndex( *(H0_.get_MeshGrid()), 
@@ -96,91 +98,50 @@ void Simulation::Propagate()
     PROFILE("Simulation::Propagate");
     auto CurrentTime = RK_object.get_CurrentTime();
     //------------------------Print population-------------------------------------
-    if(SpaceOfPropagation == R) DensityMatrix.go_to_k();
     //DensityMatrix.go_to_bloch();
-    
-    /*
-    auto Population = TraceK(DensityMatrix.get_Operator_k());
-    for(int ibnd=0; ibnd<Population.size(); ibnd++){
-        os_Pop << std::setw(20) << std::setprecision(10) << Population[ibnd].real();
-        os_Pop << ' ';
-    }
-    os_Pop << std::endl;
-
-*/
     if( PrintObservables( CurrentTime) ){
         //print time 
         os_Time << CurrentTime << std::endl;
-         //print population
-/*
-        std::vector<std::complex<double>> Population(DensityMatrix.get_Operator_k().get_nrows(), 0.);
-        for(int ik=0; ik<DensityMatrix.get_Operator_k().get_nblocks(); ik++) {
-            for(int ibnd=0; ibnd<Population.size(); ibnd++) {
-                Population[ibnd] += DensityMatrix.get_Operator_k()[ik](ibnd,ibnd);
-            }
-        }
-        Population[0] = 1.-Population[0]/double(DensityMatrix.get_Operator_k().get_MeshGrid()->get_TotalSize());
-        Population[1] /= double(DensityMatrix.get_Operator_k().get_MeshGrid()->get_TotalSize());
-
-
-        for(int ibnd=0; ibnd<Population.size(); ibnd++){
-            os_Pop << std::setw(20) << std::setprecision(10) << Population[ibnd].real();
-            os_Pop << ' ';
-        }
-        os_Pop << std::endl;
-*/
-        mdarray<std::complex<double>,2> Population;
-        DensityMatrix.go_to_bloch();
-        Population.initialize({DensityMatrix.get_Operator_k().get_nrows(), DensityMatrix.get_Operator_k().get_ncols()});
-        Population.fill(0.);
-        for(int ik=0; ik<DensityMatrix.get_Operator_k().get_nblocks(); ik++) {
-            for(int irow=0; irow <DensityMatrix.get_Operator_k().get_nrows(); ++irow ) {
-                for(int icol=0; icol <DensityMatrix.get_Operator_k().get_ncols(); ++icol ) {
-                    Population(irow, icol) += DensityMatrix.get_Operator_k()[ik](irow, icol);
-                }
-            }
-        }
-        for(int irow=0; irow <DensityMatrix.get_Operator_k().get_nrows(); ++irow ) {
-            for(int icol=0; icol <DensityMatrix.get_Operator_k().get_ncols(); ++icol ) {
-                if(irow == 0 && icol == 0) Population(irow, icol) = double(DensityMatrix.get_Operator_k().get_nblocks())-Population(irow, icol);
-                os_Pop << std::scientific <<  Population(irow, icol)/double(DensityMatrix.get_Operator_k().get_nblocks());
-                os_Pop << ' ';
-            }
-        }
-        os_Pop << std::endl;
         //print laser
         os_Laser << laser(RK_object.get_CurrentTime()).get("Cartesian");
-	    //print stuff
 
-        DensityMatrix.go_to_wannier();
+        Print_Population();
+        Print_Velocity();
     }
 
     //------------------------------------------------------------------------------
 
 
-    //
-    //std::array<std::complex<double>, 3> v;
-    //for(auto ix : {0, 1, 2}){
-    //    v[ix] = Trace(Velocity[ix].get_Operator_R(), DensityMatrix.get_Operator_R());
-    //}
-    //os_Pos << std::setw(20) << std::setprecision(8) << v[0].real();
-    //os_Pos << std::setw(20) << std::setprecision(8) << v[0].imag();
-    //os_Pos << std::setw(20) << std::setprecision(8) << v[1].real();
-    //os_Pos << std::setw(20) << std::setprecision(8) << v[1].imag();
-    //os_Pos << std::setw(20) << std::setprecision(8) << v[2].real();
-    //os_Pos << std::setw(20) << std::setprecision(8) << v[2].imag();
-    //os_Pos << std::endl;
 
-    //DensityMatrix.go_to_wannier();
-    //DensityMatrix.go_to_R();
     RK_object.Propagate();
 }
+
+
+void Simulation::Print_Population()
+{
+    DensityMatrix.go_to_bloch();
+    std::vector<std::complex<double>> Population(DensityMatrix.get_Operator_k().get_nrows(), 0.);
+    for(int ik=0; ik<DensityMatrix.get_Operator_k().get_nblocks(); ik++) {
+        for(int ibnd=0; ibnd<Population.size(); ibnd++) {
+            Population[ibnd] += DensityMatrix.get_Operator_k()[ik](ibnd,ibnd);
+        }
+    }
+    for(int ibnd=0; ibnd<Population.size(); ibnd++) {
+        Population[ ibnd ] /= double(DensityMatrix.get_Operator_k().get_MeshGrid()->get_TotalSize());        
+    }
+    for(int ibnd=0; ibnd<Population.size(); ibnd++){
+        os_Pop << std::setw(20) << std::setprecision(10) << Population[ibnd].real();
+        os_Pop << ' ';
+    }
+    os_Pop << std::endl;
+    DensityMatrix.go_to_wannier();
+}
+
 
 void Simulation::Calculate_Velocity()
 {
     for(int ix : {0, 1, 2}){
-        Velocity[ix].get_Operator_R() = DensityMatrix.get_Operator_R();
-    
+        Velocity[ix].initialize_fft(*DensityMatrix.get_Operator_R().get_MeshGrid(), DensityMatrix.get_Operator_R().get_nrows());
         Velocity[ix].get_Operator_R().fill(0.);
         commutator(Velocity[ix].get_Operator_R(), -im, material.r[ix].get_Operator_R(), material.H.get_Operator_R());
         //part with R
@@ -204,8 +165,24 @@ void Simulation::Calculate_Velocity()
             }
         }
     }
+    DensityMatrix.go_to_k(false);
 }
 
+
+void Simulation::Print_Velocity()
+{
+    std::array<std::complex<double>, 3> v;
+    for(auto ix : {0, 1, 2}){
+        v[ix] = Trace(Velocity[ix].get_Operator_R(), DensityMatrix.get_Operator_R());
+    }
+    os_Velocity << std::setw(20) << std::setprecision(8) << v[0].real();
+    os_Velocity << std::setw(20) << std::setprecision(8) << v[0].imag();
+    os_Velocity << std::setw(20) << std::setprecision(8) << v[1].real();
+    os_Velocity << std::setw(20) << std::setprecision(8) << v[1].imag();
+    os_Velocity << std::setw(20) << std::setprecision(8) << v[2].real();
+    os_Velocity << std::setw(20) << std::setprecision(8) << v[2].imag();
+    os_Velocity << std::endl;
+}
 
 void Simulation::print_recap()
 {

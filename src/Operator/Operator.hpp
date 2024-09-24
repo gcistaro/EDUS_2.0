@@ -122,7 +122,7 @@ class Operator
         static BlockMatrix<T> EigenVectors;
         static BlockMatrix<T> EigenVectors_dagger;
         static MPIindex<3> mpindex;
-        Operator() : Operator_k(BlockMatrix<T>()), Operator_R(BlockMatrix<T>()){};
+        Operator() : Operator_k(BlockMatrix<T>()), Operator_R(BlockMatrix<T>()){Operator_k.set_space(k); Operator_R.set_space(R);};
 
 
         Operator(const Operator<T>& Op_) = default;
@@ -305,6 +305,10 @@ class Operator
 #endif
         }
 
+        void set_space(const Space& space__)
+        {
+            space = space__;
+        }
 
         MeshGrid& get_FT_meshgrid_k() 
         {

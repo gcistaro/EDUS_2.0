@@ -29,16 +29,19 @@ class Simulation
         std::ofstream os_Laser;
         std::ofstream os_Pop;
         std::ofstream os_Time;
+        std::ofstream os_Velocity;
         
         template<class T>
         Simulation(const std::string& FileName, const T& arg_meshinit);
         void SettingUp_EigenSystem();
         void print_grids();
-        void Calculate_TDHamiltonian(const double& time);
+        void Calculate_TDHamiltonian(const double& time, const bool& erase_H);
         void Calculate_Velocity();
         void Propagate();
         void print_recap();
         bool PrintObservables(const double& time) const;
+        void Print_Population();
+        void Print_Velocity();
 
 
         template <typename Scalar_T>
