@@ -50,9 +50,9 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
     }
 
 
-    H.initialize_dims(DensityMatrix);
+    H.initialize_fft(*MasterRgrid, material.H.get_Operator_R().get_nrows());
     SettingUp_EigenSystem();
-    //Calculate_Velocity();
+    Calculate_Velocity();
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
 
     //---------------------------------------------------------------------------------------
@@ -68,6 +68,7 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
     kgradient.initialize(*(DensityMatrix.get_Operator(R).get_MeshGrid()));
 
     coulomb.initialize(material.H.get_Operator_R().get_nrows(), DensityMatrix.get_Operator(R).get_MeshGrid(), material.r);
+    coulomb.set_DM0(DensityMatrix);
 
 
     print_recap();
@@ -90,6 +91,7 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
     os_Pop.open("Population.txt");
     os_Laser.open("Laser.txt");
     os_Time.open("Time.txt");
+    os_Velocity.open("Velocity.txt");
     //---------------------------------------------------------------------------------------
 }
 
