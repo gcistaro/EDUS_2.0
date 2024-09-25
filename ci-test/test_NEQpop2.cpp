@@ -50,10 +50,10 @@ int main()
     auto& laser = simulation.laser;
     laser.set_Intensity(0., Wcm2);//1.e+16, Wcm2);
     auto& H = simulation.H;
-    auto& SpaceOfPropagation = simulation.SpaceOfPropagation;
     auto& kgradient = simulation.kgradient;
-    auto Calculate_TDHamiltonian = [&](const double& time){
-        return simulation.Calculate_TDHamiltonian(time);
+    auto& coulomb = simulation.coulomb;
+    auto Calculate_TDHamiltonian = [&](const double& time, const bool& erase){
+        return simulation.Calculate_TDHamiltonian(time, erase);
     };
     #include "Simulation/Functional_SourceTerm.hpp"
     std::cout << "Initializing RK_object..\n";
