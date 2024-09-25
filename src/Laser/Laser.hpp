@@ -75,6 +75,11 @@ class Envelope{
         double operator()(const double& time);
         void set_Duration(const double& Duration_);
         void set_InitialTime(const double& InitialTime_);
+
+        double get_Duration();
+        double get_InitialTime();
+        double get_FinalTime();
+
         friend class Laser;
 };
 
@@ -109,6 +114,11 @@ class Laser{
         void set_Polarization(const Coordinate& Polarization_);
         void set_TimeGrid(const TimeGrid& TimeGrid_);
         void print_info();
+
+        double get_Duration();
+        double get_InitialTime();
+        double get_FinalTime();
+        double get_NumberOfCycles();
 };
 
 

@@ -108,6 +108,21 @@ void Envelope::set_Duration(const double& Duration_)
     Duration = Duration_;
 }
 
+double Envelope::get_Duration()
+{
+    return Duration;
+}
+
+double Envelope::get_InitialTime()
+{
+    return InitialTime;
+}
+
+double Envelope::get_FinalTime()
+{
+    return Duration + InitialTime;
+}
+
 void Envelope::set_InitialTime(const double& InitialTime_)
 {
     InitialTime = InitialTime_;
@@ -185,6 +200,27 @@ void Laser::set_TimeGrid(const TimeGrid& TimeGrid_)
 {
     timegrid = std::make_shared<TimeGrid>(TimeGrid_);
 }
+
+double Laser::get_Duration()
+{
+    return envelope.get_Duration();
+}
+
+double Laser::get_InitialTime()
+{
+    return envelope.get_InitialTime();
+}
+
+double Laser::get_FinalTime()
+{
+    return envelope.get_FinalTime();
+}
+
+double Laser::get_NumberOfCycles()
+{
+    return NumberOfCycles;
+}
+
 
 void Laser::print_info()
 {
