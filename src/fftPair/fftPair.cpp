@@ -86,7 +86,9 @@ void FourierTransform::fft(const int& sign)
     fftw_execute(MyPlan);
 
     #pragma omp parallel for schedule(static)
-    for(auto& output_el : output){
+    for(int index = 0; index < output.end()-output.begin(); ++index) {
+        auto& output_el = output[index];
+    //for(auto& output_el : output){
         output_el /= SqrtTotalSize;
     }
 }
