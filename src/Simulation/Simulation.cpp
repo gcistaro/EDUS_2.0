@@ -122,14 +122,14 @@ void Simulation::Print_Population()
     DensityMatrix.go_to_bloch();
     std::vector<std::complex<double>> Population(DensityMatrix.get_Operator_k().get_nrows(), 0.);
     for(int ik=0; ik<DensityMatrix.get_Operator_k().get_nblocks(); ik++) {
-        for(int ibnd=0; ibnd<Population.size(); ibnd++) {
+        for(int ibnd=0; ibnd < int( Population.size() ); ibnd++) {
             Population[ibnd] += DensityMatrix.get_Operator_k()[ik](ibnd,ibnd);
         }
     }
-    for(int ibnd=0; ibnd<Population.size(); ibnd++) {
+    for(int ibnd=0; ibnd < int( Population.size() ); ibnd++) {
         Population[ ibnd ] /= double(DensityMatrix.get_Operator_k().get_MeshGrid()->get_TotalSize());        
     }
-    for(int ibnd=0; ibnd<Population.size(); ibnd++){
+    for(int ibnd = 0; ibnd < int( Population.size() ); ibnd++){
         os_Pop << std::setw(20) << std::setprecision(10) << Population[ibnd].real();
         os_Pop << ' ';
     }

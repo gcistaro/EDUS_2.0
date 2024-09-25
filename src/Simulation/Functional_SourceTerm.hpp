@@ -7,11 +7,11 @@ SourceTerm =
     // P <- Input
     PROFILE("RK::SourceTerm");
 
-    // Output +=   (E.Nabla) * Input
     H.go_to_R(false);
     Output.go_to_R();
     const_cast<Operator<std::complex<double>>&>(Input).go_to_R();
 
+    // Output +=   (E.Nabla) * Input
     PROFILE_START("i*(E.R)*Input");
     kgradient.Calculate(Output.get_Operator(Space::R), 
                         Input.get_Operator(Space::R), 
@@ -27,7 +27,8 @@ SourceTerm =
     H.go_to_k();
 
     // H = H0 + E.r
-    Calculate_TDHamiltonian(time, false);
+    Calculate_TDHamiltonian(time, !coulomb.get_DoCoulomb() );
+    
     // Output = -i * [ H, Input ]
     auto& Output_ = Output.get_Operator(Space::k);
     auto& Input_ = Input.get_Operator(Space::k);
