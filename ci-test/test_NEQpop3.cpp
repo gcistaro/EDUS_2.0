@@ -41,8 +41,9 @@ int main()
     laser.set_Polarization(Coordinate(1,0,0));
     auto& H = simulation.H;
     auto& kgradient = simulation.kgradient;
-    auto Calculate_TDHamiltonian = [&](const double& time){
-        return simulation.Calculate_TDHamiltonian(time);
+    auto& coulomb = simulation.coulomb;
+    auto Calculate_TDHamiltonian = [&](const double& time, const bool& erase){
+        return simulation.Calculate_TDHamiltonian(time, erase);
     };
     #include "Simulation/Functional_SourceTerm.hpp"
     std::cout << "Initializing RK_object..\n";
@@ -53,7 +54,7 @@ int main()
     //------------------------------- FINAL CHECK ON PROPAGATOR -----------------------------------------
     std::cout << "Checking correctness of propagator...\n";
     auto DMk0 = simulation.DensityMatrix.get_Operator_k();
-    for(int it=0; it <= 10; ++it){
+    for(int it=0; it <= 20; ++it){
         simulation.DensityMatrix.go_to_k();
         auto& DMk = simulation.DensityMatrix.get_Operator_k();
         for(int ik_loc=0; ik_loc < simulation.DensityMatrix.mpindex.nlocal; ++ik_loc){
