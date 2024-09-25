@@ -17,7 +17,7 @@ class Simulation
         Operator<std::complex<double>> H;
         std::array<Operator<std::complex<double>>, 3> Velocity;
         std::vector<mdarray<double,1>> Band_energies;
-        double FermiEnergy;
+        double FermiEnergy = 0.;
         Laser laser;
         Operator<std::complex<double>> DensityMatrix;
         RungeKutta<Operator<std::complex<double>>> RK_object;
