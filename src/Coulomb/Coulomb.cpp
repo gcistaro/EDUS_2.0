@@ -20,7 +20,7 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
 {
     auto size_MG =  Rgrid__->get_TotalSize();
     //W = mdarray<std::complex<double>, 6>( { size_MG, nbnd, nbnd, size_MG, nbnd, nbnd } );
-    HF = mdarray<std::complex<double>,3> ( { size_MG, size_t(nbnd), size_t(nbnd) } );
+    HF = mdarray<std::complex<double>,3> ( { int( size_MG ), nbnd, nbnd } );
     /* initializing W in point like approximation */ 
     RytovaKeldysh RytKel;
     RytKel.initialize(r, 2, Rgrid__);
@@ -48,9 +48,29 @@ void Coulomb::set_DM0( const Operator<std::complex<double>>& DM0__ )
     DM0 = DM0__;
 }
 
+void Coulomb::set_DoCoulomb(const bool& DoCoulomb__)
+{
+    DoCoulomb = DoCoulomb__;
+}
+
+const bool& Coulomb::get_DoCoulomb() const
+{
+    return DoCoulomb;
+}
+
+bool& Coulomb::get_DoCoulomb()
+{
+    return DoCoulomb;
+}
+
+
 void Coulomb::EffectiveHamiltonian(Operator<std::complex<double>>& H__, const Operator<std::complex<double>>& DM__,
                                   const bool& EraseH__ ) 
 {
+    if ( !DoCoulomb ) {
+        return;
+    }
+
     auto& HR = H__.get_Operator(R);
     auto& DMR = DM__.get_Operator(R);
     auto& DM0R = DM0.get_Operator(R);
