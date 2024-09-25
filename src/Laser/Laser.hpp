@@ -99,7 +99,7 @@ class Laser{
         //setters
         //only one of the following three calculates the others
         void set_Period(const double& Period_, const Unit& InputUnit);
-        void set_Omega(const double& Omega_);
+        void set_Omega(const double& Omega_, const Unit& InputUnit);
         void set_Lambda(const double& WaveLength_, const Unit& InputUnit);
         ////////////////////////////////////////////////////////
         void set_InitialTime(const double& InitialTime_, const Unit& InputUnit);
