@@ -139,9 +139,10 @@ void Laser::set_Period(const double& Period_, const Unit& InputUnit)
     PlaneWave.set_Period(Period);
 }
 
-void Laser::set_Omega(const double& Omega_)//, const Unit& InputUnit) 
+void Laser::set_Omega(const double& Omega_, const Unit& InputUnit)//, const Unit& InputUnit) 
 {
-    PlaneWave.set_Omega(Omega_);
+    auto Omega = Convert(Omega_, InputUnit, AuEnergy);
+    PlaneWave.set_Omega(Omega);
 }
 
 void Laser::set_Lambda(const double& WaveLength_, const Unit& InputUnit) 
