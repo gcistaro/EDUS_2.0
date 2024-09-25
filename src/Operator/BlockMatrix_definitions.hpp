@@ -192,7 +192,7 @@ void convolution(BlockMatrix<T>& Output, U Scalar, const BlockMatrix<T>& Input1,
 }
 
 template<typename T_, typename U>
-void commutator(BlockMatrix<T_>& Output, U Scalar, const BlockMatrix<T_>& Input1, const BlockMatrix<T_>& Input2 )
+void commutator(BlockMatrix<T_>& Output, U Scalar, const BlockMatrix<T_>& Input1, const BlockMatrix<T_>& Input2, const bool& Erase_Output = true)
 {
     PROFILE("Commutator");
     assert( Output.get_space() == Input1.get_space() );
@@ -207,7 +207,7 @@ void commutator(BlockMatrix<T_>& Output, U Scalar, const BlockMatrix<T_>& Input1
         }
         case(k):
         {
-            multiply(Output, Scalar, Input1, Input2);
+            multiply(Output, Scalar, Input1, Input2, double(!Erase_Output) + im*0.);
             multiply(Output, -Scalar, Input2, Input1, 1.+im*0.);
             break;
         }
