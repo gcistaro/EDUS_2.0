@@ -88,7 +88,6 @@ std::vector<std::complex<double>> TraceK(BlockMatrix<T>& O__)
             TraceK_[ibnd] += O__[iblock](ibnd, ibnd);
         }
     }
-    std::cout << TraceK_ << std::endl;
     return TraceK_;
 }
 
