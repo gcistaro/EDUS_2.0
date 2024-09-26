@@ -115,7 +115,9 @@ class BlockMatrix{
         void set_space(const Space& space__) const {space = space__;};
 
         bool is_hermitian();
-        
+        void make_hermitian();
+        void make_antihermitian();
+
         //destructor
         ~BlockMatrix();	
 };

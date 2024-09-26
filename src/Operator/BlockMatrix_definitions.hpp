@@ -246,12 +246,49 @@ bool BlockMatrix<T>::is_hermitian()
             for(int icol=irow; icol < this->get_nrows(); ++icol ) {
                 //std::cout << (*this)[ik](irow, icol) << "    " << (*this)[ik](icol, irow) << "  " ;
                 //std::cout << std::abs( (*this)[ik](irow, icol) - std::conj((*this)[ik](icol, irow)) ) << std::endl;  
-                hermitian = hermitian && ( std::abs( (*this)[ik](irow, icol) - std::conj((*this)[ik](icol, irow)) ) < 1.e-14) ;
+                hermitian = hermitian && ( std::abs( (*this)[ik](irow, icol) - std::conj((*this)[ik](icol, irow)) ) < 1.e-15) ;
             }
         }
     }
     //std::cout <<  ( hermitian ? "IS HERMITIAN!!":"IS NOT HERMITIAN :(" ) << std::endl;
     return hermitian;
+}
+
+template<typename T>
+void BlockMatrix<T>::make_hermitian()
+{
+    #pragma omp parallel for
+    for(int ik=0; ik<this->get_nblocks(); ++ik) {
+        for( int irow=0; irow<this->get_nrows(); irow++ ) {
+            for(int icol=irow; icol < this->get_nrows(); ++icol ) {
+                //std::cout << (*this)[ik](irow, icol) << "    " << (*this)[ik](icol, irow) << "  " ;
+                //std::cout << std::abs( (*this)[ik](irow, icol) - std::conj((*this)[ik](icol, irow)) ) << std::endl;
+                auto term = ((*this)(ik,irow,icol) + std::conj((*this)(ik,icol,irow)))/2.;
+                (*this)(ik,irow,icol) = term;
+                (*this)(ik,icol,irow) = std::conj(term);
+            }
+        }
+    }
+
+}
+
+
+template<typename T>
+void BlockMatrix<T>::make_antihermitian()
+{
+    #pragma omp parallel for
+    for(int ik=0; ik<this->get_nblocks(); ++ik) {
+        for( int irow=0; irow<this->get_nrows(); irow++ ) {
+            for(int icol=irow; icol < this->get_nrows(); ++icol ) {
+                //std::cout << (*this)[ik](irow, icol) << "    " << (*this)[ik](icol, irow) << "  " ;
+                //std::cout << std::abs( (*this)[ik](irow, icol) - std::conj((*this)[ik](icol, irow)) ) << std::endl;
+                auto term = ((*this)(ik,irow,icol) - std::conj((*this)(ik,icol,irow)))/2.;
+                (*this)(ik,irow,icol) = term;
+                (*this)(ik,icol,irow) = -std::conj(term);
+            }
+        }
+    }
+
 }
 
 template<typename T>
@@ -263,8 +300,9 @@ auto max(const BlockMatrix<T>& m)
 template<class T>
 std::ostream& operator<<(std::ostream& os, const BlockMatrix<T>& m)
 {
+    std::cout << m.get_nblocks();
     for(int i=0; i<m.get_nblocks(); i++){
-        os << (*((const_cast<BlockMatrix<T>&>(m)).get_MeshGrid()))[i].get(LatticeVectors(m.get_space())) << m[i] << std::endl;
+        os << i << " " << (*((const_cast<BlockMatrix<T>&>(m)).get_MeshGrid()))[i].get(LatticeVectors(m.get_space())) << m[i] << std::endl;
     }
     return os;
 }
