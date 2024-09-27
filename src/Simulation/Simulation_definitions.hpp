@@ -86,10 +86,11 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
     std::ofstream os;
     os.open(rank.str());
     auto Rgamma_centered = get_GammaCentered_grid(*DensityMatrix.get_Operator_R().get_MeshGrid());
-    for(int i=0; i< DensityMatrix.get_Operator_R().get_nblocks(); ++i){
+    for(int iR_loc=0; iR_loc< DensityMatrix.get_Operator_R().get_nblocks(); ++iR_loc){
         //os << DensityMatrix.get_Operator_R()[i] << std::endl;
-        os << Rgamma_centered[i].norm();
-        os << " " << std::abs(max(DensityMatrix.get_Operator_R()[i])) << std::endl;
+        auto iR_glob = DensityMatrix.mpindex.loc1D_to_glob1D(iR_loc);
+        os << Rgamma_centered[iR_glob].norm();
+        os << " " << std::abs(max(DensityMatrix.get_Operator_R()[iR_loc])) << std::endl;
     }
     os.close();
 
