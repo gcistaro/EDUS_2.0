@@ -13,25 +13,12 @@ void Simulation::SettingUp_EigenSystem()
     auto& MasterkGrid = DensityMatrix.get_Operator_k().get_MeshGrid()->get_mesh();
     material.H.dft(MasterkGrid, +1);
     //------------------------------------------------------------------------------
-    std::stringstream ss;
-    ss << "rank_"<< mpi::Communicator::world().rank();
-    std::ofstream processor_H(ss.str());
-    for(int ik_loc=0; ik_loc< material.H.get_Operator_k().get_nblocks(); ++ik_loc) {
-        processor_H << material.H.get_Operator_k()[ik_loc] << std::endl;
-    }
+
     //--------------------solve eigen problem---------------------------------------
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
     auto& UkDagger = Operator<std::complex<double>>::EigenVectors_dagger;
 
     material.H.get_Operator_k().diagonalize(Band_energies, Uk);
-
-    std::stringstream rank;
-    rank << "bands" << mpi::Communicator::world().rank() << ".txt";
-    std::ofstream os_band(rank.str());
-    for(int ik=0; ik<int(Band_energies.size()); ++ik) {
-        os_band << Band_energies[ik](0) << " " << Band_energies[ik](1) << std::endl;
-    }
-    os_band.close();
     //------------------------------------------------------------------------------
 
     //-------------------get U dagger-----------------------------------------------
@@ -98,43 +85,38 @@ void Simulation::Propagate()
     PROFILE("Simulation::Propagate");
     auto CurrentTime = RK_object.get_CurrentTime();
     //------------------------Print population-------------------------------------
-    //DensityMatrix.go_to_bloch();
+    
     if( PrintObservables( CurrentTime) ){
         //print time 
         os_Time << CurrentTime << std::endl;
         //print laser
         os_Laser << laser(RK_object.get_CurrentTime()).get("Cartesian");
+        os_VectorPot << laser.VectorPotential(RK_object.get_CurrentTime()).get("Cartesian");
 
         Print_Population();
         Print_Velocity();
     }
-
     //------------------------------------------------------------------------------
-
-
-
     RK_object.Propagate();
 }
 
 
 void Simulation::Print_Population()
 {
-    DensityMatrix.go_to_bloch();
-    std::vector<std::complex<double>> Population(DensityMatrix.get_Operator_k().get_nrows(), 0.);
-    for(int ik=0; ik<DensityMatrix.get_Operator_k().get_nblocks(); ik++) {
-        for(int ibnd=0; ibnd < int( Population.size() ); ibnd++) {
-            Population[ibnd] += DensityMatrix.get_Operator_k()[ik](ibnd,ibnd);
-        }
-    }
+    static Operator<std::complex<double>> aux_DM;
+    aux_DM = DensityMatrix;
+    aux_DM.go_to_bloch();
+
+    auto Population = TraceK(aux_DM.get_Operator(Space::k));
     for(int ibnd=0; ibnd < int( Population.size() ); ibnd++) {
-        Population[ ibnd ] /= double(DensityMatrix.get_Operator_k().get_MeshGrid()->get_TotalSize());        
+        Population[ ibnd ] /= double(aux_DM.get_Operator_k().get_MeshGrid()->get_TotalSize());        
     }
     for(int ibnd = 0; ibnd < int( Population.size() ); ibnd++){
+        if( ibnd < 1 ) Population[ibnd] = 1.-Population[ibnd];
         os_Pop << std::setw(20) << std::setprecision(10) << Population[ibnd].real();
         os_Pop << ' ';
     }
     os_Pop << std::endl;
-    DensityMatrix.go_to_wannier();
 }
 
 
@@ -142,8 +124,9 @@ void Simulation::Calculate_Velocity()
 {
     for(int ix : {0, 1, 2}){
         Velocity[ix].initialize_fft(*DensityMatrix.get_Operator_R().get_MeshGrid(), DensityMatrix.get_Operator_R().get_nrows());
-        Velocity[ix].get_Operator_R().fill(0.);
-        commutator(Velocity[ix].get_Operator_R(), -im, material.r[ix].get_Operator_R(), material.H.get_Operator_R());
+        Velocity[ix].get_Operator_k().fill(0.);
+        commutator(Velocity[ix].get_Operator_k(), -im, material.r[ix].get_Operator_k(), material.H.get_Operator_k());
+        Velocity[ix].go_to_R();
         //part with R
         auto& ci = MeshGrid::ConvolutionIndex[{Velocity[ix].get_Operator_R().get_MeshGrid()->get_id(), 
                                               material.H.get_Operator_R().get_MeshGrid()->get_id(), 
@@ -165,13 +148,13 @@ void Simulation::Calculate_Velocity()
             }
         }
     }
-    DensityMatrix.go_to_k(false);
 }
 
 
 void Simulation::Print_Velocity()
 {
-    std::array<std::complex<double>, 3> v;
+    DensityMatrix.go_to_R();
+    std::array<std::complex<double>, 3> v = {0., 0., 0.};
     for(auto ix : {0, 1, 2}){
         v[ix] = Trace(Velocity[ix].get_Operator_R(), DensityMatrix.get_Operator_R());
     }
@@ -200,6 +183,8 @@ void Simulation::print_recap()
     std::cout << "DM grid (k)   ";
     std::cout << "|" << std::setw(4) << DensityMatrix.get_Operator_k().get_MeshGrid()->get_id() << "|";
     std::cout <<  std::setw(7) << DensityMatrix.get_Operator_k().get_MeshGrid()->get_mesh().size() << "|"<< std::endl;
+    std::cout << "*************    RK:   *************\n";
+    std::cout << "Resolution time: " << RK_object.get_ResolutionTime() << std::endl;
     laser.print_info();
 }
 
