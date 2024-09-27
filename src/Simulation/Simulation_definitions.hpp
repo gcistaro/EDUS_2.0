@@ -82,6 +82,7 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
 #else
     rank << "DM.txt";
 #endif
+    DensityMatrix.go_to_R();
     std::ofstream os;
     os.open(rank.str());
     auto Rgamma_centered = get_GammaCentered_grid(*DensityMatrix.get_Operator_R().get_MeshGrid());

@@ -34,7 +34,7 @@ void kGradient::Calculate(T& DerivativeFunction, const T& Function,
     else if ( Rmesh && !kmesh ) {
         #pragma omp parallel for schedule(static)
         for( int iR_loc = 0; iR_loc < mpindex.nlocal; ++iR_loc ) {
-            auto iR_global = (static_cast<MPIindex<3>>(mpindex)).loc1D_to_glob1D(iR_loc);
+            auto iR_global = (const_cast<MPIindex<3>&>(mpindex)).loc1D_to_glob1D(iR_loc);
             DerivativeFunction[iR_loc] += im*(*Rmesh)[iR_global].dot(direction)*Function[iR_loc];
         }
     }
