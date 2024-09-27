@@ -257,17 +257,30 @@ bool BlockMatrix<T>::is_hermitian()
 template<typename T>
 void BlockMatrix<T>::make_hermitian()
 {
-    #pragma omp parallel for
-    for(int ik=0; ik<this->get_nblocks(); ++ik) {
-        for( int irow=0; irow<this->get_nrows(); irow++ ) {
-            for(int icol=irow; icol < this->get_nrows(); ++icol ) {
-                //std::cout << (*this)[ik](irow, icol) << "    " << (*this)[ik](icol, irow) << "  " ;
-                //std::cout << std::abs( (*this)[ik](irow, icol) - std::conj((*this)[ik](icol, irow)) ) << std::endl;
-                auto term = ((*this)(ik,irow,icol) + std::conj((*this)(ik,icol,irow)))/2.;
-                (*this)(ik,irow,icol) = term;
-                (*this)(ik,icol,irow) = std::conj(term);
+    switch(space) 
+    {
+        case(Space::k) :
+        {
+            #pragma omp parallel for
+            for(int ik=0; ik<this->get_nblocks(); ++ik) {
+                for( int irow=0; irow<this->get_nrows(); irow++ ) {
+                    for(int icol=irow; icol < this->get_nrows(); ++icol ) {
+                        //std::cout << (*this)[ik](irow, icol) << "    " << (*this)[ik](icol, irow) << "  " ;
+                        //std::cout << std::abs( (*this)[ik](irow, icol) - std::conj((*this)[ik](icol, irow)) ) << std::endl;
+                        auto term = ((*this)(ik,irow,icol) + std::conj((*this)(ik,icol,irow)))/2.;
+                        (*this)(ik,irow,icol) = term;
+                        (*this)(ik,icol,irow) = std::conj(term);
+                    }
+                }
             }
+            break;
         }
+        case(Space::R) :
+        {
+            std::cout << "Implement me\n";
+            exit(1);
+        }
+        
     }
 
 }
@@ -289,6 +302,20 @@ void BlockMatrix<T>::make_antihermitian()
         }
     }
 
+}
+
+
+template<typename T>
+void BlockMatrix<T>::cut(const double& threshold__)
+{
+    #pragma omp parallel for
+    for(int ik=0; ik<this->get_nblocks(); ++ik) {
+        for( int irow=0; irow<this->get_nrows(); irow++ ) {
+            for(int icol=irow; icol < this->get_nrows(); ++icol ) {
+                (*this)(ik,irow,icol) = ( std::abs( (*this)(ik,irow,icol) ) > threshold ? (*this)(ik,irow,icol) : 0.);
+            }
+        }
+    }
 }
 
 template<typename T>

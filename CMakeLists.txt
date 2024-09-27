@@ -195,9 +195,9 @@ add_executable(fft_mpi_test ci-test/test_fft_mpi.cpp)
 add_executable(Gradient_test ci-test/test_Gradient.cpp)
 #target_precompile_headers(Gradient_test REUSE_FROM NEGF)
 
-#fft+gradient
-add_executable(fft_Gradient_test ci-test/test_fft+gradient.cpp)
-#target_precompile_headers(fft_Gradient_test REUSE_FROM NEGF)
+#Gradient
+add_executable(Gradient_R_test ci-test/test_Gradient_R.cpp)
+#target_precompile_headers(Gradient_test REUSE_FROM NEGF)
 
 #TrivialBands 
 #add_executable(TrivialH_test ci-test/test_TrivialHamiltonian.cpp)
@@ -236,7 +236,7 @@ add_test(NAME RK_test COMMAND RK_test)
 add_test(NAME RK2_test COMMAND RK2_test)
 #add_test(NAME fft_test COMMAND fft_test)
 #add_test(NAME fft-many_test COMMAND fft-many_test)
-#add_test(NAME fft_Gradient_test COMMAND fft_Gradient_test)
+add_test(NAME Gradient_R_test COMMAND Gradient_R_test)
 #add_test(NAME TrivialH_test COMMAND TrivialH_test)
 add_test(NAME Bandstructure_test COMMAND 
 					bash -c "${CMAKE_CURRENT_BINARY_DIR}/Bandstructure_test ; \

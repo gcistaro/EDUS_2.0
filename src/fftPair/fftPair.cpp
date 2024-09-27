@@ -18,7 +18,11 @@ FourierTransform::initialize
     IsFFT = true;
     Array_x = &Array_x__;
     Array_k = &Array_k__;
+#ifdef NEGF_MPI
+    howmany = Array_x->get_Size(1);
+#else
     howmany = Array_x->get_Size(0);
+#endif
     TotalSize = 1;
     for(auto& dim__ : Dimensions__) {
         TotalSize *= dim__;  //to be valid also with mpi you can't use Array_x->get_Size(1)!
@@ -49,6 +53,9 @@ FourierTransform::initialize
                                  reinterpret_cast<fftw_complex*>(&(*Array_k)[0]),
                                  reinterpret_cast<fftw_complex*>(&(*Array_x)[0]), 
                                  MPI_COMM_WORLD, +1, FFTW_ESTIMATE);
+    //as per user guide: this corresponds to the same parameter in the serial advanced interface 
+    //(see Advanced Complex DFTs) with stride = howmany and dist = 1. Meaning that data are contiguous 
+    //in the dimension of the bands (no transpose needed!)
     delete[] Dimensions_ptr;
 #else
     //from x to k (fft to Fourier space)

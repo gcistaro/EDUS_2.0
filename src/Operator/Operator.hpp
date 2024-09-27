@@ -245,33 +245,26 @@ class Operator
             MG2.close();
             //endofproof
             */
-#ifdef NEGF_MPI
             Operator_k = BlockMatrix<std::complex<double>>(k, mpindex.get_RecommendedAllocate_fftw(), nbnd, nbnd);
-#else
-            Operator_k = BlockMatrix<std::complex<double>>(k, nk, nbnd, nbnd);
-#endif
             auto& kgrid = Operator_k.get_MeshGrid();
             kgrid = FT_meshgrid_k;
             //bandindex.initialize(nbnd);
             bandindex.initialize({nbnd, nbnd});
 
-#ifdef NEGF_MPI
             //bandindex FTfriendly_Operator_k = mdarray<std::complex<double>, 2>({nbnd*(nbnd+1)/2, mpindex.get_RecommendedAllocate_fftw()});
             //bandindex FTfriendly_Operator_R = mdarray<std::complex<double>, 2>({nbnd*(nbnd+1)/2, mpindex.get_RecommendedAllocate_fftw()});
+#ifdef NEGF_MPI
+            FTfriendly_Operator_k = mdarray<std::complex<double>, 2>( Operator_k.data(), {mpindex.get_RecommendedAllocate_fftw(),nbnd*nbnd} );
+            FTfriendly_Operator_R = mdarray<std::complex<double>, 2>( Operator_R.data(), {mpindex.get_RecommendedAllocate_fftw(),nbnd*nbnd} );
+#else
             FTfriendly_Operator_k = mdarray<std::complex<double>, 2>({nbnd*nbnd, mpindex.get_RecommendedAllocate_fftw()});
             FTfriendly_Operator_R = mdarray<std::complex<double>, 2>({nbnd*nbnd, mpindex.get_RecommendedAllocate_fftw()});
-#else     
-            //bandindex FTfriendly_Operator_k = mdarray<std::complex<double>, 2>({nbnd*(nbnd+1)/2, nk});
-            //bandindex FTfriendly_Operator_k = mdarray<std::complex<double>, 2>({nbnd*(nbnd+1)/2, nk});
-            FTfriendly_Operator_k = mdarray<std::complex<double>, 2>({nbnd*nbnd, nk});
-            FTfriendly_Operator_R = mdarray<std::complex<double>, 2>({nbnd*nbnd, nk});
 #endif
             //use convolution index for shuffle index.
             std::vector<int> Dimensions(3);
             for(int ix=0; ix<3; ix++){
                 Dimensions[ix] = FT_meshgrid_k->get_Size()[ix];
             }
-
             ft_.initialize(FTfriendly_Operator_k, FTfriendly_Operator_R, Dimensions, tagname);
             //shuffle_to_fft();
             this->space = R;
@@ -296,7 +289,7 @@ class Operator
             execute_dft(path_local, sign);
             Operator_k.initialize(k, path_local.size(), Operator_R.get_nrows(), Operator_R.get_ncols());
             Operator_k.set_MeshGrid(MeshGrid(k, path));
-            shuffle_to_RK();
+            shuffle_to_RK_dft();
 #else                        
             execute_dft(path, sign);
             Operator_k.initialize(k, FTfriendly_Operator_k.get_Size(1), Operator_R.get_nrows(), Operator_R.get_ncols());
@@ -375,7 +368,7 @@ class Operator
         }
 
 
-        void shuffle_to_RK()
+        void shuffle_to_RK_dft()
         {
             for(int ik=0; ik<Operator_k.get_nblocks(); ++ik){
                 for(int ibnd1=0; ibnd1<Operator_k.get_nrows(); ++ibnd1){
@@ -388,8 +381,17 @@ class Operator
             }
         }
 
+        
+        void shuffle_to_RK()
+        {
+#ifndef NEGF_MPI
+            shuffle_to_RK_dft();
+#endif
+        }
+
         void shuffle_to_fft_R()
         {
+#ifndef NEGF_MPI
             PROFILE("Operator::shuffle_to_fft_R");
             auto ci = MeshGrid::get_ConvolutionIndex(*Operator_R.get_MeshGrid() , *FT_meshgrid_R, *MeshGrid_Null);
 
@@ -403,10 +405,12 @@ class Operator
                     }
                 }
             }
+#endif
         }
 
         void shuffle_to_fft_k()
         {
+#ifndef NEGF_MPI
             PROFILE("Operator::shuffle_to_fft_k");
 
             #pragma omp parallel for
@@ -418,10 +422,12 @@ class Operator
                     }
                 }
             }
+#endif
         }
 
         void shuffle_from_fft_R()
         {
+#ifndef NEGF_MPI
             PROFILE("Operator::shuffle_from_fft_R");
             auto ci = MeshGrid::get_ConvolutionIndex(*Operator_R.get_MeshGrid(), *FT_meshgrid_R, *MeshGrid_Null);
             // bandindex auto ciminus = MeshGrid::get_ConvolutionIndex(*MeshGrid_Null, *Operator_R.get_MeshGrid(), *Operator_R.get_MeshGrid());
@@ -446,10 +452,12 @@ class Operator
             // bandindex         }
             // bandindex     }
             // bandindex }
+#endif
         }
 
         void shuffle_from_fft_k()
         {
+#ifndef NEGF_MPI
             PROFILE("Operator::shuffle_from_fft_k");
 
             #pragma omp parallel for 
@@ -463,6 +471,7 @@ class Operator
                     }
                 }
             }
+#endif            
         }
 
 

@@ -184,17 +184,19 @@ Matrix<double> GradientMatrix(const size_t& nshells, const MeshGrid& kmesh, cons
 std::vector<std::vector<std::vector<int>>> kGradient::Find_kpb(const MeshGrid& kmesh, const std::vector<std::vector<int>>& ikshell)
 {
 #ifdef NEGF_MPI
-    std::cout << "find_kpb still not implemented in MPI. SUGGESTION: Propagate gradient in R!\n";
-    exit(1);
+    if( mpi::Communicator::world().size() > 1 ) {
+        std::cout << "find_kpb still not implemented in MPI. SUGGESTION: Propagate gradient in R!\n";
+        exit(1);
+    }
 #endif
     PROFILE("kgradient::Find_kpb");
     std::vector<std::vector<std::vector<int>>> ikpb_local(mpindex.nlocal);
 
     #pragma omp parallel for schedule(static)
     for( int ik = 0; ik < mpindex.nlocal; ++ik) {
-        ikpb[ik].resize(nshells);
+        ikpb_local[ik].resize(nshells);
         for( int ishell = 0; ishell < nshells; ++ishell ) {
-            ikpb[ik][ishell].resize( ikshell[ishell].size() );
+            ikpb_local[ik][ishell].resize( ikshell[ishell].size() );
         }
     }
     std::cout << "Calculating map ik, ib ---> ikpb...\n";
@@ -203,14 +205,13 @@ std::vector<std::vector<std::vector<int>>> kGradient::Find_kpb(const MeshGrid& k
     #pragma omp parallel for schedule(static)
     for( int ik_loc = 0; ik_loc < mpindex.nlocal; ++ik_loc) {
         auto ik_global = ik_loc;//mpindex.loc1D_to_glob1D(ik_loc);
-        //std::cout << "ik: " << ik << "/" << kmesh.get_TotalSize() << " in thread " << omp_get_thread_num() << "/" << omp_get_num_threads() << std::endl;
-        for( int ishell = 0; ishell < int( ikpb[ik_loc].size() ); ++ishell ) {
-            for( int ib = 0; ib < int( ikpb[ik_loc][ishell].size() ); ++ib ) {
-                ikpb[ik_loc][ishell][ib] = kmesh.find(kmesh[ik_global] + kmesh[ikshell[ishell][ib]]);
+        for( int ishell = 0; ishell < int( ikpb_local[ik_loc].size() ); ++ishell ) {
+            for( int ib = 0; ib < int( ikpb_local[ik_loc][ishell].size() ); ++ib ) {
+                ikpb_local[ik_loc][ishell][ib] = kmesh.find(kmesh[ik_global] + kmesh[ikshell[ishell][ib]]);
             }
         }
     }
-    std::cout << "DONE!";
+    std::cout << "DONE!\n";
     return ikpb_local;
 }
 
