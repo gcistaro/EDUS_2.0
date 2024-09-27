@@ -52,7 +52,9 @@ configure_file("${PROJECT_SOURCE_DIR}/src/core/githash.h.in" "${PROJECT_SOURCE_D
 #compile sources as library INTERFACE (not a real library, just objects to be reused)
 include_directories("${PROJECT_SOURCE_DIR}/src/")
 
-set(_SOURCES src/GlobalFunctions.cpp
+set(_SOURCES src/initialize.cpp
+             src/GlobalFunctions.cpp
+             src/core/print_header.cpp
              src/ConvertUnits.cpp
              src/ostream.cpp
              src/StreamFile.cpp
