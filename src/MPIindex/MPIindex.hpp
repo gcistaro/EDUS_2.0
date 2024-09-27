@@ -19,8 +19,9 @@ class MPIindex
         std::array<int, dim> ValuesToSplit;
         std::array<int, dim> Offset;
         MultiIndex<dim> multindex;
+#ifdef NEGF_MPI
         std::shared_ptr<mpi::Communicator> mpi_comm_;
-
+#endif
     public:
         int nlocal = 0; //number of local points
 

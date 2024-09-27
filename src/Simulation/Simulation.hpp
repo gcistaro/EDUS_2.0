@@ -27,6 +27,7 @@ class Simulation
         Space SpaceOfPropagation = k;
 
         std::ofstream os_Laser;
+        std::ofstream os_VectorPot;
         std::ofstream os_Pop;
         std::ofstream os_Time;
         std::ofstream os_Velocity;

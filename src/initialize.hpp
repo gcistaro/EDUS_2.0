@@ -10,11 +10,11 @@
 #include "core/mpi/Communicator.hpp"
 #include "fftw3-mpi.h"
 
-
+#ifdef NEGF_MPI
 mpi::Communicator kpool_comm;
 mpi::Communicator band_comm;
 int NumberKpools;
-
+#endif
 
 
 /*

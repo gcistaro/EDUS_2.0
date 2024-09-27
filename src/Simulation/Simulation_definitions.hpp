@@ -7,11 +7,12 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
     //---------------------------------------------------------------------------------------
     
     //------------------------------initializing laser---------------------------------------
-    laser.set_Intensity(1.e+11, Wcm2);//1.e+16, Wcm2);
+    laser.set_Intensity(1.e+05, Wcm2);//1.e+16, Wcm2);
     laser.set_InitialTime(0., FemtoSeconds);
     laser.set_Intensity(1.e+05, Wcm2);
-    laser.set_Lambda(800, NanoMeters);
-    laser.set_NumberOfCycles(10);    
+    laser.set_Lambda(3000, NanoMeters);
+    //laser.set_Omega(7.25, ElectronVolt);
+    laser.set_NumberOfCycles(2);    
     laser.set_Polarization(Coordinate(1,0,0));
     //---------------------------------------------------------------------------------------
 
@@ -26,7 +27,7 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
     material.r[0].dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
     material.r[1].dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
     material.r[2].dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
-
+/*
     std::stringstream rank_H;
     rank_H << "H" << mpi::Communicator::world().rank() << ".txt";
     std::ofstream os_H;
@@ -48,7 +49,7 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
     for(int i=0; i< material.r[1].get_Operator_k().get_nblocks(); ++i){
         os_H << material.r[1].get_Operator_k()[i] << std::endl;
     }
-
+*/
 
     H.initialize_fft(*MasterRgrid, material.H.get_Operator_R().get_nrows());
     SettingUp_EigenSystem();
@@ -63,7 +64,7 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
     RK_object.initialize(DensityMatrix, 
                         InitialCondition, SourceTerm);
     RK_object.set_InitialTime(0.);
-    RK_object.set_ResolutionTime(0.01);
+    RK_object.set_ResolutionTime( ( laser.get_Duration()/laser.get_NumberOfCycles() )/ 1000. );
     PrintResolution = 1;
     kgradient.initialize(*(DensityMatrix.get_Operator(R).get_MeshGrid()));
 
@@ -76,20 +77,29 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
 
     //print DM in R to prove it decays and is zero for large R
     std::stringstream rank;
+#ifdef NEGF_MPI
     rank << "DM" << mpi::Communicator::world().rank() << ".txt";
+#else
+    rank << "DM.txt";
+#endif
     std::ofstream os;
     os.open(rank.str());
-    for(int i=0; i< DensityMatrix.get_Operator_k().get_nblocks(); ++i){
-        os << DensityMatrix.get_Operator_k()[i] << std::endl;
-        //os << DensityMatrix.get_Operator_R().get_MeshGrid()->get_mesh()[i].norm();
-        //os << " " << std::abs(max(DensityMatrix.get_Operator_R()[i])) << std::endl;
+    auto Rgamma_centered = get_GammaCentered_grid(*DensityMatrix.get_Operator_R().get_MeshGrid());
+    for(int i=0; i< DensityMatrix.get_Operator_R().get_nblocks(); ++i){
+        //os << DensityMatrix.get_Operator_R()[i] << std::endl;
+        os << Rgamma_centered[i].norm();
+        os << " " << std::abs(max(DensityMatrix.get_Operator_R()[i])) << std::endl;
     }
     os.close();
+
+    DensityMatrix.go_to_k();
+    assert(DensityMatrix.get_Operator_k().is_hermitian());
     //---------------------------------------------------------------------------------------
 
     //---------------------open files---------------------------------------------------------
     os_Pop.open("Population.txt");
     os_Laser.open("Laser.txt");
+    os_VectorPot.open("Laser_A.txt");
     os_Time.open("Time.txt");
     os_Velocity.open("Velocity.txt");
     //---------------------------------------------------------------------------------------
