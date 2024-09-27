@@ -111,7 +111,7 @@ int main()
     //}
 
 
-    for(int it=0; it <= 10; ++it){
+    for(int it=0; it <= 1000; ++it){
         simulation.DensityMatrix.go_to_k();
         auto DMk = simulation.DensityMatrix.get_Operator_k();
         for(int ik=0; ik < DMk.get_nblocks(); ik++){
