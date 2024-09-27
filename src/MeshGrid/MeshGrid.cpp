@@ -472,8 +472,5 @@ MeshGrid get_GammaCentered_grid(const MeshGrid& mesh__)
     mg.initialize( mesh__.get_space(), bare_mg, LatticeVectors(space) );
     mg.type = mesh__.type;
     mg.Size = mesh__.Size;
-
-    std::cout << "Gamma centered grid:\n";
-    std::cout << mg << std::endl;
     return mg;
 }
