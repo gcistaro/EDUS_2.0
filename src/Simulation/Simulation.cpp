@@ -69,7 +69,7 @@ void Simulation::Calculate_TDHamiltonian(const double& time, const bool& erase_H
             for(int icol=0; icol<H0_.get_ncols(); ++icol){
                 //auto Hblock = ( SpaceOfPropagation == k ? iblock : ci(iblock, 0) );
                 //H_(Hblock, irow, icol) = H0_(iblock, irow, icol)
-                H_(iblock, irow, icol) = H0_(iblock, irow, icol)
+                H_(iblock, irow, icol) += H0_(iblock, irow, icol)
                                        + las[0]*x_(iblock, irow, icol)
                                        + las[1]*y_(iblock, irow, icol)
                                        + las[2]*z_(iblock, irow, icol);
@@ -114,7 +114,7 @@ void Simulation::Print_Population()
     for(int ibnd = 0; ibnd < int( Population.size() ); ibnd++){
         if( ibnd < 1 ) Population[ibnd] = 1.-Population[ibnd];
         os_Pop << std::setw(20) << std::setprecision(10) << Population[ibnd].real();
-        os_Pop << ' ';
+        os_Pop << " ";
     }
     os_Pop << std::endl;
 }
