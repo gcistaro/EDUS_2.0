@@ -94,7 +94,7 @@ void Simulation::Propagate()
         os_VectorPot << laser.VectorPotential(RK_object.get_CurrentTime()).get("Cartesian");
 
         Print_Population();
-        Print_Velocity();
+        //Print_Velocity();
     }
     //------------------------------------------------------------------------------
     RK_object.Propagate();
