@@ -7,7 +7,6 @@ SourceTerm =
     auto& Input_ = Input.get_Operator(Space::k);
     auto& H_ = H.get_Operator(Space::k);
     
-    //Output_.fill(0.*im);
     commutator(Output_, -im, H_, Input_, true);
 
     Output.go_to_R();
