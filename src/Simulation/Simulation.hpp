@@ -7,7 +7,7 @@
 #include "ostream.hpp"
 #include "kGradient/kGradient.hpp"
 #include "Coulomb/Coulomb.hpp"
-
+#include "initialize.hpp"
 class Simulation
 {
     private:
@@ -89,8 +89,16 @@ std::vector<std::complex<double>> TraceK(BlockMatrix<T>& O__)
             TraceK_[ibnd] += O__[iblock](ibnd, ibnd);
         }
     }
+#ifdef NEGF_MPI
+    std::vector<std::complex<double>> TraceK_reduced(O__.get_nrows(), 0.);
+    kpool_comm.reduce(&TraceK_[0], &TraceK_reduced[0], TraceK_.size(), MPI_SUM, 0);
+    return TraceK_reduced;
+#else
     return TraceK_;
+#endif
 }
+
+
 
 
 #include "Simulation_definitions.hpp"
