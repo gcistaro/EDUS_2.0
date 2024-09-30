@@ -28,8 +28,8 @@ class kGradient {
         void initialize(const MeshGrid& kmesh__);
         void initialize();
 
-        template<typename T, typename U>
-        void Calculate(T& DerivativeFunction, const T& Function, 
+        template<typename T, typename U, typename S>
+        void Calculate(const S& scalar, T& DerivativeFunction, const T& Function, 
                           const U& direction, const bool& EraseOutput) const;
 };
 
