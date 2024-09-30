@@ -4,8 +4,8 @@
    in k space, we use the formula from Mostofi2008; in R space, we calculate it as:
    Derivative(R) = i*R*Function(R)
 */
-template<typename T, typename U>
-void kGradient::Calculate(T& DerivativeFunction, const T& Function, 
+template<typename T, typename U, typename S>
+void kGradient::Calculate(const S& scalar, T& DerivativeFunction, const T& Function, 
                           const U& direction, const bool& EraseOutput) const
 {
     PROFILE("kGradient::Calculate");
@@ -23,7 +23,7 @@ void kGradient::Calculate(T& DerivativeFunction, const T& Function,
                     auto& Bvector = (*kmesh)[ikshell[ishell][ib]];
                     auto bdotu = Bvector.dot(direction);
                     auto& ikpb_ = ikpb[ik][ishell][ib];
-                    DerivativeFunction[ik] += Weight(ishell)*bdotu*Function[ikpb_];  
+                    DerivativeFunction[ik] += scalar*Weight(ishell)*bdotu*Function[ikpb_];  
                 }
             }
         }
@@ -35,7 +35,7 @@ void kGradient::Calculate(T& DerivativeFunction, const T& Function,
         #pragma omp parallel for schedule(static)
         for( int iR_loc = 0; iR_loc < mpindex.nlocal; ++iR_loc ) {
             auto iR_global = (const_cast<MPIindex<3>&>(mpindex)).loc1D_to_glob1D(iR_loc);
-            DerivativeFunction[iR_loc] += im*(*Rmesh)[iR_global].dot(direction)*Function[iR_loc];
+            DerivativeFunction[iR_loc] += scalar*im*(*Rmesh)[iR_global].dot(direction)*Function[iR_loc];
         }
     }
 }
