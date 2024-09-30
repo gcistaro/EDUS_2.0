@@ -9,9 +9,8 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
     //------------------------------initializing laser---------------------------------------
     laser.set_Intensity(1.e+05, Wcm2);//1.e+16, Wcm2);
     laser.set_InitialTime(0., FemtoSeconds);
-    laser.set_Intensity(1.e+05, Wcm2);
-    laser.set_Lambda(3000, NanoMeters);
-    //laser.set_Omega(7.25, ElectronVolt);
+    //laser.set_Lambda(3000, NanoMeters);
+    laser.set_Omega(7.25, ElectronVolt);
     laser.set_NumberOfCycles(2);    
     laser.set_Polarization(Coordinate(1,0,0));
     //---------------------------------------------------------------------------------------
@@ -53,7 +52,6 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
 
     H.initialize_fft(*MasterRgrid, material.H.get_Operator_R().get_nrows());
     SettingUp_EigenSystem();
-    Calculate_Velocity();
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
 
     //---------------------------------------------------------------------------------------
@@ -94,6 +92,7 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
     }
     os.close();
 
+    Calculate_Velocity();
     DensityMatrix.go_to_k();
     assert(DensityMatrix.get_Operator_k().is_hermitian());
     //---------------------------------------------------------------------------------------
