@@ -130,13 +130,15 @@ void Envelope::set_InitialTime(const double& InitialTime_)
 
 Coordinate Laser::operator()(const double& Time)
 {
-    //return Coordinate<k>(10.,10.,10.);//(Amplitude*envelope(Time)*PlaneWave(Time))*Polarization;
     return (Amplitude*envelope(Time)*PlaneWave(Time))*Polarization;
 }
 
 Coordinate Laser::VectorPotential(const double& Time)
 {
     //integral of the electric field with a - sign 
+    if(Time < get_InitialTime() || Time > get_Duration()) {
+        return Coordinate(0,0,0);
+    }
     auto a = pi/envelope.Duration;
     auto b = PlaneWave.Omega;
     auto one_ = 2.*a-b;
