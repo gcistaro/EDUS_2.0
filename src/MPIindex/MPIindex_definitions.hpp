@@ -14,10 +14,12 @@ template<size_t dim>
 void MPIindex<dim>::initialize( const std::array<int, 3>& ValuesToSplit__)
 {
     //Global arrays are in range [0,values)
+#ifdef NEGF_MPI    
     assert(ValuesToSplit__[0] > 1);//we dont want MPI to work without splitting anything, and fftw splits over this index.
     assert(ValuesToSplit__[1] > 1 || ValuesToSplit__[2] > 1 ); //because we know this fftw routines break for 1D FFT
                                                            //we can avoid this by making a choice on the fftw_mpi_local
                                                            //function to pick up
+#endif
     ValuesToSplit[0] = ValuesToSplit__[0];
     ValuesToSplit[1] = ValuesToSplit__[1];
     ValuesToSplit[2] = ValuesToSplit__[2];
