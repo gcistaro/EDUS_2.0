@@ -5,6 +5,7 @@
 
 #ifdef NEGF_MPI
 
+#include <complex>
 #include "mpi.h"
 #include <cassert>
 #include <iostream>
@@ -95,6 +96,12 @@ class Communicator {
         {
             MPI_Request request;
             MPI_Irecv( &message, 1, MPI_INT, sender, mpi::tag(sender, rank()), communicator_, &request);
+        }
+
+        //gather
+        void reduce( std::complex<double>* to_send, std::complex<double>* to_recv, int count, const MPI_Op& mpi_op, int root)
+        {
+            MPI_Reduce( to_send, to_recv, count, MPI_C_DOUBLE_COMPLEX, mpi_op, root, communicator_);
         }
 
         /// MPI global initialization.
