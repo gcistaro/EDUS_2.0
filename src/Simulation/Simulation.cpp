@@ -37,6 +37,7 @@ void Simulation::SettingUp_EigenSystem()
 void Simulation::Calculate_TDHamiltonian(const double& time, const bool& erase_H)
 {
     PROFILE("SourceTerm::Calculate_TDHamiltonian");
+    H.go_to_k();
     //--------------------get aliases for nested variables--------------------------------
     auto& H_ = H.get_Operator(SpaceOfPropagation);
     auto& H0_ = material.H.get_Operator(SpaceOfPropagation);
@@ -70,10 +71,9 @@ void Simulation::Calculate_TDHamiltonian(const double& time, const bool& erase_H
                 //auto Hblock = ( SpaceOfPropagation == k ? iblock : ci(iblock, 0) );
                 //H_(Hblock, irow, icol) = H0_(iblock, irow, icol)
                 H_(iblock, irow, icol) += H0_(iblock, irow, icol)
-                                       + las[0]*x_(iblock, irow, icol)
-                                       + las[1]*y_(iblock, irow, icol)
-                                       + las[2]*z_(iblock, irow, icol);
-                //std::cout << iblock << " " << irow << " " << icol << " " << H_(Hblock, irow, icol)-H0_(iblock, irow, icol) << std::endl;
+                                        + las[0]*x_(iblock, irow, icol)
+                                        + las[1]*y_(iblock, irow, icol)
+                                        + las[2]*z_(iblock, irow, icol);
             }
         }
     }
@@ -94,7 +94,7 @@ void Simulation::Propagate()
         os_VectorPot << laser.VectorPotential(RK_object.get_CurrentTime()).get("Cartesian");
 
         Print_Population();
-        //Print_Velocity();
+        Print_Velocity();
     }
     //------------------------------------------------------------------------------
     RK_object.Propagate();
@@ -108,55 +108,60 @@ void Simulation::Print_Population()
     aux_DM.go_to_bloch();
 
     auto Population = TraceK(aux_DM.get_Operator(Space::k));
-    for(int ibnd=0; ibnd < int( Population.size() ); ibnd++) {
-        Population[ ibnd ] /= double(aux_DM.get_Operator_k().get_MeshGrid()->get_TotalSize());        
+#ifdef NEGF_MPI
+    if( kpool_comm.rank() == 0 )
+#endif
+    {
+        for(int ibnd=0; ibnd < int( Population.size() ); ibnd++) {
+            Population[ ibnd ] /= double(aux_DM.get_Operator_k().get_MeshGrid()->get_TotalSize());        
+        }
+        for(int ibnd = 0; ibnd < int( Population.size() ); ibnd++){
+            if( ibnd < 1 ) Population[ibnd] = 1.-Population[ibnd];
+            os_Pop << std::setw(20) << std::setprecision(10) << Population[ibnd].real();
+            os_Pop << " ";
+        }
+        os_Pop << std::endl;
     }
-    for(int ibnd = 0; ibnd < int( Population.size() ); ibnd++){
-        if( ibnd < 1 ) Population[ibnd] = 1.-Population[ibnd];
-        os_Pop << std::setw(20) << std::setprecision(10) << Population[ibnd].real();
-        os_Pop << " ";
-    }
-    os_Pop << std::endl;
 }
 
 
 void Simulation::Calculate_Velocity()
 {
+    Calculate_TDHamiltonian(-10000, true);
+    H.go_to_R();
+    std::vector<Coordinate> direction(3);
+    direction[0].initialize(1,0,0);
+    direction[1].initialize(0,1,0);
+    direction[2].initialize(0,0,1);
+
     for(int ix : {0, 1, 2}){
         Velocity[ix].initialize_fft(*DensityMatrix.get_Operator_R().get_MeshGrid(), DensityMatrix.get_Operator_R().get_nrows());
+        Velocity[ix].lock_space(k);
         Velocity[ix].get_Operator_k().fill(0.);
-        commutator(Velocity[ix].get_Operator_k(), -im, material.r[ix].get_Operator_k(), material.H.get_Operator_k());
+        commutator(Velocity[ix].get_Operator_k(), -im, material.r[ix].get_Operator_k(), H.get_Operator_k());
         Velocity[ix].go_to_R();
         //part with R
-        auto& ci = MeshGrid::ConvolutionIndex[{Velocity[ix].get_Operator_R().get_MeshGrid()->get_id(), 
-                                              material.H.get_Operator_R().get_MeshGrid()->get_id(), 
-                                              Operator<std::complex<double>>::MeshGrid_Null->get_id()}];
-        if(ci.get_Size(0) == 0 ){
-            MeshGrid::Calculate_ConvolutionIndex(*(Velocity[ix].get_Operator_R().get_MeshGrid()), 
-                                                     *(material.H.get_Operator_R().get_MeshGrid()), 
-                                                     *(Operator<std::complex<double>>::MeshGrid_Null));
-        }
-
-        for(int iblock=0; iblock<Velocity[ix].get_Operator_R().get_nblocks(); ++iblock){
-            auto& R =(*(Velocity[ix].get_Operator_R().get_MeshGrid()))[iblock].get("Cartesian"); 
-            for(int irow=0; irow<Velocity[ix].get_Operator_R().get_nrows(); ++irow){
-                for(int icol=0; icol<Velocity[ix].get_Operator_R().get_ncols(); ++icol){
-                    if(ci(iblock, 0) != -1){
-                        Velocity[ix].get_Operator_R()(iblock, irow, icol) += -im*R[ix]*material.H.get_Operator_R()[ci(iblock,0)](irow, icol);
-                    }
-                }
-            }
-        }
+        kgradient.Calculate(1., Velocity[ix].get_Operator_R(), H.get_Operator_R(), direction[ix], false);
+        Velocity[ix].go_to_k();
     }
 }
 
 
 void Simulation::Print_Velocity()
 {
-    DensityMatrix.go_to_R();
     std::array<std::complex<double>, 3> v = {0., 0., 0.};
+    
+    auto& DMK = DensityMatrix.get_Operator_k();
+    static BlockMatrix<std::complex<double>> temp(k, DMK.get_nblocks(), DMK.get_nrows(), DMK.get_ncols());
+
     for(auto ix : {0, 1, 2}){
-        v[ix] = Trace(Velocity[ix].get_Operator_R(), DensityMatrix.get_Operator_R());
+        temp.fill(0.);
+        multiply(temp, 1.+im*0., Velocity[ix].get_Operator_k(), DMK );
+        auto ToSum = TraceK(temp);
+        for(int ibnd=0; ibnd<int(ToSum.size()); ++ibnd) {
+            v[ix] += ToSum[ibnd];
+        }
+        v[ix] /= DMK.get_MeshGrid()->get_TotalSize();
     }
     os_Velocity << std::setw(20) << std::setprecision(8) << v[0].real();
     os_Velocity << std::setw(20) << std::setprecision(8) << v[0].imag();
