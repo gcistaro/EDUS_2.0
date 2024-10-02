@@ -7,11 +7,11 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
     //---------------------------------------------------------------------------------------
     
     //------------------------------initializing laser---------------------------------------
-    laser.set_Intensity(1.e+05, Wcm2);//1.e+16, Wcm2);
     laser.set_InitialTime(0., FemtoSeconds);
     //laser.set_Lambda(3000, NanoMeters);
-    laser.set_Omega(7.25, ElectronVolt);
-    laser.set_NumberOfCycles(2);    
+    laser.set_Intensity(1.e+05, Wcm2);
+    laser.set_Lambda(232.368, NanoMeters);
+    laser.set_NumberOfCycles(1);
     laser.set_Polarization(Coordinate(1,0,0));
     //---------------------------------------------------------------------------------------
 
@@ -63,11 +63,10 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
                         InitialCondition, SourceTerm);
     RK_object.set_InitialTime(0.);
     RK_object.set_ResolutionTime( ( laser.get_Duration()/laser.get_NumberOfCycles() )/ 1000. );
-    PrintResolution = 1;
+    PrintResolution = 10;
     kgradient.initialize(*(DensityMatrix.get_Operator(R).get_MeshGrid()));
 
     coulomb.initialize(material.H.get_Operator_R().get_nrows(), DensityMatrix.get_Operator(R).get_MeshGrid(), material.r);
-    coulomb.set_DM0(DensityMatrix);
 
 
     print_recap();
@@ -91,6 +90,8 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
         os << " " << std::abs(max(DensityMatrix.get_Operator_R()[iR_loc])) << std::endl;
     }
     os.close();
+
+    coulomb.set_DM0(DensityMatrix);
 
     Calculate_Velocity();
     DensityMatrix.go_to_k();

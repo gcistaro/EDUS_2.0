@@ -19,6 +19,10 @@ void MPIindex<dim>::initialize( const std::array<int, 3>& ValuesToSplit__)
     assert(ValuesToSplit__[1] > 1 || ValuesToSplit__[2] > 1 ); //because we know this fftw routines break for 1D FFT
                                                            //we can avoid this by making a choice on the fftw_mpi_local
                                                            //function to pick up
+    std::ptrdiff_t dimensions[] = {std::ptrdiff_t( ValuesToSplit__[0] ), 
+                                   std::ptrdiff_t( ValuesToSplit__[1] ),
+                                   std::ptrdiff_t( ValuesToSplit__[2] )};
+    std::ptrdiff_t local_0_start;
 #endif
     ValuesToSplit[0] = ValuesToSplit__[0];
     ValuesToSplit[1] = ValuesToSplit__[1];
@@ -27,10 +31,7 @@ void MPIindex<dim>::initialize( const std::array<int, 3>& ValuesToSplit__)
     std::cout << "Initializing multindex..\n";
     multindex.initialize(ValuesToSplit);
     //here we suppose the splitting happens with fftw. for the future must be fixed
-    std::ptrdiff_t dimensions[] = {std::ptrdiff_t( ValuesToSplit[0] ), 
-                                   std::ptrdiff_t( ValuesToSplit[1] ),
-                                   std::ptrdiff_t( ValuesToSplit[2] )};
-    std::ptrdiff_t local_n0, local_0_start;
+    std::ptrdiff_t local_n0;
 
     GlobalRange_1D.first = 0;
     GlobalRange_1D.second = ValuesToSplit[0]*ValuesToSplit[1]*ValuesToSplit[2];
