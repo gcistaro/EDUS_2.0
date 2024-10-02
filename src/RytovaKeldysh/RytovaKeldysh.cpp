@@ -8,9 +8,11 @@ double struve(const double& x, const double& v)
     }
 
     double H = 0;
-    for(int k=0; k<200; k++){
+    for(int k=0; k<100; k++){
+        auto tgamma__ = std::tgamma(k+v+1.5);
         int sign = (k%2 == 0 ? 1 : -1);
         H += sign*pow(.5*x, 2*k+v+1)/(std::tgamma(k+1.5)*std::tgamma(k+v+1.5));
+        //std::cout << "rnorm " << x << " " << sign*pow(.5*x, 2*k+v+1)<<  " k " << k << " v " << v << " H "<< H << " tgamma " << std::tgamma(k+1.5) << " " << std::tgamma(k+v+1.5) << std::endl;
     }
     return H;
 }
@@ -31,11 +33,12 @@ void RytovaKeldysh::initialize(const std::array<Operator<std::complex<double>>,3
     
     if(dim_==2) dim=twoD;
     if(dim_==3) dim=threeD;
+    auto index_origin = r[0].get_Operator_R().get_MeshGrid()->find(Coordinate(0,0,0));
 
-    auto& x0 = (r[0].get_Operator_R())[0];
-    auto& y0 = (r[1].get_Operator_R())[0];
-    auto& z0 = (r[2].get_Operator_R())[0];
-    
+    auto& x0 = (r[0].get_Operator_R())[index_origin];
+    auto& y0 = (r[1].get_Operator_R())[index_origin];
+    auto& z0 = (r[2].get_Operator_R())[index_origin];
+
     //I use W(n'R1', m'R2', nR1, mR2) = 1/Omega^2*delta(nn')delta(R1R1')delta(mm')delta(R2R2')W(rn+R1-rm-R2)
     TB.initialize({MasterRGrid->get_TotalSize(),
                                  r[0].get_Operator_R().get_nrows(), 
@@ -46,27 +49,25 @@ void RytovaKeldysh::initialize(const std::array<Operator<std::complex<double>>,3
     std::cout << "TB.get_Size(0): " << TB.get_Size(0) << std::endl;
     std::cout << "TB.get_Size(1): " << TB.get_Size(1) << std::endl;
 
-    #pragma omp parallel for schedule(static)
-    for(int iR=0; iR<TB.get_Size(0); ++iR) {
+//    #pragma omp parallel for schedule(static)
+    for(int iR=0; iR<1; ++iR) {//TB.get_Size(0); ++iR) {
         auto& Rcart = (*Rgrid)[iR].get("Cartesian");
-        //for(int iS=0; iS<TB.get_Size(1); ++iS) {
-        //    auto& Scart = (*Rgrid)[iS].get("Cartesian");
-            for(int in=0; in<TB.get_Size(1); in++){
-                //ratom_n = rn + R
-                auto ratom_n = Coordinate(x0(in,in).real() - Rcart[0],
-                                          y0(in,in).real() - Rcart[1],
-                                          z0(in,in).real() - Rcart[2]);
+        for(int in=0; in<TB.get_Size(1); in++){
+            //ratom_n = rn - R
+            auto ratom_n = Coordinate(x0(in,in).real() - Rcart[0],
+                                      y0(in,in).real() - Rcart[1],
+                                      z0(in,in).real() - Rcart[2]);
 
-                for(int im=0; im<TB.get_Size(2); im++){
-                    //ratom_m = rm + S
-                    auto ratom_m = Coordinate(x0(im,im).real(),//+Scart[0],
-                                              y0(im,im).real(),//+Scart[1],
-                                              z0(im,im).real());//+Scart[2]);
+            for(int im=0; im<TB.get_Size(2); im++){
+                //ratom_m = rm + S
+                auto ratom_m = Coordinate(x0(im,im).real(),//+Scart[0],
+                                          y0(im,im).real(),//+Scart[1],
+                                          z0(im,im).real());//+Scart[2]);
 
-                    TB(iR, in, im) = Potential(ratom_n - ratom_m);
-                }
+                TB(iR, in, im) = Potential(ratom_n - ratom_m);
+                std::cout << TB(iR, in, im) << std::endl;
             }
-        //}
+        }
     }
     std::cout << "out of loop!\n";
 }
@@ -102,7 +103,7 @@ std::complex<double> RytovaKeldysh::Potential(const Coordinate& r)
     {
         case twoD:
         {
-            if(r_norm < threshold){
+            if(r_norm < threshold ){
                 Wr = 0.;
             }
             else{
@@ -150,6 +151,8 @@ std::complex<double> RytovaKeldysh::Potential(const Coordinate& r)
         default:
             break;
     }
+        std::cout << r_norm << " "<< Wr << std::endl;
+
     return Wr;
 }
 
