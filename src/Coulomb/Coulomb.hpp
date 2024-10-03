@@ -2,7 +2,7 @@
 #include "mdContainers/mdContainers.hpp"
 #include "MeshGrid/MeshGrid.hpp"
 #include "Operator/Operator.hpp"
-
+#include "StreamFile.hpp"
 
 class Coulomb 
 {
@@ -11,7 +11,7 @@ class Coulomb
         std::shared_ptr<MeshGrid> Rgrid;
         Operator<std::complex<double>> DM0;
         mdarray<std::complex<double>, 3> HF;
-        bool DoCoulomb = false;
+        bool DoCoulomb = true;
     public:
         Coulomb(){};
         
