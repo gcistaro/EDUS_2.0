@@ -28,10 +28,34 @@ void SumWithProduct(T& Output, const Scalar_T& FirstScalar, const T& FirstAddend
     
     typedef typename T::iterator iterator;
     
-    for(struct{ iterator Output; iterator Input1; iterator Input2;} loop =
-            {Output.begin(), (const_cast<T&>(FirstAddend)).begin(), (const_cast<T&>(SecondAddend)).begin()};
-        (loop.Output!=Output.end()) && (loop.Input1 != FirstAddend.end()) && (loop.Input2 != SecondAddend.end());  
-          ++loop.Output, ++loop.Input1, ++loop.Input2 ){
+    struct Loop{
+                    iterator Output; 
+                    iterator Input1; 
+                    iterator Input2; 
+                    bool operator!=(const Loop& loop2) 
+                        { return (Output !=loop2.Output) && 
+                          (Input1 != loop2.Input1) && 
+                          (Input2 != loop2.Input2);};
+                    Loop(const iterator& Output__, const iterator& Input1__, const iterator& Input2__) :
+                    Output(Output__), Input1(Input1__), Input2(Input2__){};
+                    // Prefix increment
+                    Loop& operator++() { Output++; Input1++; Input2++; return *this; };  
+                    // Postfix increment
+                    Loop operator++(int) { Loop tmp = *this; ++(*this); return tmp; };
+                    Loop operator+=(int rhs) { Loop tmp(Output += rhs, Input1 += rhs, Input2 += rhs); return tmp;}
+                    int operator-(const Loop& loop2) {return ((this->Output-loop2.Output)+
+                                                              (this->Input1-loop2.Input1)+
+                                                              (this->Input2-loop2.Input2)); }
+                };
+
+    Loop loop_begin = {Output.begin(), (const_cast<T&>(FirstAddend)).begin(), (const_cast<T&>(SecondAddend)).begin()};
+    Loop loop_end   = {Output.end(), (const_cast<T&>(FirstAddend)).end(), (const_cast<T&>(SecondAddend)).end()};
+    #pragma omp parallel for
+    for( Loop loop = loop_begin; loop != loop_end; ++loop ) {
+        //struct{ iterator Output; iterator Input1; iterator Input2;} loop =
+        //    {Output.begin(), (const_cast<T&>(FirstAddend)).begin(), (const_cast<T&>(SecondAddend)).begin()};
+        //((loop.Output!=Output.end()) && (loop.Input1 != FirstAddend.end()) && (loop.Input2 != SecondAddend.end()));  
+        //  (++loop.Output, ++loop.Input1, ++loop.Input2) ){
                 *loop.Output = FirstScalar*(*loop.Input1) + SecondScalar*(*loop.Input2);
     }
 }
