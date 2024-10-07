@@ -63,11 +63,13 @@ class mdarray
             Iterator& operator++() { m_ptr++; return *this; };  
             // Postfix increment
             Iterator operator++(int) { Iterator tmp = *this; ++(*this); return tmp; };
-            Iterator operator+=(int rhs) { Iterator tmp = this->data(); tmp += rhs; return Iterator(tmp);}
+            Iterator operator+=(int rhs) { pointer tmp = this->data(); tmp += rhs; return Iterator(tmp);}
             friend bool operator== (const Iterator& a, const Iterator& b) { return a.m_ptr == b.m_ptr; };
             friend bool operator!= (const Iterator& a, const Iterator& b) { return a.m_ptr != b.m_ptr; };     
             //difference
             int operator-(const Iterator& it2) {return this->m_ptr - it2.m_ptr;}        
+            Iterator operator+(const Iterator& it2) {return Iterator(this->m_ptr + it2.m_ptr);}        
+            Iterator operator+(const int& i) {return Iterator(this->m_ptr + i);}        
         private:
             pointer m_ptr;
         };
