@@ -16,9 +16,15 @@
 auto ReadFile(const std::string& FileName) -> std::vector<std::vector<std::string>>
 {    
     std::ifstream FileName_Stream;
-    FileName_Stream.open(FileName.c_str());
+    try {
+        FileName_Stream.open(FileName.c_str());
+        throw(FileName);
+    }
+    catch (std::string FileName) {
+        std::cout << "\nReading " << FileName << "... not found\n";
+    }
+
     //get all the lines and put them in a container called file_content
-    
     std::vector<std::vector<std::string>> file_content;
     std::string line;
     while( std::getline(FileName_Stream,line) ){
