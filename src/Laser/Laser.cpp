@@ -183,7 +183,6 @@ void Laser::set_NumberOfCycles(const double& NumberOfCycles_)
 {
     NumberOfCycles = NumberOfCycles_; 
     auto Duration = NumberOfCycles*PlaneWave.get_Period();
-    std::cout << "Number of Cycles "<< NumberOfCycles << " Duration " << Convert(Duration, AuTime, FemtoSeconds) << std::endl;
     envelope.set_Duration(Duration);
 }
 

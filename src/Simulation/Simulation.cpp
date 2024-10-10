@@ -1,16 +1,18 @@
 #include "Simulation/Simulation.hpp"
 
 
-Simulation::Simulation(const std::string& JsonFileName)
+Simulation::Simulation(const std::string& JsonFileName__)
 {
-    std::ifstream f(JsonFileName);
+    JsonFile = JsonFileName__;
+    std::ifstream f(JsonFileName__);
 
     nlohmann::json data = nlohmann::json::parse(f);
 
     //read model from tb_file    
     PROFILE("Simulation::Initialize");
     //---------------------------getting info from tb----------------------------------------
-    material = Material(data["tb_file"].template get<std::string>());
+    tb_model = data["tb_file"].template get<std::string>();
+    material = Material(tb_model);
     
     //---------------------------------------------------------------------------------------
     for ( int ilaser = 0; ilaser < int( data["lasers"].size() ); ++ilaser ) {
@@ -278,22 +280,35 @@ void Simulation::Print_Velocity()
 
 void Simulation::print_recap()
 {
-    std::cout << "*************  GRIDS: *************\n";
-    std::cout << "Total number of grids:  " << MeshGrid::get_counter_id() << std::endl;
-    std::cout << "              ";
-    std::cout << "| id |";
-    std::cout << " size  |\n";
-    std::cout << "material grid ";
-    std::cout << "|" << std::setw(4) << material.H.get_Operator_R().get_MeshGrid()->get_id() << "|";
-    std::cout<<  std::setw(7)  <<  material.H.get_Operator_R().get_MeshGrid()->get_mesh().size() << "|"<< std::endl;
-    std::cout << "DM grid (R)   ";
-    std::cout << "|" << std::setw(4) << DensityMatrix.get_Operator_R().get_MeshGrid()->get_id() << "|";
-    std::cout <<  std::setw(7) << DensityMatrix.get_Operator_R().get_MeshGrid()->get_mesh().size() << "|"<< std::endl;
-    std::cout << "DM grid (k)   ";
-    std::cout << "|" << std::setw(4) << DensityMatrix.get_Operator_k().get_MeshGrid()->get_id() << "|";
-    std::cout <<  std::setw(7) << DensityMatrix.get_Operator_k().get_MeshGrid()->get_mesh().size() << "|"<< std::endl;
-    std::cout << "*************    RK:   *************\n";
-    std::cout << "Resolution time: " << RK_object.get_ResolutionTime() << std::endl;
+    //std::cout << "*************  GRIDS: *************\n";
+    //std::cout << "Total number of grids:  " << MeshGrid::get_counter_id() << std::endl;
+    //std::cout << "              ";
+    //std::cout << "| id |";
+    //std::cout << " size  |\n";
+    //std::cout << "material grid ";
+    //std::cout << "|" << std::setw(4) << material.H.get_Operator_R().get_MeshGrid()->get_id() << "|";
+    //std::cout<<  std::setw(7)  <<  material.H.get_Operator_R().get_MeshGrid()->get_mesh().size() << "|"<< std::endl;
+    //std::cout << "DM grid (R)   ";
+    //std::cout << "|" << std::setw(4) << DensityMatrix.get_Operator_R().get_MeshGrid()->get_id() << "|";
+    //std::cout <<  std::setw(7) << DensityMatrix.get_Operator_R().get_MeshGrid()->get_mesh().size() << "|"<< std::endl;
+    //std::cout << "DM grid (k)   ";
+    //std::cout << "|" << std::setw(4) << DensityMatrix.get_Operator_k().get_MeshGrid()->get_id() << "|";
+    //std::cout <<  std::setw(7) << DensityMatrix.get_Operator_k().get_MeshGrid()->get_mesh().size() << "|"<< std::endl;
+    //"tb_file": "/home/gcistaro/NEGF/tb_models/hBN_gap7.25eV_a2.5A",
+    //"dt": [0.1, "autime"],
+    //"solver": "RungeKutta",
+    //"printresolution": 10,
+    //"coulomb": false,
+    std::cout << "*********************************************************************************\n";
+    std::cout << "*   input file:         *     " << JsonFile << std::endl;
+    std::cout << "*   tb_model  :         *     " << tb_model << std::endl;
+    std::cout << "*   grid:               *     [ " << DensityMatrix.get_Operator_R().get_MeshGrid()->get_Size()[0];
+    std::cout << ", "       << DensityMatrix.get_Operator_R().get_MeshGrid()->get_Size()[1];
+    std::cout << ", "       << DensityMatrix.get_Operator_R().get_MeshGrid()->get_Size()[2];
+    std::cout << "]" << std::endl;     
+    std::cout << "*   Resolution time:    *     " << RK_object.get_ResolutionTime() << std::endl;
+    std::cout << "*   Print Resolution:   *     " << PrintResolution << std::endl;
+    std::cout << "*   Coulomb:            *     " << (coulomb.get_DoCoulomb() ? "True" : "False") << std::endl;
     for( int ilaser=0; ilaser<int(setoflaser.size()); ++ilaser) {
         setoflaser[ilaser].print_info();
     }
