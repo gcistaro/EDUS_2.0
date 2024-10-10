@@ -28,7 +28,7 @@ void MPIindex<dim>::initialize( const std::array<int, 3>& ValuesToSplit__)
     ValuesToSplit[1] = ValuesToSplit__[1];
     ValuesToSplit[2] = ValuesToSplit__[2];
 
-    std::cout << "Initializing multindex..\n";
+    //std::cout << "Initializing multindex..\n";
     multindex.initialize(ValuesToSplit);
     //here we suppose the splitting happens with fftw. for the future must be fixed
     std::ptrdiff_t local_n0;
@@ -42,8 +42,8 @@ void MPIindex<dim>::initialize( const std::array<int, 3>& ValuesToSplit__)
                                    &local_n0, &local_0_start);
 
     //initialize class variables using what we have obtained
-    std::cout << "local_0_start " << local_0_start << " local_n0 " << local_n0 <<  std::endl;
-    std::cout << "alloc_local  " << alloc_local <<  std::endl;
+    //std::cout << "local_0_start " << local_0_start << " local_n0 " << local_n0 <<  std::endl;
+    //std::cout << "alloc_local  " << alloc_local <<  std::endl;
     LocalRange_1D.first  = multindex.oneDindex(int(local_0_start),0,0);
     LocalRange_1D.second = multindex.oneDindex(int(local_0_start + local_n0-1),ValuesToSplit[1]-1,ValuesToSplit[2]-1);
 
