@@ -33,6 +33,7 @@ find_program(GIT_EXE NAMES git)
 
 # generate version header
 string(TIMESTAMP NEGF_TIMESTAMP "%Y-%m-%d %H:%M:%S")
+message("PROJECT_SOURCE_DIR:     ${PROJECT_SOURCE_DIR}")
 if(DEFINED GIT_EXE AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
   execute_process(COMMAND git rev-parse HEAD
                   OUTPUT_VARIABLE NEGF_SHA
@@ -48,6 +49,8 @@ if(DEFINED GIT_EXE AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
 endif()
 
 configure_file("${PROJECT_SOURCE_DIR}/src/core/githash.h.in" "${PROJECT_SOURCE_DIR}/src/core/githash.hpp" @ONLY)
+configure_file("${PROJECT_SOURCE_DIR}/src/core/projectdir.h.in" "${PROJECT_SOURCE_DIR}/src/core/projectdir.hpp" @ONLY)
+configure_file("${PROJECT_SOURCE_DIR}/ci-test/inputs/simulation.json.in" "${PROJECT_SOURCE_DIR}/ci-test/inputs/simulation.json" @ONLY)
 
 #compile sources as library INTERFACE (not a real library, just objects to be reused)
 include_directories("${PROJECT_SOURCE_DIR}/src/")
@@ -122,7 +125,7 @@ if (NEGF_MPI)
 endif()
 
 # add the executable
-add_executable(NEGF main.cpp)
+add_executable(EDUS src/EDUS.cpp)
 
 #precompile headers to speed up compilation
 #target_precompile_headers( NEGF 
@@ -153,6 +156,10 @@ add_executable(NEGF main.cpp)
 
 
 #testing...
+#json
+add_executable(json ci-test/test_json.cpp) 
+#target_precompile_headers(Containers_test REUSE_FROM NEGF)
+
 #mdcontainers
 add_executable(Containers_test ci-test/test_mdarray.cpp) 
 #target_precompile_headers(Containers_test REUSE_FROM NEGF)
@@ -192,10 +199,6 @@ add_executable(fft-many_test ci-test/test_fft_many.cpp)
 #fft+mpi
 add_executable(fft_mpi_test ci-test/test_fft_mpi.cpp)
 #target_precompile_headers(fft_Gradient_test REUSE_FROM NEGF)
-
-#Gradient
-add_executable(Gradient_test ci-test/test_Gradient.cpp)
-#target_precompile_headers(Gradient_test REUSE_FROM NEGF)
 
 #Gradient
 add_executable(Gradient_R_test ci-test/test_Gradient_R.cpp)
