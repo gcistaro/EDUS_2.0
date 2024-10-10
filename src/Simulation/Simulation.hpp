@@ -1,6 +1,7 @@
 #ifndef SIMULATION_HPP
 #define SIMULATION_HPP
 
+#include "ConvertUnits.hpp"
 #include "Model/Model.hpp"
 #include "RungeKutta/RungeKutta.hpp"
 #include "Laser/Laser.hpp"
@@ -8,6 +9,8 @@
 #include "kGradient/kGradient.hpp"
 #include "Coulomb/Coulomb.hpp"
 #include "initialize.hpp"
+#include "Json/json.hpp"
+
 class Simulation
 {
     private:
@@ -18,7 +21,7 @@ class Simulation
         std::array<Operator<std::complex<double>>, 3> Velocity;
         std::vector<mdarray<double,1>> Band_energies;
         double FermiEnergy = 0.;
-        Laser laser;
+        SetOfLaser setoflaser;
         Operator<std::complex<double>> DensityMatrix;
         RungeKutta<Operator<std::complex<double>>> RK_object;
         int PrintResolution; //steps needed to print a variable
@@ -34,6 +37,7 @@ class Simulation
         
         template<class T>
         Simulation(const std::string& FileName, const T& arg_meshinit);
+        Simulation(const std::string& JsonFileName);
         void SettingUp_EigenSystem();
         void print_grids();
         void Calculate_TDHamiltonian(const double& time, const bool& erase_H);

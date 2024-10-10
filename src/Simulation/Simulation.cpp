@@ -1,5 +1,109 @@
 #include "Simulation/Simulation.hpp"
 
+
+Simulation::Simulation(const std::string& JsonFileName)
+{
+    std::ifstream f(JsonFileName);
+
+    nlohmann::json data = nlohmann::json::parse(f);
+
+    //read model from tb_file    
+    PROFILE("Simulation::Initialize");
+    //---------------------------getting info from tb----------------------------------------
+    material = Material(data["tb_file"].template get<std::string>());
+    
+    //---------------------------------------------------------------------------------------
+    for ( int ilaser = 0; ilaser < int( data["lasers"].size() ); ++ilaser ) {
+        auto& currentdata = data["lasers"][ilaser];
+        Laser laser_;
+        laser_.set_InitialTime(0., FemtoSeconds);
+        laser_.set_Intensity(currentdata["intensity"][0].template get<double>(), 
+                            unit(currentdata["intensity"][1].template get<std::string>()));
+        laser_.set_Lambda(currentdata["wavelength"][0].template get<double>(), 
+                            unit(currentdata["wavelength"][1].template get<std::string>()));
+        laser_.set_NumberOfCycles(currentdata["cycles"].template get<double>());
+        laser_.set_Polarization(Coordinate(currentdata["polarization"][0],
+                                          currentdata["polarization"][1],
+                                          currentdata["polarization"][2]) );
+        setoflaser.push_back(laser_);
+    }
+
+    //--------------------------initializing grids and arrays--------------------------------
+    auto MasterRgrid = std::make_shared<MeshGrid>(R, data["grid"].template get<std::array<int,3>>());
+    coulomb.set_DoCoulomb(data["coulomb"].template get<bool>());    
+    PrintResolution = data["printresolution"].template get<int>();
+    
+    std::array<int, 3> MG_size = {MasterRgrid->get_Size()[0], MasterRgrid->get_Size()[1], MasterRgrid->get_Size()[2]};
+    Operator<std::complex<double>>::mpindex.initialize(MG_size);
+    DensityMatrix.initialize_fft(*MasterRgrid, material.H.get_Operator_R().get_nrows());
+    Operator<std::complex<double>>::SpaceOfPropagation = SpaceOfPropagation;
+
+    material.H.dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
+    material.r[0].dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
+    material.r[1].dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
+    material.r[2].dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
+
+    H.initialize_fft(*MasterRgrid, material.H.get_Operator_R().get_nrows());
+    SettingUp_EigenSystem();
+    auto& Uk = Operator<std::complex<double>>::EigenVectors;
+
+    //---------------------------------------------------------------------------------------
+
+    //------------------------setting up TD equations----------------------------------------
+    #include "Functional_InitialCondition.hpp"
+    #include "Functional_SourceTerm.hpp"
+    RK_object.initialize(DensityMatrix, 
+                        InitialCondition, SourceTerm);
+    RK_object.set_InitialTime(0.);
+    RK_object.set_ResolutionTime( Convert(data["dt"][0].template get<double>(), 
+                                          unit(data["dt"][1].template get<std::string>()), 
+                                        AuTime ));
+
+    kgradient.initialize(*(DensityMatrix.get_Operator(R).get_MeshGrid()));
+    coulomb.initialize(material.H.get_Operator_R().get_nrows(), DensityMatrix.get_Operator(R).get_MeshGrid(), material.r);
+
+
+    print_recap();
+    //---------------------------------------------------------------------------------------
+
+    //print DM in R to prove it decays and is zero for large R
+    std::stringstream rank;
+#ifdef NEGF_MPI
+    rank << "DM" << mpi::Communicator::world().rank() << ".txt";
+#else
+    rank << "DM.txt";
+#endif
+    DensityMatrix.go_to_R();
+    std::ofstream os;
+    os.open(rank.str());
+    auto Rgamma_centered = get_GammaCentered_grid(*DensityMatrix.get_Operator_R().get_MeshGrid());
+    for(int iR_loc=0; iR_loc< DensityMatrix.get_Operator_R().get_nblocks(); ++iR_loc){
+        //os << DensityMatrix.get_Operator_R()[i] << std::endl;
+        auto iR_glob = DensityMatrix.mpindex.loc1D_to_glob1D(iR_loc);
+        os << Rgamma_centered[iR_glob].norm();
+        os << " " << std::abs(max(DensityMatrix.get_Operator_R()[iR_loc])) << std::endl;
+    }
+    os.close();
+
+    coulomb.set_DM0(DensityMatrix);
+
+    Calculate_Velocity();
+    DensityMatrix.go_to_k();
+    assert(DensityMatrix.get_Operator_k().is_hermitian());
+    //---------------------------------------------------------------------------------------
+
+    //---------------------open files---------------------------------------------------------
+    os_Pop.open("Population.txt");
+    os_Laser.open("Laser.txt");
+    os_VectorPot.open("Laser_A.txt");
+    os_Time.open("Time.txt");
+    os_Velocity.open("Velocity.txt");
+    //---------------------------------------------------------------------------------------
+}
+
+
+
+
 bool Simulation::PrintObservables(const double& time) const
 {
     return ( int( round( time/RK_object.get_ResolutionTime() ) ) % PrintResolution == 0 );
@@ -44,7 +148,7 @@ void Simulation::Calculate_TDHamiltonian(const double& time, const bool& erase_H
     auto& x_ = material.r[0].get_Operator(SpaceOfPropagation);
     auto& y_ = material.r[1].get_Operator(SpaceOfPropagation);
     auto& z_ = material.r[2].get_Operator(SpaceOfPropagation);
-    auto las = laser(time).get("Cartesian");
+    auto las = setoflaser(time).get("Cartesian");
     
     auto& ci = MeshGrid::ConvolutionIndex[{H0_.get_MeshGrid()->get_id(), 
                                               H_.get_MeshGrid()->get_id(), 
@@ -90,8 +194,8 @@ void Simulation::Propagate()
         //print time 
         os_Time << CurrentTime << std::endl;
         //print laser
-        os_Laser << laser(RK_object.get_CurrentTime()).get("Cartesian");
-        os_VectorPot << laser.VectorPotential(RK_object.get_CurrentTime()).get("Cartesian");
+        os_Laser << setoflaser(RK_object.get_CurrentTime()).get("Cartesian");
+        os_VectorPot << setoflaser.VectorPotential(RK_object.get_CurrentTime()).get("Cartesian");
 
         Print_Population();
         Print_Velocity();
@@ -190,7 +294,9 @@ void Simulation::print_recap()
     std::cout <<  std::setw(7) << DensityMatrix.get_Operator_k().get_MeshGrid()->get_mesh().size() << "|"<< std::endl;
     std::cout << "*************    RK:   *************\n";
     std::cout << "Resolution time: " << RK_object.get_ResolutionTime() << std::endl;
-    laser.print_info();
+    for( int ilaser=0; ilaser<int(setoflaser.size()); ++ilaser) {
+        setoflaser[ilaser].print_info();
+    }
 }
 
 
