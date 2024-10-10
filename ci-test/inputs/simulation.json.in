@@ -1,0 +1,23 @@
+{
+    "tb_file": "@PROJECT_SOURCE_DIR@/tb_models/hBN_gap7.25eV_a2.5A",
+    "fermienergy": [0, "electronvolt"],
+    "coulomb": false,
+    "grid": [100,100,1],
+    
+    "dt": [0.1, "autime"],
+    "printresolution": 10,
+    "starttime" : [0, "femtosecond"],
+    "finaltime": [100, "femtosecond"],
+
+    "solver": "rk4",
+
+    "lasers":
+    [
+      {
+      "intensity": [1e10, "wcm2"],
+      "wavelength": [3000, "nanometers"],
+      "polarization": [1,1,0],
+      "cycles" : 1
+      }
+    ]
+  }
