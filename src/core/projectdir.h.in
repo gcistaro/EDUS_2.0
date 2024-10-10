@@ -1,0 +1,6 @@
+#ifndef PROJECT_DIR
+#define PROJECT_DIR
+const char* const ProjectDirectory = "@PROJECT_SOURCE_DIR@";
+#endif
+
+
