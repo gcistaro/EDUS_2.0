@@ -63,7 +63,7 @@ int main()
     ft_D.initialize(DFunction_k, DFunction_R, {n_el, n_el, 1});
 
     Coordinate direction(1,0,0, "Cartesian");
-    gradient.Calculate(DFunction_R, Function_R, direction, true);
+    gradient.Calculate(1., DFunction_R, Function_R, direction, true);
     ft_D.fft(+1);
     for( int ik=0; ik<Function.get_TotalSize(); ++ik ) {
         auto& cart = mesh[ik].get("Cartesian");     
