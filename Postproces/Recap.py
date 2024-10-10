@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 Population = np.loadtxt("Population.txt", unpack=True)
 t = range(Population.shape[-1])
 Laser = np.loadtxt("Laser.txt", unpack=True)
-Velocity = np.loadtxt("Position.txt", unpack=True)
+#Velocity = np.loadtxt("Position.txt", unpack=True)
 
 
 fig, ax = plt.subplots(2)
