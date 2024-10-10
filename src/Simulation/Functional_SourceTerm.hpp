@@ -11,7 +11,7 @@ SourceTerm =
     PROFILE_START("i*(E.R)*Input");
     kgradient.Calculate(1.+0.*im, Output.get_Operator(Space::R), 
                         Input.get_Operator(Space::R), 
-                        laser(time), true);
+                        setoflaser(time), true);
     PROFILE_STOP("i*(E.R)*Input");
 
     PROFILE_START("Coulomb");
