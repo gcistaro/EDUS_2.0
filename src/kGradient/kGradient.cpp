@@ -184,9 +184,14 @@ Matrix<double> GradientMatrix(const size_t& nshells, const MeshGrid& kmesh, cons
 std::vector<std::vector<std::vector<int>>> kGradient::Find_kpb(const MeshGrid& kmesh, const std::vector<std::vector<int>>& ikshell)
 {
 #ifdef NEGF_MPI
-    if( mpi::Communicator::world().size() > 1 ) {
-        std::cout << "find_kpb still not implemented in MPI. SUGGESTION: Propagate gradient in R!\n";
-        exit(1);
+    try{
+        if( mpi::Communicator::world().size() > 1 ) {
+            throw(mpi::Communicator::world().size());
+        }
+    }
+    catch( int size ){
+        std::cout << "\nfind_kpb still not implemented in MPI and you are using "<< size << "processors\n";
+        std::cout << "SUGGESTION: Propagate gradient in R!\n";
     }
 #endif
     PROFILE("kgradient::Find_kpb");
