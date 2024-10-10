@@ -16,19 +16,15 @@
 int main(int argc, char *argv[])
 {   
     PROFILE_START("EDUS");
-    initialize();
-
-    Simulation simulation(argv[1]);
-
-    auto index_FinalTime = Convert(150,FemtoSeconds,AuTime)/simulation.RK_object.get_ResolutionTime() +1;
-    std::cout << index_FinalTime << std::endl;
-    for(int it=0; it<index_FinalTime; ++it) {
-        if(it%1000 == 0) {
-            std::cout << "it: " << it << " / " << index_FinalTime<< "  %: "; 
-            std::cout << 100*double(it)/index_FinalTime << std::endl;
-        }
-        simulation.Propagate();
+    if ( argc != 2 ) {
+        std::cout << "To start the program: EDUS <input.json>" << std::endl;
+        exit(0);
     }
-    PROFILE_STOP("test_simulation");
+    initialize();
+    
+    Simulation simulation(argv[1]);
+    simulation.Propagate();
+
+    PROFILE_STOP("EDUS");
     print_timing(1);
 }
