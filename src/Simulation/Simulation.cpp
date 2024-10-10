@@ -21,12 +21,21 @@ Simulation::Simulation(const std::string& JsonFileName__)
         laser_.set_InitialTime(0., FemtoSeconds);
         laser_.set_Intensity(currentdata["intensity"][0].template get<double>(), 
                             unit(currentdata["intensity"][1].template get<std::string>()));
-        laser_.set_Lambda(currentdata["wavelength"][0].template get<double>(), 
+        auto freq_wavelength = wavelength_or_frequency(currentdata);
+        std::cout << "freq_wavelength    " << freq_wavelength    << std::endl;
+        if(freq_wavelength == "frequency") {
+            laser_.set_Omega(currentdata["frequency"][0].template get<double>(), 
+                            unit(currentdata["frequency"][1].template get<std::string>()));
+        }
+        else {
+            laser_.set_Lambda(currentdata["wavelength"][0].template get<double>(), 
                             unit(currentdata["wavelength"][1].template get<std::string>()));
+        }
         laser_.set_NumberOfCycles(currentdata["cycles"].template get<double>());
-        laser_.set_Polarization(Coordinate(currentdata["polarization"][0],
-                                          currentdata["polarization"][1],
-                                          currentdata["polarization"][2]) );
+        Coordinate pol(currentdata["polarization"][0], currentdata["polarization"][1],
+                                          currentdata["polarization"][2]);
+        pol = pol/pol.norm(); 
+        laser_.set_Polarization(pol);
         setoflaser.push_back(laser_);
     }
 
@@ -344,4 +353,19 @@ void Simulation::print_grids()
         os << R.get("Cartesian");
     }
     os.close();
+}
+
+
+
+
+std::string wavelength_or_frequency(const nlohmann::json& data)
+{
+    bool is_frequency = ( data.find("frequency") != data.end() );
+    if( is_frequency) return "frequency";
+    bool is_wavelength = ( data.find("wavelength") != data.end() );
+    if( !is_wavelength ) {
+        std::cout << "You must specify frequency *xor* wavelength!\n";
+        exit(1);
+    }
+    return "wavelength";
 }

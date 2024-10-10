@@ -28,7 +28,8 @@ class Simulation
         kGradient kgradient;
         Coulomb coulomb;
         Space SpaceOfPropagation = k;
-
+        std::string JsonFile;
+        std::string tb_model;
         std::ofstream os_Laser;
         std::ofstream os_VectorPot;
         std::ofstream os_Pop;
@@ -103,6 +104,7 @@ std::vector<std::complex<double>> TraceK(BlockMatrix<T>& O__)
 }
 
 
+std::string wavelength_or_frequency(const nlohmann::json& data);
 
 
 #include "Simulation_definitions.hpp"
