@@ -222,9 +222,9 @@ class Operator
             //mdarray<double,2> bare_mg({1,3});
             //bare_mg.fill(0);
             //MeshGrid_Null = std::make_shared<MeshGrid<R>>(bare_mg, "Cartesian");
-            std::cout << "Calculate convolution index MG, FT_meshgrid_R, MeshGrid_null\n";
+            //std::cout << "Calculate convolution index MG, FT_meshgrid_R, MeshGrid_null\n";
             MeshGrid::Calculate_ConvolutionIndex(MG , *FT_meshgrid_R, *MeshGrid_Null);
-            std::cout << "Calculate convolution index MeshGrid_null, MG, MG\n";
+            //std::cout << "Calculate convolution index MeshGrid_null, MG, MG\n";
             MeshGrid::Calculate_ConvolutionIndex(*MeshGrid_Null, MG, MG);
 
             //prove that is working
@@ -350,7 +350,6 @@ class Operator
                 //std::cout << Mesh_FT[im][0] << " " << Mesh_FT[im][1] << Mesh_FT[im][2] << std::endl;
             }
             ft_.initialize(FTfriendly_Operator_R, Mesh_FT);
-            std::cout << "ft is initialized.\n";
         }
 
 
