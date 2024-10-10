@@ -20,6 +20,8 @@ extern mpi::Communicator band_comm;
 extern int NumberKpools;
 #endif
 
+#define variable(x)  (#x)
+
 void initialize();
 
 #endif
