@@ -137,7 +137,7 @@ class SetOfLaser
             return LaserArray[i];
         };
 
-        auto operator()(const double& Time)
+        auto operator()(const double& Time) -> Coordinate
         {
             Coordinate result({0,0,0});
             for(auto& laser : LaserArray){
@@ -145,6 +145,25 @@ class SetOfLaser
             }
             return result;
         };
+
+        auto VectorPotential(const double& Time) -> Coordinate
+        {
+            Coordinate result({0,0,0});
+            for(auto& laser : LaserArray){
+                result += laser.VectorPotential(Time);
+            }
+            return result;
+        };
+
+        void push_back(const Laser& laser)
+        {
+            LaserArray.push_back(laser);
+        }
+
+        int size()
+        {
+            return int( LaserArray.size() );
+        }
 };
 
 #endif
