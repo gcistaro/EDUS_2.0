@@ -231,7 +231,7 @@ void Simulation::Print_Population()
         }
         for(int ibnd = 0; ibnd < int( Population.size() ); ibnd++){
             if( ibnd < 1 ) Population[ibnd] = 1.-Population[ibnd];
-            os_Pop << std::setw(20) << std::setprecision(10) << Population[ibnd].real();
+            os_Pop << std::setw(20) << std::setprecision(6) << Population[ibnd].real();
             os_Pop << " ";
         }
         os_Pop << std::endl;
@@ -241,7 +241,7 @@ void Simulation::Print_Population()
 
 void Simulation::Calculate_Velocity()
 {
-    Calculate_TDHamiltonian(-10000, true);
+    Calculate_TDHamiltonian(-6000, true);
     H.go_to_R();
     std::vector<Coordinate> direction(3);
     direction[0].initialize(1,0,0);
@@ -305,7 +305,7 @@ void Simulation::print_recap()
     //"tb_file": "/home/gcistaro/NEGF/tb_models/hBN_gap7.25eV_a2.5A",
     //"dt": [0.1, "autime"],
     //"solver": "RungeKutta",
-    //"printresolution": 10,
+    //"printresolution": 6,
     //"coulomb": false,
     std::cout << "*********************************************************************************\n";
     std::cout << "*   input file:         *     " << JsonFile << std::endl;
@@ -317,6 +317,36 @@ void Simulation::print_recap()
     std::cout << "*   Resolution time:    *     " << RK_object.get_ResolutionTime() << std::endl;
     std::cout << "*   Print Resolution:   *     " << PrintResolution << std::endl;
     std::cout << "*   Coulomb:            *     " << (coulomb.get_DoCoulomb() ? "True" : "False") << std::endl;
+    std::cout << "******************************WANNIER*********************************************\n";
+    std::cout << "*   #R points :         *     " << material.H.get_Operator_R().get_nblocks() << std::endl;
+    std::cout << "*\n";
+    auto& A = Coordinate::get_Basis(LatticeVectors(R)).get_M();
+    std::cout << "*             :         *     ";
+    std::cout << std::scientific << std::setw(15) << std::setprecision(6) <<  A(0,0);
+    std::cout << std::scientific << std::setw(15) << std::setprecision(6) <<  A(0,1);
+    std::cout << std::scientific << std::setw(15) << std::setprecision(6) <<  A(0,2) << "\n";
+    std::cout << "*      A      :         *     ";
+    std::cout << std::scientific << std::setw(15) << std::setprecision(6) <<  A(1,0);
+    std::cout << std::scientific << std::setw(15) << std::setprecision(6) <<  A(1,1);
+    std::cout << std::scientific << std::setw(15) << std::setprecision(6) <<  A(1,2) << "\n";
+    std::cout << "*             :         *     ";
+    std::cout << std::scientific << std::setw(15) << std::setprecision(6) <<  A(2,0);
+    std::cout << std::scientific << std::setw(15) << std::setprecision(6) <<  A(2,1);
+    std::cout << std::scientific << std::setw(15) << std::setprecision(6) <<  A(2,2) << "\n";
+    std::cout << "*\n";
+    auto& B = Coordinate::get_Basis(LatticeVectors(k)).get_M();
+    std::cout << "*             :         *     ";
+    std::cout << std::scientific << std::setw(15) << std::setprecision(6) <<  B(0,0);
+    std::cout << std::scientific << std::setw(15) << std::setprecision(6) <<  B(0,1);
+    std::cout << std::scientific << std::setw(15) << std::setprecision(6) <<  B(0,2) << "\n";
+    std::cout << "*      B      :         *     ";
+    std::cout << std::scientific << std::setw(15) << std::setprecision(6) <<  B(1,0);
+    std::cout << std::scientific << std::setw(15) << std::setprecision(6) <<  B(1,1);
+    std::cout << std::scientific << std::setw(15) << std::setprecision(6) <<  B(1,2) << "\n";
+    std::cout << "*             :         *     ";
+    std::cout << std::scientific << std::setw(15) << std::setprecision(6) <<  B(2,0);
+    std::cout << std::scientific << std::setw(15) << std::setprecision(6) <<  B(2,1);
+    std::cout << std::scientific << std::setw(15) << std::setprecision(6) <<  B(2,2) << "\n";
     for( int ilaser=0; ilaser<int(setoflaser.size()); ++ilaser) {
         setoflaser[ilaser].print_info();
     }

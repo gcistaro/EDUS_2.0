@@ -26,5 +26,7 @@ int main(int argc, char *argv[])
     simulation.Propagate();
 
     PROFILE_STOP("EDUS");
-    print_timing(1);
+    if( mpi::Communicator::world().rank() == 0 ) {
+        print_timing(1);
+    }
 }
