@@ -1,1 +1,5 @@
 src/core/githash.hpp
+build/
+.vscode/
+src/core/projectdir.hpp
+ci-test/inputs/simulation.json
