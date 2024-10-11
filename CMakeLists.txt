@@ -117,7 +117,8 @@ message(STATUS "Imported oneMKL targets: ${MKL_IMPORTED_TARGETS}")
 
 
 #fftw3
-find_package(fftw3 REQUIRED)
+
+#find_package(fftw3 REQUIRED)
 link_libraries(fftw3)
 
 if (NEGF_MPI)
@@ -156,9 +157,6 @@ add_executable(EDUS src/EDUS.cpp)
 
 
 #testing...
-#json
-add_executable(json ci-test/test_json.cpp) 
-#target_precompile_headers(Containers_test REUSE_FROM NEGF)
 
 #mdcontainers
 add_executable(Containers_test ci-test/test_mdarray.cpp) 
