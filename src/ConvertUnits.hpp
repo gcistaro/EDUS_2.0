@@ -4,10 +4,9 @@
 #include <map>
 #include <string>
 #include <cassert>
-
 #include "Constants.hpp"
 
-enum  Type{LENGTH, TIME, ENERGY, INTENSITY};
+enum  Type{LENGTH, TIME, ENERGY, INTENSITY, NullType};
 
 struct Unit{
     Type type;
