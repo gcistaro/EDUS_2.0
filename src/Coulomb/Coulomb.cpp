@@ -113,7 +113,6 @@ Delta_DM.fill(0);
         for( int irow = 0; irow < HR.get_nrows(); ++irow ) {
             for( int icol = 0; icol < HR.get_ncols(); ++icol ) {
                 HR( iblock, irow, icol ) += HF( iblock, irow, icol )*( DMR( iblock, irow, icol ) - DM0R( iblock, irow, icol ) );
-                //Delta_DM(iblock, irow, icol ) =  DMR( iblock, irow, icol ) - DM0R( iblock, irow, icol ) ;
             }
         }
     } 

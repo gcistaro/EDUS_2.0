@@ -76,3 +76,22 @@ void initialize()
     print_header();
 #endif
 }
+
+
+
+void finalize()
+{  
+#ifdef NEGF_MPI
+    mpi::Communicator::finalize();
+    if( mpi::Communicator::world().rank() == 0 ) {
+        std::cout << "MPI Communicator finalized!\n";
+        time_t now = time(0);
+        char* dt = ctime(&now);
+        std::cout << "Execution finished: " << dt << std::endl;
+    }
+#else
+        time_t now = time(0);
+        char* dt = ctime(&now);
+        std::cout << "Execution finished: " << dt << std::endl;
+#endif
+}
