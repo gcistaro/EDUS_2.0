@@ -22,7 +22,6 @@ Simulation::Simulation(const std::string& JsonFileName__)
         laser_.set_Intensity(currentdata["intensity"][0].template get<double>(), 
                             unit(currentdata["intensity"][1].template get<std::string>()));
         auto freq_wavelength = wavelength_or_frequency(currentdata);
-        std::cout << "freq_wavelength    " << freq_wavelength    << std::endl;
         if(freq_wavelength == "frequency") {
             laser_.set_Omega(currentdata["frequency"][0].template get<double>(), 
                             unit(currentdata["frequency"][1].template get<std::string>()));
