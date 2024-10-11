@@ -41,8 +41,9 @@ class MeshGrid{
         int id; //each MeshGrid has a unique id,  to exchange the indices with others
         static int counter_id; //neded to count objects
 
-        MPIindex<3> mpindex;
+
     public:
+        MPIindex<3> mpindex;
         static std::map<std::array<int,3>, mdarray<int,2> > ConvolutionIndex;//to call it: [{id1,id2,id3}][{iR1,iR3}]
 
         MeshGrid(){};
@@ -81,6 +82,7 @@ class MeshGrid{
         const std::vector<Coordinate>& get_mesh() const;
         const std::array<int,3>& get_Size() const;
         int get_TotalSize() const;
+        int get_LocalSize() const;
         int get_id() const;
         static int get_counter_id(){return counter_id;}; //neded to count objects
 
