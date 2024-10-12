@@ -3,3 +3,5 @@ build/
 .vscode/
 src/core/projectdir.hpp
 ci-test/inputs/simulation.json
+ci-test/inputs/hBN.json
+ci-test/inputs/hBN_coulomb.json
