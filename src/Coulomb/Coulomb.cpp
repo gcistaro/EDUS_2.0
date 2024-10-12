@@ -72,8 +72,9 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
     for( int iR = 0; iR < size_MG_local; ++iR ){
         for( int irow = 0; irow < nbnd; ++irow ){
             for( int icol = 0; icol < nbnd; ++icol ){
-                HFF << HF( iR, irow, icol ) << std::endl;
+                HFF << HF( iR, irow, icol ).real() << " " << HF( iR, irow, icol ).imag() <<  std::endl;
             }}}
+            HFF.close();
 
 }
 
