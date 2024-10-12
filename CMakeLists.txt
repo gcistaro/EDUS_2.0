@@ -219,7 +219,8 @@ add_test(NAME hBN_Coulomb COMMAND
           bash -c "python3 ${PROJECT_SOURCE_DIR}/Postproces/RytovaKeldysh.py 40 40 1 ${PROJECT_SOURCE_DIR}/tb_models/hBN_gap7.25eV_a2.5A_tb.dat; \
           python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py RytovaKeldysh.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN_coulomb/RytovaKeldysh.txt; \
           ${CMAKE_CURRENT_BINARY_DIR}/EDUS  ${PROJECT_SOURCE_DIR}/ci-test/inputs/hBN_coulomb.json; \
-                  python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py Population.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN_coulomb/Population.txt; \
-                  python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py Velocity.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN/Velocity.txt")
+          python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py HF.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN_coulomb/HF.txt; \
+          python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py Population.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN_coulomb/Population.txt; \
+                  python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py Velocity.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN_coulomb/Velocity.txt")
 
 
