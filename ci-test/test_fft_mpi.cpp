@@ -28,8 +28,6 @@ int main(int argc, char **argv)
     int irank, nproc;
     int howmany = 1;
 /*     ***********************get splitted arrays************************************************/
-    std::ptrdiff_t alloc_local, local_n0, local_0_start;
-    std::ptrdiff_t dimensions[] = {N0, N1, 1};
     std::array<int,3> dims = {N0, N1, 1};
 
 #ifdef NEGF_MPI
@@ -47,23 +45,21 @@ int main(int argc, char **argv)
 /*     ***********************end of get splitted arrays************************************************/
 
     //allocate array with recommended size
-    mdarray<std::complex<double>,2> Array_x( { 1, mpindex.get_RecommendedAllocate_fftw()  } );//({1,int(N0)*int(N1)});
-    mdarray<std::complex<double>,2> Array_k( { 1, mpindex.get_RecommendedAllocate_fftw()  } );//({1,int(N0)*int(N1)});
+    mdarray<std::complex<double>,2> Array_x( { mpindex.get_RecommendedAllocate_fftw(), howmany  } );//({1,int(N0)*int(N1)});
+    mdarray<std::complex<double>,2> Array_k( { mpindex.get_RecommendedAllocate_fftw(), howmany  } );//({1,int(N0)*int(N1)});
 
     //filling Array_x
     //loop over local indices
-    auto& LocalRange = mpindex.get_LocalRange();
     #pragma omp parallel for
     for( int oneDindex_loc = 0; oneDindex_loc < mpindex.nlocal; ++oneDindex_loc ) {
         auto aux_ = mpindex.loc1D_to_globnD(oneDindex_loc);
-        //std::cout << oneDindex_loc << "/" << LocalRange.second << std::endl;
         double x, y;
         if( aux_[0] <= N0/2 )     x = aux_[0];
         else                      x = N0-aux_[0];
         if( aux_[1] <= N1/2 )     y = aux_[1];
         else                      y = N1-aux_[1];
   
-        Array_x(0, oneDindex_loc) = std::exp(-a*std::pow(x, 2))*std::exp(-b*std::pow(y,2));
+        Array_x(oneDindex_loc, 0) = std::exp(-a*std::pow(x, 2))*std::exp(-b*std::pow(y,2));
     }
     std::cout << "Rank " << irank <<  " Settingv up Fourier Transform..\n";
 {
@@ -98,7 +94,7 @@ int main(int argc, char **argv)
         else                      wy = double(N1-aux_[1]) * DeltaWy;
   
         auto AnalyticalSolution = std::sqrt(pi/b)*std::sqrt(pi/a)*std::exp(-pi*pi*wx*wx/a)/std::sqrt(N0)*std::exp(-pi*pi*wy*wy/b)/std::sqrt(N1);
-        auto NumericalSolution  = Array_k( 0, oneDindex_loc );
+        auto NumericalSolution  = Array_k( oneDindex_loc, 0 );
         auto RelativeError = 100*abs(NumericalSolution - AnalyticalSolution )/abs(AnalyticalSolution);
         //print all infos
         os_rank << "  |  ";

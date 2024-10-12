@@ -50,7 +50,8 @@ endif()
 
 configure_file("${PROJECT_SOURCE_DIR}/src/core/githash.h.in" "${PROJECT_SOURCE_DIR}/src/core/githash.hpp" @ONLY)
 configure_file("${PROJECT_SOURCE_DIR}/src/core/projectdir.h.in" "${PROJECT_SOURCE_DIR}/src/core/projectdir.hpp" @ONLY)
-configure_file("${PROJECT_SOURCE_DIR}/ci-test/inputs/simulation.json.in" "${PROJECT_SOURCE_DIR}/ci-test/inputs/simulation.json" @ONLY)
+configure_file("${PROJECT_SOURCE_DIR}/ci-test/inputs/hBN.json.in" "${PROJECT_SOURCE_DIR}/ci-test/inputs/hBN.json" @ONLY)
+configure_file("${PROJECT_SOURCE_DIR}/ci-test/inputs/hBN_coulomb.json.in" "${PROJECT_SOURCE_DIR}/ci-test/inputs/hBN_coulomb.json" @ONLY)
 
 #compile sources as library INTERFACE (not a real library, just objects to be reused)
 include_directories("${PROJECT_SOURCE_DIR}/src/")
@@ -160,94 +161,65 @@ add_executable(EDUS src/EDUS.cpp)
 
 #mdcontainers
 add_executable(Containers_test ci-test/test_mdarray.cpp) 
-#target_precompile_headers(Containers_test REUSE_FROM NEGF)
-
-#MultiIndex
-add_executable(MultiIndex_test ci-test/test_MultiIndex.cpp) 
-#target_precompile_headers(Containers_test REUSE_FROM #NEGF)
 
 #Matrix
 add_executable(Matrix_test ci-test/test_matrix.cpp)
-#target_precompile_headers(Laser_test REUSE_FROM NEGF)
 
 #Eigenvalues
 add_executable(Eigen_test ci-test/test_eigen.cpp) 
-#target_precompile_headers(Eigen_test REUSE_FROM NEGF)
-
-#Overhead of function call
-add_executable(Overhead ci-test/test_overhead.cpp) 
-#target_precompile_headers(Eigen_test REUSE_FROM NEGF)
 
 #RK
 add_executable(RK_test ci-test/test_RK.cpp)
-#target_precompile_headers(RK_test REUSE_FROM NEGF)
 
 #RK2
 add_executable(RK2_test ci-test/test_RK2.cpp)
-#target_precompile_headers(RK2_test REUSE_FROM NEGF)
-
-#fft
-add_executable(fft_test ci-test/test_fft.cpp)
-#target_precompile_headers(fft_test REUSE_FROM NEGF)
 
 #fft-many
 add_executable(fft-many_test ci-test/test_fft_many.cpp)
-#target_precompile_headers(fft-many_test REUSE_FROM NEGF)
 
 #fft+mpi
-add_executable(fft_mpi_test ci-test/test_fft_mpi.cpp)
-#target_precompile_headers(fft_Gradient_test REUSE_FROM NEGF)
+add_executable(fft_test ci-test/test_fft_mpi.cpp)
 
 #Gradient
 add_executable(Gradient_R_test ci-test/test_Gradient_R.cpp)
-#target_precompile_headers(Gradient_test REUSE_FROM NEGF)
-
-#TrivialBands 
-#add_executable(TrivialH_test ci-test/test_TrivialHamiltonian.cpp)
 
 #Noneq propagation 
 add_executable(NonEQ ci-test/test_NEQpop2.cpp)
-#target_precompile_headers(NonEQ REUSE_FROM NEGF)
 
 #Noneq propagation3 
 add_executable(NonEQ3 ci-test/test_NEQpop3.cpp)
-#target_precompile_headers(NonEQ REUSE_FROM NEGF)
-
-#simulation 
-add_executable(simulation_test ci-test/test_simulation.cpp)
-#target_precompile_headers(simulation_test REUSE_FROM NEGF)
-
-#RytovaKeldysh 
-add_executable(RytKel ci-test/test_RytovaKeldysh.cpp)
 
 #bandstructure
 add_executable(Bandstructure_test ci-test/test_bandstructure.cpp)
-#target_precompile_headers(Bandstructure_test REUSE_FROM NEGF)
 
 #pseudoinverse
 add_executable(Pseudoinv_test ci-test/test_pseudoinverse.cpp)
-#target_precompile_headers(Pseudoinv_test REUSE_FROM NEGF)
 
 #build for ctest
 enable_testing()
 add_test(NAME Containers_test COMMAND Containers_test)
-add_test(NAME MultiIndex_test COMMAND MultiIndex_test)
 add_test(NAME Matrix_test COMMAND Matrix_test)
-#add_test(NAME Laser_test COMMAND Laser_test)
 add_test(NAME Eigen_test COMMAND Eigen_test)
 add_test(NAME RK_test COMMAND RK_test)
 add_test(NAME RK2_test COMMAND RK2_test)
-#add_test(NAME fft_test COMMAND fft_test)
-#add_test(NAME fft-many_test COMMAND fft-many_test)
 add_test(NAME Gradient_R_test COMMAND Gradient_R_test)
-#add_test(NAME TrivialH_test COMMAND TrivialH_test)
 add_test(NAME Bandstructure_test COMMAND 
 					bash -c "${CMAKE_CURRENT_BINARY_DIR}/Bandstructure_test ; \
 					python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py BANDSTRUCTURE.txt ${CMAKE_SOURCE_DIR}/ci-test/Reference/BANDSTRUCTURE.txt")
-add_test(NAME fft_mpi_test COMMAND fft_mpi_test)
-#add_test(NAME simulation_test COMMAND simulation_test)
-add_test(NAME NonEQ COMMAND NonEQ)
-add_test(NAME NonEQ3 COMMAND NonEQ3)
-add_test(NAME RytKel COMMAND RytKel)
-add_test(NAME Overhead COMMAND Overhead) 
+add_test(NAME fft_test COMMAND fft_test)
+#add_test(NAME NonEQ COMMAND NonEQ)
+#add_test(NAME NonEQ3 COMMAND NonEQ3)
+add_test(NAME hBN COMMAND
+             bash -c "${CMAKE_CURRENT_BINARY_DIR}/EDUS  ${PROJECT_SOURCE_DIR}/ci-test/inputs/hBN.json; \
+             python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py Population.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN/Population.txt
+             python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py Velocity.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN/Velocity.txt; \
+             python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py DM0.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN/DM0.txt")
+
+add_test(NAME hBN_Coulomb COMMAND 
+          bash -c "python3 ${PROJECT_SOURCE_DIR}/Postproces/RytovaKeldysh.py 40 40 1 ${PROJECT_SOURCE_DIR}/tb_models/hBN_gap7.25eV_a2.5A_tb.dat; \
+          python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py RytovaKeldysh.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN_coulomb/RytovaKeldysh.txt; \
+          ${CMAKE_CURRENT_BINARY_DIR}/EDUS  ${PROJECT_SOURCE_DIR}/ci-test/inputs/hBN_coulomb.json; \
+                  python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py Population.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN_coulomb/Population.txt; \
+                  python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py Velocity.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN/Velocity.txt")
+
 

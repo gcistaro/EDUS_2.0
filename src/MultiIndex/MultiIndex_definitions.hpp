@@ -62,7 +62,7 @@ inline std::array<int,dim> MultiIndex<dim>::nDindex(const int& index) const
     assert(index >= 0 && index < TotalSize);
     std::array<int,dim> nDindex;
     int remainder = index;
-    for(int idim=0; idim<dim; idim++){
+    for(int idim=0; idim < int(dim); idim++){
         nDindex[idim] = remainder/Offset[idim];
         remainder = remainder%Offset[idim];
     }

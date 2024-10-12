@@ -6,8 +6,8 @@
     
     "dt": [0.1, "autime"],
     "printresolution": 10,
-    "starttime" : [0, "femtosecond"],
-    "finaltime": [100, "femtosecond"],
+    "initialtime" : [0, "femtoseconds"],
+    "finaltime": [100, "femtoseconds"],
 
     "solver": "rk4",
 

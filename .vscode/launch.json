@@ -5,11 +5,39 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(gdb) ",
+            "name": "(gdb) EDUS",
             "type": "cppdbg",
             "request": "launch",
-            "program": "/home/gcistaro/NEGF/build/simulation_test",
+            "program": "/home/gcistaro/NEGF/build/EDUS",
             "cwd": "/home/gcistaro/NEGF/build/",
+            "args": "../ci-test/inputs/simulation.json",
+            "stopAtEntry": false,
+            "environment": [{"name":"OMP_NUM_THREADS", "value":"1"},
+                            {"name":"SIRIUS_VERBOSITY", "value":"1"},
+                            {"name":"SIRIUS_PRINT_TIMING", "value":"1"},
+                            {"name":"SIRIUS_PRINT_MPI_LAYOUT", "value": "1"}],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "(gdb) fft_mpi",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/home/gcistaro/NEGF/build/fft_mpi_test",
+            "cwd": "/home/gcistaro/NEGF/build/",
+            //"args": "../ci-test/inputs/simulation.json",
             "stopAtEntry": false,
             "environment": [{"name":"OMP_NUM_THREADS", "value":"1"},
                             {"name":"SIRIUS_VERBOSITY", "value":"1"},
@@ -30,5 +58,6 @@
                 }
             ]
         }
+
     ]
 }
