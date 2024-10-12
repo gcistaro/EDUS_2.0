@@ -112,9 +112,6 @@ void Coulomb::EffectiveHamiltonian(Operator<std::complex<double>>& H__, const Op
     if ( !DoCoulomb ) {
         return;
     }
-BlockMatrix<std::complex<double>> Delta_DM;
-Delta_DM = DMR;
-Delta_DM.fill(0);
     #pragma omp parallel for
     for( int iblock = 0; iblock < HR.get_nblocks(); ++iblock ) {
         for( int irow = 0; irow < HR.get_nrows(); ++irow ) {

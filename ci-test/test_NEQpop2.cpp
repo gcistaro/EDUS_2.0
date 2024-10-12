@@ -47,8 +47,10 @@ int main()
     };
 
     //---------------------------------reinitialize RK with that initial condition--------------------------------------
-    auto& laser = simulation.laser;
+    auto& setoflaser = simulation.setoflaser;
+    Laser laser;
     laser.set_Intensity(0., Wcm2);//1.e+16, Wcm2);
+    setoflaser.push_back(laser);
     auto& H = simulation.H;
     auto& kgradient = simulation.kgradient;
     auto& coulomb = simulation.coulomb;

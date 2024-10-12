@@ -11,7 +11,7 @@ class Coulomb
         std::shared_ptr<MeshGrid> Rgrid;
         Operator<std::complex<double>> DM0;
         mdarray<std::complex<double>, 3> HF;
-        bool DoCoulomb;
+        bool DoCoulomb = false;
     public:
         Coulomb(){};
         

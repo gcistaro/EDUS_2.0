@@ -2,7 +2,7 @@ import numpy as np
 from scipy.special import struve, yn
 import matplotlib.pyplot as plt
 from scipy import constants
-
+import sys
 
 #read wannier 
 def read_wannierTB(filename):
@@ -54,7 +54,7 @@ r0 = 10.
 r0_au = r0*1.e-10/constants.physical_constants["Bohr radius"][0]
 epsilon = 2.
 
-name_tb = "/home/gcistaro/NEGF/tb_models/hBN_gap7.25eV_a2.5A_tb.dat"
+name_tb = sys.argv[4]
 A,num_R,num_bands,R,H,r = read_wannierTB(name_tb)
 R_cart = np.matmul( R, A )
 index_origin = np.where( np.linalg.norm(R_cart-np.zeros([1,3]), axis=1) < 1.e-07)
@@ -65,7 +65,7 @@ r_atom = np.array([np.diag(r_atom[0]), np.diag(r_atom[1]), np.diag(r_atom[2])])
 r_atom = np.transpose(r_atom)
 
 #calculate the Rytova-Keldysh potential on the grid given
-grid = [100,100,1]
+grid = [ int(sys.argv[1]) , int(sys.argv[2]) , int(sys.argv[3]) ]
 #gamma centered grid
 R = np.array(np.meshgrid(range(grid[0]), range(grid[1]), range(grid[2])))
 R = np.reshape(R,  [  3, grid[0]*grid[1]*grid[2] ])
