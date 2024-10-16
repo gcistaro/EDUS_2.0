@@ -86,7 +86,7 @@ Simulation::Simulation(const std::string& JsonFileName__)
 #ifdef NEGF_MPI
     rank << "DM" << mpi::Communicator::world().rank() << ".txt";
 #else
-    rank << "DM.txt";
+    rank << "DM0.txt";
 #endif
     DensityMatrix.go_to_R();
     std::ofstream os;
