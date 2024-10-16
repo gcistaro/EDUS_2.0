@@ -106,9 +106,3 @@ int MPIindex<dim>::get_RecommendedAllocate_fftw() const
     return RecommendedAllocate_fftw;
 }
 
-
-template<size_t dim>
-bool MPIindex<dim>::is_local(const int& index) const
-{
-    return ( index <= LocalRange_1D.second && index >= LocalRange_1D.first );
-}

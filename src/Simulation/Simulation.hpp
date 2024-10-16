@@ -25,9 +25,6 @@ class Simulation
         Operator<std::complex<double>> DensityMatrix;
         RungeKutta<Operator<std::complex<double>>> RK_object;
         int PrintResolution; //steps needed to print a variable
-        double FinalTime;
-        double InitialTime;
-
         kGradient kgradient;
         Coulomb coulomb;
         Space SpaceOfPropagation = k;
@@ -47,7 +44,6 @@ class Simulation
         void Calculate_TDHamiltonian(const double& time, const bool& erase_H);
         void Calculate_Velocity();
         void Propagate();
-        void do_onestep();
         void print_recap();
         bool PrintObservables(const double& time) const;
         void Print_Population();

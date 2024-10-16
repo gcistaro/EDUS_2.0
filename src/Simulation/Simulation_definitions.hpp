@@ -1,4 +1,4 @@
-
+/*
 
 template<class T>
 Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
@@ -9,13 +9,12 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
     //---------------------------------------------------------------------------------------
     
     //------------------------------initializing laser---------------------------------------
-    //Laser laser;
-    //laser.set_InitialTime(0., FemtoSeconds);
-    ////laser.set_Lambda(3000, NanoMeters);
-    //laser.set_Intensity(1.e+05, Wcm2);
-    //laser.set_Lambda(232.368, NanoMeters);
-    //laser.set_NumberOfCycles(1);
-    //laser.set_Polarization(Coordinate(1,0,0));
+    laser.set_InitialTime(0., FemtoSeconds);
+    //laser.set_Lambda(3000, NanoMeters);
+    laser.set_Intensity(1.e+05, Wcm2);
+    laser.set_Lambda(232.368, NanoMeters);
+    laser.set_NumberOfCycles(1);
+    laser.set_Polarization(Coordinate(1,0,0));
     //---------------------------------------------------------------------------------------
 
     //--------------------------initializing grids and arrays--------------------------------
@@ -50,6 +49,8 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
     for(int i=0; i< material.r[1].get_Operator_k().get_nblocks(); ++i){
         os_H << material.r[1].get_Operator_k()[i] << std::endl;
     }
+*/
+/*
     H.initialize_fft(*MasterRgrid, material.H.get_Operator_R().get_nrows());
     SettingUp_EigenSystem();
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
@@ -62,7 +63,7 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
     RK_object.initialize(DensityMatrix, 
                         InitialCondition, SourceTerm);
     RK_object.set_InitialTime(0.);
-    //RK_object.set_ResolutionTime( ( laser.get_Duration()/laser.get_NumberOfCycles() )/ 1000. );
+    RK_object.set_ResolutionTime( ( laser.get_Duration()/laser.get_NumberOfCycles() )/ 1000. );
     PrintResolution = 10;
     kgradient.initialize(*(DensityMatrix.get_Operator(R).get_MeshGrid()));
 
@@ -106,6 +107,7 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
     os_Velocity.open("Velocity.txt");
     //---------------------------------------------------------------------------------------
 }
+*/
 
 
 template <typename Scalar_T>

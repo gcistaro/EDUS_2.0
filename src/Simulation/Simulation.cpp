@@ -42,11 +42,6 @@ Simulation::Simulation(const std::string& JsonFileName__)
     auto MasterRgrid = std::make_shared<MeshGrid>(R, data["grid"].template get<std::array<int,3>>());
     coulomb.set_DoCoulomb(data["coulomb"].template get<bool>());    
     PrintResolution = data["printresolution"].template get<int>();
-
-    InitialTime =    data["initialtime"][0].template get<double>();
-    InitialTime = Convert(InitialTime, unit(data["initialtime"][1].template get<std::string>()), AuTime);
-    FinalTime =    data["finaltime"][0].template get<double>();
-    FinalTime = Convert(FinalTime, unit(data["finaltime"][1].template get<std::string>()), AuTime);
     
     std::array<int, 3> MG_size = {MasterRgrid->get_Size()[0], MasterRgrid->get_Size()[1], MasterRgrid->get_Size()[2]};
     Operator<std::complex<double>>::mpindex.initialize(MG_size);
@@ -69,7 +64,7 @@ Simulation::Simulation(const std::string& JsonFileName__)
     #include "Functional_SourceTerm.hpp"
     RK_object.initialize(DensityMatrix, 
                         InitialCondition, SourceTerm);
-    RK_object.set_InitialTime(InitialTime);
+    RK_object.set_InitialTime(0.);
     RK_object.set_ResolutionTime( Convert(data["dt"][0].template get<double>(), 
                                           unit(data["dt"][1].template get<std::string>()), 
                                         AuTime ));
@@ -202,20 +197,6 @@ void Simulation::Calculate_TDHamiltonian(const double& time, const bool& erase_H
 void Simulation::Propagate()
 {
     PROFILE("Simulation::Propagate");
-    int iFinalTime = int((FinalTime - InitialTime)/RK_object.get_ResolutionTime())+2;
-    std::cout << "Starting time propagation. TotalNumberOfSteps: " << iFinalTime << std::endl;
-    std::cout << "InitialTime : " << InitialTime << " " << "FinalTime: " << FinalTime << std::endl;
-
-    for( int it = 0; it < iFinalTime; ++it ) {
-        if(it%100 == 0) {
-            std::cout << "it: " << it << " / " << iFinalTime<< "  %: " << 100*double(it)/iFinalTime << std::endl;
-        }
-        do_onestep();
-    }
-}
-
-void Simulation::do_onestep()
-{
     auto CurrentTime = RK_object.get_CurrentTime();
     //------------------------Print population-------------------------------------
     

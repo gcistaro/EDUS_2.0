@@ -21,26 +21,28 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
     if(!DoCoulomb) {
         return;
     }
-    Rgrid = Rgrid__;
-    auto size_MG_global =  Rgrid__->get_TotalSize();
-    auto size_MG_local = Rgrid__->get_LocalSize();
+    auto size_MG =  Rgrid__->get_TotalSize();
     //W = mdarray<std::complex<double>, 6>( { size_MG, nbnd, nbnd, size_MG, nbnd, nbnd } );
-    HF = mdarray<std::complex<double>,3> ( { int( size_MG_local ), nbnd, nbnd } );
+    HF = mdarray<std::complex<double>,3> ( { int( size_MG ), nbnd, nbnd } );
     /* initializing W in point like approximation */ 
-    auto RytovaKeldysh_TB = mdarray<std::complex<double>,3> ( { int( size_MG_global ), nbnd, nbnd } );
+    auto RytovaKeldysh_TB = mdarray<std::complex<double>,3> ( { int( size_MG ), nbnd, nbnd } );
 /*
     RytovaKeldysh RytKel;
     RytKel.initialize(r, 2, Rgrid__);
 
 */
+    auto det = Coordinate::get_Basis(LatticeVectors(R)).get_M().determinant()/Coordinate::get_Basis(LatticeVectors(R)).get_M()(2,2);
     std::ifstream("RytovaKeldysh.txt");
     auto file = ReadFile("RytovaKeldysh.txt");
+std::cout << "Coordinate::get_Basis(LatticeVectors(R)).get_M().determinant():" << det << " " << std::sqrt(det) << std::endl;//.determinant() << std::endl;
     auto index = 1;
-    for( int iR = 0; iR < int(RytovaKeldysh_TB.get_Size(0)); ++iR ) {
-        for( int irow = 0; irow < int(RytovaKeldysh_TB.get_Size(1)); ++irow ) {
-            for( int icol = 0; icol < int(RytovaKeldysh_TB.get_Size(1)); ++icol ) {
+    for( int iR = 0; iR < int(HF.get_Size(0)); ++iR ) {
+        for( int irow = 0; irow < int(HF.get_Size(1)); ++irow ) {
+            for( int icol = 0; icol < int(HF.get_Size(1)); ++icol ) {
+                std::cout << "index: " << index << std::endl;
                 assert(file[index].size() == 1);
                 RytovaKeldysh_TB( iR, irow, icol ) = std::atof( file[index][0].c_str() );
+                //RytovaKeldysh_TB( iR, irow, icol ) *= 100.*100.*100.*100.;
                 index++;
             }
         }
@@ -49,32 +51,23 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
 
     //Fock part
     #pragma omp parallel for
-    for( int iR_local = 0; iR_local < size_MG_local; ++iR_local ){
+    for( int iR = 0; iR < size_MG; ++iR ){
         for( int irow = 0; irow < nbnd; ++irow ){
             for( int icol = 0; icol < nbnd; ++icol ){
-                auto iR_global = int( Rgrid__->mpindex.loc1D_to_glob1D(iR_local) );
-                HF( iR_local, irow, icol ) = - RytovaKeldysh_TB( iR_global, irow, icol ); 
+                HF( iR, irow, icol ) = - RytovaKeldysh_TB( iR, irow, icol ); 
             }
         }
     }
-
-    int index_origin_global = Rgrid__->find(Coordinate(0,0,0));
-    if( Rgrid__->mpindex.is_local(index_origin_global) ) {
-        int index_origin_local = Rgrid__->mpindex.glob1D_to_loc1D(index_origin_global);
-
-        for( int iR = 0; iR < int(RytovaKeldysh_TB.get_Size(0)); ++iR ) {
-            for( int irow = 0; irow < nbnd; ++irow ){
-                HF( index_origin_local, irow, irow ) += 2.*RytovaKeldysh_TB( iR, irow, irow );
-            }
+    int index_origin = Rgrid__->find(Coordinate(0,0,0));
+    std::cout << index_origin;
+    #pragma omp parallel for
+    for( int iR = 0; iR < int(HF.get_Size(0)); ++iR ) {
+        for( int irow = 0; irow < nbnd; ++irow ){
+            HF( index_origin, irow, irow ) += 2.*RytovaKeldysh_TB( iR, irow, irow );
         }
     }
-        std::ofstream HFF("HF.txt");
-    for( int iR = 0; iR < size_MG_local; ++iR ){
-        for( int irow = 0; irow < nbnd; ++irow ){
-            for( int icol = 0; icol < nbnd; ++icol ){
-                HFF << HF( iR, irow, icol ) << std::endl;
-            }}}
-
+    std::cout << HF;
+    std::cout << "Done HF!\n";
 }
 
 void Coulomb::set_DM0( const Operator<std::complex<double>>& DM0__ )

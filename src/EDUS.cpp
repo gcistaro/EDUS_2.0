@@ -20,13 +20,10 @@ int main(int argc, char *argv[])
         std::cout << "To start the program: EDUS <input.json>" << std::endl;
         exit(0);
     }
-
     initialize();
-{    
+    
     Simulation simulation(argv[1]);
     simulation.Propagate();
-}
-    finalize();
 
     PROFILE_STOP("EDUS");
     if( mpi::Communicator::world().rank() == 0 ) {

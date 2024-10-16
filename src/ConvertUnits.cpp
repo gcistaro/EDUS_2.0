@@ -1,6 +1,7 @@
 #include <map>
 #include <string>
 #include <cassert>
+
 #include "ConvertUnits.hpp"
 
 
@@ -17,7 +18,7 @@ Unit AuIntensity(INTENSITY, AtomicUnitOfIntensity);
 Unit AuTime(TIME, AtomicUnitOfTime);
 Unit AuLength(LENGTH,Bohr_value);
 Unit AuEnergy(ENERGY,2.*Rydberg_value);
-Unit NullUnit(NullType, 0.);
+
 
 Unit unit( const std::string& to_unit)
 {
@@ -31,5 +32,5 @@ Unit unit( const std::string& to_unit)
     if( to_unit == "autime"      )    {return AuTime;  }
     if( to_unit == "aulength"    )    {return AuLength;  }
     if( to_unit == "auenergy"    )    {return AuEnergy;  }
-    return NullUnit;
+    return AuLength;
 }

@@ -23,5 +23,5 @@ extern int NumberKpools;
 #define variable(x)  (#x)
 
 void initialize();
-void finalize();
+
 #endif
