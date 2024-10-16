@@ -1,5 +1,5 @@
 {
-    "tb_file": "/home/gcistaro/NEGF/tb_models/hBN_gap7.25eV_a2.5A",
+    "tb_file": "/home/miguelsa/Desktop/madrid_phd/NEGF/tb_models/hBN_gap7.25eV_a2.5A",
     "fermienergy": [0, "electronvolt"],
     "coulomb": false,
     "grid": [100,100,1],
