@@ -77,7 +77,6 @@ for iR, R_ in enumerate(R):
     for ix in range(3):
         if R[iR][ix] > int(grid[ix]/2):
             R[iR][ix] = R[iR][ix] -int(grid[ix])
-print(R)
 R = np.matmul(R, A)
 
 
@@ -85,7 +84,6 @@ R = np.matmul(R, A)
 print("Calculating rytova keldysh")
 RytovaKeldysh = np.zeros([R.shape[0], num_bands, num_bands])
 for iR, R_ in enumerate(R):
-    print(iR)
     for ibnd1 in range(num_bands):
         for ibnd2 in range(num_bands):
             rnorm = np.linalg.norm(r_atom[ibnd1]-R_-r_atom[ibnd2])
