@@ -45,8 +45,13 @@ int main(int argc, char **argv)
 /*     ***********************end of get splitted arrays************************************************/
 
     //allocate array with recommended size
+#ifdef NEGF_MPI
     mdarray<std::complex<double>,2> Array_x( { mpindex.get_RecommendedAllocate_fftw(), howmany  } );//({1,int(N0)*int(N1)});
     mdarray<std::complex<double>,2> Array_k( { mpindex.get_RecommendedAllocate_fftw(), howmany  } );//({1,int(N0)*int(N1)});
+#else
+    mdarray<std::complex<double>,2> Array_x( { howmany, int(N0)*int(N1)});
+    mdarray<std::complex<double>,2> Array_k( { howmany, int(N0)*int(N1)});
+#endif 
 
     //filling Array_x
     //loop over local indices
@@ -58,8 +63,12 @@ int main(int argc, char **argv)
         else                      x = N0-aux_[0];
         if( aux_[1] <= N1/2 )     y = aux_[1];
         else                      y = N1-aux_[1];
-  
-        Array_x(oneDindex_loc, 0) = std::exp(-a*std::pow(x, 2))*std::exp(-b*std::pow(y,2));
+#ifdef NEGF_MPI
+        Array_x(oneDindex_loc, 0) =
+#else
+        Array_x(0, oneDindex_loc) =
+#endif 
+        std::exp(-a*std::pow(x, 2))*std::exp(-b*std::pow(y,2));
     }
     std::cout << "Rank " << irank <<  " Settingv up Fourier Transform..\n";
 {
@@ -94,7 +103,11 @@ int main(int argc, char **argv)
         else                      wy = double(N1-aux_[1]) * DeltaWy;
   
         auto AnalyticalSolution = std::sqrt(pi/b)*std::sqrt(pi/a)*std::exp(-pi*pi*wx*wx/a)/std::sqrt(N0)*std::exp(-pi*pi*wy*wy/b)/std::sqrt(N1);
+#ifdef NEGF_MPI
         auto NumericalSolution  = Array_k( oneDindex_loc, 0 );
+#else
+        auto NumericalSolution  = Array_k( 0, oneDindex_loc );
+#endif
         auto RelativeError = 100*abs(NumericalSolution - AnalyticalSolution )/abs(AnalyticalSolution);
         //print all infos
         os_rank << "  |  ";
