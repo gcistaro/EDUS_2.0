@@ -34,7 +34,7 @@ void MPIindex<dim>::initialize( const std::array<int, 3>& ValuesToSplit__)
     std::ptrdiff_t local_n0;
 
     GlobalRange_1D.first = 0;
-    GlobalRange_1D.second = ValuesToSplit[0]*ValuesToSplit[1]*ValuesToSplit[2];
+    GlobalRange_1D.second = ValuesToSplit[0]*ValuesToSplit[1]*ValuesToSplit[2]-1;
 
 #ifdef NEGF_MPI
     auto alloc_local = fftw_mpi_local_size_many(int(dim), dimensions, 1,//howmany 
