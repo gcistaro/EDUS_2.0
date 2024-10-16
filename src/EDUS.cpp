@@ -29,7 +29,10 @@ int main(int argc, char *argv[])
     finalize();
 
     PROFILE_STOP("EDUS");
-    if( mpi::Communicator::world().rank() == 0 ) {
+#ifdef NEGF_MPI
+    if( mpi::Communicator::world().rank() == 0 )
+#endif
+    {
         print_timing(1);
     }
 }
