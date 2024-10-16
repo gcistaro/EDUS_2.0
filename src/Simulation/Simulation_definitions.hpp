@@ -29,6 +29,7 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
     material.r[0].dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
     material.r[1].dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
     material.r[2].dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
+/*
     std::stringstream rank_H;
     rank_H << "H" << mpi::Communicator::world().rank() << ".txt";
     std::ofstream os_H;
@@ -50,6 +51,7 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
     for(int i=0; i< material.r[1].get_Operator_k().get_nblocks(); ++i){
         os_H << material.r[1].get_Operator_k()[i] << std::endl;
     }
+*/
     H.initialize_fft(*MasterRgrid, material.H.get_Operator_R().get_nrows());
     SettingUp_EigenSystem();
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
