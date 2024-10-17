@@ -21,8 +21,10 @@ endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /lib/x86_64-linux-gnu/)
-add_compile_options(-g -Wall -fopenmp)#-fconcepts -g)
-
+if (CMAKE_BUILD_TYPE="Debug")
+    add_compile_options(-g -Wall)#-fconcepts -g)
+endif()
+add_compile_options(-fopenmp)
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
 
 
