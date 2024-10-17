@@ -4,6 +4,7 @@
 //- MPI_COMM_WORLD
 //- fftw initialization
 
+#include "omp.h"
 #include "initialize.hpp"
 
 
@@ -31,8 +32,9 @@ void initialize()
 #ifdef NEGF_MPI
     mpi::Communicator::initialize(MPI_THREAD_MULTIPLE);
     if( mpi::Communicator::world().rank() == 0 ) {
-        std::cout << "MPI Communicator world size: " << mpi::Communicator::world().size() << "processors\n";
+        std::cout << "MPI Communicator world size: " << mpi::Communicator::world().size() << " processors\n";
     }
+    std::cout << "OpenMP threads available to the program: " << omp_get_thread_limit() << std::endl;
     NumberKpools = mpi::Communicator::world().size();
     fftw_mpi_init();  
 
