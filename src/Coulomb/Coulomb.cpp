@@ -1,7 +1,6 @@
-
-
 #include "Coulomb.hpp"
 #include "RytovaKeldysh/RytovaKeldysh.hpp"
+#include <filesystem> 
 
 Coulomb::Coulomb(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid__)
 {
@@ -33,8 +32,8 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
     RytKel.initialize(r, 2, Rgrid__);
 
 */
-    std::ifstream("RytovaKeldysh.txt");
-    auto file = ReadFile("RytovaKeldysh.txt");
+    std::filesystem::path cwd = std::filesystem::current_path() / "RytovaKeldysh.txt";
+    auto file = ReadFile(cwd.string());
     auto index = 1;
     for( int iR = 0; iR < int(RytovaKeldysh_TB.get_Size(0)); ++iR ) {
         for( int irow = 0; irow < int(RytovaKeldysh_TB.get_Size(1)); ++irow ) {
