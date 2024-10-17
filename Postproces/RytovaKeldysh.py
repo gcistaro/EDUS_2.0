@@ -1,8 +1,9 @@
 import numpy as np
 from scipy.special import struve, yn
-import matplotlib.pyplot as plt
+##import matplotlib.pyplot as plt
 from scipy import constants
 import sys
+import os
 
 #read wannier 
 def read_wannierTB(filename):
@@ -93,8 +94,8 @@ for iR, R_ in enumerate(R):
 print("Done")
 print(np.max(RytovaKeldysh), np.min(RytovaKeldysh))
 
-
-f=open("RytovaKeldysh.txt","w")
+print("Saving RK potential in " + os.getcwd()+"/RytovaKeldysh.txt")
+f=open(os.getcwd()+"/RytovaKeldysh.txt","w")
 f.write("#File generated from "+ name_tb+ "with a grid " + str(grid[0]) + "x" + str(grid[1]) + "x" + str(grid[2]) + "\n")
 for iR, R_ in enumerate(R):
     for ibnd1 in range(num_bands):
