@@ -77,13 +77,13 @@ DESolver<T>::DESolver(T& Function_, const std::function<void(T&)>& EvaluateIniti
 template<typename T>
 const T& DESolver<T>::get_Function() const 
 {
-    return *(this->Function);
+    return *(Function);
 }
 
 template<typename T>
 T& DESolver<T>::get_Function() 
 {
-    return *(this->Function);
+    return *(Function);
 }
 
 
