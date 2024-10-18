@@ -19,8 +19,10 @@ class RungeKutta: public DESolver<T>{
         using DESolver<T>::EvaluateSourceFunction;
 
     public:
-        RungeKutta(T& Function_, const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_) 
-        : DESolver<T>(Function_, EvaluateInitialCondition_, EvaluateSourceFunction_){};
+        using DESolver<T>::DESolver;
+        //RungeKutta(T& Function_, const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_) 
+        //: DESolver<T>(Function_, EvaluateInitialCondition_, EvaluateSourceFunction_){};
+
         void initialize(T& Function_, const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_) override; 
         void Propagate(); 
 };

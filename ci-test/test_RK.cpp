@@ -2,10 +2,9 @@
 #include <iomanip>
 #include <vector>
 #include <math.h>
-//#include "RungeKutta/RungeKutta.hpp"
+#include "RungeKutta/RungeKutta.hpp"
 //#include "AdamsBashforth/AdamsBashforth.hpp"
 #include <chrono>
-#include "DESolver/DESolver.hpp"
 #include <typeinfo>  // Required for typeid
 
 //here we solve y'=c*y
@@ -36,9 +35,9 @@ int main()
         }
     };
 
-    //auto rungekutta = RungeKutta<std::vector<double>>(Function_, InitialCondition, SourceTerm);
+    auto rungekutta = RungeKutta<std::vector<double>>(Function_, InitialCondition, SourceTerm);
     //auto rungekutta = DESolver<std::vector<double>>(Function_, InitialCondition, SourceTerm);         // how do i specify that it is the derived class?
-    RungeKutta<decltype(Function_)> rungekutta(Function_, InitialCondition, SourceTerm);                // here i define the object rungekutta as a RungeKutta derived class object
+    //RungeKutta<decltype(Function_)> rungekutta(Function_, InitialCondition, SourceTerm);                // here i define the object rungekutta as a RungeKutta derived class object
     //rungekutta = rungekutta.DESolver<std::vector<double>>(Function_, InitialCondition, SourceTerm);
     rungekutta.set_InitialTime(InitialTime);
     rungekutta.set_ResolutionTime(ResolutionTime);

@@ -61,7 +61,7 @@ class DESolver{
         void set_InitialTime(const double& InitialTime_){InitialTime = InitialTime_;}
         void set_ResolutionTime(const double& ResolutionTime_){ResolutionTime = ResolutionTime_;}
         void set_EvaluateInitialCondition(const std::function<void(T&)>& EvaluateInitialCondition_);
-        virtual void initialize(T& Function_, const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_) = 0; 
+        virtual void initialize(T& Function_, const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_){}; 
 	
 };
 
