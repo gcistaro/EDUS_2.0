@@ -203,9 +203,19 @@ void Simulation::Propagate()
 {
     PROFILE("Simulation::Propagate");
     int iFinalTime = int((FinalTime - InitialTime)/RK_object.get_ResolutionTime())+2;
-    std::cout << "Starting time propagation. TotalNumberOfSteps: " << iFinalTime << std::endl;
-    std::cout << "InitialTime : " << InitialTime << " " << "FinalTime: " << FinalTime << std::endl;
-
+    std::cout << "*******************************************************    PROPAGATION     ***************************************************\n";
+    std::cout << "*   Initial time:       *     ";
+    std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << InitialTime;
+    std::cout << std::left << std::setw(15) << " a.u.";
+    std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << Convert(InitialTime, AuTime, FemtoSeconds);
+    std::cout << std::left << std::setw(60) << " fs" << "*\n";
+    std::cout << "*   Final time:         *     ";
+    std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << FinalTime;
+    std::cout << std::left << std::setw(15) << " a.u.";
+    std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << Convert(FinalTime, AuTime, FemtoSeconds);
+    std::cout << std::left << std::setw(60) << " fs" << "*\n";
+    std::cout << "*   Number of steps:    *     ";
+    std::cout << std::left << std::setw(95) << iFinalTime <<  "*\n";
     for( int it = 0; it < iFinalTime; ++it ) {
         if(it%100 == 0) {
             std::cout << "it: " << it << " / " << iFinalTime<< "  %: " << 100*double(it)/iFinalTime << std::endl;
