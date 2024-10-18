@@ -218,10 +218,16 @@ void Simulation::Propagate()
     std::cout << std::left << std::setw(95) << iFinalTime <<  "*\n";
     for( int it = 0; it < iFinalTime; ++it ) {
         if(it%100 == 0) {
-            std::cout << "it: " << it << " / " << iFinalTime<< "  %: " << 100*double(it)/iFinalTime << std::endl;
+            std::cout << "*   it:                 *     ";
+            std::cout << std::setw(5) << std::left <<  it;
+            std::cout << " / "; 
+            std::cout << std::setw(10) << std::left << iFinalTime;
+            std::cout << std::fixed << std::left << std::setw(8) << std::setprecision(4) << 100*double(it)/iFinalTime << "%";
+            std::cout << std::right << std::setw(69) << "*" << std::endl;
         }
         do_onestep();
     }
+    std::cout << "******************************************************************************************************************************\n";
 }
 
 void Simulation::do_onestep()
