@@ -2,8 +2,11 @@
 #include <iomanip>
 #include <vector>
 #include <math.h>
-#include "RungeKutta/RungeKutta.hpp"
-//#include "Adams-Bashforth/Adams-Bashforth.hpp"
+//#include "RungeKutta/RungeKutta.hpp"
+//#include "AdamsBashforth/AdamsBashforth.hpp"
+#include <chrono>
+#include "DESolver/DESolver.hpp"
+#include <typeinfo>  // Required for typeid
 
 //here we solve y'=c*y
 //The analytical solution is y=y0*Exp(c*t)
@@ -11,7 +14,8 @@
 int main()
 {
     double InitialTime = 0.;
-    double ResolutionTime = 0.001;
+    double ResolutionTime = 0.00001;
+    double FinalTime = 1.;
     static double InitialConstant = 1.;
     static double RateOfIncrease = 2.;
     std::vector<double> Function_;
@@ -33,14 +37,30 @@ int main()
     };
 
     //auto rungekutta = RungeKutta<std::vector<double>>(Function_, InitialCondition, SourceTerm);
-    auto rungekutta = RungeKutta<std::vector<double>>(Function_, InitialCondition, SourceTerm);
+    //auto rungekutta = DESolver<std::vector<double>>(Function_, InitialCondition, SourceTerm);         // how do i specify that it is the derived class?
+    RungeKutta<decltype(Function_)> rungekutta(Function_, InitialCondition, SourceTerm);                // here i define the object rungekutta as a RungeKutta derived class object
+    //rungekutta = rungekutta.DESolver<std::vector<double>>(Function_, InitialCondition, SourceTerm);
     rungekutta.set_InitialTime(InitialTime);
     rungekutta.set_ResolutionTime(ResolutionTime);
+    std::cout << "Type of Function_: " << typeid(Function_).name() << "\n";
+
+    // uncomment the following lines if you include AdamsBashforth and not RungeKutta
+    /*
+    auto a = RateOfIncrease*InitialConstant*exp(RateOfIncrease*rungekutta.get_CurrentTime() - 0*ResolutionTime);
+    auto b = RateOfIncrease*InitialConstant*exp(RateOfIncrease*rungekutta.get_CurrentTime() - 1*ResolutionTime);
+    auto c = RateOfIncrease*InitialConstant*exp(RateOfIncrease*rungekutta.get_CurrentTime() - 2*ResolutionTime);
+    auto d = RateOfIncrease*InitialConstant*exp(RateOfIncrease*rungekutta.get_CurrentTime() - 3*ResolutionTime);
+    rungekutta.set_fns({a}, {b}, {c}, {d});
+    */
+
+    auto start = std::chrono::high_resolution_clock::now();
 
     std::cout << "+---------+------------+--------------------+---------------------+-------------------+\n";
     std::cout << "|  step   |    time    | Numerical solution | Analytical solution |      Error(%)     |\n";
     std::cout << "+---------+------------+--------------------+---------------------+-------------------+\n";
-    for(double it=0; it<=10000; it++){
+    //for(double it=0; it<=10000; it++){
+    int it = 0;
+    while (rungekutta.get_CurrentTime() <= FinalTime){
         if(int(it)%100==0){
             auto AnalyticalSolution = InitialConstant*exp(RateOfIncrease*rungekutta.get_CurrentTime());
             auto&& NumericalSolution = rungekutta.get_Function()[0];
@@ -56,10 +76,12 @@ int main()
             std::cout << "|";
             std::cout << "  ";
             std::cout << std::setw(16) << std::setprecision(8) << std::scientific << AnalyticalSolution;
+            std::cout << "gets here\n";
             std::cout << "   ";
             std::cout << "|";
             std::cout << "  ";
             std::cout << std::setw(15) << std::setprecision(8) << std::scientific <<  100*abs(NumericalSolution-AnalyticalSolution)/abs(AnalyticalSolution);
+            std::cout << "gets here\n";
             std::cout << "  |" << std::endl;
         
             if( 100*abs(NumericalSolution-AnalyticalSolution)/abs(AnalyticalSolution) > 1.e-08){
@@ -69,7 +91,13 @@ int main()
         }    
 
         rungekutta.Propagate();
+        it++;
     }
+
+    auto end = std::chrono::high_resolution_clock::now();
+
+    std::chrono::duration<double> duration = end - start;
+    std::cout << "Time taken: " << duration.count() << " seconds" << std::endl;
 
     
 
