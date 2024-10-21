@@ -40,6 +40,7 @@ int main()
     laser.set_Intensity(1.e+10, Wcm2);
     laser.set_Lambda(800, NanoMeters);
     laser.set_Polarization(Coordinate(1,0,0));
+    laser.set_NumberOfCycles(5);
     setoflaser.push_back(laser);
     auto& H = simulation.H;
     auto& kgradient = simulation.kgradient;
@@ -56,7 +57,7 @@ int main()
     //------------------------------- FINAL CHECK ON PROPAGATOR -----------------------------------------
     std::cout << "Checking correctness of propagator...\n";
     auto DMk0 = simulation.DensityMatrix.get_Operator_k();
-    for(int it=0; it <= 20; ++it){
+    for(int it=0; it <= 2; ++it){
         simulation.DensityMatrix.go_to_k();
         auto& DMk = simulation.DensityMatrix.get_Operator_k();
         for(int ik_loc=0; ik_loc < simulation.DensityMatrix.mpindex.nlocal; ++ik_loc){
@@ -71,11 +72,11 @@ int main()
             std::cout  << std::setw(40) << std::setprecision(10) << Analytical;
             std::cout  << std::setw(20) << std::setprecision(10) << RelativeError << std::endl;
             if( std::abs(Analytical) > 1.e-07 && 
-                RelativeError > 10.){
+                RelativeError > 1.e-05){
                 exit(1);
             }
         }
-        simulation.Propagate();
+        simulation.do_onestep();
     }
 
     PROFILE_STOP("main");

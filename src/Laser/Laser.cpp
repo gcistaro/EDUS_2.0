@@ -97,7 +97,7 @@ double Envelope::operator()(const double& Time)
 {
     double t = Time - InitialTime;
 
-    if(t < 0 || t > Duration){
+    if( std::abs(t) <= 1.e-07 || t > Duration){
         return 0.;
     }
     return std::pow(std::sin(pi*t/Duration), 2.);

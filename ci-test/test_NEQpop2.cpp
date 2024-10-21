@@ -49,7 +49,10 @@ int main()
     //---------------------------------reinitialize RK with that initial condition--------------------------------------
     auto& setoflaser = simulation.setoflaser;
     Laser laser;
-    laser.set_Intensity(0., Wcm2);//1.e+16, Wcm2);
+    laser.set_Intensity(0, Wcm2);
+    laser.set_Lambda(5, NanoMeters);
+    laser.set_Polarization(Coordinate(1,0,0));
+    laser.set_NumberOfCycles(5);
     setoflaser.push_back(laser);
     auto& H = simulation.H;
     auto& kgradient = simulation.kgradient;
@@ -113,7 +116,7 @@ int main()
     //}
 
 
-    for(int it=0; it <= 1000; ++it){
+    for(int it=0; it <= 100; ++it){
         simulation.DensityMatrix.go_to_k();
         auto DMk = simulation.DensityMatrix.get_Operator_k();
         for(int ik=0; ik < DMk.get_nblocks(); ik++){
@@ -127,7 +130,7 @@ int main()
             std::cout  << std::setw(40) << std::setprecision(10) << Analytical;
             std::cout  << std::setw(20) << std::setprecision(10) << RelativeError << std::endl;
             if( std::abs(Analytical) > 1.e-07 && 
-                RelativeError > 10.){
+                RelativeError > 1.e-06){
                 exit(1);
             }
         }
