@@ -209,8 +209,8 @@ add_test(NAME Bandstructure_test COMMAND
 					bash -c "${CMAKE_CURRENT_BINARY_DIR}/Bandstructure_test ; \
 					python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_CURRENT_BINARY_DIR}/BANDSTRUCTURE.txt ${CMAKE_SOURCE_DIR}/ci-test/Reference/BANDSTRUCTURE.txt")
 add_test(NAME fft_test COMMAND fft_test)
-#add_test(NAME NonEQ COMMAND NonEQ)
-#add_test(NAME NonEQ3 COMMAND NonEQ3)
+add_test(NAME NonEQ_H0 COMMAND NonEQ)
+add_test(NAME NonEQ_Grad COMMAND NonEQ3)
 add_test(NAME hBN COMMAND
              bash -c "${CMAKE_CURRENT_BINARY_DIR}/EDUS  ${PROJECT_SOURCE_DIR}/ci-test/inputs/hBN.json; \
              python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py Population.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN/Population.txt
