@@ -186,10 +186,10 @@ add_executable(fft_test ci-test/test_fft_mpi.cpp)
 add_executable(Gradient_R_test ci-test/test_Gradient_R.cpp)
 
 #Noneq propagation 
-add_executable(NonEQ ci-test/test_NEQpop2.cpp)
+add_executable(NonEQ ci-test/test_NEQ_H0.cpp)
 
 #Noneq propagation3 
-add_executable(NonEQ3 ci-test/test_NEQpop3.cpp)
+add_executable(NonEQ3 ci-test/test_NEQ_Grad.cpp)
 
 #bandstructure
 add_executable(Bandstructure_test ci-test/test_bandstructure.cpp)
