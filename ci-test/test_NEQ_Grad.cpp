@@ -2,6 +2,7 @@
 #include "initialize.hpp"
 #include "Simulation/Simulation.hpp"
 #include "core/print_timing.hpp"
+#include "core/projectdir.hpp"
 
 /*
  This test is used to test only the adiabatic term.
@@ -19,7 +20,9 @@ int main()
     initialize();
     //------------------------------------------initialize simulation------------------------------------------------------
     auto N = 100;
-    Simulation simulation("/home/gcistaro/NEGF/tb_models/Trivial_Hamiltonian", std::array<int,3>({N,N,1}));//;/TBgraphene",40.);//
+    std::stringstream ss ;
+    ss << ProjectDirectory << "/tb_models/Trivial_Hamiltonian";
+    Simulation simulation(ss.str(), std::array<int,3>({N,N,1}));//;/TBgraphene",40.);//
 
     //------------------------------------------get wanted initial condition------------------------------------------------
     std::function<void(Operator<std::complex<double>>&)> InitialConditionToUse = [&](Operator<std::complex<double>>& DM)

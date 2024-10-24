@@ -122,6 +122,11 @@ message(STATUS "Imported oneMKL targets: ${MKL_IMPORTED_TARGETS}")
 #fftw3
 
 #find_package(fftw3 REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_search_module(FFTW REQUIRED fftw3 IMPORTED_TARGET)
+#message(STATUS "PkgConfigFFTW -> ${FFTW_IMPORTED_TARGETS}")
+include_directories(PkgConfig::FFTW)
+link_libraries(PkgConfig::FFTW)
 link_libraries(fftw3)
 
 if (NEGF_MPI)
