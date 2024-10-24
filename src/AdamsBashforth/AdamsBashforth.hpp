@@ -18,13 +18,22 @@ class AdamsBashforth: public DESolver<T>{
         using DESolver<T>::EvaluateSourceFunction;
 
     public:
-        AdamsBashforth(T& Function_, const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_) 
-        : DESolver<T>(Function_, EvaluateInitialCondition_, EvaluateSourceFunction_){};
 
-        void initialize(T& Function_, const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_) override; 
+        AdamsBashforth(T& Function_, const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_); 
+
+        using DESolver<T>::DESolver;
+
+        void initialize(T& Function_, const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_); 
         void Propagate(); 
         void set_fns(const T& a, const T& b, const T& c, const T& d);
 };
+
+template<typename T>
+AdamsBashforth<T>::AdamsBashforth(T& Function_, const std::function<void(T&)>& EvaluateInitialCondition_, 
+                        const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_)
+{
+    initialize(Function_, EvaluateInitialCondition_, EvaluateSourceFunction_);
+}
 
 template<typename T>
 void AdamsBashforth<T>::initialize(T& Function_, const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_)
@@ -40,6 +49,7 @@ void AdamsBashforth<T>::initialize(T& Function_, const std::function<void(T&)>& 
     std::fill(fns[ifn2].begin(), fns[ifn2].end(), 0.);
     std::fill(fns[ifn3].begin(), fns[ifn3].end(), 0.);
     std::fill(fns[ifn4].begin(), fns[ifn4].end(), 0.);
+    
 
 }
 

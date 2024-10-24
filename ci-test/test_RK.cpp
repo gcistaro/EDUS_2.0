@@ -2,10 +2,9 @@
 #include <iomanip>
 #include <vector>
 #include <math.h>
-#include "RungeKutta/RungeKutta.hpp"
-//#include "AdamsBashforth/AdamsBashforth.hpp"
+//#include "RungeKutta/RungeKutta.hpp"
+#include "AdamsBashforth/AdamsBashforth.hpp"
 #include <chrono>
-#include <typeinfo>  // Required for typeid
 
 //here we solve y'=c*y
 //The analytical solution is y=y0*Exp(c*t)
@@ -35,22 +34,26 @@ int main()
         }
     };
 
+    /*
     auto rungekutta = RungeKutta<std::vector<double>>(Function_, InitialCondition, SourceTerm);
-    //auto rungekutta = DESolver<std::vector<double>>(Function_, InitialCondition, SourceTerm);         // how do i specify that it is the derived class?
-    //RungeKutta<decltype(Function_)> rungekutta(Function_, InitialCondition, SourceTerm);                // here i define the object rungekutta as a RungeKutta derived class object
-    //rungekutta = rungekutta.DESolver<std::vector<double>>(Function_, InitialCondition, SourceTerm);
+    //auto rungekutta = DESolver<std::vector<double>>(Function_, InitialCondition, SourceTerm);             // how do i specify that it is the derived class?
+    //RungeKutta<decltype(Function_)> rungekutta(Function_, InitialCondition, SourceTerm);                  // here i define the object rungekutta as a RungeKutta derived class object
     rungekutta.set_InitialTime(InitialTime);
     rungekutta.set_ResolutionTime(ResolutionTime);
-    std::cout << "Type of Function_: " << typeid(Function_).name() << "\n";
+    */
+
+    auto adamsbashforth = AdamsBashforth<std::vector<double>>(Function_, InitialCondition, SourceTerm);
+    adamsbashforth.set_InitialTime(InitialTime);
+    adamsbashforth.set_ResolutionTime(ResolutionTime);
 
     // uncomment the following lines if you include AdamsBashforth and not RungeKutta
-    /*
-    auto a = RateOfIncrease*InitialConstant*exp(RateOfIncrease*rungekutta.get_CurrentTime() - 0*ResolutionTime);
-    auto b = RateOfIncrease*InitialConstant*exp(RateOfIncrease*rungekutta.get_CurrentTime() - 1*ResolutionTime);
-    auto c = RateOfIncrease*InitialConstant*exp(RateOfIncrease*rungekutta.get_CurrentTime() - 2*ResolutionTime);
-    auto d = RateOfIncrease*InitialConstant*exp(RateOfIncrease*rungekutta.get_CurrentTime() - 3*ResolutionTime);
-    rungekutta.set_fns({a}, {b}, {c}, {d});
-    */
+    
+    auto a = RateOfIncrease*InitialConstant*exp(RateOfIncrease*adamsbashforth.get_CurrentTime() - 0*ResolutionTime);
+    auto b = RateOfIncrease*InitialConstant*exp(RateOfIncrease*adamsbashforth.get_CurrentTime() - 1*ResolutionTime);
+    auto c = RateOfIncrease*InitialConstant*exp(RateOfIncrease*adamsbashforth.get_CurrentTime() - 2*ResolutionTime);
+    auto d = RateOfIncrease*InitialConstant*exp(RateOfIncrease*adamsbashforth.get_CurrentTime() - 3*ResolutionTime);
+    adamsbashforth.set_fns({a}, {b}, {c}, {d});
+    
 
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -59,14 +62,15 @@ int main()
     std::cout << "+---------+------------+--------------------+---------------------+-------------------+\n";
     //for(double it=0; it<=10000; it++){
     int it = 0;
-    while (rungekutta.get_CurrentTime() <= FinalTime){
+    while (adamsbashforth.get_CurrentTime() <= FinalTime){
         if(int(it)%100==0){
-            auto AnalyticalSolution = InitialConstant*exp(RateOfIncrease*rungekutta.get_CurrentTime());
-            auto&& NumericalSolution = rungekutta.get_Function()[0];
+            auto AnalyticalSolution = InitialConstant*exp(RateOfIncrease*adamsbashforth.get_CurrentTime());
+            auto&& NumericalSolution = adamsbashforth.get_Function()[0];
+            std::cout << adamsbashforth.get_Function()[0] << "\n";
             std::cout << "|";
             std::cout << std::setw(7) << std::fixed << int(it);
             std::cout << "  |  ";
-            std::cout << std::setw(6) << std::setprecision(2) <<  std::scientific << rungekutta.get_CurrentTime();
+            std::cout << std::setw(6) << std::setprecision(2) <<  std::scientific << adamsbashforth.get_CurrentTime();
             std::cout << "  ";
             std::cout << "|";
             std::cout << "  ";
@@ -75,21 +79,19 @@ int main()
             std::cout << "|";
             std::cout << "  ";
             std::cout << std::setw(16) << std::setprecision(8) << std::scientific << AnalyticalSolution;
-            std::cout << "gets here\n";
             std::cout << "   ";
             std::cout << "|";
             std::cout << "  ";
             std::cout << std::setw(15) << std::setprecision(8) << std::scientific <<  100*abs(NumericalSolution-AnalyticalSolution)/abs(AnalyticalSolution);
-            std::cout << "gets here\n";
             std::cout << "  |" << std::endl;
         
             if( 100*abs(NumericalSolution-AnalyticalSolution)/abs(AnalyticalSolution) > 1.e-08){
                 exit(1);
             }
-
+        
         }    
 
-        rungekutta.Propagate();
+        adamsbashforth.Propagate();
         it++;
     }
 

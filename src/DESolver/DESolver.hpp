@@ -33,7 +33,7 @@ template<typename T>
 class DESolver{
 	//private:
 	protected:
-		T *Function;
+		T *Function;                  // Function is declared as a pointer
 		double InitialTime = 0.;
         double ResolutionTime = 0.;
         double CurrentTime = 0;
@@ -52,7 +52,8 @@ class DESolver{
         DESolver(DESolver&& DES) = default;
         DESolver& operator=(DESolver&& DES) = default;
 
-        DESolver(T& Function_, const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_); 
+        // this has to be declared separately in each derived class since it calls initialize, a function defined differently for each method
+        //DESolver(T& Function_, const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_); 
 
         const T& get_Function() const; 
         T& get_Function(); 
@@ -61,29 +62,23 @@ class DESolver{
         void set_InitialTime(const double& InitialTime_){InitialTime = InitialTime_;}
         void set_ResolutionTime(const double& ResolutionTime_){ResolutionTime = ResolutionTime_;}
         void set_EvaluateInitialCondition(const std::function<void(T&)>& EvaluateInitialCondition_);
-        virtual void initialize(T& Function_, const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_){}; 
 	
 };
 
 //template<typename T, typename LambdaForSourceTerm, typename LambdaForInitialCondition>
 //RungeKutta<T, LambdaForSourceTerm, LambdaForInitialCondition>::RungeKutta
-template<typename T>
-DESolver<T>::DESolver(T& Function_, const std::function<void(T&)>& EvaluateInitialCondition_, 
-                        const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_)
-{
-    this->initialize(Function_, EvaluateInitialCondition_, EvaluateSourceFunction_);
-}
+
 
 template<typename T>
 const T& DESolver<T>::get_Function() const 
 {
-    return *(Function);
+    return *Function;                         
 }
 
 template<typename T>
 T& DESolver<T>::get_Function() 
 {
-    return *(Function);
+    return *Function;
 }
 
 
