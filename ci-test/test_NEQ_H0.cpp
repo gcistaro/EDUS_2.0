@@ -2,7 +2,7 @@
 #include "initialize.hpp"
 #include "Simulation/Simulation.hpp"
 #include "core/print_timing.hpp"
-
+#include "core/projectdir.hpp"
 /*
  This test is used to test only the H0 term (no laser). We solve the differential equation:
  i dP(R)/dt = [H,P]
@@ -31,7 +31,9 @@ int main()
     initialize();
     //------------------------------------------initialize simulation------------------------------------------------------
     auto N = 100;
-    Simulation simulation("/home/gcistaro/NEGF/tb_models/2B_trivialH", std::array<int,3>({N,N,1}));//;/TBgraphene",40.);//
+    std::stringstream ss ;
+    ss << ProjectDirectory << "/tb_models/2B_trivialH";
+    Simulation simulation(ss.str(), std::array<int,3>({N,N,1}));//;/TBgraphene",40.);//
 
     //------------------------------------------get wanted initial condition------------------------------------------------
     std::function<void(Operator<std::complex<double>>&)> InitialConditionToUse = [&](Operator<std::complex<double>>& DM)
@@ -134,7 +136,7 @@ int main()
                 exit(1);
             }
         }
-        simulation.Propagate();
+        simulation.do_onestep();
     }
     print_timing(1);
 }
