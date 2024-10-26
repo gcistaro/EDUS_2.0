@@ -96,6 +96,8 @@ link_libraries(OpenMP::OpenMP_CXX)
 #adding MPI
 if(NEGF_MPI)
   find_package(MPI REQUIRED)
+  message("MPI include dir: ${MPI_CXX_INCLUDE_DIRS}")
+  include_directories(${MPI_CXX_INCLUDE_DIRS})
   link_libraries(MPI::MPI_CXX)
   message(STATUS "Run: ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS} ${MPIEXEC_PREFLAGS} EXECUTABLE ${MPIEXEC_POSTFLAGS} ARGS")
   if(MPI_COMPILE_FLAGS)
