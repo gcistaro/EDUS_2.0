@@ -396,6 +396,12 @@ int MeshGrid::get_TotalSize() const
     return TotalSize;
 }
 
+int MeshGrid::get_LocalSize() const
+{
+    auto LocalRange = mpindex.get_LocalRange();
+    return LocalRange.second-LocalRange.first + 1;
+}
+
 int MeshGrid::get_id() const
 {
     return id;

@@ -55,6 +55,8 @@ class MPIindex
         inline const auto& get_LocalRange() const {return LocalRange_1D; };
         inline auto& get_LocalRange() {return LocalRange_1D; };
 
+        bool is_local(const int& index) const;
+
 };
 
 

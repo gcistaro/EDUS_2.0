@@ -20,11 +20,13 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
     if(!DoCoulomb) {
         return;
     }
-    auto size_MG =  Rgrid__->get_TotalSize();
+    Rgrid = Rgrid__;
+    auto size_MG_global =  Rgrid__->get_TotalSize();
+    auto size_MG_local = Rgrid__->get_LocalSize();
     //W = mdarray<std::complex<double>, 6>( { size_MG, nbnd, nbnd, size_MG, nbnd, nbnd } );
-    HF = mdarray<std::complex<double>,3> ( { int( size_MG ), nbnd, nbnd } );
+    HF = mdarray<std::complex<double>,3> ( { int( size_MG_local ), nbnd, nbnd } );
     /* initializing W in point like approximation */ 
-    auto RytovaKeldysh_TB = mdarray<std::complex<double>,3> ( { int( size_MG ), nbnd, nbnd } );
+    auto RytovaKeldysh_TB = mdarray<std::complex<double>,3> ( { int( size_MG_global ), nbnd, nbnd } );
 /*
     RytovaKeldysh RytKel;
     RytKel.initialize(r, 2, Rgrid__);
@@ -33,13 +35,11 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
     std::filesystem::path cwd = std::filesystem::current_path() / "RytovaKeldysh.txt";
     auto file = ReadFile(cwd.string());
     auto index = 1;
-    for( int iR = 0; iR < int(HF.get_Size(0)); ++iR ) {
-        for( int irow = 0; irow < int(HF.get_Size(1)); ++irow ) {
-            for( int icol = 0; icol < int(HF.get_Size(1)); ++icol ) {
-                std::cout << "index: " << index << std::endl;
+    for( int iR = 0; iR < int(RytovaKeldysh_TB.get_Size(0)); ++iR ) {
+        for( int irow = 0; irow < int(RytovaKeldysh_TB.get_Size(1)); ++irow ) {
+            for( int icol = 0; icol < int(RytovaKeldysh_TB.get_Size(1)); ++icol ) {
                 assert(file[index].size() == 1);
                 RytovaKeldysh_TB( iR, irow, icol ) = std::atof( file[index][0].c_str() );
-                //RytovaKeldysh_TB( iR, irow, icol ) *= 100.*100.*100.*100.;
                 index++;
             }
         }
@@ -48,19 +48,23 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
 
     //Fock part
     #pragma omp parallel for
-    for( int iR = 0; iR < size_MG; ++iR ){
+    for( int iR_local = 0; iR_local < size_MG_local; ++iR_local ){
         for( int irow = 0; irow < nbnd; ++irow ){
             for( int icol = 0; icol < nbnd; ++icol ){
-                HF( iR, irow, icol ) = - RytovaKeldysh_TB( iR, irow, icol ); 
+                auto iR_global = int( Rgrid__->mpindex.loc1D_to_glob1D(iR_local) );
+                HF( iR_local, irow, icol ) = - RytovaKeldysh_TB( iR_global, irow, icol ); 
             }
         }
     }
-    int index_origin = Rgrid__->find(Coordinate(0,0,0));
-    std::cout << index_origin;
-    #pragma omp parallel for
-    for( int iR = 0; iR < int(HF.get_Size(0)); ++iR ) {
-        for( int irow = 0; irow < nbnd; ++irow ){
-            HF( index_origin, irow, irow ) += 2.*RytovaKeldysh_TB( iR, irow, irow );
+
+    int index_origin_global = Rgrid__->find(Coordinate(0,0,0));
+    if( Rgrid__->mpindex.is_local(index_origin_global) ) {
+        int index_origin_local = Rgrid__->mpindex.glob1D_to_loc1D(index_origin_global);
+
+        for( int iR = 0; iR < int(RytovaKeldysh_TB.get_Size(0)); ++iR ) {
+            for( int irow = 0; irow < nbnd; ++irow ){
+                HF( index_origin_local, irow, irow ) += 2.*RytovaKeldysh_TB( iR, irow, irow );
+            }
         }
     }
         std::ofstream HFF("HF.txt");
@@ -70,6 +74,7 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
                 HFF << HF( iR, irow, icol ).real() << " " << HF( iR, irow, icol ).imag() <<  std::endl;
             }}}
             HFF.close();
+
 }
 
 void Coulomb::set_DM0( const Operator<std::complex<double>>& DM0__ )
