@@ -183,7 +183,7 @@ Matrix<double> GradientMatrix(const size_t& nshells, const MeshGrid& kmesh, cons
 
 std::vector<std::vector<std::vector<int>>> kGradient::Find_kpb(const MeshGrid& kmesh, const std::vector<std::vector<int>>& ikshell)
 {
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
     try{
         if( mpi::Communicator::world().size() > 1 ) {
             throw(mpi::Communicator::world().size());

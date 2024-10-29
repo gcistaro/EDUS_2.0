@@ -1,19 +1,18 @@
 cmake_minimum_required(VERSION 3.16) #last feature: target_precompile_header
 
 # set the project name and version
-project(NEGF VERSION 1.0)
+project(EDUS VERSION 1.0)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 
-option(NEGF_PROFILE "Profiling function timings" ON)
-option(NEGF_MPI "Enabling MPI" ON)
+option(EDUS_PROFILE "Profiling function timings" ON)
+option(EDUS_MPI "Enabling MPI" ON)
 
-if(NEGF_PROFILE)
-  add_definitions(-DNEGF_PROFILE)
+if(EDUS_PROFILE)
+  add_definitions(-DEDUS_PROFILE)
 endif()
-if(NEGF_MPI)
-  add_definitions(-DNEGF_MPI)
-  #set(MPI_CXX_COMPILER mpiicpc)
+if(EDUS_MPI)
+  add_definitions(-DEDUS_MPI)
 endif()
 
 
@@ -34,20 +33,20 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
 find_program(GIT_EXE NAMES git)
 
 # generate version header
-string(TIMESTAMP NEGF_TIMESTAMP "%Y-%m-%d %H:%M:%S")
+string(TIMESTAMP EDUS_TIMESTAMP "%Y-%m-%d %H:%M:%S")
 message("PROJECT_SOURCE_DIR:     ${PROJECT_SOURCE_DIR}")
 if(DEFINED GIT_EXE AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
   execute_process(COMMAND git rev-parse HEAD
-                  OUTPUT_VARIABLE NEGF_SHA
+                  OUTPUT_VARIABLE EDUS_SHA
                   WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
                   ERROR_QUIET
                   OUTPUT_STRIP_TRAILING_WHITESPACE)
   execute_process(COMMAND git describe --all
-                  OUTPUT_VARIABLE NEGF_GIT_BRANCH
+                  OUTPUT_VARIABLE EDUS_GIT_BRANCH
                   WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
                   ERROR_QUIET
                   OUTPUT_STRIP_TRAILING_WHITESPACE)
-  message(STATUS "git hash ${NEGF_SHA}")
+  message(STATUS "git hash ${EDUS_SHA}")
 endif()
 
 configure_file("${PROJECT_SOURCE_DIR}/src/core/githash.h.in" "${PROJECT_SOURCE_DIR}/src/core/githash.hpp" @ONLY)
@@ -94,7 +93,7 @@ find_package(OpenMP)
 link_libraries(OpenMP::OpenMP_CXX)
 
 #adding MPI
-if(NEGF_MPI)
+if(EDUS_MPI)
   find_package(MPI REQUIRED)
   message("MPI include dir: ${MPI_CXX_INCLUDE_DIRS}")
   include_directories(${MPI_CXX_INCLUDE_DIRS})
@@ -131,77 +130,26 @@ include_directories(PkgConfig::FFTW)
 link_libraries(PkgConfig::FFTW)
 link_libraries(fftw3)
 
-if (NEGF_MPI)
+if (EDUS_MPI)
   link_libraries(fftw3_mpi)
 endif()
+
 
 # add the executable
 add_executable(EDUS src/EDUS.cpp)
 
-#precompile headers to speed up compilation
-#target_precompile_headers( NEGF 
-#                              PUBLIC src/core/print_timing.hpp
-#                              PUBLIC src/core/profiler.hpp
-#                              PUBLIC src/core/rt_graph.hpp
-#                              PUBLIC src/fftPair/fftPair.hpp
-#                              PUBLIC src/Geometry/Coordinate.hpp
-#                              PUBLIC src/Geometry/Matrix.hpp
-#                              PUBLIC src/Geometry/Vector.hpp
-#                              PUBLIC src/kGradient/kGradient.hpp
-#                              PUBLIC src/Laser/Laser.hpp
-#                              PUBLIC src/LinearAlgebra/gemm.hpp
-#                              PUBLIC src/mdContainers/mdContainers.hpp
-#                              PUBLIC src/MeshGrid/MeshGrid.hpp
-#                              PUBLIC src/Model/Model.hpp
-#                              PUBLIC src/Operator/BlockMatrix.hpp
-#                              PUBLIC src/Operator/Operator.hpp
-#                              PUBLIC src/RungeKutta/RungeKutta.hpp
-#                              PUBLIC src/Simulation/Simulation.hpp
-#                              PUBLIC src/Wannier/Wannier.hpp
-#                              PUBLIC src/Constants.hpp
-#                              PUBLIC src/ConvertUnits.hpp
-#                              PUBLIC src/ostream.hpp
-#                              PUBLIC src/StreamFile.hpp)
-
-
-
-
-#testing...
-
-#mdcontainers
+#Executables for test various classes
 add_executable(Containers_test ci-test/test_mdarray.cpp) 
-
-#Matrix
 add_executable(Matrix_test ci-test/test_matrix.cpp)
-
-#Eigenvalues
 add_executable(Eigen_test ci-test/test_eigen.cpp) 
-
-#RK
 add_executable(RK_test ci-test/test_RK.cpp)
-
-#RK2
 add_executable(RK2_test ci-test/test_RK2.cpp)
-
-#fft-many
-add_executable(fft-many_test ci-test/test_fft_many.cpp)
-
-#fft+mpi
+#add_executable(fft-many_test ci-test/test_fft_many.cpp)
 add_executable(fft_test ci-test/test_fft_mpi.cpp)
-
-#Gradient
 add_executable(Gradient_R_test ci-test/test_Gradient_R.cpp)
-
-#Noneq propagation 
 add_executable(NonEQ ci-test/test_NEQ_H0.cpp)
-
-#Noneq propagation3 
 add_executable(NonEQ3 ci-test/test_NEQ_Grad.cpp)
-
-#bandstructure
 add_executable(Bandstructure_test ci-test/test_bandstructure.cpp)
-
-#pseudoinverse
 add_executable(Pseudoinv_test ci-test/test_pseudoinverse.cpp)
 
 #build for ctest

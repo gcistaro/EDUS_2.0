@@ -5,7 +5,7 @@
 #include <memory>
 #include <complex>
 
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
 #include <fftw3-mpi.h>
 #else
 #include <fftw3.h>

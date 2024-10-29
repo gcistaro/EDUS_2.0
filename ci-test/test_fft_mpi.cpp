@@ -30,7 +30,7 @@ int main(int argc, char **argv)
 /*     ***********************get splitted arrays************************************************/
     std::array<int,3> dims = {N0, N1, 1};
 
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
     irank = mpi::Communicator::world().rank();
     nproc = mpi::Communicator::world().size();
 #else 
@@ -45,7 +45,7 @@ int main(int argc, char **argv)
 /*     ***********************end of get splitted arrays************************************************/
 
     //allocate array with recommended size
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
     mdarray<std::complex<double>,2> Array_x( { mpindex.get_RecommendedAllocate_fftw(), howmany  } );//({1,int(N0)*int(N1)});
     mdarray<std::complex<double>,2> Array_k( { mpindex.get_RecommendedAllocate_fftw(), howmany  } );//({1,int(N0)*int(N1)});
 #else
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
         else                      x = N0-aux_[0];
         if( aux_[1] <= N1/2 )     y = aux_[1];
         else                      y = N1-aux_[1];
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
         Array_x(oneDindex_loc, 0) =
 #else
         Array_x(0, oneDindex_loc) =
@@ -78,7 +78,7 @@ int main(int argc, char **argv)
     fftm.fft(-1);
     std::cout << "Rank " << irank <<  "DONE Fourier transform!\n";
 
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     double DeltaWx = 1./double(N0);
@@ -103,7 +103,7 @@ int main(int argc, char **argv)
         else                      wy = double(N1-aux_[1]) * DeltaWy;
   
         auto AnalyticalSolution = std::sqrt(pi/b)*std::sqrt(pi/a)*std::exp(-pi*pi*wx*wx/a)/std::sqrt(N0)*std::exp(-pi*pi*wy*wy/b)/std::sqrt(N1);
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
         auto NumericalSolution  = Array_k( oneDindex_loc, 0 );
 #else
         auto NumericalSolution  = Array_k( 0, oneDindex_loc );
@@ -136,7 +136,7 @@ int main(int argc, char **argv)
     os_rank.close();
 
 }//end of scope of fftw
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
     MPI_Finalize(); 
 #endif
 }

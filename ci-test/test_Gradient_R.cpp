@@ -34,7 +34,7 @@ int main()
     kGradient gradient(Rmesh);
 
     //define function e(i 2\pi (k_0))+e(i 2\pi (k_1))
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
     mdarray<std::complex<double>, 2> Function({mesh.get_TotalSize(), 1});
     mdarray<std::complex<double>, 2> Function_R({mesh.get_TotalSize(), 1});
     mdarray<std::complex<double>, 2> DFunction_k({mesh.get_TotalSize(), 1});
@@ -47,7 +47,7 @@ int main()
 #endif
     for( int ik=0; ik<Function.get_TotalSize(); ++ik ) {
         auto& cart = mesh[ik].get("Cartesian");
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
         Function(ik, 0) =
 #else
         Function(0, ik) =
@@ -67,7 +67,7 @@ int main()
     ft_D.fft(+1);
     for( int ik=0; ik<Function.get_TotalSize(); ++ik ) {
         auto& cart = mesh[ik].get("Cartesian");     
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
         auto& Dfunction = DFunction_k(ik, 0); 
 #else
         auto& Dfunction = DFunction_k(0,ik);

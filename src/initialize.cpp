@@ -1,5 +1,5 @@
 //this function must be called at the beginning of any miniapp to allow for 
-//initialization of NEGF important quantities, such as:
+//initialization of EDUS important quantities, such as:
 //- header printing with git infos
 //- MPI_COMM_WORLD
 //- fftw initialization
@@ -10,7 +10,7 @@
 #include "initialize.hpp"
 
 
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
 mpi::Communicator kpool_comm;
 mpi::Communicator band_comm;
 int NumberKpools;
@@ -31,7 +31,7 @@ int NumberKpools;
 */
 void initialize()
 {  
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
     mpi::Communicator::initialize(MPI_THREAD_MULTIPLE);
     NumberKpools = mpi::Communicator::world().size();
     fftw_mpi_init();  
@@ -91,7 +91,7 @@ void initialize()
 
 void finalize()
 {  
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
     mpi::Communicator::finalize();
     if( mpi::Communicator::world().rank() == 0 ) {
         std::cout << "MPI Communicator finalized!\n";

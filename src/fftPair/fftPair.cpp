@@ -18,7 +18,7 @@ FourierTransform::initialize
     IsFFT = true;
     Array_x = &Array_x__;
     Array_k = &Array_k__;
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
     howmany = Array_x->get_Size(1);
 #else
     howmany = Array_x->get_Size(0);
@@ -34,7 +34,7 @@ FourierTransform::initialize
     odist = TotalSize;
 
 //initializing plans, two for each object for +1 and -1 transforms.
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
     std::ptrdiff_t* Dimensions_ptr = new std::ptrdiff_t[Dimensions.size()];
     for( auto idim = 0; idim < int(Dimensions.size()); ++idim ) {
         Dimensions_ptr[idim] = Dimensions[idim];

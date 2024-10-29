@@ -83,7 +83,7 @@ Simulation::Simulation(const std::string& JsonFileName__)
 
     //print DM in R to prove it decays and is zero for large R
     std::stringstream rank;
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
     rank << "DM" << mpi::Communicator::world().rank() << ".txt";
 #else
     rank << "DM0.txt";
@@ -257,7 +257,7 @@ void Simulation::Print_Population()
     aux_DM.go_to_bloch();
 
     auto Population = TraceK(aux_DM.get_Operator(Space::k));
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
     if( kpool_comm.rank() == 0 )
 #endif
     {
@@ -337,7 +337,7 @@ void Simulation::print_recap()
     //std::cout << "DM grid (k)   ";
     //std::cout << "|" << std::setw(4) << DensityMatrix.get_Operator_k().get_MeshGrid()->get_id() << "|";
     //std::cout <<  std::setw(7) << DensityMatrix.get_Operator_k().get_MeshGrid()->get_mesh().size() << "|"<< std::endl;
-    //"tb_file": "/home/gcistaro/NEGF/tb_models/hBN_gap7.25eV_a2.5A",
+    //"tb_file": "/home/gcistaro/EDUS/tb_models/hBN_gap7.25eV_a2.5A",
     //"dt": [0.1, "autime"],
     //"solver": "RungeKutta",
     //"printresolution": 6,

@@ -196,7 +196,7 @@ class Operator
             }
             initialized_fft = true;
             
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
             Operator_R = BlockMatrix<std::complex<double>>(R, mpindex.get_RecommendedAllocate_fftw(), nbnd, nbnd);
 #else
             Operator_R = BlockMatrix<std::complex<double>>(R, MG.get_mesh().size(), nbnd, nbnd);
@@ -253,7 +253,7 @@ class Operator
 
             //bandindex FTfriendly_Operator_k = mdarray<std::complex<double>, 2>({nbnd*(nbnd+1)/2, mpindex.get_RecommendedAllocate_fftw()});
             //bandindex FTfriendly_Operator_R = mdarray<std::complex<double>, 2>({nbnd*(nbnd+1)/2, mpindex.get_RecommendedAllocate_fftw()});
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
             FTfriendly_Operator_k = mdarray<std::complex<double>, 2>( Operator_k.data(), {mpindex.get_RecommendedAllocate_fftw(),nbnd*nbnd} );
             FTfriendly_Operator_R = mdarray<std::complex<double>, 2>( Operator_R.data(), {mpindex.get_RecommendedAllocate_fftw(),nbnd*nbnd} );
 #else
@@ -275,7 +275,7 @@ class Operator
         void dft(const std::vector<Coordinate>& path, const int& sign, const bool& UseMPI=true)
         {
             initialize_dft();
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
             std::vector<Coordinate> path_local;
             auto& LocalRange = mpindex.get_LocalRange();
             if(UseMPI) {
@@ -383,14 +383,14 @@ class Operator
         
         void shuffle_to_RK()
         {
-#ifndef NEGF_MPI
+#ifndef EDUS_MPI
             shuffle_to_RK_dft();
 #endif
         }
 
         void shuffle_to_fft_R()
         {
-#ifndef NEGF_MPI
+#ifndef EDUS_MPI
             PROFILE("Operator::shuffle_to_fft_R");
             auto ci = MeshGrid::get_ConvolutionIndex(*Operator_R.get_MeshGrid() , *FT_meshgrid_R, *MeshGrid_Null);
 
@@ -409,7 +409,7 @@ class Operator
 
         void shuffle_to_fft_k()
         {
-#ifndef NEGF_MPI
+#ifndef EDUS_MPI
             PROFILE("Operator::shuffle_to_fft_k");
 
             #pragma omp parallel for
@@ -426,7 +426,7 @@ class Operator
 
         void shuffle_from_fft_R()
         {
-#ifndef NEGF_MPI
+#ifndef EDUS_MPI
             PROFILE("Operator::shuffle_from_fft_R");
             auto ci = MeshGrid::get_ConvolutionIndex(*Operator_R.get_MeshGrid(), *FT_meshgrid_R, *MeshGrid_Null);
             // bandindex auto ciminus = MeshGrid::get_ConvolutionIndex(*MeshGrid_Null, *Operator_R.get_MeshGrid(), *Operator_R.get_MeshGrid());
@@ -456,7 +456,7 @@ class Operator
 
         void shuffle_from_fft_k()
         {
-#ifndef NEGF_MPI
+#ifndef EDUS_MPI
             PROFILE("Operator::shuffle_from_fft_k");
 
             #pragma omp parallel for 

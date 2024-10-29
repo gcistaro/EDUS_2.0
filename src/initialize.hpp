@@ -1,5 +1,5 @@
 //this function must be called at the beginning of any miniapp to allow for 
-//initialization of NEGF important quantities, such as:
+//initialization of EDUS important quantities, such as:
 //- header printing with git infos
 //- MPI_COMM_WORLD
 //- fftw initialization
@@ -14,7 +14,7 @@
 #include "fftw3-mpi.h"
 
 
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
 extern mpi::Communicator kpool_comm;
 extern mpi::Communicator band_comm;
 extern int NumberKpools;

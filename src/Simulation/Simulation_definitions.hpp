@@ -76,7 +76,7 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
 
     //print DM in R to prove it decays and is zero for large R
     std::stringstream rank;
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
     rank << "DM" << mpi::Communicator::world().rank() << ".txt";
 #else
     rank << "DM.txt";
