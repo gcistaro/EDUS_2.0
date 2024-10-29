@@ -3,7 +3,7 @@
 #define COMMUNICATORS_HPP
 
 
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
 
 #include <complex>
 #include "mpi.h"
@@ -132,5 +132,5 @@ class Communicator {
 
 
 }//end namespace mpi
-#endif//NEGF_MPI
+#endif//EDUS_MPI
 #endif//COMMUNICATORS_HPP

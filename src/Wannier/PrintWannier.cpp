@@ -7,7 +7,7 @@ void PrintWannier(const std::string& FileName, const int& NumberOfBands, const i
     std::ofstream OutputFile;
     OutputFile.open(FileName.c_str());
 
-    OutputFile << "#Created with NEGF program for checking purposes" << std::endl;
+    OutputFile << "#Created with EDUS program for checking purposes" << std::endl;
     
     //unitcell
     for(int i=0; i<3; i++){

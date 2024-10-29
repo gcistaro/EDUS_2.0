@@ -1,13 +1,16 @@
 //this function must be called at the beginning of any miniapp to allow for 
-//initialization of NEGF important quantities, such as:
+//initialization of EDUS important quantities, such as:
 //- header printing with git infos
 //- MPI_COMM_WORLD
 //- fftw initialization
 
+//#include "omp.h"
+#include <thread>
+#include <iomanip>
 #include "initialize.hpp"
 
 
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
 mpi::Communicator kpool_comm;
 mpi::Communicator band_comm;
 int NumberKpools;
@@ -28,11 +31,8 @@ int NumberKpools;
 */
 void initialize()
 {  
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
     mpi::Communicator::initialize(MPI_THREAD_MULTIPLE);
-    if( mpi::Communicator::world().rank() == 0 ) {
-        std::cout << "MPI Communicator world size: " << mpi::Communicator::world().size() << "processors\n";
-    }
     NumberKpools = mpi::Communicator::world().size();
     fftw_mpi_init();  
 
@@ -54,10 +54,16 @@ void initialize()
     }
     else {
         print_header();
-        std::cout << "MPI parallelization recap. \n";
-        std::cout << "WORLD RANK: " << mpi::Communicator::world().rank() << "/" << mpi::Communicator::world().size();
-        std::cout << " KPOOL RANK: " << kpool_comm.rank() << "/" << kpool_comm.size();
-        std::cout << " BAND RANK: " << band_comm.rank()<< "/" << band_comm.size() << std::endl;
+        std::cout << "**************************************************    PARALLELIZATION RECAP     **********************************************\n";
+        std::cout << "*    MPI world size:    *     ";
+        std::cout << std::left << std::setw(95) << mpi::Communicator::world().size() << "*\n";
+        std::cout << "*    OpenMP  threads:   *     ";
+        std::cout << std::left << std::setw(95) << std::thread::hardware_concurrency() << "*\n";
+        std::cout << "******************************************************************************************************************************\n";
+        //std::cout << "MPI parallelization recap. \n";
+        //std::cout << "WORLD RANK: " << mpi::Communicator::world().rank() << "/" << mpi::Communicator::world().size();
+        //std::cout << " KPOOL RANK: " << kpool_comm.rank() << "/" << kpool_comm.size();
+        //std::cout << " BAND RANK: " << band_comm.rank()<< "/" << band_comm.size() << std::endl;
 
         for(int irank_ = 1; irank_ < mpi::Communicator::world().size(); ++irank_ ) {
             int world_comm_rank = 10, kpool_comm_rank, kpool_comm_size, band_comm_rank, band_comm_size;
@@ -67,13 +73,17 @@ void initialize()
             mpi::Communicator::world().receive( band_comm_rank, irank_ );
             mpi::Communicator::world().receive( band_comm_size, irank_ );
 
-            std::cout << "WORLD RANK: " << world_comm_rank << "/" << mpi::Communicator::world().size();
-            std::cout << " KPOOL RANK: " << kpool_comm_rank << "/" << kpool_comm_size;
-            std::cout << " BAND RANK: " << band_comm_rank << "/" << band_comm_size << std::endl;
+            //std::cout << "WORLD RANK: " << world_comm_rank << "/" << mpi::Communicator::world().size();
+            //std::cout << " KPOOL RANK: " << kpool_comm_rank << "/" << kpool_comm_size;
+            //std::cout << " BAND RANK: " << band_comm_rank << "/" << band_comm_size << std::endl;
         }
     }
 #else  
     print_header();
+    std::cout << "**************************************************    PARALLELIZATION RECAP     **********************************************\n";
+    std::cout << "*    OpenMP  threads:   *     ";
+    std::cout << std::left << std::setw(95) << std::thread::hardware_concurrency() << "*\n";
+    std::cout << "******************************************************************************************************************************\n";
 #endif
 }
 
@@ -81,7 +91,7 @@ void initialize()
 
 void finalize()
 {  
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
     mpi::Communicator::finalize();
     if( mpi::Communicator::world().rank() == 0 ) {
         std::cout << "MPI Communicator finalized!\n";

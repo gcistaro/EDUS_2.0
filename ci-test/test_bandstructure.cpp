@@ -1,11 +1,15 @@
 #include <iomanip>
 #include "initialize.hpp"
 #include "Model/Model.hpp"
+#include "core/projectdir.hpp"
+
 int main()
 {
     initialize();
 
-    Material model("/home/gcistaro/NEGF/tb_models/TBgraphene");
+    std::stringstream inputfile;
+    inputfile << ProjectDirectory <<  "/tb_models/TBgraphene";
+    Material model(inputfile.str());
 
     std::vector<Coordinate> path;
 

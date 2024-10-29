@@ -43,7 +43,7 @@ extern acc::nvtxprofiler::Timer global_nvtx_timer;
 
 // TODO: add calls to apex and cudaNvtx
 
-#if defined(NEGF_PROFILE)
+#if defined(EDUS_PROFILE)
 #define PROFILER_CONCAT_IMPL(x, y) x##y
 #define PROFILER_CONCAT(x, y) PROFILER_CONCAT_IMPL(x, y)
 

@@ -112,7 +112,7 @@ class BlockMatrix{
         auto get_space() const{return space; };
         auto get_space() {return space; };
         void set_space(const Space& space__) {space = space__;};
-        void set_space(const Space& space__) const {space = space__;};
+        //void set_space(const Space& space__) const {space = space__;};
         bool is_hermitian();
         void make_hermitian();
         void make_antihermitian();

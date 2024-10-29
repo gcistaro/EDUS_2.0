@@ -1,7 +1,6 @@
-
-
 #include "Coulomb.hpp"
 #include "RytovaKeldysh/RytovaKeldysh.hpp"
+#include <filesystem> 
 
 Coulomb::Coulomb(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid__)
 {
@@ -31,10 +30,8 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
     RytKel.initialize(r, 2, Rgrid__);
 
 */
-    auto det = Coordinate::get_Basis(LatticeVectors(R)).get_M().determinant()/Coordinate::get_Basis(LatticeVectors(R)).get_M()(2,2);
-    std::ifstream("RytovaKeldysh.txt");
-    auto file = ReadFile("RytovaKeldysh.txt");
-std::cout << "Coordinate::get_Basis(LatticeVectors(R)).get_M().determinant():" << det << " " << std::sqrt(det) << std::endl;//.determinant() << std::endl;
+    std::filesystem::path cwd = std::filesystem::current_path() / "RytovaKeldysh.txt";
+    auto file = ReadFile(cwd.string());
     auto index = 1;
     for( int iR = 0; iR < int(HF.get_Size(0)); ++iR ) {
         for( int irow = 0; irow < int(HF.get_Size(1)); ++irow ) {
@@ -66,8 +63,13 @@ std::cout << "Coordinate::get_Basis(LatticeVectors(R)).get_M().determinant():" <
             HF( index_origin, irow, irow ) += 2.*RytovaKeldysh_TB( iR, irow, irow );
         }
     }
-    std::cout << HF;
-    std::cout << "Done HF!\n";
+        std::ofstream HFF("HF.txt");
+    for( int iR = 0; iR < size_MG_local; ++iR ){
+        for( int irow = 0; irow < nbnd; ++irow ){
+            for( int icol = 0; icol < nbnd; ++icol ){
+                HFF << HF( iR, irow, icol ).real() << " " << HF( iR, irow, icol ).imag() <<  std::endl;
+            }}}
+            HFF.close();
 }
 
 void Coulomb::set_DM0( const Operator<std::complex<double>>& DM0__ )
@@ -105,9 +107,6 @@ void Coulomb::EffectiveHamiltonian(Operator<std::complex<double>>& H__, const Op
     if ( !DoCoulomb ) {
         return;
     }
-BlockMatrix<std::complex<double>> Delta_DM;
-Delta_DM = DMR;
-Delta_DM.fill(0);
     #pragma omp parallel for
     for( int iblock = 0; iblock < HR.get_nblocks(); ++iblock ) {
         for( int irow = 0; irow < HR.get_nrows(); ++irow ) {

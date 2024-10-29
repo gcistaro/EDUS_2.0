@@ -1,8 +1,9 @@
 import numpy as np
 from scipy.special import struve, yn
-import matplotlib.pyplot as plt
+##import matplotlib.pyplot as plt
 from scipy import constants
-
+import sys
+import os
 
 #read wannier 
 def read_wannierTB(filename):
@@ -54,7 +55,7 @@ r0 = 10.
 r0_au = r0*1.e-10/constants.physical_constants["Bohr radius"][0]
 epsilon = 2.
 
-name_tb = "/home/gcistaro/NEGF/tb_models/hBN_gap7.25eV_a2.5A_tb.dat"
+name_tb = sys.argv[4]
 A,num_R,num_bands,R,H,r = read_wannierTB(name_tb)
 R_cart = np.matmul( R, A )
 index_origin = np.where( np.linalg.norm(R_cart-np.zeros([1,3]), axis=1) < 1.e-07)
@@ -65,7 +66,7 @@ r_atom = np.array([np.diag(r_atom[0]), np.diag(r_atom[1]), np.diag(r_atom[2])])
 r_atom = np.transpose(r_atom)
 
 #calculate the Rytova-Keldysh potential on the grid given
-grid = [100,100,1]
+grid = [ int(sys.argv[1]) , int(sys.argv[2]) , int(sys.argv[3]) ]
 #gamma centered grid
 R = np.array(np.meshgrid(range(grid[0]), range(grid[1]), range(grid[2])))
 R = np.reshape(R,  [  3, grid[0]*grid[1]*grid[2] ])
@@ -77,7 +78,6 @@ for iR, R_ in enumerate(R):
     for ix in range(3):
         if R[iR][ix] > int(grid[ix]/2):
             R[iR][ix] = R[iR][ix] -int(grid[ix])
-print(R)
 R = np.matmul(R, A)
 
 
@@ -85,7 +85,6 @@ R = np.matmul(R, A)
 print("Calculating rytova keldysh")
 RytovaKeldysh = np.zeros([R.shape[0], num_bands, num_bands])
 for iR, R_ in enumerate(R):
-    print(iR)
     for ibnd1 in range(num_bands):
         for ibnd2 in range(num_bands):
             rnorm = np.linalg.norm(r_atom[ibnd1]-R_-r_atom[ibnd2])
@@ -95,8 +94,8 @@ for iR, R_ in enumerate(R):
 print("Done")
 print(np.max(RytovaKeldysh), np.min(RytovaKeldysh))
 
-
-f=open("RytovaKeldysh.txt","w")
+print("Saving RK potential in " + os.getcwd()+"/RytovaKeldysh.txt")
+f=open(os.getcwd()+"/RytovaKeldysh.txt","w")
 f.write("#File generated from "+ name_tb+ "with a grid " + str(grid[0]) + "x" + str(grid[1]) + "x" + str(grid[2]) + "\n")
 for iR, R_ in enumerate(R):
     for ibnd1 in range(num_bands):

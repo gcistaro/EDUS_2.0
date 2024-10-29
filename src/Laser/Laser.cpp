@@ -97,7 +97,7 @@ double Envelope::operator()(const double& Time)
 {
     double t = Time - InitialTime;
 
-    if(t < 0 || t > Duration){
+    if( std::abs(t) <= 1.e-07 || t > Duration){
         return 0.;
     }
     return std::pow(std::sin(pi*t/Duration), 2.);
@@ -225,14 +225,27 @@ double Laser::get_NumberOfCycles()
 
 void Laser::print_info()
 {
-    std::cout << "********** Laser info **********\n";
-    std::cout << "* frequency:  ";
-    std::cout << std::setw(10) << std::setprecision(4) << Convert(PlaneWave.get_Omega(), AuEnergy, ElectronVolt) << " eV" << std::endl;
-    std::cout << "* wavelength: ";
-    std::cout << std::setw(10) << std::setprecision(4) << Convert(PlaneWave.get_Lambda(), AuLength, NanoMeters) << " nm" << std::endl;
-    std::cout << "* Period:     ";
-    std::cout << std::setw(10) << std::setprecision(4) << Convert(PlaneWave.get_Period(), AuTime, FemtoSeconds) << " fs" << std::endl;
-    std::cout << "* Intensity:  ";
-    std::cout << std::setw(10) << std::setprecision(4) << Amplitude*Amplitude << " au" << std::endl;
+    std::cout << "****************************************************       LASER INFO        *************************************************\n";
+    std::cout << "*   Frequency:          *     ";
+    std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << PlaneWave.get_Omega();
+    std::cout << std::left << std::setw(15) << " a.u.";
+    std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << Convert(PlaneWave.get_Omega(), AuEnergy, ElectronVolt);
+    std::cout << std::left << std::setw(60) << " eV" << "*\n";
+    std::cout << "*   Wavelength:         *     ";
+    std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << PlaneWave.get_Lambda();
+    std::cout << std::left << std::setw(15) << " a.u.";
+    std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << Convert(PlaneWave.get_Lambda(), AuLength, NanoMeters);
+    std::cout << std::left << std::setw(60) << " nm" << "*\n";
+    std::cout << "*   Period:             *     ";
+    std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << PlaneWave.get_Period();
+    std::cout << std::left << std::setw(15) << " a.u.";
+    std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << Convert(PlaneWave.get_Period(), AuTime, FemtoSeconds);
+    std::cout << std::left << std::setw(60) << " fs" << "*\n";
+    std::cout << "*   Intensity:          *     ";
+    std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << Amplitude*Amplitude;
+    std::cout << std::left << std::setw(15) << " a.u.";
+    std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << Convert(Amplitude*Amplitude, AuIntensity, Wcm2);
+    std::cout << std::left << std::setw(60) << " Wcm2" << "*\n";
+    std::cout << "******************************************************************************************************************************\n";
 }
 

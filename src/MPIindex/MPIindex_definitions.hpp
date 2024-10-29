@@ -14,7 +14,7 @@ template<size_t dim>
 void MPIindex<dim>::initialize( const std::array<int, 3>& ValuesToSplit__)
 {
     //Global arrays are in range [0,values)
-#ifdef NEGF_MPI    
+#ifdef EDUS_MPI    
     assert(ValuesToSplit__[0] > 1);//we dont want MPI to work without splitting anything, and fftw splits over this index.
     assert(ValuesToSplit__[1] > 1 || ValuesToSplit__[2] > 1 ); //because we know this fftw routines break for 1D FFT
                                                            //we can avoid this by making a choice on the fftw_mpi_local
@@ -34,9 +34,9 @@ void MPIindex<dim>::initialize( const std::array<int, 3>& ValuesToSplit__)
     std::ptrdiff_t local_n0;
 
     GlobalRange_1D.first = 0;
-    GlobalRange_1D.second = ValuesToSplit[0]*ValuesToSplit[1]*ValuesToSplit[2];
+    GlobalRange_1D.second = ValuesToSplit[0]*ValuesToSplit[1]*ValuesToSplit[2]-1;
 
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
     auto alloc_local = fftw_mpi_local_size_many(int(dim), dimensions, 1,//howmany 
                                    FFTW_MPI_DEFAULT_BLOCK, MPI_COMM_WORLD,
                                    &local_n0, &local_0_start);

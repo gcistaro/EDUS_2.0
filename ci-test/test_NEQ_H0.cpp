@@ -2,7 +2,7 @@
 #include "initialize.hpp"
 #include "Simulation/Simulation.hpp"
 #include "core/print_timing.hpp"
-
+#include "core/projectdir.hpp"
 /*
  This test is used to test only the H0 term (no laser). We solve the differential equation:
  i dP(R)/dt = [H,P]
@@ -31,7 +31,9 @@ int main()
     initialize();
     //------------------------------------------initialize simulation------------------------------------------------------
     auto N = 100;
-    Simulation simulation("/home/gcistaro/NEGF/tb_models/2B_trivialH", std::array<int,3>({N,N,1}));//;/TBgraphene",40.);//
+    std::stringstream ss ;
+    ss << ProjectDirectory << "/tb_models/2B_trivialH";
+    Simulation simulation(ss.str(), std::array<int,3>({N,N,1}));//;/TBgraphene",40.);//
 
     //------------------------------------------get wanted initial condition------------------------------------------------
     std::function<void(Operator<std::complex<double>>&)> InitialConditionToUse = [&](Operator<std::complex<double>>& DM)
@@ -47,8 +49,13 @@ int main()
     };
 
     //---------------------------------reinitialize RK with that initial condition--------------------------------------
-    auto& laser = simulation.laser;
-    laser.set_Intensity(0., Wcm2);//1.e+16, Wcm2);
+    auto& setoflaser = simulation.setoflaser;
+    Laser laser;
+    laser.set_Intensity(0, Wcm2);
+    laser.set_Lambda(5, NanoMeters);
+    laser.set_Polarization(Coordinate(1,0,0));
+    laser.set_NumberOfCycles(5);
+    setoflaser.push_back(laser);
     auto& H = simulation.H;
     auto& kgradient = simulation.kgradient;
     auto& coulomb = simulation.coulomb;
@@ -111,7 +118,7 @@ int main()
     //}
 
 
-    for(int it=0; it <= 1000; ++it){
+    for(int it=0; it <= 20; ++it){
         simulation.DensityMatrix.go_to_k();
         auto DMk = simulation.DensityMatrix.get_Operator_k();
         for(int ik=0; ik < DMk.get_nblocks(); ik++){
@@ -125,11 +132,11 @@ int main()
             std::cout  << std::setw(40) << std::setprecision(10) << Analytical;
             std::cout  << std::setw(20) << std::setprecision(10) << RelativeError << std::endl;
             if( std::abs(Analytical) > 1.e-07 && 
-                RelativeError > 10.){
+                RelativeError > 1.e-06){
                 exit(1);
             }
         }
-        simulation.Propagate();
+        simulation.do_onestep();
     }
     print_timing(1);
 }

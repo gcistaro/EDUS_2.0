@@ -28,6 +28,7 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
     material.r[0].dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
     material.r[1].dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
     material.r[2].dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
+/*
     std::stringstream rank_H;
     rank_H << "H" << mpi::Communicator::world().rank() << ".txt";
     std::ofstream os_H;
@@ -50,7 +51,6 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
         os_H << material.r[1].get_Operator_k()[i] << std::endl;
     }
 */
-/*
     H.initialize_fft(*MasterRgrid, material.H.get_Operator_R().get_nrows());
     SettingUp_EigenSystem();
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
@@ -75,7 +75,7 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
 
     //print DM in R to prove it decays and is zero for large R
     std::stringstream rank;
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
     rank << "DM" << mpi::Communicator::world().rank() << ".txt";
 #else
     rank << "DM.txt";

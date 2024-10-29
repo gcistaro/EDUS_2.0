@@ -32,7 +32,7 @@ int main(int argc, char **argv)
     std::ptrdiff_t dimensions[] = {N0, N1, 1};
     std::array<int,3> dims = {N0, N1, 1};
 
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
     irank = mpi::Communicator::world().rank();
     nproc = mpi::Communicator::world().size();
 #else 
@@ -73,7 +73,7 @@ int main(int argc, char **argv)
     fftm.fft(-1);
     std::cout << "Rank " << irank <<  "DONE Fourier transform!\n";
 
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     double DeltaWx = 1./double(N0);
@@ -127,7 +127,7 @@ int main(int argc, char **argv)
     os_rank.close();
 
 }//end of scope of fftw
-#ifdef NEGF_MPI
+#ifdef EDUS_MPI
     MPI_Finalize(); 
 #endif
 }

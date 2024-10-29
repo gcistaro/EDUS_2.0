@@ -1,6 +1,6 @@
 #include "Simulation/Simulation.hpp"
 #include "core/print_timing.hpp"
-
+//OUTDATED!!! REMAKE IT!!! it was useful
 /*
 This test is constructed with simple Hamiltonian and simple eigenstates .
 We use:
@@ -22,7 +22,7 @@ Rho[R] = |                              |
 */      
 int main()
 {            
-    Simulation simulation("/home/gcistaro/NEGF/tb_models/2B_CosBand", 20.);
+    Simulation simulation("/home/gcistaro/EDUS/tb_models/2B_CosBand", 20.);
     //TODO: assert dm has the expected form
     print_timing(1);
 }

@@ -5,7 +5,7 @@
 #define watch(x)  (#x)
 int main()
 {
-    PROFILE_START("NEGF");
+    PROFILE_START("EDUS");
     std::cout << "Testing matrix multiplication...\n";
     double threshold = 1.e-14;
     Matrix<double> A(3,3);
@@ -98,7 +98,7 @@ int main()
     std::cout << "v\n" << v;
     std::cout <<  "B*v\n" << B*v;
 
-    PROFILE_STOP("NEGF");
+    PROFILE_STOP("EDUS");
 
 
 

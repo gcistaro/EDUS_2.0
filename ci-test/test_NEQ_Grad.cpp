@@ -2,6 +2,7 @@
 #include "initialize.hpp"
 #include "Simulation/Simulation.hpp"
 #include "core/print_timing.hpp"
+#include "core/projectdir.hpp"
 
 /*
  This test is used to test only the adiabatic term.
@@ -19,7 +20,9 @@ int main()
     initialize();
     //------------------------------------------initialize simulation------------------------------------------------------
     auto N = 100;
-    Simulation simulation("/home/gcistaro/NEGF/tb_models/Trivial_Hamiltonian", std::array<int,3>({N,N,1}));//;/TBgraphene",40.);//
+    std::stringstream ss ;
+    ss << ProjectDirectory << "/tb_models/Trivial_Hamiltonian";
+    Simulation simulation(ss.str(), std::array<int,3>({N,N,1}));//;/TBgraphene",40.);//
 
     //------------------------------------------get wanted initial condition------------------------------------------------
     std::function<void(Operator<std::complex<double>>&)> InitialConditionToUse = [&](Operator<std::complex<double>>& DM)
@@ -35,10 +38,13 @@ int main()
     };
 
     //---------------------------------reinitialize RK with that initial condition--------------------------------------
-    auto& laser = simulation.laser;
+    auto& setoflaser = simulation.setoflaser;
+    Laser laser;
     laser.set_Intensity(1.e+10, Wcm2);
     laser.set_Lambda(800, NanoMeters);
     laser.set_Polarization(Coordinate(1,0,0));
+    laser.set_NumberOfCycles(5);
+    setoflaser.push_back(laser);
     auto& H = simulation.H;
     auto& kgradient = simulation.kgradient;
     auto& coulomb = simulation.coulomb;
@@ -69,11 +75,11 @@ int main()
             std::cout  << std::setw(40) << std::setprecision(10) << Analytical;
             std::cout  << std::setw(20) << std::setprecision(10) << RelativeError << std::endl;
             if( std::abs(Analytical) > 1.e-07 && 
-                RelativeError > 10.){
+                RelativeError > 1.e-03){
                 exit(1);
             }
         }
-        simulation.Propagate();
+        simulation.do_onestep();
     }
 
     PROFILE_STOP("main");
