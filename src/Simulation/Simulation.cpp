@@ -1,5 +1,5 @@
 #include "Simulation/Simulation.hpp"
-
+#include "core/mpi/Communicator.hpp"
 
 Simulation::Simulation(const std::string& JsonFileName__)
 {
@@ -312,13 +312,18 @@ void Simulation::Print_Velocity()
         }
         v[ix] /= DMK.get_MeshGrid()->get_TotalSize();
     }
-    os_Velocity << std::setw(20) << std::setprecision(8) << v[0].real();
-    os_Velocity << std::setw(20) << std::setprecision(8) << v[0].imag();
-    os_Velocity << std::setw(20) << std::setprecision(8) << v[1].real();
-    os_Velocity << std::setw(20) << std::setprecision(8) << v[1].imag();
-    os_Velocity << std::setw(20) << std::setprecision(8) << v[2].real();
-    os_Velocity << std::setw(20) << std::setprecision(8) << v[2].imag();
-    os_Velocity << std::endl;
+#ifdef EDUS_MPI
+    if( kpool_comm.rank() == 0 )
+#endif
+    {
+        os_Velocity << std::setw(20) << std::setprecision(8) << v[0].real();
+        os_Velocity << std::setw(20) << std::setprecision(8) << v[0].imag();
+        os_Velocity << std::setw(20) << std::setprecision(8) << v[1].real();
+        os_Velocity << std::setw(20) << std::setprecision(8) << v[1].imag();
+        os_Velocity << std::setw(20) << std::setprecision(8) << v[2].real();
+        os_Velocity << std::setw(20) << std::setprecision(8) << v[2].imag();
+        os_Velocity << std::endl;
+    }
 }
 
 void Simulation::print_recap()
