@@ -175,6 +175,7 @@ add_test(NAME NonEQ_Grad COMMAND NonEQ3)
 
 add_test(NAME hBN COMMAND
              bash -c "mkdir ${CMAKE_SOURCE_DIR}/CTEST; 
+             rm -rf ${CMAKE_SOURCE_DIR}/CTEST/hBN/; \ 
              mkdir ${CMAKE_SOURCE_DIR}/CTEST/hBN/; \ 
              cd ${CMAKE_SOURCE_DIR}/CTEST/hBN/; \             
              ${CMAKE_CURRENT_BINARY_DIR}/EDUS  ${PROJECT_SOURCE_DIR}/ci-test/inputs/hBN.json | tee output; \
@@ -184,6 +185,7 @@ add_test(NAME hBN COMMAND
 
 add_test(NAME hBN_Coulomb COMMAND 
           bash -c "mkdir ${CMAKE_SOURCE_DIR}/CTEST; 
+          rm -rf ${CMAKE_SOURCE_DIR}/CTEST/hBN_coulomb/; \ 
           mkdir ${CMAKE_SOURCE_DIR}/CTEST/hBN_coulomb/; \ 
           cd ${CMAKE_SOURCE_DIR}/CTEST/hBN_coulomb/; \             
           python3 ${PROJECT_SOURCE_DIR}/Postproces/RytovaKeldysh.py 40 40 1 ${PROJECT_SOURCE_DIR}/tb_models/hBN_gap7.25eV_a2.5A_tb.dat; \
@@ -195,6 +197,7 @@ add_test(NAME hBN_Coulomb COMMAND
 
 add_test(NAME MPI_hBN COMMAND
           bash -c "mkdir ${CMAKE_SOURCE_DIR}/CTEST; 
+          rm -rf ${CMAKE_SOURCE_DIR}/CTEST/MPI_hBN/; \ 
           mkdir ${CMAKE_SOURCE_DIR}/CTEST/MPI_hBN/; \ 
           cd ${CMAKE_SOURCE_DIR}/CTEST/MPI_hBN/; \             
           ${MPIEXEC_MAX_NUMPROCS} ${MPIEXEC_PREFLAGS} EXECUTABLE ${MPIEXEC_POSTFLAGS} ARGS
@@ -205,6 +208,7 @@ add_test(NAME MPI_hBN COMMAND
 
 add_test(NAME MPI_hBN_Coulomb COMMAND 
           bash -c "mkdir ${CMAKE_SOURCE_DIR}/CTEST; 
+          rm -rf ${CMAKE_SOURCE_DIR}/CTEST/MPI_hBN_coulomb/; \ 
           mkdir ${CMAKE_SOURCE_DIR}/CTEST/MPI_hBN_coulomb/; \ 
           cd ${CMAKE_SOURCE_DIR}/CTEST/MPI_hBN_coulomb/; \             
           python3 ${PROJECT_SOURCE_DIR}/Postproces/RytovaKeldysh.py 40 40 1 ${PROJECT_SOURCE_DIR}/tb_models/hBN_gap7.25eV_a2.5A_tb.dat; \
