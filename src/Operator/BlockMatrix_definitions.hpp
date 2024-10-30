@@ -153,10 +153,23 @@ template<typename T>
 void multiply(BlockMatrix<T>& Output, T Scalar, const BlockMatrix<T>& Input1, const BlockMatrix<T>& Input2, T Scalar2 )
 {
     assert(Output.get_nblocks() == Input1.get_nblocks() && Input1.get_nblocks() == Input2.get_nblocks());
+#ifdef EDUS_BATCHGEMM
+    static auto stride = Output.get_nblocks();
+    static auto m = Output.get_nrows();
+    static auto n = Output.get_ncols();
+    static auto k = Input1.get_ncols();
+    assert( k == Input1.get_ncols() );
+    assert( n == Input2.get_ncols() );
+    assert( m == Input1.get_nrows() );
+    cblas_zgemm_batch_strided( CblasRowMajor, CblasNoTrans, CblasNoTrans,
+    m, n, k, &Scalar, &Input1(0,0,0), k, m*k, &Input2(0,0,0), n, k*n, &Scalar2,
+    &Output(0,0,0), n, m*n, stride);
+#else 
     #pragma omp parallel for schedule(static)
     for(int iblock=0; iblock<Output.get_nblocks(); iblock++){
         Matrix_gemm(Output[iblock], Scalar, Input1[iblock], Input2[iblock], Scalar2);
     }
+#endif
 }
 
 

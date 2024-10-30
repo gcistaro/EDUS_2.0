@@ -7,6 +7,7 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 
 option(EDUS_PROFILE "Profiling function timings" ON)
 option(EDUS_MPI "Enabling MPI" ON)
+option(EDUS_BATCHGEMM "Enabling Batch Gemm for k matrix multiplication" ON)
 
 if(EDUS_PROFILE)
   add_definitions(-DEDUS_PROFILE)
@@ -14,16 +15,21 @@ endif()
 if(EDUS_MPI)
   add_definitions(-DEDUS_MPI)
 endif()
-
+if(EDUS_BATCHGEMM)
+  add_definitions(-DEDUS_BATCHGEMM)
+endif()
 
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /lib/x86_64-linux-gnu/)
+
 if (CMAKE_BUILD_TYPE="Debug")
-    add_compile_options(-g -Wall)#-fconcepts -g)
+    add_compile_options(-g -Wall)
 endif()
+
 add_compile_options(-fopenmp)
+
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
 
 
