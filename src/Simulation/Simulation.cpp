@@ -55,10 +55,10 @@ Simulation::Simulation(const std::string& JsonFileName__)
     Operator<std::complex<double>>::SpaceOfPropagation = SpaceOfPropagation;
 
     material.H.dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
-    material.r[0].dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
-    material.r[1].dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
-    material.r[2].dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
-
+    for(auto ix : {0,1,2}) {
+        material.r[ix].dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
+        material.r[ix].get_Operator(Space::k).make_hermitian();
+    }
     H.initialize_fft(*MasterRgrid, material.H.get_Operator_R().get_nrows());
     SettingUp_EigenSystem();
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
