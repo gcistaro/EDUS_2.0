@@ -2,6 +2,19 @@
 #define ADAMSBASHFORTH_HPP
 #include "DESolver/DESolver.hpp"
 
+/*
+Equations implemented here: 
+dy/dt = f(t,y) with y(t0) = y0  
+beta[0] = 55/24
+beta[1] = -59/24
+beta[2] = 37/24
+beta[3] = -3/8
+y(n) = y(n-1) + h*[beta[0]*fns[ifn1] + beta[1]*fns[ifn2] + beta[2]*fns[ifn3] + beta[3]*fns[ifn4]]
+fns[ifn1] is computed every step through EvaluateSourceFunction and its used for the next 3 steps
+a more detailed explanation of the implementation is given in the Propagate function
+f-> source term
+*/
+
                                                         // -- ADAMS BASHFORTH DERIVED CLASS -- //
 
 template<typename T>

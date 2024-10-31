@@ -2,6 +2,17 @@
 #define RUNGEKUTTA_HPP
 #include "DESolver/DESolver.hpp"
 
+/*
+Equations implemented here: 
+dy/dt= f(t,y) with y(t0) = y0  
+k1=f(tn,yn)
+k2=f(tn+h/2, yn+h/2*k1)
+k3=f(tn+h/2, yn+h/2*k2)
+k4=f(tn+h, yn+h*k3)
+the calculation of k- is defined as EvaluateSourceTerm.
+y(n+1) = yn+h/6*(k1+2*k2+2*k3+k4)
+f-> source term
+*/
 
                                                         // -- RUNGE KUTTA DERIVED CLASS -- //
 
