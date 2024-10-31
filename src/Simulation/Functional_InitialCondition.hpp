@@ -7,10 +7,11 @@ InitialCondition =
     
     //filling matrix in Bloch-k gauge
     for(int ik=0; ik<Uk.get_nblocks(); ++ik){
-        for(int iband=0; iband<Uk.get_nrows(); iband++){
-            if(this->Band_energies[ik](iband) < FermiEnergy-threshold){
+        for(int iband=0; iband<FilledBands; iband++){
+        //for(int iband=0; iband<Uk.get_nrows(); iband++){
+        //    if(this->Band_energies[ik](iband) < FermiEnergy-threshold){
                 DM.get_Operator_k()(ik, iband, iband) = 1.;
-            }
+        //    }
         }
     }
     DM.lock_gauge(bloch);

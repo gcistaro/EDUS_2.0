@@ -27,6 +27,7 @@ class Simulation
         int PrintResolution; //steps needed to print a variable
         double FinalTime;
         double InitialTime;
+        int FilledBands=1;
 
         kGradient kgradient;
         Coulomb coulomb;
