@@ -3,7 +3,7 @@
     "fermienergy": [0, "electronvolt"],
     "coulomb": false,
     "grid": [50,50,1],
-    
+    "filledbands" : 1,
     "dt": [0.01, "femtoseconds"],
     "printresolution": 1,
     "initialtime" : [0, "femtoseconds"],

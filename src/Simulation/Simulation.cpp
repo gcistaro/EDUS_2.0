@@ -40,6 +40,7 @@ Simulation::Simulation(const std::string& JsonFileName__)
 
     //--------------------------initializing grids and arrays--------------------------------
     auto MasterRgrid = std::make_shared<MeshGrid>(R, data["grid"].template get<std::array<int,3>>());
+    FilledBands = data["filledbands"];
     coulomb.set_DoCoulomb(data["coulomb"].template get<bool>());    
     PrintResolution = data["printresolution"].template get<int>();
 
@@ -265,7 +266,7 @@ void Simulation::Print_Population()
             Population[ ibnd ] /= double(aux_DM.get_Operator_k().get_MeshGrid()->get_TotalSize());        
         }
         for(int ibnd = 0; ibnd < int( Population.size() ); ibnd++){
-            if( ibnd < 1 ) Population[ibnd] = 1.-Population[ibnd];
+            if( ibnd < FilledBands ) Population[ibnd] = 1.-Population[ibnd];
             os_Pop << std::setw(20) << std::setprecision(6) << Population[ibnd].real();
             os_Pop << " ";
         }
