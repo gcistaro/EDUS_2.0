@@ -4,7 +4,7 @@
 //- MPI_COMM_WORLD
 //- fftw initialization
 
-//#include "omp.h"
+#include "omp.h"
 #include <thread>
 #include <iomanip>
 #include "initialize.hpp"
@@ -61,7 +61,7 @@ void initialize()
         std::cout << "*    MPI world size:    *     ";
         std::cout << std::left << std::setw(95) << mpi::Communicator::world().size() << "*\n";
         std::cout << "*    OpenMP  threads:   *     ";
-        std::cout << std::left << std::setw(95) << std::thread::hardware_concurrency() << "*\n";
+        std::cout << std::left << std::setw(95) << omp_get_num_threads() << "*\n";
         std::cout << "******************************************************************************************************************************\n";
         //std::cout << "MPI parallelization recap. \n";
         //std::cout << "WORLD RANK: " << mpi::Communicator::world().rank() << "/" << mpi::Communicator::world().size();
@@ -85,11 +85,11 @@ void initialize()
     print_header();
     std::cout << "**************************************************    PARALLELIZATION RECAP     **********************************************\n";
     std::cout << "*    OpenMP  threads:   *     ";
-    std::cout << std::left << std::setw(95) << std::thread::hardware_concurrency() << "*\n";
+    std::cout << std::left << std::setw(95) << omp_get_num_threads() << "*\n";
     std::cout << "******************************************************************************************************************************\n";
 #endif
 #ifdef EDUS_FFTWTHREADS
-    fftw_plan_with_nthreads(std::thread::hardware_concurrency());
+    fftw_plan_with_nthreads(omp_get_num_threads());
 #endif
 }
 
