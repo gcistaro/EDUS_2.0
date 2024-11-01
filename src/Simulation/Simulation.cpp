@@ -3,6 +3,13 @@
 
 Simulation::Simulation(const std::string& JsonFileName__)
 {
+#ifdef EDUS_MPI
+    if(mpi::Communicator::world().rank() == 0)
+#endif
+    {
+        std::cout << std::setw(120) << "* -> initializing simulation";
+        std::cout << "*\n";
+    }
     JsonFile = JsonFileName__;
     std::ifstream f(JsonFileName__);
 
@@ -204,30 +211,43 @@ void Simulation::Propagate()
 {
     PROFILE("Simulation::Propagate");
     int iFinalTime = int((FinalTime - InitialTime)/RK_object.get_ResolutionTime())+2;
-    std::cout << "*******************************************************    PROPAGATION     ***************************************************\n";
-    std::cout << "*   Initial time:       *     ";
-    std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << InitialTime;
-    std::cout << std::left << std::setw(15) << " a.u.";
-    std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << Convert(InitialTime, AuTime, FemtoSeconds);
-    std::cout << std::left << std::setw(60) << " fs" << "*\n";
-    std::cout << "*   Final time:         *     ";
-    std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << FinalTime;
-    std::cout << std::left << std::setw(15) << " a.u.";
-    std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << Convert(FinalTime, AuTime, FemtoSeconds);
-    std::cout << std::left << std::setw(60) << " fs" << "*\n";
-    std::cout << "*   Number of steps:    *     ";
-    std::cout << std::left << std::setw(95) << iFinalTime <<  "*\n";
+#ifdef EDUS_MPI
+    if(mpi::Communicator::world().rank() == 0)
+#endif
+    {
+        std::cout << "*******************************************************    PROPAGATION     ***************************************************\n";
+        std::cout << "*   Initial time:       *     ";
+        std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << InitialTime;
+        std::cout << std::left << std::setw(15) << " a.u.";
+        std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << Convert(InitialTime, AuTime, FemtoSeconds);
+        std::cout << std::left << std::setw(60) << " fs" << "*\n";
+        std::cout << "*   Final time:         *     ";
+        std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << FinalTime;
+        std::cout << std::left << std::setw(15) << " a.u.";
+        std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << Convert(FinalTime, AuTime, FemtoSeconds);
+        std::cout << std::left << std::setw(60) << " fs" << "*\n";
+        std::cout << "*   Number of steps:    *     ";
+        std::cout << std::left << std::setw(95) << iFinalTime <<  "*\n";
+    }
     for( int it = 0; it < iFinalTime; ++it ) {
         if(it%100 == 0) {
+#ifdef EDUS_MPI
+    if(mpi::Communicator::world().rank() == 0)
+#endif
+            {
             std::cout << "*   it:                 *     ";
             std::cout << std::setw(5) << std::left <<  it;
             std::cout << " / "; 
             std::cout << std::setw(10) << std::left << iFinalTime;
             std::cout << std::fixed << std::left << std::setw(8) << std::setprecision(4) << 100*double(it)/iFinalTime << "%";
             std::cout << std::right << std::setw(69) << "*" << std::endl;
+            }
         }
         do_onestep();
     }
+#ifdef EDUS_MPI
+    if(mpi::Communicator::world().rank() == 0)
+#endif
     std::cout << "******************************************************************************************************************************\n";
 }
 
@@ -348,70 +368,75 @@ void Simulation::print_recap()
     //"solver": "RungeKutta",
     //"printresolution": 6,
     //"coulomb": false,
+#ifdef EDUS_MPI
+    if(mpi::Communicator::world().rank() == 0)
+#endif
+    {
         std::cout << "*******************************************************    INPUT RECAP     ***************************************************\n";
-    std::cout << "*   input file:         *     ";
-    std::cout << std::left << std::setw(95) << JsonFile << "*\n";
-    std::cout << "*   tb_model  :         *     ";
-    std::cout << std::left << std::setw(95) << tb_model << "*\n";
-    std::cout << "*   grid:               *     [";
-    std::cout << std::right << std::setw(4) << DensityMatrix.get_Operator_R().get_MeshGrid()->get_Size()[0];
-    std::cout << ", ";
-    std::cout << std::right << std::setw(4) << DensityMatrix.get_Operator_R().get_MeshGrid()->get_Size()[1];
-    std::cout << ", ";
-    std::cout << std::right << std::setw(4) << DensityMatrix.get_Operator_R().get_MeshGrid()->get_Size()[2];
-    std::cout << std::left << std::setw(78) << "]" << "*\n";     
-    std::cout << "*   Resolution time:    *     ";
-    std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << RK_object.get_ResolutionTime();
-    std::cout << std::left << std::setw(15) << " a.u.";
-    std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << Convert(RK_object.get_ResolutionTime(), AuTime, FemtoSeconds);
-    std::cout << std::left << std::setw(60) << " fs" << "*\n";
-    std::cout << "*   Print Resolution:   *     ";
-    std::cout << std::left << std::setw(95) << PrintResolution <<  "*\n";
-    std::cout << "*   Coulomb:            *     ";
-    std::cout << std::left << std::setw(95)  << (coulomb.get_DoCoulomb() ? "True" : "False") << "*\n";
-    std::cout << "******************************************************************************************************************************\n";
-    std::cout << "*******************************************************   WANNIER     ********************************************************\n";
-    std::cout << "*   #R points :         *     ";
-    std::cout << std::setw(95) << std::left<< material.H.get_Operator_R().get_nblocks();
-    std::cout << "*\n";
-    auto& A = Coordinate::get_Basis(LatticeVectors(R)).get_M();
-    std::cout << "*             :         *   ";
-    std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  A(0,0);
-    std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  A(0,1);
-    std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  A(0,2);
-    std::cout << std::setw(56) << std::right << "*" << std::endl;
-    std::cout << "*      A      :         *   ";
-    std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  A(1,0);
-    std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  A(1,1);
-    std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  A(1,2);
-    std::cout << std::setw(56) << std::right << "*" << std::endl;
-    std::cout << "*             :         *   ";
-    std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  A(2,0);
-    std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  A(2,1);
-    std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  A(2,2);
-    std::cout << std::setw(56) << std::right << "*" << std::endl;
-    std::cout << "*";
-    std::cout << std::setw(124) << " ";
-    std::cout << "*\n";
-    auto& B = Coordinate::get_Basis(LatticeVectors(k)).get_M();
-    std::cout << "*             :         *   ";
-    std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  B(0,0);
-    std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  B(0,1);
-    std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  B(0,2);
-    std::cout << std::setw(56) << std::right << "*" << std::endl;
-    std::cout << "*      B      :         *   ";
-    std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  B(1,0);
-    std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  B(1,1);
-    std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  B(1,2);
-    std::cout << std::setw(56) << std::right << "*" << std::endl;
-    std::cout << "*             :         *   ";
-    std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  B(2,0);
-    std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  B(2,1);
-    std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  B(2,2);
-    std::cout << std::setw(56) << std::right << "*" << std::endl;
-    std::cout << "******************************************************************************************************************************\n";
-    for( int ilaser=0; ilaser<int(setoflaser.size()); ++ilaser) {
-        setoflaser[ilaser].print_info();
+        std::cout << "*   input file:         *     ";
+        std::cout << std::left << std::setw(95) << JsonFile << "*\n";
+        std::cout << "*   tb_model  :         *     ";
+        std::cout << std::left << std::setw(95) << tb_model << "*\n";
+        std::cout << "*   grid:               *     [";
+        std::cout << std::right << std::setw(4) << DensityMatrix.get_Operator_R().get_MeshGrid()->get_Size()[0];
+        std::cout << ", ";
+        std::cout << std::right << std::setw(4) << DensityMatrix.get_Operator_R().get_MeshGrid()->get_Size()[1];
+        std::cout << ", ";
+        std::cout << std::right << std::setw(4) << DensityMatrix.get_Operator_R().get_MeshGrid()->get_Size()[2];
+        std::cout << std::left << std::setw(78) << "]" << "*\n";     
+        std::cout << "*   Resolution time:    *     ";
+        std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << RK_object.get_ResolutionTime();
+        std::cout << std::left << std::setw(15) << " a.u.";
+        std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << Convert(RK_object.get_ResolutionTime(), AuTime, FemtoSeconds);
+        std::cout << std::left << std::setw(60) << " fs" << "*\n";
+        std::cout << "*   Print Resolution:   *     ";
+        std::cout << std::left << std::setw(95) << PrintResolution <<  "*\n";
+        std::cout << "*   Coulomb:            *     ";
+        std::cout << std::left << std::setw(95)  << (coulomb.get_DoCoulomb() ? "True" : "False") << "*\n";
+        std::cout << "******************************************************************************************************************************\n";
+        std::cout << "*******************************************************   WANNIER     ********************************************************\n";
+        std::cout << "*   #R points :         *     ";
+        std::cout << std::setw(95) << std::left<< material.H.get_Operator_R().get_nblocks();
+        std::cout << "*\n";
+        auto& A = Coordinate::get_Basis(LatticeVectors(R)).get_M();
+        std::cout << "*             :         *   ";
+        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  A(0,0);
+        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  A(0,1);
+        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  A(0,2);
+        std::cout << std::setw(56) << std::right << "*" << std::endl;
+        std::cout << "*      A      :         *   ";
+        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  A(1,0);
+        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  A(1,1);
+        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  A(1,2);
+        std::cout << std::setw(56) << std::right << "*" << std::endl;
+        std::cout << "*             :         *   ";
+        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  A(2,0);
+        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  A(2,1);
+        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  A(2,2);
+        std::cout << std::setw(56) << std::right << "*" << std::endl;
+        std::cout << "*";
+        std::cout << std::setw(124) << " ";
+        std::cout << "*\n";
+        auto& B = Coordinate::get_Basis(LatticeVectors(k)).get_M();
+        std::cout << "*             :         *   ";
+        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  B(0,0);
+        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  B(0,1);
+        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  B(0,2);
+        std::cout << std::setw(56) << std::right << "*" << std::endl;
+        std::cout << "*      B      :         *   ";
+        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  B(1,0);
+        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  B(1,1);
+        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  B(1,2);
+        std::cout << std::setw(56) << std::right << "*" << std::endl;
+        std::cout << "*             :         *   ";
+        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  B(2,0);
+        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  B(2,1);
+        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  B(2,2);
+        std::cout << std::setw(56) << std::right << "*" << std::endl;
+        std::cout << "******************************************************************************************************************************\n";
+        for( int ilaser=0; ilaser<int(setoflaser.size()); ++ilaser) {
+            setoflaser[ilaser].print_info();
+        }
     }
 }
 
