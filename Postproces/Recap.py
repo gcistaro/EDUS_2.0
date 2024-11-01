@@ -10,8 +10,9 @@ Laser = np.loadtxt("Laser.txt", unpack=True)
 
 
 fig, ax = plt.subplots(2)
-for p in Population:
-    ax[0].plot(t, p)
+for ip,p in enumerate(Population):
+    ax[0].plot(t, p, label=str(ip))
+ax[0].legend()
 ax[0].plot(t,np.zeros(Population.shape[-1]))
 #ax[0].set_ylim(-1.e-05, 1.e-05)
 ax[1].plot(t, Laser[0])
