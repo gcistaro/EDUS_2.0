@@ -5,10 +5,10 @@ project(EDUS VERSION 1.0)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 
-option(EDUS_PROFILE "Profiling function timings" ON)
-option(EDUS_MPI "Enabling MPI" ON)
-option(EDUS_BATCHGEMM "Enabling Batch Gemm for k matrix multiplication" ON)
-
+option(EDUS_PROFILE     "Profiling function timings"                         ON)
+option(EDUS_MPI         "Enabling MPI"                                       ON)
+option(EDUS_BATCHGEMM   "Enabling Batch Gemm for k matrix multiplication"    ON)
+option(EDUS_FFTWTHREADS "Enabling threads in fftw"                           ON)                  
 if(EDUS_PROFILE)
   add_definitions(-DEDUS_PROFILE)
 endif()
@@ -17,6 +17,9 @@ if(EDUS_MPI)
 endif()
 if(EDUS_BATCHGEMM)
   add_definitions(-DEDUS_BATCHGEMM)
+endif()
+if(EDUS_FFTWTHREADS)
+  add_definitions(-DEDUS_FFTWTHREADS)
 endif()
 
 # specify the C++ standard
