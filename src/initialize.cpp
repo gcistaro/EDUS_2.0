@@ -31,6 +31,9 @@ int NumberKpools;
 */
 void initialize()
 {  
+#ifdef EDUS_FFTWTHREADS
+    fftw_init_threads();
+#endif
 #ifdef EDUS_MPI
     mpi::Communicator::initialize(MPI_THREAD_MULTIPLE);
     NumberKpools = mpi::Communicator::world().size();
@@ -84,6 +87,9 @@ void initialize()
     std::cout << "*    OpenMP  threads:   *     ";
     std::cout << std::left << std::setw(95) << std::thread::hardware_concurrency() << "*\n";
     std::cout << "******************************************************************************************************************************\n";
+#endif
+#ifdef EDUS_FFTWTHREADS
+    fftw_plan_with_nthreads(std::thread::hardware_concurrency());
 #endif
 }
 
