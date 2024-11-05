@@ -4,6 +4,8 @@ from scipy.special import struve, yn
 from scipy import constants
 import sys
 import os
+import math
+
 
 #read wannier 
 def read_wannierTB(filename):
@@ -55,18 +57,19 @@ r0 = 10.
 r0_au = r0*1.e-10/constants.physical_constants["Bohr radius"][0]
 epsilon = 2.
 
+#calculate the Rytova-Keldysh potential on the grid given
+grid = [ int(sys.argv[1]) , int(sys.argv[2]) , int(sys.argv[3]) ]
 name_tb = sys.argv[4]
 A,num_R,num_bands,R,H,r = read_wannierTB(name_tb)
 R_cart = np.matmul( R, A )
 index_origin = np.where( np.linalg.norm(R_cart-np.zeros([1,3]), axis=1) < 1.e-07)
 r_atom = np.array([r[0][index_origin], r[1][index_origin], r[2][index_origin]])
 print(r_atom.shape)
-r_atom = np.reshape(r_atom, [3,2,2])
+r_atom = np.reshape(r_atom, [3,num_bands,num_bands])
 r_atom = np.array([np.diag(r_atom[0]), np.diag(r_atom[1]), np.diag(r_atom[2])])
 r_atom = np.transpose(r_atom)
 
-#calculate the Rytova-Keldysh potential on the grid given
-grid = [ int(sys.argv[1]) , int(sys.argv[2]) , int(sys.argv[3]) ]
+
 #gamma centered grid
 R = np.array(np.meshgrid(range(grid[0]), range(grid[1]), range(grid[2])))
 R = np.reshape(R,  [  3, grid[0]*grid[1]*grid[2] ])
@@ -89,8 +92,10 @@ for iR, R_ in enumerate(R):
         for ibnd2 in range(num_bands):
             rnorm = np.linalg.norm(r_atom[ibnd1]-R_-r_atom[ibnd2])
             RytovaKeldysh[iR][ibnd1][ibnd2] = np.pi/(epsilon*r0_au)*( struve(0, rnorm/r0) - yn(0, rnorm/r0) )
-            if(rnorm < 1.e-07) :
+            if(rnorm < 1.e-05) :
                 RytovaKeldysh[iR][ibnd1][ibnd2] = 0.
+            if ( math.isnan(RytovaKeldysh[iR][ibnd1][ibnd2]) ):   
+                print( "R= ", R_, "atom positions: ", r_atom[ibnd1], r_atom[ibnd2], "rnorm : ", rnorm, struve(0,rnorm/r0), yn(0,rnorm/r0), "is nan")
 print("Done")
 print(np.max(RytovaKeldysh), np.min(RytovaKeldysh))
 
