@@ -243,6 +243,7 @@ void BlockMatrix<T>::diagonalize(std::vector<mdarray<double,1>>& Eigenvalues,
     //assert(space_ == k);
     Eigenvectors.initialize(k, this->get_nblocks(), this->get_nrows(), this->get_ncols());
     Eigenvalues.resize(this->get_nblocks());
+    #pragma omp parallel for
     for(int ik=0; ik<this->get_nblocks(); ik++){
         Eigenvalues[ik].initialize({this->get_nrows()});
         ((*this)[ik]).diagonalize(Eigenvectors[ik], Eigenvalues[ik]);

@@ -7,7 +7,7 @@ Simulation::Simulation(const std::string& JsonFileName__)
     if(mpi::Communicator::world().rank() == 0)
 #endif
     {
-        std::cout << std::setw(120) << "* -> initializing simulation";
+        std::cout << std::setw(125) << "* -> initializing simulation";
         std::cout << "*\n";
     }
     JsonFile = JsonFileName__;
@@ -19,9 +19,23 @@ Simulation::Simulation(const std::string& JsonFileName__)
     PROFILE("Simulation::Initialize");
     //---------------------------getting info from tb----------------------------------------
     tb_model = data["tb_file"].template get<std::string>();
+#ifdef EDUS_MPI
+    if(mpi::Communicator::world().rank() == 0)
+#endif
+    {
+        std::cout << std::setw(125) << "* -> initializing material";
+        std::cout << "*\n";
+    }
     material = Material(tb_model);
     
     //---------------------------------------------------------------------------------------
+#ifdef EDUS_MPI
+    if(mpi::Communicator::world().rank() == 0)
+#endif
+    {
+        std::cout << std::setw(125) << "* -> initializing lasers";
+        std::cout << "*\n";
+    }
     for ( int ilaser = 0; ilaser < int( data["lasers"].size() ); ++ilaser ) {
         auto& currentdata = data["lasers"][ilaser];
         Laser laser_;
@@ -58,15 +72,43 @@ Simulation::Simulation(const std::string& JsonFileName__)
     
     std::array<int, 3> MG_size = {MasterRgrid->get_Size()[0], MasterRgrid->get_Size()[1], MasterRgrid->get_Size()[2]};
     Operator<std::complex<double>>::mpindex.initialize(MG_size);
+#ifdef EDUS_MPI
+    if(mpi::Communicator::world().rank() == 0)
+#endif
+    {
+        std::cout << std::setw(125) << "* -> initializing DensityMatrix";
+        std::cout << "*\n";
+    }
     DensityMatrix.initialize_fft(*MasterRgrid, material.H.get_Operator_R().get_nrows());
     Operator<std::complex<double>>::SpaceOfPropagation = SpaceOfPropagation;
+#ifdef EDUS_MPI
+    if(mpi::Communicator::world().rank() == 0)
+#endif
+    {
+        std::cout << std::setw(125) << "* -> H to k";
+        std::cout << "*\n";
+    }
 
     material.H.dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
     for(auto ix : {0,1,2}) {
         material.r[ix].dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
         material.r[ix].get_Operator(Space::k).make_hermitian();
     }
+#ifdef EDUS_MPI
+    if(mpi::Communicator::world().rank() == 0)
+#endif
+    {
+        std::cout << std::setw(125) << "* -> initialize fft";
+        std::cout << "*\n";
+    }
     H.initialize_fft(*MasterRgrid, material.H.get_Operator_R().get_nrows());
+#ifdef EDUS_MPI
+    if(mpi::Communicator::world().rank() == 0)
+#endif
+    {
+        std::cout << std::setw(125) << "* -> eigensolver";
+        std::cout << "*\n";
+    }
     SettingUp_EigenSystem();
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
 
@@ -138,7 +180,7 @@ void Simulation::SettingUp_EigenSystem()
 
     //------------------------go to H(k)--------------------------------------------
     auto& MasterkGrid = DensityMatrix.get_Operator_k().get_MeshGrid()->get_mesh();
-    material.H.dft(MasterkGrid, +1);
+    //material.H.dft(MasterkGrid, +1);
     //------------------------------------------------------------------------------
 
     //--------------------solve eigen problem---------------------------------------
