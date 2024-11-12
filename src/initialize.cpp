@@ -62,6 +62,9 @@ void initialize()
         std::cout << "*    OpenMP  threads:   *     ";
         std::cout << std::left << std::setw(95) << omp_get_max_threads() << "*\n";
         std::cout << "******************************************************************************************************************************\n";
+        std::cout << "*    fftw3 threads:     *     ";
+        std::cout << std::left << std::setw(95) << fftw_planner_nthreads() << "*\n";
+        std::cout << "******************************************************************************************************************************\n";
         //std::cout << "MPI parallelization recap. \n";
         //std::cout << "WORLD RANK: " << mpi::Communicator::world().rank() << "/" << mpi::Communicator::world().size();
         //std::cout << " KPOOL RANK: " << kpool_comm.rank() << "/" << kpool_comm.size();
