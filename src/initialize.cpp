@@ -5,6 +5,7 @@
 //- fftw initialization
 
 #include "omp.h"
+#include "mkl.h"
 #include <thread>
 #include <iomanip>
 #include "initialize.hpp"
@@ -30,9 +31,24 @@ int NumberKpools;
 */
 void initialize()
 {  
+    mkl_set_num_threads(omp_get_max_threads());
+    std::cout << "**************************************************    PARALLELIZATION RECAP     **********************************************\n";
 #ifdef EDUS_FFTWTHREADS
     fftw_init_threads();
 #endif
+    print_header();
+    std::cout << "**************************************************    PARALLELIZATION RECAP     **********************************************\n";
+        std::cout << "*    OpenMP  threads:   *     ";
+        std::cout << std::left << std::setw(95) << omp_get_max_threads() << "*\n";
+        std::cout << "*    MKL  threads:      *     ";
+        std::cout << std::left << std::setw(95) << mkl_get_max_threads() << "*\n";
+#ifdef EDUS_FFTWTHREADS
+    fftw_plan_with_nthreads(omp_get_max_threads());
+        std::cout << "*    fftw3 threads:     *     ";
+        std::cout << std::left << std::setw(95) << fftw_planner_nthreads() << "*\n";
+        std::cout << "******************************************************************************************************************************\n";
+#endif
+
 #ifdef EDUS_MPI
     mpi::Communicator::initialize(MPI_THREAD_FUNNELED);
     NumberKpools = mpi::Communicator::world().size();
@@ -55,13 +71,8 @@ void initialize()
         mpi::Communicator::world().send( band_comm.size(), 0 );
     }
     else {
-        print_header();
-        std::cout << "**************************************************    PARALLELIZATION RECAP     **********************************************\n";
         std::cout << "*    MPI world size:    *     ";
         std::cout << std::left << std::setw(95) << mpi::Communicator::world().size() << "*\n";
-        std::cout << "*    OpenMP  threads:   *     ";
-        std::cout << std::left << std::setw(95) << omp_get_max_threads() << "*\n";
-        std::cout << "******************************************************************************************************************************\n";
         //std::cout << "MPI parallelization recap. \n";
         //std::cout << "WORLD RANK: " << mpi::Communicator::world().rank() << "/" << mpi::Communicator::world().size();
         //std::cout << " KPOOL RANK: " << kpool_comm.rank() << "/" << kpool_comm.size();
@@ -80,20 +91,7 @@ void initialize()
             //std::cout << " BAND RANK: " << band_comm_rank << "/" << band_comm_size << std::endl;
         }
     }
-#else  
-    print_header();
-    std::cout << "**************************************************    PARALLELIZATION RECAP     **********************************************\n";
-    std::cout << "*    OpenMP  threads:   *     ";
-    std::cout << std::left << std::setw(95) << omp_get_max_threads() << "*\n";
-    std::cout << "******************************************************************************************************************************\n";
 #endif
-#ifdef EDUS_FFTWTHREADS
-    fftw_plan_with_nthreads(omp_get_max_threads());
-#endif
-        std::cout << "*    fftw3 threads:     *     ";
-        std::cout << std::left << std::setw(95) << fftw_planner_nthreads() << "*\n";
-        std::cout << "******************************************************************************************************************************\n";
-
 }
 
 
