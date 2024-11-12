@@ -120,7 +120,7 @@ endif()
 
 #adding mkl (can it be replaced with lapack?)
 set(MKL_ARCH intel64)
-set(MKL_THREADING sequential)
+set(MKL_THREADING intel_thread)
 set(MKL_INTERFACE lp64)
 find_package(MKL CONFIG REQUIRED PATHS $ENV{MKLROOT})
 add_compile_options($<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
@@ -146,7 +146,7 @@ endif()
 
 # add the executable
 add_executable(EDUS src/EDUS.cpp)
-
+add_executable(batchgemm ci-test/test_cblas_batchgemm.cpp)
 #Executables for test various classes
 add_executable(Containers_test ci-test/test_mdarray.cpp) 
 add_executable(Matrix_test ci-test/test_matrix.cpp)
