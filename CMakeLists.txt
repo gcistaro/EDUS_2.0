@@ -138,7 +138,7 @@ pkg_search_module(FFTW REQUIRED fftw3 IMPORTED_TARGET)
 include_directories(PkgConfig::FFTW)
 link_libraries(PkgConfig::FFTW)
 link_libraries(fftw3)
-
+link_libraries(fftw3_omp)
 if (EDUS_MPI)
   link_libraries(fftw3_mpi)
 endif()
