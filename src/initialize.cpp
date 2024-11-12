@@ -15,7 +15,6 @@ mpi::Communicator kpool_comm;
 mpi::Communicator band_comm;
 int NumberKpools;
 #endif
-int OMPthreads;
 /*
     Parallelization using grid / example with 4 kpools, 12 ranks
 
@@ -31,16 +30,11 @@ int OMPthreads;
 */
 void initialize()
 {  
-    #pragma omp parallel
-    {
-	if( omp_get_thread_num() == 0)
-        OMPthreads = omp_get_num_threads();
-    }
 #ifdef EDUS_FFTWTHREADS
     fftw_init_threads();
 #endif
 #ifdef EDUS_MPI
-    mpi::Communicator::initialize(MPI_THREAD_MULTIPLE);
+    mpi::Communicator::initialize(MPI_THREAD_FUNNELED);
     NumberKpools = mpi::Communicator::world().size();
     fftw_mpi_init();  
 
@@ -66,7 +60,7 @@ void initialize()
         std::cout << "*    MPI world size:    *     ";
         std::cout << std::left << std::setw(95) << mpi::Communicator::world().size() << "*\n";
         std::cout << "*    OpenMP  threads:   *     ";
-        std::cout << std::left << std::setw(95) << OMPthreads << "*\n";
+        std::cout << std::left << std::setw(95) << omp_get_max_threads() << "*\n";
         std::cout << "******************************************************************************************************************************\n";
         //std::cout << "MPI parallelization recap. \n";
         //std::cout << "WORLD RANK: " << mpi::Communicator::world().rank() << "/" << mpi::Communicator::world().size();
@@ -90,11 +84,11 @@ void initialize()
     print_header();
     std::cout << "**************************************************    PARALLELIZATION RECAP     **********************************************\n";
     std::cout << "*    OpenMP  threads:   *     ";
-    std::cout << std::left << std::setw(95) << OMPthreads << "*\n";
+    std::cout << std::left << std::setw(95) << omp_get_max_threads() << "*\n";
     std::cout << "******************************************************************************************************************************\n";
 #endif
 #ifdef EDUS_FFTWTHREADS
-    fftw_plan_with_nthreads(OMPthreads);
+    fftw_plan_with_nthreads(omp_get_max_threads());
 #endif
 }
 
