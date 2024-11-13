@@ -391,7 +391,9 @@ class Operator
         void shuffle_to_fft_R()
         {
 #ifndef EDUS_MPI
+#ifdef EDUS_TIMERS
             PROFILE("Operator::shuffle_to_fft_R");
+#endif
             auto ci = MeshGrid::get_ConvolutionIndex(*Operator_R.get_MeshGrid() , *FT_meshgrid_R, *MeshGrid_Null);
 
             #pragma omp parallel for
@@ -410,8 +412,9 @@ class Operator
         void shuffle_to_fft_k()
         {
 #ifndef EDUS_MPI
+#ifdef EDUS_TIMERS
             PROFILE("Operator::shuffle_to_fft_k");
-
+#endif
             #pragma omp parallel for
             for(int ik=0; ik<Operator_k.get_nblocks(); ik++){
                 for(int ibnd1=0; ibnd1<Operator_k.get_nrows(); ++ibnd1){
@@ -427,7 +430,9 @@ class Operator
         void shuffle_from_fft_R()
         {
 #ifndef EDUS_MPI
+#ifdef EDUS_TIMERS
             PROFILE("Operator::shuffle_from_fft_R");
+#endif
             auto ci = MeshGrid::get_ConvolutionIndex(*Operator_R.get_MeshGrid(), *FT_meshgrid_R, *MeshGrid_Null);
             // bandindex auto ciminus = MeshGrid::get_ConvolutionIndex(*MeshGrid_Null, *Operator_R.get_MeshGrid(), *Operator_R.get_MeshGrid());
 
@@ -457,8 +462,9 @@ class Operator
         void shuffle_from_fft_k()
         {
 #ifndef EDUS_MPI
+#ifdef EDUS_TIMERS
             PROFILE("Operator::shuffle_from_fft_k");
-
+#endif
             #pragma omp parallel for 
             for(int ik=0; ik<Operator_k.get_nblocks(); ik++){
                 for(int ibnd1=0; ibnd1<Operator_k.get_nrows(); ++ibnd1){
@@ -476,7 +482,9 @@ class Operator
 
         void go_to_wannier()
         {
+#ifdef EDUS_TIMERS
             PROFILE("Operator::go_to_wannier");
+#endif
             assert(locked_bandgauge);
             assert(space == k);
             if (bandgauge == wannier){
@@ -494,7 +502,9 @@ class Operator
         void go_to_bloch()
         {
             // O_{bloch} = U^\dagger O_{wannier} U
+#ifdef EDUS_TIMERS
             PROFILE("Operator::go_to_bloch");
+#endif
             assert(locked_bandgauge);
             assert(space == k);
             if(bandgauge == bloch){
@@ -510,7 +520,9 @@ class Operator
 
         void go_to_R(const bool& do_fft = true)
         {
+#ifdef EDUS_TIMERS
             PROFILE("Operator::go_to_R");
+#endif
             assert(locked_space && initialized_fft);
             if(space == R){
                 return;
@@ -529,7 +541,9 @@ class Operator
 
         void go_to_k(const bool& do_fft = true)
         {
+#ifdef EDUS_TIMERS
             PROFILE("Operator::go_to_k");
+#endif
             assert(locked_space && initialized_fft);
             if(space == k){
                 return;

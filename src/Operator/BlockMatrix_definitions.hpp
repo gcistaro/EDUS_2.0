@@ -110,7 +110,9 @@ BlockMatrix<T>& BlockMatrix<T>::operator=(BlockMatrix<T>&& A)
 template<typename T>
 void BlockMatrix<T>::fill(const T& Scalar)
 {
+#ifdef EDUS_TIMERS
     PROFILE("BlockMatrix::fill");
+#endif
     std::fill(this->Values.begin(), this->Values.end(), Scalar);
 }
 
@@ -207,7 +209,9 @@ void convolution(BlockMatrix<T>& Output, U Scalar, const BlockMatrix<T>& Input1,
 template<typename T_, typename U>
 void commutator(BlockMatrix<T_>& Output, U Scalar, const BlockMatrix<T_>& Input1, const BlockMatrix<T_>& Input2, const bool& Erase_Output = true)
 {
+#ifdef EDUS_TIMERS
     PROFILE("Commutator");
+#endif
     assert( Output.get_space() == Input1.get_space() );
     assert( Input2.get_space() == Input1.get_space() );
 

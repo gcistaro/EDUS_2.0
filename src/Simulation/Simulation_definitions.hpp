@@ -117,7 +117,9 @@ void SumWithProduct(Operator<std::complex<double>>& Output,
                     const Scalar_T& SecondScalar, 
                     const Operator<std::complex<double>>& SecondAddend)
 {
+#ifdef EDUS_TIMERS
     PROFILE("SumWithProduct");
+#endif
     auto& SpaceOfPropagation = Operator<std::complex<double>>::SpaceOfPropagation;
 
     //std::cout << "space of propagation: "<< (SpaceOfPropagation==k? "k":"R") << std::endl;

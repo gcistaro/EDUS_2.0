@@ -8,8 +8,9 @@ template<typename T, typename U, typename S>
 void kGradient::Calculate(const S& scalar, T& DerivativeFunction, const T& Function, 
                           const U& direction, const bool& EraseOutput) const
 {
+#ifdef EDUS_TIMERS
     PROFILE("kGradient::Calculate");
-
+#endif
     if( EraseOutput ) {
         DerivativeFunction.fill(0.);
     }

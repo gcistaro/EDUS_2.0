@@ -8,21 +8,14 @@ SourceTerm =
     H.get_Operator_R().fill(0);
     
     //Output +=   (E.Nabla) * Input
-    PROFILE_START("i*(E.R)*Input");
     kgradient.Calculate(1.+0.*im, Output.get_Operator(Space::R), 
                         Input.get_Operator(Space::R), 
                         setoflaser(time), true);
-    PROFILE_STOP("i*(E.R)*Input");
-
-    PROFILE_START("Coulomb");
+                        
     coulomb.EffectiveHamiltonian( H, Input, true); 
-    PROFILE_STOP("Coulomb");
-
-//std::cout << "HRR" << H.get_Operator(R) << std::endl<< std::endl<< std::endl<< std::endl<< std::endl<< std::endl<< std::endl;
     Output.go_to_k(true);
     const_cast<Operator<std::complex<double>>&>(Input).go_to_k(false);
     H.go_to_k(true);
-//std::cout << "HK: " << H.get_Operator(k) << std::endl<< std::endl<< std::endl<< std::endl<< std::endl<< std::endl<< std::endl;
 
     // Output = -i * [ H, Input ]
     Calculate_TDHamiltonian(time, false);

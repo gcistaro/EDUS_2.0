@@ -205,7 +205,9 @@ void Simulation::SettingUp_EigenSystem()
 
 void Simulation::Calculate_TDHamiltonian(const double& time, const bool& erase_H)
 {
+#ifdef EDUS_TIMERS
     PROFILE("SourceTerm::Calculate_TDHamiltonian");
+#endif
     H.go_to_k();
     //--------------------get aliases for nested variables--------------------------------
     auto& H_ = H.get_Operator(SpaceOfPropagation);
