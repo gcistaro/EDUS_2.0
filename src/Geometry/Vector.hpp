@@ -24,10 +24,10 @@ class Vector{
     private:
         mdarray<T,1> Values;
     public:
-        Vector(){};
+        Vector() = default;
 
-        Vector(const Vector& v) = default;
-        Vector& operator=(const Vector& v) = default;
+        Vector(const Vector& v){this->Values = v.Values; };
+        Vector& operator=(const Vector& v){this->Values = v.Values; return *this;};
         
         Vector(Vector&& v) = default;
         Vector& operator=(Vector&& v) = default;
@@ -75,8 +75,6 @@ class Vector{
         auto end() const {return Values.end(); } 	
         int get_NumberOfElements() const;
         
-	//destructor
-        ~Vector();	
 
         friend class Matrix<T>;
 };

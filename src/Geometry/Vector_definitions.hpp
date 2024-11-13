@@ -7,7 +7,6 @@ Vector<T>::Vector(const int& n)
 template<class T>
 void Vector<T>::initialize(const int& n)
 {
-    (*this).~Vector<T>();
     this->Values.initialize({n});
 }
 
@@ -142,13 +141,6 @@ inline int Vector<T>::get_NumberOfElements() const
     return this->Values.get_Size(0);
 }
 
-
-//destructor
-template<typename T>
-Vector<T>::~Vector()
-{
-    (*this).Values.~mdarray<T,1>();
-}
 
 template<class T>
 double Vector<T>::norm() const
