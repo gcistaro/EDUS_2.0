@@ -9,6 +9,7 @@ option(EDUS_PROFILE     "Profiling function timings"                         ON)
 option(EDUS_MPI         "Enabling MPI"                                       ON)
 option(EDUS_BATCHGEMM   "Enabling Batch Gemm for k matrix multiplication"    ON)
 option(EDUS_FFTWTHREADS "Enabling threads in fftw"                           ON)                  
+option(EDUS_MKL_THREAD "Enabling threads in fftw"                           OFF)                  
 if(EDUS_PROFILE)
   add_definitions(-DEDUS_PROFILE)
 endif()
@@ -21,6 +22,9 @@ endif()
 if(EDUS_FFTWTHREADS)
   add_definitions(-DEDUS_FFTWTHREADS)
 endif()
+if(EDUS_MKL_THREAD)
+  add_definitions(-DEDUS_MKL_THREAD)
+endif()
 
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 17)
@@ -31,7 +35,7 @@ if (CMAKE_BUILD_TYPE="Debug")
     add_compile_options(-g -Wall)
 endif()
 
-add_compile_options(-fopenmp)
+add_compile_options(-g -fopenmp -O2)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
 
@@ -120,7 +124,13 @@ endif()
 
 #adding mkl (can it be replaced with lapack?)
 set(MKL_ARCH intel64)
-set(MKL_THREADING intel_thread)
+
+if(EDUS_MKL_THREAD)
+  set(MKL_THREADING intel_thread)
+else()
+  set(MKL_THREADING sequential)
+endif()
+
 set(MKL_INTERFACE lp64)
 find_package(MKL CONFIG REQUIRED PATHS $ENV{MKLROOT})
 add_compile_options($<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
