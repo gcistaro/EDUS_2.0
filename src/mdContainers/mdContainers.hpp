@@ -28,7 +28,7 @@ class mdarray
         void TotalSizeAndOffset();
 
     public:
-        mdarray(){Ptr = nullptr;};
+        mdarray() = default;
         mdarray(const mdarray<T,dim>& ToBeCopied);
         mdarray<T,dim>& operator=(const mdarray<T,dim>& ToBeCopied);
         

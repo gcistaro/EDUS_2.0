@@ -9,7 +9,6 @@ template<typename T, size_t dim>
 mdarray<T,dim>& mdarray<T,dim>::operator=(const mdarray<T,dim>& ToBeCopied)
 {
     if( this->Size != ToBeCopied.Size || Ptr == nullptr){
-        (*this).~mdarray<T,dim>();
         this->Ptr = new T[ToBeCopied.TotalSize];
         this->Size = ToBeCopied.Size;
         this->TotalSize = ToBeCopied.TotalSize;
@@ -24,7 +23,6 @@ mdarray<T,dim>& mdarray<T,dim>::operator=(const mdarray<T,dim>& ToBeCopied)
 template<typename T, size_t dim> 
 mdarray<T,dim>::mdarray(mdarray<T,dim>&& ToBeMoved)
 {
-    (*this).~mdarray<T,dim>();
     this->Ptr = std::move(ToBeMoved.Ptr);
     this->multindex = std::move(ToBeMoved.multindex);
     this->Size = std::move(ToBeMoved.Size);
@@ -40,7 +38,6 @@ mdarray<T,dim>::mdarray(mdarray<T,dim>&& ToBeMoved)
 template<typename T, size_t dim> 
 mdarray<T,dim>& mdarray<T,dim>::operator=(mdarray<T,dim>&& ToBeMoved)
 {
-    (*this).~mdarray<T,dim>();
     this->Ptr = std::move(ToBeMoved.Ptr);
     this->multindex = std::move(ToBeMoved.multindex);
     this->Size = std::move(ToBeMoved.Size);
@@ -84,7 +81,6 @@ void mdarray<T,dim>::TotalSizeAndOffset()
 template<typename T, size_t dim> 
 void mdarray<T,dim>::initialize(const std::array<int,dim>& Size_)
 {
-    (*this).~mdarray<T,dim>();
     Size = Size_;
     this->multindex.initialize(Size_);
     TotalSizeAndOffset();
