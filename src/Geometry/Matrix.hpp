@@ -25,9 +25,9 @@ class Matrix{
     private:
         mdarray<T,2> Values;
     public:
-        Matrix(){Values = mdarray<T,2>();};
+        Matrix() = default;
         Matrix(const mdarray<T,2>& Values_) : Values(Values_){};
-        Matrix(mdarray<T,2>&& Values_) : Values(Values_)
+        Matrix(mdarray<T,2>&& Values_) 
         {
                 Values=std::move(Values_);
         };
@@ -36,8 +36,8 @@ class Matrix{
 
         Matrix(T* Ptr, const std::array<int,2>& dims);
         
-        Matrix(const Matrix& A) = default;
-        Matrix& operator=(const Matrix& m) = default;
+        Matrix(const Matrix& A) {this->Values = A.Values;};
+        Matrix& operator=(const Matrix& m) {this->Values = m.Values; return *this;};
         
         Matrix(Matrix&& A) = default;
         Matrix& operator=(Matrix&& m) = default;
@@ -80,9 +80,6 @@ class Matrix{
         int get_nrows() const;
         int get_ncols() const;
         
-	//destructor
-        ~Matrix();	
-
         friend class Vector<T>;
 };
 

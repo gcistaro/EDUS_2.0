@@ -7,7 +7,7 @@ Matrix<T>::Matrix(const int& nrows, const int& ncols)
 template<class T>
 void Matrix<T>::initialize(const int& nrows, const int& ncols)
 {
-    (*this).~Matrix<T>();
+    //(*this).~Matrix<T>();
     assert(nrows > 0 && ncols > 0);
     this->Values.initialize({nrows, ncols});
 }
@@ -224,14 +224,6 @@ template<class T>
 inline int Matrix<T>::get_ncols() const
 {
     return this->Values.get_Size(1);
-}
-
-
-//destructor
-template<typename T>
-Matrix<T>::~Matrix()
-{
-    (*this).Values.~mdarray<T,2>();
 }
 
 template<typename T>
