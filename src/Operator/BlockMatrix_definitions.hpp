@@ -228,14 +228,6 @@ void commutator(BlockMatrix<T_>& Output, U Scalar, const BlockMatrix<T_>& Input1
 }
 
 
-
-template<typename T>
-BlockMatrix<T>::~BlockMatrix()
-{
-    Values.~mdarray<T,3>();
-}
-
-
 template<typename T>
 void BlockMatrix<T>::diagonalize(std::vector<mdarray<double,1>>& Eigenvalues,
                  BlockMatrix<std::complex<double>>& Eigenvectors) const

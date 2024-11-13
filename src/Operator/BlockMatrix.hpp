@@ -118,7 +118,6 @@ class BlockMatrix{
         void make_antihermitian();
         void cut(const double& threshold__);
         //destructor
-        ~BlockMatrix();	
 };
 
 
