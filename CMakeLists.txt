@@ -9,7 +9,7 @@ option(EDUS_PROFILE     "Profiling function timings"                         ON)
 option(EDUS_MPI         "Enabling MPI"                                       ON)
 option(EDUS_BATCHGEMM   "Enabling Batch Gemm for k matrix multiplication"    ON)
 option(EDUS_FFTWTHREADS "Enabling threads in fftw"                          OFF)                
-option(EDUS_MKL_THREAD "Enabling threads in fftw"                           OFF)                  
+option(EDUS_MKL_THREAD  "Enabling threads in mkl"                           OFF)                  
 if(EDUS_PROFILE)
   add_definitions(-DEDUS_PROFILE)
 endif()
@@ -93,6 +93,7 @@ set(_SOURCES src/initialize.cpp
              src/Simulation/Simulation.cpp
              src/core/profiler.cpp 
              src/core/print_timing.cpp 
+             src/core/cmd_args/cmd_args.cpp 
              src/core/rt_graph.cpp
              src/core/mpi/Communicator.cpp
              src/Coulomb/Coulomb.cpp
@@ -162,7 +163,12 @@ endif()
 
 # add the executable
 add_executable(EDUS src/EDUS.cpp)
-add_executable(batchgemm ci-test/test_cblas_batchgemm.cpp)
+
+#speed executables
+add_executable(Matrix_mult_speed speed-apps/Matrix_multiplication.cpp)
+add_executable(BlockMatrix_mult_speed speed-apps/BlockMatrix_multiplication.cpp)
+add_executable(FourierTransform_speed speed-apps/FourierTransform.cpp)
+
 #Executables for test various classes
 add_executable(Containers_test ci-test/test_mdarray.cpp) 
 add_executable(Matrix_test ci-test/test_matrix.cpp)
