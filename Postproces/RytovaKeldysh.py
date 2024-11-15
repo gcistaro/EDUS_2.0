@@ -97,7 +97,7 @@ for iR, R_ in enumerate(R):
             if ( math.isnan(RytovaKeldysh[iR][ibnd1][ibnd2]) ):  
                 RytovaKeldysh[iR][ibnd1][ibnd2] = np.pi/(epsilon*r0_au)*( struve(0, (rnorm+0.01)/r0) - yn(0, (rnorm+0.01)/r0) )
                 if ( math.isnan(RytovaKeldysh[iR][ibnd1][ibnd2]) ):  
-                print( "R= ", R_, "atom positions: ", r_atom[ibnd1], r_atom[ibnd2], "rnorm : ", rnorm, struve(0,rnorm/r0), yn(0,rnorm/r0), "is nan")
+                    print( "R= ", R_, "atom positions: ", r_atom[ibnd1], r_atom[ibnd2], "rnorm : ", rnorm, struve(0,rnorm/r0), yn(0,rnorm/r0), "is nan")
 print("Done")
 print(np.max(RytovaKeldysh), np.min(RytovaKeldysh))
 
