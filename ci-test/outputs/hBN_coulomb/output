@@ -1,4 +1,5 @@
-Execution started: Wed Oct 30 11:35:16 2024
+**************************************************    PARALLELIZATION RECAP     **********************************************
+Execution started: Wed Nov 20 16:20:12 2024
 
 ******************************************************************************************************************************
 *                                ________   ________     ___    ___     ________                                             *
@@ -10,16 +11,23 @@ Execution started: Wed Oct 30 11:35:16 2024
 *                                                                                                                            *
 ******************************************************************************************************************************
 **********************************************     GIT RECAP    **************************************************************
-*   Git hash:           *    8ce526659266cca12077fedce2fb9250a5e069b1                                                        *
-*   Git branch:         *    heads/Add_batch_gemm                                                                            *
+*   Git hash:           *    27f2f857da4ed561ec938609ced7b1fe0d0ff82b                                                        *
+*   Git branch:         *    heads/main                                                                                      *
 ******************************************************************************************************************************
 **************************************************    PARALLELIZATION RECAP     **********************************************
+*    OpenMP  threads:   *     20                                                                                             *
+*    MKL  threads:      *     1                                                                                              *
 *    MPI world size:    *     1                                                                                              *
-*    OpenMP  threads:   *     12                                                                                             *
-******************************************************************************************************************************
+* -> initializing simulation                                                                                                 *
+* -> initializing material                                                                                                   *
+* -> initializing lasers                                                                                                     *
+* -> initializing DensityMatrix                                                                                              *
+* -> H to k                                                                                                                  *
+* -> initialize fft                                                                                                          *
+* -> eigensolver                                                                                                             *
 *******************************************************    INPUT RECAP     ***************************************************
-*   input file:         *     /home/gcistaro/EDUS_2.0/ci-test/inputs/hBN_coulomb.json                                        *
-*   tb_model  :         *     /home/gcistaro/EDUS_2.0/tb_models/hBN_gap7.25eV_a2.5A                                          *
+*   input file:         *     /scratch/gcistaro/codes/EDUS_2.0/ci-test/inputs/hBN_coulomb.json                               *
+*   tb_model  :         *     /scratch/gcistaro/codes/EDUS_2.0/tb_models/hBN_gap7.25eV_a2.5A                                 *
 *   grid:               *     [  40,   40,    1]                                                                             *
 *   Resolution time:    *     4.1341e-01 a.u.          1.0000e-02 fs                                                         *
 *   Print Resolution:   *     1                                                                                              *
@@ -37,9 +45,9 @@ Execution started: Wed Oct 30 11:35:16 2024
 ******************************************************************************************************************************
 ****************************************************       LASER INFO        *************************************************
 *   Frequency:          *     3.6749e-01 a.u.          1.0000e+01 eV                                                         *
-*   Wavelength:         *     2.3430e+03 a.u.          1.2398e+02 nm                                                         *
+*   Wavelength:         *     5.1257e+09 a.u.          2.7124e+08 nm                                                         *
 *   Period:             *     1.7097e+01 a.u.          4.1357e-01 fs                                                         *
-*   Intensity:          *     6.2337e-05 a.u.          1.0000e+10 Wcm2                                                       *
+*   Intensity:          *     2.8495e-07 a.u.          1.0000e+10 Wcm2                                                       *
 ******************************************************************************************************************************
 *******************************************************    PROPAGATION     ***************************************************
 *   Initial time:       *     0.0000e+00 a.u.          0.0000e+00 fs                                                         *
@@ -49,44 +57,19 @@ Execution started: Wed Oct 30 11:35:16 2024
 *   it:                 *     100   / 102       98.0392 %                                                                    *
 ******************************************************************************************************************************
 MPI Communicator finalized!
-Execution finished: Wed Oct 30 11:35:18 2024
+Execution finished: Wed Nov 20 16:20:16 2024
 
 ==============================================================================================================================
                                                #         Total          %     Self %        Median           Min           Max
 ------------------------------------------------------------------------------------------------------------------------------
-EDUS                                           1       2.94 s      100.00      10.31       2.94 s        2.94 s        2.94 s 
-├ Simulation::Initialize                       1     440.98 ms      15.00      40.27     440.98 ms     440.98 ms     440.98 ms
-│ ├ Material                                   1       3.48 ms       0.12      90.93       3.48 ms       3.48 ms       3.48 ms
-│ │ └ Wannier                                  1     315.63 us       0.01     100.00     315.63 us     315.63 us     315.63 us
-│ ├ MeshGrid::fftPair                         16      71.99 ms       2.45     100.00       5.03 ms       3.26 ms       5.16 ms
-│ ├ MeshGrid::CalculateConvolutionIndex       16     153.18 ms       5.21     100.00       9.76 ms       2.14 ms      17.49 ms
-│ ├ Simulation::SetEigensystem                 1      25.97 ms       0.88     100.00      25.97 ms      25.97 ms      25.97 ms
-│ ├ RK::InitialCondition                       1       1.53 ms       0.05      14.69       1.53 ms       1.53 ms       1.53 ms
-│ │ ├ BlockMatrix::fill                        1      34.10 us       0.00     100.00      34.10 us      34.10 us      34.10 us
-│ │ └ Operator::go_to_wannier                  1       1.27 ms       0.04      94.70       1.27 ms       1.27 ms       1.27 ms
-│ │   └ BlockMatrix::fill                      2      67.31 us       0.00     100.00      33.66 us      33.59 us      33.72 us
-│ ├ Operator::go_to_R                          5     415.95 us       0.01     100.00      78.57 us      74.52 us      96.15 us
-│ ├ SourceTerm::Calculate_TDHamiltonian        1     745.25 us       0.03      61.94     745.25 us     745.25 us     745.25 us
-│ │ ├ Operator::go_to_k                        1     181.59 us       0.01     100.00     181.59 us     181.59 us     181.59 us
-│ │ └ BlockMatrix::fill                        1     102.07 us       0.00     100.00     102.07 us     102.07 us     102.07 us
-│ ├ BlockMatrix::fill                          3     189.69 us       0.01     100.00      63.81 us      61.92 us      63.96 us
-│ ├ Commutator                                 3       3.30 ms       0.11     100.00       1.10 ms       1.06 ms       1.14 ms
-│ ├ kGradient::Calculate                       3       1.99 ms       0.07     100.00     663.41 us     650.49 us     674.23 us
-│ └ Operator::go_to_k                          4     600.64 us       0.02     100.00     149.22 us     147.66 us     154.54 us
-└ Simulation::Propagate                        1       2.20 s       74.69      21.90       2.20 s        2.20 s        2.20 s 
-  ├ Operator::go_to_bloch                    102     178.61 ms       6.08      93.17       1.75 ms       1.68 ms       2.11 ms
-  │ └ BlockMatrix::fill                      204      12.20 ms       0.41     100.00      58.27 us      53.83 us      90.09 us
-  ├ BlockMatrix::fill                        714      54.99 ms       1.87     100.00      88.06 us      48.97 us     127.56 us
-  ├ Operator::go_to_R                       1224      47.41 ms       1.61     100.00     153.00 ns      88.00 ns       6.00 ms
-  ├ i*(E.R)*Input                            408     329.31 ms      11.20       1.16     757.58 us     707.20 us       7.45 ms
-  │ └ kGradient::Calculate                   408     325.49 ms      11.07      89.67     747.93 us     699.23 us       7.44 ms
-  │   └ BlockMatrix::fill                    408      33.62 ms       1.14     100.00      80.75 us      70.32 us     118.84 us
-  ├ Coulomb                                  408     165.85 ms       5.64      83.71     318.18 us     296.09 us      14.90 ms
-  │ └ BlockMatrix::fill                      408      27.01 ms       0.92     100.00      66.20 us      61.55 us      90.51 us
-  ├ Operator::go_to_k                       1224     181.84 ms       6.19     100.00     148.48 us     109.00 ns      22.83 ms
-  ├ SourceTerm::Calculate_TDHamiltonian      408     216.06 ms       7.35      99.96     408.54 us     354.44 us      15.41 ms
-  │ └ Operator::go_to_k                      408      78.66 us       0.00     100.00     121.00 ns      86.00 ns      16.91 us
-  ├ Commutator                               408     438.75 ms      14.93     100.00       1.07 ms       1.03 ms       1.20 ms
-  └ SumWithProduct                           714     101.72 ms       3.46     100.00      70.76 us      65.63 us       9.78 ms
+EDUS                                           1       4.31 s      100.00       6.72       4.31 s        4.31 s        4.31 s 
+├ Simulation::Initialize                       1     378.93 ms       8.79      38.56     378.93 ms     378.93 ms     378.93 ms
+│ ├ Material                                   1       2.88 ms       0.07      92.89       2.88 ms       2.88 ms       2.88 ms
+│ │ └ Wannier                                  1     204.70 us       0.00     100.00     204.70 us     204.70 us     204.70 us
+│ ├ MeshGrid::fftPair                         16      51.60 ms       1.20     100.00       3.24 ms       3.13 ms       3.35 ms
+│ ├ MeshGrid::CalculateConvolutionIndex       16     172.87 ms       4.01     100.00      10.82 ms      10.62 ms      11.01 ms
+│ ├ Simulation::SetEigensystem                 1       4.59 ms       0.11     100.00       4.59 ms       4.59 ms       4.59 ms
+│ └ RK::InitialCondition                       1     888.60 us       0.02     100.00     888.60 us     888.60 us     888.60 us
+└ Simulation::Propagate                        1       3.64 s       84.50     100.00       3.64 s        3.64 s        3.64 s 
 
 ==============================================================================================================================

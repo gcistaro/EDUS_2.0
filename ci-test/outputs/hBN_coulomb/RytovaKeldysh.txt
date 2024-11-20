@@ -1,4 +1,4 @@
-#File generated from /home/gcistaro/EDUS_2.0/tb_models/hBN_gap7.25eV_a2.5A_tb.datwith a grid 40x40x1
+#File generated from /scratch/gcistaro/codes/EDUS_2.0/tb_models/hBN_gap7.25eV_a2.5A_tb.datwith a grid 40x40x1
   0.00000000
   0.11534298
   0.11534298
