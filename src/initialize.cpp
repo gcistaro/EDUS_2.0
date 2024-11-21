@@ -32,7 +32,6 @@ int NumberKpools;
 void initialize()
 {  
     mkl_set_num_threads(omp_get_max_threads());
-    std::cout << "**************************************************    PARALLELIZATION RECAP     **********************************************\n";
 #ifdef EDUS_FFTWTHREADS
     fftw_init_threads();
 #endif
