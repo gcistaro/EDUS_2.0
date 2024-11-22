@@ -2,8 +2,7 @@
 #include <iomanip>
 #include <vector>
 #include <math.h>
-//#include "RungeKutta/RungeKutta.hpp"
-#include "AdamsBashforth/AdamsBashforth.hpp"
+#include "DESolver/DESolver.hpp"
 #include <chrono>
 
 //here we solve y'=c*y
@@ -42,17 +41,28 @@ int main()
     rungekutta.set_ResolutionTime(ResolutionTime);
     */
 
+    /*
     auto adamsbashforth = AdamsBashforth<std::vector<double>>(Function_, InitialCondition, SourceTerm);
     adamsbashforth.set_InitialTime(InitialTime);
     adamsbashforth.set_ResolutionTime(ResolutionTime);
 
-    // uncomment the following lines if you include AdamsBashforth and not RungeKutta
+    */
     
-    auto a = RateOfIncrease*InitialConstant*exp(RateOfIncrease*adamsbashforth.get_CurrentTime() - 0*ResolutionTime);
-    auto b = RateOfIncrease*InitialConstant*exp(RateOfIncrease*adamsbashforth.get_CurrentTime() - 1*ResolutionTime);
-    auto c = RateOfIncrease*InitialConstant*exp(RateOfIncrease*adamsbashforth.get_CurrentTime() - 2*ResolutionTime);
-    auto d = RateOfIncrease*InitialConstant*exp(RateOfIncrease*adamsbashforth.get_CurrentTime() - 3*ResolutionTime);
-    adamsbashforth.set_fns({a}, {b}, {c}, {d});
+
+    // uncomment the following lines if you include AdamsBashforth and not RungeKutta
+
+    auto PropagatedFunction = DESolver<std::vector<double>>(Function_, InitialCondition, SourceTerm);
+    //PropagatedFunction.setType(DESolver<decltype(Function_)>::RK4);
+    PropagatedFunction.setType(DESolver<decltype(Function_)>::AB4);
+    
+    auto a = RateOfIncrease*InitialConstant*exp(RateOfIncrease*PropagatedFunction.get_CurrentTime() - 0*ResolutionTime);
+    auto b = RateOfIncrease*InitialConstant*exp(RateOfIncrease*PropagatedFunction.get_CurrentTime() - 1*ResolutionTime);
+    auto c = RateOfIncrease*InitialConstant*exp(RateOfIncrease*PropagatedFunction.get_CurrentTime() - 2*ResolutionTime);
+    auto d = RateOfIncrease*InitialConstant*exp(RateOfIncrease*PropagatedFunction.get_CurrentTime() - 3*ResolutionTime);
+    //PropagatedFunction.setFnsAB4({a}, {b}, {c}, {d});
+
+   PropagatedFunction.set_InitialTime(InitialTime);
+   PropagatedFunction.set_ResolutionTime(ResolutionTime);
     
 
     auto start = std::chrono::high_resolution_clock::now();
@@ -62,15 +72,15 @@ int main()
     std::cout << "+---------+------------+--------------------+---------------------+-------------------+\n";
     //for(double it=0; it<=10000; it++){
     int it = 0;
-    while (adamsbashforth.get_CurrentTime() <= FinalTime){
+    while (PropagatedFunction.get_CurrentTime() <= FinalTime){
         if(int(it)%100==0){
-            auto AnalyticalSolution = InitialConstant*exp(RateOfIncrease*adamsbashforth.get_CurrentTime());
-            auto&& NumericalSolution = adamsbashforth.get_Function()[0];
-            std::cout << adamsbashforth.get_Function()[0] << "\n";
+            auto AnalyticalSolution = InitialConstant*exp(RateOfIncrease*PropagatedFunction.get_CurrentTime());
+            auto&& NumericalSolution = PropagatedFunction.get_Function()[0];
+            std::cout << PropagatedFunction.get_Function()[0] << "\n";
             std::cout << "|";
             std::cout << std::setw(7) << std::fixed << int(it);
             std::cout << "  |  ";
-            std::cout << std::setw(6) << std::setprecision(2) <<  std::scientific << adamsbashforth.get_CurrentTime();
+            std::cout << std::setw(6) << std::setprecision(2) <<  std::scientific << PropagatedFunction.get_CurrentTime();
             std::cout << "  ";
             std::cout << "|";
             std::cout << "  ";
@@ -91,7 +101,7 @@ int main()
         
         }    
 
-        adamsbashforth.Propagate();
+        PropagatedFunction.Propagate();
         it++;
     }
 
