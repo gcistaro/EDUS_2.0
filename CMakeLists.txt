@@ -7,7 +7,7 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 
 option(EDUS_PROFILE     "Profiling function timings"                         ON)
 option(EDUS_MPI         "Enabling MPI"                                       ON)
-option(EDUS_BATCHGEMM   "Enabling Batch Gemm for k matrix multiplication"    ON)
+option(EDUS_BATCHGEMM   "Enabling Batch Gemm for k matrix multiplication"   OFF)
 option(EDUS_FFTWTHREADS "Enabling threads in fftw"                          OFF)                
 option(EDUS_MKL_THREAD  "Enabling threads in mkl"                           OFF)                  
 if(EDUS_PROFILE)
