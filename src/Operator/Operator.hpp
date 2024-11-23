@@ -223,9 +223,9 @@ class Operator
             //bare_mg.fill(0);
             //MeshGrid_Null = std::make_shared<MeshGrid<R>>(bare_mg, "Cartesian");
             //std::cout << "Calculate convolution index MG, FT_meshgrid_R, MeshGrid_null\n";
-            MeshGrid::Calculate_ConvolutionIndex(MG , *FT_meshgrid_R, *MeshGrid_Null);
+            //MeshGrid::Calculate_ConvolutionIndex(MG , *FT_meshgrid_R, *MeshGrid_Null);
             //std::cout << "Calculate convolution index MeshGrid_null, MG, MG\n";
-            MeshGrid::Calculate_ConvolutionIndex(*MeshGrid_Null, MG, MG);
+            //MeshGrid::Calculate_ConvolutionIndex(*MeshGrid_Null, MG, MG);
 
             //prove that is working
             /*
@@ -271,6 +271,49 @@ class Operator
             locked_space = true;
         };
 
+        void initialize_fft(const Operator& Op__, const std::string& tagname__="")
+        {
+            tagname = tagname__;
+            //for now this is the only case implemented. it will be more general.
+            //we enter in this function only once
+            if(initialized_fft){
+                return;
+            }
+            initialized_fft = true;
+            
+            auto nbnd = Op__.get_Operator_R().get_nrows();
+#ifdef EDUS_MPI
+            Operator_R = BlockMatrix<std::complex<double>>(R, mpindex.get_RecommendedAllocate_fftw(), nbnd, nbnd);
+#else
+            Operator_R = BlockMatrix<std::complex<double>>(R, MG.get_mesh().size(), nbnd, nbnd);
+#endif
+            auto& Rgrid = Operator_R.get_MeshGrid();
+            Rgrid = Op__.get_Operator_R().get_MeshGrid();
+            FT_meshgrid_k = Op__.FT_meshgrid_k;
+            FT_meshgrid_R = Op__.FT_meshgrid_R;
+            
+            Operator_k = BlockMatrix<std::complex<double>>(k, mpindex.get_RecommendedAllocate_fftw(), nbnd, nbnd);
+            auto& kgrid = Operator_k.get_MeshGrid();
+            kgrid = FT_meshgrid_k;
+            bandindex.initialize({nbnd, nbnd});
+
+#ifdef EDUS_MPI
+            FTfriendly_Operator_k = mdarray<std::complex<double>, 2>( Operator_k.data(), {mpindex.get_RecommendedAllocate_fftw(),nbnd*nbnd} );
+            FTfriendly_Operator_R = mdarray<std::complex<double>, 2>( Operator_R.data(), {mpindex.get_RecommendedAllocate_fftw(),nbnd*nbnd} );
+#else
+            FTfriendly_Operator_k = mdarray<std::complex<double>, 2>({nbnd*nbnd, mpindex.get_RecommendedAllocate_fftw()});
+            FTfriendly_Operator_R = mdarray<std::complex<double>, 2>({nbnd*nbnd, mpindex.get_RecommendedAllocate_fftw()});
+#endif
+            //use convolution index for shuffle index.
+            std::vector<int> Dimensions(3);
+            for(int ix=0; ix<3; ix++){
+                Dimensions[ix] = FT_meshgrid_k->get_Size()[ix];
+            }
+            ft_.initialize(FTfriendly_Operator_k, FTfriendly_Operator_R, Dimensions, tagname);
+            //shuffle_to_fft();
+            this->space = R;
+            locked_space = true;
+        };
 
         void dft(const std::vector<Coordinate>& path, const int& sign, const bool& UseMPI=true)
         {
@@ -297,6 +340,10 @@ class Operator
             shuffle_to_RK();
 #endif
         }
+
+
+
+
 
         void set_space(const Space& space__)
         {
@@ -394,15 +441,16 @@ class Operator
 #ifdef EDUS_TIMERS
             PROFILE("Operator::shuffle_to_fft_R");
 #endif
-            auto ci = MeshGrid::get_ConvolutionIndex(*Operator_R.get_MeshGrid() , *FT_meshgrid_R, *MeshGrid_Null);
+            //auto ci = MeshGrid::get_ConvolutionIndex(*Operator_R.get_MeshGrid() , *FT_meshgrid_R, *MeshGrid_Null);
 
             #pragma omp parallel for
             for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
-                assert(ci(iR,0) != -1);
+                //assert(ci(iR,0) != -1);
                 for(int ibnd1=0; ibnd1<Operator_R.get_nrows(); ++ibnd1){
                     // bandindex for(int ibnd2=ibnd1; ibnd2<Operator_R.get_ncols(); ++ibnd2){
                     for(int ibnd2=0; ibnd2<Operator_R.get_ncols(); ++ibnd2){
-                        FTfriendly_Operator_R(static_cast<int>(bandindex.oneDindex(ibnd1, ibnd2)), ci(iR,0)) = Operator_R(iR, ibnd1, ibnd2);
+                    //    FTfriendly_Operator_R(static_cast<int>(bandindex.oneDindex(ibnd1, ibnd2)), ci(iR,0)) = Operator_R(iR, ibnd1, ibnd2);
+                        FTfriendly_Operator_R(static_cast<int>(bandindex.oneDindex(ibnd1, ibnd2)), iR) = Operator_R(iR, ibnd1, ibnd2);
                     }
                 }
             }
@@ -433,16 +481,17 @@ class Operator
 #ifdef EDUS_TIMERS
             PROFILE("Operator::shuffle_from_fft_R");
 #endif
-            auto ci = MeshGrid::get_ConvolutionIndex(*Operator_R.get_MeshGrid(), *FT_meshgrid_R, *MeshGrid_Null);
+            //auto ci = MeshGrid::get_ConvolutionIndex(*Operator_R.get_MeshGrid(), *FT_meshgrid_R, *MeshGrid_Null);
             // bandindex auto ciminus = MeshGrid::get_ConvolutionIndex(*MeshGrid_Null, *Operator_R.get_MeshGrid(), *Operator_R.get_MeshGrid());
 
             #pragma omp parallel for 
             for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
-                assert(ci(iR,0) != -1);
+                //assert(ci(iR,0) != -1);
                 for(int ibnd1=0; ibnd1<Operator_R.get_nrows(); ++ibnd1){
                     // bandindex for(int ibnd2=ibnd1; ibnd2<Operator_R.get_ncols(); ++ibnd2){
                     for(int ibnd2=0; ibnd2<Operator_R.get_ncols(); ++ibnd2){
-                        Operator_R(iR, ibnd1, ibnd2) = FTfriendly_Operator_R(static_cast<int>(bandindex.oneDindex(ibnd1, ibnd2)), ci(iR,0));
+                        //Operator_R(iR, ibnd1, ibnd2) = FTfriendly_Operator_R(static_cast<int>(bandindex.oneDindex(ibnd1, ibnd2)), ci(iR,0));
+                        Operator_R(iR, ibnd1, ibnd2) = FTfriendly_Operator_R(static_cast<int>(bandindex.oneDindex(ibnd1, ibnd2)), iR);
                     }
                 }
             }
