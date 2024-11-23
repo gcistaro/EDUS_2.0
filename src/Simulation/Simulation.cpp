@@ -101,7 +101,7 @@ Simulation::Simulation(const std::string& JsonFileName__)
         std::cout << std::setw(125) << "* -> initialize fft";
         std::cout << "*\n";
     }
-    H.initialize_fft(*MasterRgrid, material.H.get_Operator_R().get_nrows());
+    H.initialize_fft(DensityMatrix);
 #ifdef EDUS_MPI
     if(mpi::Communicator::world().rank() == 0)
 #endif
@@ -217,9 +217,9 @@ void Simulation::Calculate_TDHamiltonian(const double& time, const bool& erase_H
     auto& z_ = material.r[2].get_Operator(SpaceOfPropagation);
     auto las = setoflaser(time).get("Cartesian");
     
-    auto& ci = MeshGrid::ConvolutionIndex[{H0_.get_MeshGrid()->get_id(), 
-                                              H_.get_MeshGrid()->get_id(), 
-                                              Operator<std::complex<double>>::MeshGrid_Null->get_id()}];
+    //auto& ci = MeshGrid::ConvolutionIndex[{H0_.get_MeshGrid()->get_id(), 
+    //                                          H_.get_MeshGrid()->get_id(), 
+    //                                          Operator<std::complex<double>>::MeshGrid_Null->get_id()}];
     //-----------------------------------------------------------------------------------
 
     //--------------------------do initializations---------------------------------------
@@ -227,11 +227,11 @@ void Simulation::Calculate_TDHamiltonian(const double& time, const bool& erase_H
         H_.fill(0.);
     }
 
-    if(ci.get_Size(0) == 0 && SpaceOfPropagation == R) {
-        MeshGrid::Calculate_ConvolutionIndex( *(H0_.get_MeshGrid()), 
-                                                  *(H_.get_MeshGrid()), 
-                                                  *(Operator<std::complex<double>>::MeshGrid_Null));
-    }
+    //if(ci.get_Size(0) == 0 && SpaceOfPropagation == R) {
+    //    MeshGrid::Calculate_ConvolutionIndex( *(H0_.get_MeshGrid()), 
+    //                                              *(H_.get_MeshGrid()), 
+    //                                              *(Operator<std::complex<double>>::MeshGrid_Null));
+    //}
     //---------------------------------------------------------------------------------
 
     //------------------------H(R) = H0(R) + E.r(R)-------------------------------------
@@ -349,7 +349,7 @@ void Simulation::Calculate_Velocity()
     direction[2].initialize(0,0,1);
 
     for(int ix : {0, 1, 2}){
-        Velocity[ix].initialize_fft(*DensityMatrix.get_Operator_R().get_MeshGrid(), DensityMatrix.get_Operator_R().get_nrows());
+        Velocity[ix].initialize_fft(DensityMatrix);
         Velocity[ix].lock_space(k);
         Velocity[ix].get_Operator_k().fill(0.);
         commutator(Velocity[ix].get_Operator_k(), -im, material.r[ix].get_Operator_k(), H.get_Operator_k());
