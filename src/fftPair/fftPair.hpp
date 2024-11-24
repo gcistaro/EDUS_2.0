@@ -58,7 +58,7 @@ class FourierTransform
         void initialize(mdarray<std::complex<double>, 2>& Array_x__, 
                         const std::vector<std::vector<double>>& Mesh__);
         void fft(const int& sign);
-        mdarray<std::complex<double>, 1> dft(const std::vector<double>& Point, const int& sign); 
+        std::complex<double> dft(const std::vector<double>& Point, const int& h, const int& sign); 
         mdarray<std::complex<double>, 2> dft(const std::vector<std::vector<double>>& ArrayOfPoints, const int& sign);
         inline const mdarray<std::complex<double>, 2>& get_Array_k() const { return (*Array_k);};
         inline const mdarray<std::complex<double>, 2>& get_Array_x() const { return (*Array_x);};

@@ -267,6 +267,7 @@ bool BlockMatrix<T>::is_hermitian()
 template<typename T>
 void BlockMatrix<T>::make_hermitian()
 {
+    PROFILE("make_hermitian");
     switch(space) 
     {
         case(Space::k) :
