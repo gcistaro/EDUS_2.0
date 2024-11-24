@@ -363,6 +363,7 @@ class Operator
 */
         void initialize_dft()
         {
+            PROFILE("initialize_dft");
             //we enter in this function only once
             if(initialized_dft){
                 return;
@@ -416,6 +417,8 @@ class Operator
 
         void shuffle_to_RK_dft()
         {
+            PROFILE("shuffle_to_RK_dft")
+            #pragma omp parallel for
             for(int ik=0; ik<Operator_k.get_nblocks(); ++ik){
                 for(int ibnd1=0; ibnd1<Operator_k.get_nrows(); ++ibnd1){
                     //bandindex for(int ibnd2=ibnd1; ibnd2<Operator_k.get_nrows(); ++ibnd2){ 
