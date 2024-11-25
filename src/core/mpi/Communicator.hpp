@@ -117,6 +117,13 @@ class Communicator {
             }
         };
 
+        inline void
+        barrier() const
+        {
+            assert(communicator_ != MPI_COMM_NULL);
+            MPI_Barrier(communicator_);
+        }
+
         // MPI global finalization
         static void finalize()
         {

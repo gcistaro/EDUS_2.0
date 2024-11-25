@@ -14,7 +14,9 @@
 #include "MeshGrid/MeshGrid.hpp"
 #include "Geometry/Matrix.hpp"
 #include "core/mpi/Communicator.hpp"
-
+#include "core/hdf5/hdf5_tree.hpp"
+#include "GlobalFunctions.hpp"
+#include "initialize.hpp"
 template<class T>
 class Operator;
 //Our sparse matrices are block matrices. 
@@ -74,7 +76,7 @@ class BlockMatrix{
         BlockMatrix<T> operator*(const BlockMatrix<T>& B);
 
         const T* data() const {return Values.data();};
-        T* data() {return const_cast<T*>((static_cast<const BlockMatrix<T>&>(*this)).Values.data());};
+        T* data() {return const_cast<T*>((const_cast<const BlockMatrix<T>&>(*this)).Values.data());};
         //friend void multiply(Matrix<T>& OutputMatrix, const auto& Scalar1, const Matrix<T>& Matrix1, 
         //                                              const auto& Scalar2, const Matrix<T>& Matrix2);
 
@@ -84,6 +86,7 @@ class BlockMatrix{
         int get_nblocks() const{return Values.get_Size(0);};
         int get_nrows() const{return Values.get_Size(1);};
         int get_ncols() const{return Values.get_Size(2);};
+        int get_TotalSize() const {return Values.get_TotalSize();};
         std::shared_ptr<MeshGrid>& get_MeshGrid(){return this->meshgrid;};
         const std::shared_ptr<MeshGrid>& get_MeshGrid() const {return this->meshgrid;} ;
 
@@ -117,7 +120,7 @@ class BlockMatrix{
         void make_hermitian();
         void make_antihermitian();
         void cut(const double& threshold__);
-        //destructor
+        void write_h5(const std::string& name__, const std::string& label__="");
 };
 
 

@@ -79,6 +79,7 @@ class Matrix{
         auto end() const {return Values.end(); } 	
         int get_nrows() const;
         int get_ncols() const;
+        int get_TotalSize() const;
         
         friend class Vector<T>;
 };

@@ -134,7 +134,7 @@ template <typename T, size_t dim>
 template <typename... Args>
 inline T& mdarray<T,dim>::operator()(Args... args)
 {
-    return (const_cast<T&>(static_cast<mdarray<T,dim> const&>(*this)(args...)));
+    return (const_cast<T&>(const_cast<mdarray<T,dim> const&>(*this)(args...)));
 }
 
 
@@ -149,7 +149,7 @@ inline T const& mdarray<T,dim>::operator[](const int& oneDindex) const
 template <typename T, size_t dim>
 inline T& mdarray<T,dim>::operator[](const int& oneDindex) 
 {
-    return (const_cast<T&>(static_cast<mdarray<T,dim> const&>(*this)[oneDindex]));
+    return (const_cast<T&>(const_cast<mdarray<T,dim> const&>(*this)[oneDindex]));
 }
 
 

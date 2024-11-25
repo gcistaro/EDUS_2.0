@@ -226,6 +226,12 @@ inline int Matrix<T>::get_ncols() const
     return this->Values.get_Size(1);
 }
 
+template<class T>
+inline int Matrix<T>::get_TotalSize() const
+{
+    return this->Values.get_TotalSize();
+}
+
 template<typename T>
 inline double Matrix<T>::norm() const
 {
