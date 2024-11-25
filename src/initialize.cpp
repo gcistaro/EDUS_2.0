@@ -63,11 +63,16 @@ void initialize()
 
     //recap of mpi ranks -- to be done only for high verbosity
     if ( mpi::Communicator::world().rank() != 0 ) {
-        mpi::Communicator::world().send( mpi::Communicator::world().rank(), 0 );
-        mpi::Communicator::world().send( kpool_comm.rank(), 0 );
-        mpi::Communicator::world().send( kpool_comm.size(), 0 );
-        mpi::Communicator::world().send( band_comm.rank(), 0 );
-        mpi::Communicator::world().send( band_comm.size(), 0 );
+        auto aux = mpi::Communicator::world().rank();
+        mpi::Communicator::world().send( &aux, 0 );
+        aux = kpool_comm.rank();
+        mpi::Communicator::world().send( &aux, 0 );
+        aux = kpool_comm.size();
+        mpi::Communicator::world().send( &aux, 0 );
+        aux = band_comm.rank();
+        mpi::Communicator::world().send( &aux, 0 );
+        aux = band_comm.size();
+        mpi::Communicator::world().send( &aux, 0 );
     }
     else {
         std::cout << "*    MPI world size:    *     ";
@@ -79,11 +84,11 @@ void initialize()
 
         for(int irank_ = 1; irank_ < mpi::Communicator::world().size(); ++irank_ ) {
             int world_comm_rank = 10, kpool_comm_rank, kpool_comm_size, band_comm_rank, band_comm_size;
-            mpi::Communicator::world().receive( world_comm_rank, irank_ );
-            mpi::Communicator::world().receive( kpool_comm_rank, irank_ );
-            mpi::Communicator::world().receive( kpool_comm_size, irank_ );
-            mpi::Communicator::world().receive( band_comm_rank, irank_ );
-            mpi::Communicator::world().receive( band_comm_size, irank_ );
+            mpi::Communicator::world().receive( &world_comm_rank, irank_ );
+            mpi::Communicator::world().receive( &kpool_comm_rank, irank_ );
+            mpi::Communicator::world().receive( &kpool_comm_size, irank_ );
+            mpi::Communicator::world().receive( &band_comm_rank, irank_ );
+            mpi::Communicator::world().receive( &band_comm_size, irank_ );
 
             //std::cout << "WORLD RANK: " << world_comm_rank << "/" << mpi::Communicator::world().size();
             //std::cout << " KPOOL RANK: " << kpool_comm_rank << "/" << kpool_comm_size;

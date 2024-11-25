@@ -46,10 +46,12 @@ Simulation::Simulation(const std::string& JsonFileName__)
         if(freq_wavelength == "frequency") {
             laser_.set_Omega(currentdata["frequency"][0].template get<double>(), 
                             unit(currentdata["frequency"][1].template get<std::string>()));
+            currentdata["wavelength"] = {laser_.get_Lambda()};
         }
         else {
             laser_.set_Lambda(currentdata["wavelength"][0].template get<double>(), 
                             unit(currentdata["wavelength"][1].template get<std::string>()));
+            currentdata["frequency"] = {laser_.get_Omega()};
         }
         laser_.set_NumberOfCycles(currentdata["cycles"].template get<double>());
         Coordinate pol(currentdata["polarization"][0], currentdata["polarization"][1],
@@ -163,6 +165,26 @@ Simulation::Simulation(const std::string& JsonFileName__)
     os_VectorPot.open("Laser_A.txt");
     os_Time.open("Time.txt");
     os_Velocity.open("Velocity.txt");
+    //---------------------------------------------------------------------------------------
+
+    // ---------------------- create recap file ---------------------------------------------
+    data["num_bands"]   = material.H.get_Operator_R().get_nrows();
+    data["num_kpoints"] = material.H.get_Operator_k().get_MeshGrid()->get_TotalSize();
+
+#ifdef EDUS_HDF5
+    std::string name = "recap.h5";
+    if (!file_exists(name)) {
+        HDF5_tree(name, hdf5_access_t::truncate);
+    }
+    HDF5_tree fout(name, hdf5_access_t::truncate);
+    dump_json_in_h5( data, name );
+    material.H.get_Operator_k().write_h5(name, "H0");
+    for(auto& ix : {0, 1, 2}) {
+        material.r[ix].get_Operator_k().write_h5(name, "r"+std::to_string(ix));
+    }
+    fout.create_node("DM0");
+    DensityMatrix.get_Operator_k().write_h5(name, "DM");
+#endif
     //---------------------------------------------------------------------------------------
 }
 

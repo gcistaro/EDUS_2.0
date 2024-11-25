@@ -222,6 +222,15 @@ double Laser::get_NumberOfCycles()
     return NumberOfCycles;
 }
 
+double Laser::get_Omega() 
+{
+    return PlaneWave.get_Omega();
+}
+
+double Laser::get_Lambda() 
+{
+    return PlaneWave.get_Lambda();
+}
 
 void Laser::print_info()
 {

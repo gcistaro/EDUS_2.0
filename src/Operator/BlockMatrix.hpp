@@ -14,7 +14,9 @@
 #include "MeshGrid/MeshGrid.hpp"
 #include "Geometry/Matrix.hpp"
 #include "core/mpi/Communicator.hpp"
+#ifdef EDUS_HDF5
 #include "core/hdf5/hdf5_tree.hpp"
+#endif
 #include "GlobalFunctions.hpp"
 #include "initialize.hpp"
 template<class T>

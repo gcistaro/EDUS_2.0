@@ -333,20 +333,32 @@ void BlockMatrix<T>::cut(const double& threshold__)
 template<typename T>
 void BlockMatrix<T>::write_h5(const std::string& name__, const std::string& label__)
 {
+#ifdef EDUS_HDF5
     PROFILE("write_h5");
     //PROFILE_START("write_h5::open")
-    std::string name = name__+label__+".h5";
-    if (!file_exists(name)) {
-        HDF5_tree(name, hdf5_access_t::truncate);
-    }
-    HDF5_tree fout(name, hdf5_access_t::truncate);
-    //PROFILE_STOP("write_h5::open")
 
+    HDF5_tree fout(name__, hdf5_access_t::read_write);
+    //PROFILE_STOP("write_h5::open")
     mpi::Communicator::world().barrier();
-    fout.create_node(kpool_comm.rank());
-    fout[kpool_comm.rank()].write("local", 
+    fout.create_node(label__);
+#ifdef EDUS_HDF5PARALLEL
+    fout[label__].create_node(kpool_comm.rank());
+    fout[label__][kpool_comm.rank()].write("local", 
     reinterpret_cast<double*>(this->data()), (this->get_TotalSize() * 2) );
     mpi::Communicator::world().barrier();
+#else
+    kpool_comm.isend(&((*this)(0,0,0)), 0, this->get_TotalSize());
+    static BlockMatrix<T> aux_ = *this;
+    if( kpool_comm.rank() == 0 ) {
+        for(int ik_rank = 0; ik_rank < kpool_comm.rank(); ++ik_rank) {
+            kpool_comm.receive(&(aux_(0,0,0)), ik_rank, this->get_TotalSize());
+            fout[label__].create_node(ik_rank);
+            fout[label__][ik_rank].write("local", 
+                reinterpret_cast<double*>(aux_.data()), (this->get_TotalSize() * 2) );
+        }
+    }
+#endif //EDUS_HDF5PARALLEL
+#endif //EDUS_HDF5
 }
 
 

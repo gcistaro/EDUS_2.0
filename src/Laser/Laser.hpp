@@ -119,6 +119,8 @@ class Laser{
         double get_InitialTime();
         double get_FinalTime();
         double get_NumberOfCycles();
+        double get_Lambda();
+        double get_Omega();
 };
 
 

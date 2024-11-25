@@ -10,7 +10,7 @@ option(EDUS_MPI         "Enabling MPI"                                          
 option(EDUS_BATCHGEMM   "Enabling Batch Gemm for k matrix multiplication"      OFF)
 option(EDUS_FFTWTHREADS "Enabling threads in fftw"                             OFF)                
 option(EDUS_MKL_THREAD  "Enabling threads in mkl"                              OFF)                  
-option(EDUS_H5F         "Link hdf5 library for fast writing of big matrices"    ON)
+option(EDUS_HDF5        "Link hdf5 library for fast writing of big matrices"   OFF)
 
 if(EDUS_PROFILE)
   add_definitions(-DEDUS_PROFILE)
@@ -26,6 +26,9 @@ if(EDUS_FFTWTHREADS)
 endif()
 if(EDUS_MKL_THREAD)
   add_definitions(-DEDUS_MKL_THREAD)
+endif()
+if(EDUS_HDF5)
+	add_definitions(-DEDUS_HDF5)
 endif()
 
 # specify the C++ standard
@@ -127,7 +130,7 @@ if(EDUS_MPI)
   endif()
 endif()
 
-if(EDUS_H5F)
+if(EDUS_HDF5)
     find_package(HDF5 REQUIRED)
     message(STATUS "HDF5 LIBRARY: ${HDF5_LIBRARIES}")
     message(STATUS "HDF5 include directories: ${HDF5_INCLUDE_DIRS}")
