@@ -62,7 +62,7 @@ inline const T& BlockMatrix<T>::operator()(const int& iblock, const int& n, cons
 template<typename T>
 inline T& BlockMatrix<T>::operator()(const int& iblock, const int& n, const int& m)
 {
-    return (const_cast<T&>(static_cast<BlockMatrix<T> const&>(*this)(iblock, n, m)));
+    return (const_cast<T&>(const_cast<BlockMatrix<T> const&>(*this)(iblock, n, m)));
 }
 
 template<typename T>
@@ -74,7 +74,7 @@ inline T& BlockMatrix<T>::operator()(const int& i)
 template<typename T>
 inline const T& BlockMatrix<T>::operator()(const int& i) const
 {
-    return (const_cast<T&>(static_cast<BlockMatrix<T> const&>(*this)(i)));
+    return (const_cast<T&>(const_cast<BlockMatrix<T> const&>(*this)(i)));
 }
 
 template<typename T>
@@ -119,7 +119,7 @@ void BlockMatrix<T>::fill(const T& Scalar)
 template<typename T>
 Matrix<T>& BlockMatrix<T>::operator[](const int& iblock)
 {
-    return const_cast<Matrix<T>&>(static_cast<const BlockMatrix<T>&>(*this)[iblock]);
+    return const_cast<Matrix<T>&>(const_cast<const BlockMatrix<T>&>(*this)[iblock]);
 }
 
 template<typename T>
@@ -134,7 +134,7 @@ const Matrix<T>& BlockMatrix<T>::operator[](const int& iblock) const
 template<typename T>
 Matrix<T>& BlockMatrix<T>::operator[](const Coordinate& Point)
 {
-    return const_cast<Matrix<T>&>(static_cast<const BlockMatrix<T>&>(*this)[Point]);
+    return const_cast<Matrix<T>&>(const_cast<const BlockMatrix<T>&>(*this)[Point]);
 }
 
 template<typename T>
@@ -327,6 +327,27 @@ void BlockMatrix<T>::cut(const double& threshold__)
         }
     }
 }
+
+
+template<typename T>
+void BlockMatrix<T>::write_h5(const std::string& name__, const std::string& label__)
+{
+    PROFILE("write_h5");
+    //PROFILE_START("write_h5::open")
+    std::string name = name__+label__+".h5";
+    if (!file_exists(name)) {
+        HDF5_tree(name, hdf5_access_t::truncate);
+    }
+    HDF5_tree fout(name, hdf5_access_t::truncate);
+    //PROFILE_STOP("write_h5::open")
+
+    mpi::Communicator::world().barrier();
+    fout.create_node(kpool_comm.rank());
+    fout[kpool_comm.rank()].write("local", 
+    reinterpret_cast<double*>(this->data()), (this->get_TotalSize() * 2) );
+    mpi::Communicator::world().barrier();
+}
+
 
 template<typename T>
 auto max(const BlockMatrix<T>& m)
