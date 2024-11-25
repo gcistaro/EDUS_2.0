@@ -75,6 +75,7 @@ configure_file("${PROJECT_SOURCE_DIR}/src/core/githash.h.in" "${PROJECT_SOURCE_D
 configure_file("${PROJECT_SOURCE_DIR}/src/core/projectdir.h.in" "${PROJECT_SOURCE_DIR}/src/core/projectdir.hpp" @ONLY)
 configure_file("${PROJECT_SOURCE_DIR}/ci-test/inputs/hBN.json.in" "${PROJECT_SOURCE_DIR}/ci-test/inputs/hBN.json" @ONLY)
 configure_file("${PROJECT_SOURCE_DIR}/ci-test/inputs/hBN_coulomb.json.in" "${PROJECT_SOURCE_DIR}/ci-test/inputs/hBN_coulomb.json" @ONLY)
+configure_file("${PROJECT_SOURCE_DIR}/ci-test/inputs/MoS2.json.in" "${PROJECT_SOURCE_DIR}/ci-test/inputs/MoS2.json" @ONLY)
 
 #compile sources as library INTERFACE (not a real library, just objects to be reused)
 include_directories("${PROJECT_SOURCE_DIR}/src/")

@@ -1,5 +1,5 @@
 {
-    "tb_file": "/home/gcistaro/EDUS_2.0/tb_models/MoS2_Camarasa_SOC_cutD0p3_cutH5",
+    "tb_file": "@PROJECT_SOURCE_DIR@/tb_models/MoS2_Camarasa_SOC_cutD0p3_cutH5",
     "fermienergy": [0, "electronvolt"],
     "coulomb": false,
     "grid": [40,40,1],
@@ -7,8 +7,10 @@
     "dt": [0.01, "femtoseconds"],
     "printresolution": 1,
     "initialtime" : [0, "femtoseconds"],
-    "finaltime": [0.01, "femtoseconds"],
+    "finaltime": [200, "femtoseconds"],
+
     "solver": "rk4",
+
     "lasers":
     [
       {
