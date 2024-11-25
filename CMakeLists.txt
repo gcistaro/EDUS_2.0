@@ -5,11 +5,13 @@ project(EDUS VERSION 1.0)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 
-option(EDUS_PROFILE     "Profiling function timings"                         ON)
-option(EDUS_MPI         "Enabling MPI"                                       ON)
-option(EDUS_BATCHGEMM   "Enabling Batch Gemm for k matrix multiplication"   OFF)
-option(EDUS_FFTWTHREADS "Enabling threads in fftw"                          OFF)                
-option(EDUS_MKL_THREAD  "Enabling threads in mkl"                           OFF)                  
+option(EDUS_PROFILE     "Profiling function timings"                            ON)
+option(EDUS_MPI         "Enabling MPI"                                          ON)
+option(EDUS_BATCHGEMM   "Enabling Batch Gemm for k matrix multiplication"      OFF)
+option(EDUS_FFTWTHREADS "Enabling threads in fftw"                             OFF)                
+option(EDUS_MKL_THREAD  "Enabling threads in mkl"                              OFF)                  
+option(EDUS_H5F         "Link hdf5 library for fast writing of big matrices"    ON)
+
 if(EDUS_PROFILE)
   add_definitions(-DEDUS_PROFILE)
 endif()
@@ -125,6 +127,13 @@ if(EDUS_MPI)
   endif()
 endif()
 
+if(EDUS_H5F)
+    find_package(HDF5 REQUIRED)
+    message(STATUS "HDF5 LIBRARY: ${HDF5_LIBRARIES}")
+    message(STATUS "HDF5 include directories: ${HDF5_INCLUDE_DIRS}")
+    include_directories(${HDF5_INCLUDE_DIRS})
+    link_libraries(${HDF5_LIBRARIES})
+endif()
 
 
 #adding mkl (can it be replaced with lapack?)

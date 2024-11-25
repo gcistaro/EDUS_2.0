@@ -51,6 +51,13 @@ int main()
     auto Calculate_TDHamiltonian = [&](const double& time, const bool& erase){
         return simulation.Calculate_TDHamiltonian(time, erase);
     };
+    auto get_it = [&](const double& time){
+        return simulation.get_it(time);
+    };
+    auto PrintObservables = [&](const double& time){
+        return simulation.PrintObservables(time);
+    };
+
     #include "Simulation/Functional_SourceTerm.hpp"
     std::cout << "Initializing RK_object..\n";
     simulation.RK_object.initialize(simulation.DensityMatrix, 

@@ -53,6 +53,7 @@ class Simulation
         bool PrintObservables(const double& time) const;
         void Print_Population();
         void Print_Velocity();
+        int get_it(const double& time) const;
 
 
         template <typename Scalar_T>

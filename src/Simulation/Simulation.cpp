@@ -485,6 +485,10 @@ void Simulation::print_recap()
 }
 
 
+int Simulation::get_it(const double& time) const
+{
+    return int(time/RK_object.get_ResolutionTime());
+}
 
 
 
