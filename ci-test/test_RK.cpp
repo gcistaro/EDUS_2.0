@@ -51,15 +51,13 @@ int main()
 
     // uncomment the following lines if you include AdamsBashforth and not RungeKutta
 
-    auto PropagatedFunction = DESolver<std::vector<double>>(Function_, InitialCondition, SourceTerm);
-    //PropagatedFunction.setType(DESolver<decltype(Function_)>::RK4);
-    PropagatedFunction.setType(DESolver<decltype(Function_)>::AB4);
+    auto PropagatedFunction = DESolver<std::vector<double>>(Function_, InitialCondition, SourceTerm, DESolver<decltype(Function_)>::AB4);
     
     auto a = RateOfIncrease*InitialConstant*exp(RateOfIncrease*PropagatedFunction.get_CurrentTime() - 0*ResolutionTime);
     auto b = RateOfIncrease*InitialConstant*exp(RateOfIncrease*PropagatedFunction.get_CurrentTime() - 1*ResolutionTime);
     auto c = RateOfIncrease*InitialConstant*exp(RateOfIncrease*PropagatedFunction.get_CurrentTime() - 2*ResolutionTime);
     auto d = RateOfIncrease*InitialConstant*exp(RateOfIncrease*PropagatedFunction.get_CurrentTime() - 3*ResolutionTime);
-    //PropagatedFunction.setFnsAB4({a}, {b}, {c}, {d});
+    PropagatedFunction.setFnsAB4({a}, {b}, {c}, {d});
 
    PropagatedFunction.set_InitialTime(InitialTime);
    PropagatedFunction.set_ResolutionTime(ResolutionTime);
@@ -76,7 +74,6 @@ int main()
         if(int(it)%100==0){
             auto AnalyticalSolution = InitialConstant*exp(RateOfIncrease*PropagatedFunction.get_CurrentTime());
             auto&& NumericalSolution = PropagatedFunction.get_Function()[0];
-            std::cout << PropagatedFunction.get_Function()[0] << "\n";
             std::cout << "|";
             std::cout << std::setw(7) << std::fixed << int(it);
             std::cout << "  |  ";

@@ -66,7 +66,7 @@ class DESolver{
         DESolver& operator=(DESolver&& DES) = default; 
 
 
-        DESolver(T& Function_, const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_); 
+        DESolver(T& Function_, const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_, Type type); 
 
         // this has to be declared separately in each derived class since it calls initialize, a function defined differently for each method
         //DESolver(T& Function_, const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_); 
@@ -118,8 +118,9 @@ void DESolver<T>::initialize(T& Function_, const std::function<void(T&)>& Evalua
 
 template<typename T>
 DESolver<T>::DESolver(T& Function_, const std::function<void(T&)>& EvaluateInitialCondition_, 
-                        const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_)
+                        const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_, Type type)
 {
+    setType(type);
     initialize(Function_, EvaluateInitialCondition_, EvaluateSourceFunction_);
 }
 
