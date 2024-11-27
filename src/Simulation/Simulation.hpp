@@ -3,7 +3,7 @@
 
 #include "ConvertUnits.hpp"
 #include "Model/Model.hpp"
-#include "RungeKutta/RungeKutta.hpp"
+#include "DESolver/RungeKutta/RungeKutta.hpp"
 #include "Laser/Laser.hpp"
 #include "ostream.hpp"
 #include "kGradient/kGradient.hpp"

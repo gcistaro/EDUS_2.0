@@ -72,7 +72,7 @@ set(_SOURCES src/initialize.cpp
              src/Laser/Laser.cpp
              src/fftPair/fftPair.cpp
              src/kGradient/kGradient.cpp
-             src/RungeKutta/RungeKutta.cpp
+             src/DESolver/RungeKutta/RungeKutta.cpp
              src/Simulation/Simulation.cpp
              src/core/profiler.cpp 
              src/core/print_timing.cpp 
