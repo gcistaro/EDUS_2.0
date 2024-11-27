@@ -129,6 +129,7 @@ Simulation::Simulation(const std::string& JsonFileName__)
 
     kgradient.initialize(*(DensityMatrix.get_Operator(R).get_MeshGrid()));
     coulomb.initialize(material.H.get_Operator_R().get_nrows(), DensityMatrix.get_Operator(R).get_MeshGrid(), material.r);
+    DensityMatrix.go_to_R();
     coulomb.set_DM0(DensityMatrix);
 
 
@@ -146,7 +147,6 @@ Simulation::Simulation(const std::string& JsonFileName__)
 #else
     rank << "DM0.txt";
 #endif
-    DensityMatrix.go_to_R();
     std::ofstream os;
     os.open(rank.str());
     auto Rgamma_centered = get_GammaCentered_grid(*DensityMatrix.get_Operator_R().get_MeshGrid());
@@ -357,6 +357,7 @@ void Simulation::do_onestep()
         H.go_to_k(true);
         H.get_Operator_k().write_h5(name_, "SelfEnergy");
         DensityMatrix.get_Operator_k().write_h5(name_, "DensityMatrix_k");
+        DensityMatrix.go_to_k(false);
 #endif 
 
         //print time 
@@ -377,6 +378,7 @@ void Simulation::Print_Population()
 {
     static Operator<std::complex<double>> aux_DM;
     aux_DM = DensityMatrix;
+
     aux_DM.go_to_bloch();
 
     auto Population = TraceK(aux_DM.get_Operator(Space::k));
