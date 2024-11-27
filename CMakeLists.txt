@@ -219,9 +219,9 @@ add_test(NAME hBN COMMAND
              mkdir ${CMAKE_SOURCE_DIR}/CTEST/hBN/; \ 
              cd ${CMAKE_SOURCE_DIR}/CTEST/hBN/; \             
              ${CMAKE_CURRENT_BINARY_DIR}/EDUS  ${PROJECT_SOURCE_DIR}/ci-test/inputs/hBN.json | tee output; \
-             python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_SOURCE_DIR}/CTEST/hBN/Population.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN/Population.txt
-             python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_SOURCE_DIR}/CTEST/hBN/Velocity.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN/Velocity.txt; \
-             python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_SOURCE_DIR}/CTEST/hBN/DM0.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN/DM0.txt")
+             python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_SOURCE_DIR}/CTEST/hBN/Output/Population.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN/Population.txt
+             python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_SOURCE_DIR}/CTEST/hBN/Output/Velocity.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN/Velocity.txt; \
+             python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_SOURCE_DIR}/CTEST/hBN/Output/DM0.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN/DM0.txt")
 
 add_test(NAME hBN_Coulomb COMMAND 
           bash -c "mkdir ${CMAKE_SOURCE_DIR}/CTEST; 
@@ -232,8 +232,8 @@ add_test(NAME hBN_Coulomb COMMAND
           python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_SOURCE_DIR}/CTEST/hBN_coulomb/RytovaKeldysh.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN_coulomb/RytovaKeldysh.txt; \
           ${CMAKE_CURRENT_BINARY_DIR}/EDUS  ${PROJECT_SOURCE_DIR}/ci-test/inputs/hBN_coulomb.json | tee output; \
           python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_SOURCE_DIR}/CTEST/hBN_coulomb/HF.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN_coulomb/HF.txt; \
-          python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_SOURCE_DIR}/CTEST/hBN_coulomb/Population.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN_coulomb/Population.txt; \
-          python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_SOURCE_DIR}/CTEST/hBN_coulomb/Velocity.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN_coulomb/Velocity.txt")
+          python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_SOURCE_DIR}/CTEST/hBN_coulomb/Output/Population.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN_coulomb/Population.txt; \
+          python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_SOURCE_DIR}/CTEST/hBN_coulomb/Output/Velocity.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN_coulomb/Velocity.txt")
 
 add_test(NAME MPI_hBN COMMAND
           bash -c "mkdir ${CMAKE_SOURCE_DIR}/CTEST; 
@@ -242,9 +242,9 @@ add_test(NAME MPI_hBN COMMAND
           cd ${CMAKE_SOURCE_DIR}/CTEST/MPI_hBN/; \             
           ${MPIEXEC_MAX_NUMPROCS} ${MPIEXEC_PREFLAGS} EXECUTABLE ${MPIEXEC_POSTFLAGS} ARGS
           ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 10 ${CMAKE_CURRENT_BINARY_DIR}/EDUS  ${PROJECT_SOURCE_DIR}/ci-test/inputs/hBN.json | tee output; \
-          python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_SOURCE_DIR}/CTEST/MPI_hBN/Population.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN/Population.txt
-          python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_SOURCE_DIR}/CTEST/MPI_hBN/Velocity.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN/Velocity.txt; \
-          python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_SOURCE_DIR}/CTEST/MPI_hBN/DM0.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN/DM0.txt")
+          python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_SOURCE_DIR}/CTEST/MPI_hBN/Output/Population.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN/Population.txt
+          python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_SOURCE_DIR}/CTEST/MPI_hBN/Output/Velocity.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN/Velocity.txt; \
+          python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_SOURCE_DIR}/CTEST/MPI_hBN/Output/DM0.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN/DM0.txt")
 
 add_test(NAME MPI_hBN_Coulomb COMMAND 
           bash -c "mkdir ${CMAKE_SOURCE_DIR}/CTEST; 
@@ -255,5 +255,5 @@ add_test(NAME MPI_hBN_Coulomb COMMAND
           python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_SOURCE_DIR}/CTEST/MPI_hBN_coulomb/RytovaKeldysh.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN_coulomb/RytovaKeldysh.txt; \
           ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 10 ${CMAKE_CURRENT_BINARY_DIR}/EDUS ${PROJECT_SOURCE_DIR}/ci-test/inputs/hBN_coulomb.json | tee output; \
           python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_SOURCE_DIR}/CTEST/MPI_hBN_coulomb/HF.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN_coulomb/HF.txt; \
-          python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_SOURCE_DIR}/CTEST/MPI_hBN_coulomb/Population.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN_coulomb/Population.txt; \
-          python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_SOURCE_DIR}/CTEST/MPI_hBN_coulomb/Velocity.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN_coulomb/Velocity.txt")
+          python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_SOURCE_DIR}/CTEST/MPI_hBN_coulomb/Output/Population.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN_coulomb/Population.txt; \
+          python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_SOURCE_DIR}/CTEST/MPI_hBN_coulomb/Output/Velocity.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN_coulomb/Velocity.txt")
