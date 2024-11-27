@@ -17,9 +17,6 @@ SourceTerm =
     const_cast<Operator<std::complex<double>>&>(Input).go_to_k(false);
     H.go_to_k(true);
 
-    //write Hamiltonian
-    if( PrintObservables(time) ) 
-        H.get_Operator_k().write_h5("SelfEnergy", std::to_string(get_it(time)) );
 
     // Output = -i * [ H, Input ]
     Calculate_TDHamiltonian(time, false);

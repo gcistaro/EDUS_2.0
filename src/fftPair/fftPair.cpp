@@ -131,8 +131,6 @@ mdarray<std::complex<double>, 2> FourierTransform::dft(const std::vector<std::ve
     #pragma omp parallel for collapse(2)
     for(int h=0; h<howmany; ++h){
         for(int ip=0; ip<int(ArrayOfPoints.size()); ++ip){
-//            auto FT = dft(ArrayOfPoints[ip], h, sign);
-            //copy to Array_k
             (*Array_k)(h,ip) = dft(ArrayOfPoints[ip], h, sign);
         }
     }

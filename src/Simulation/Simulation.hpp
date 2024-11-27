@@ -54,7 +54,7 @@ class Simulation
         void Print_Population();
         void Print_Velocity();
         int get_it(const double& time) const;
-
+        int get_it_sparse(const double& time) const;
 
         template <typename Scalar_T>
         friend void SumWithProduct(Operator<std::complex<double>>& Output, 

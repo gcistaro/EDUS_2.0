@@ -32,6 +32,13 @@ int NumberKpools;
 void initialize()
 {  
     mkl_set_num_threads(omp_get_max_threads());
+#ifdef EDUS_MPI
+    mpi::Communicator::initialize(MPI_THREAD_FUNNELED);
+    NumberKpools = mpi::Communicator::world().size();
+    fftw_mpi_init();  
+
+    if( mpi::Communicator::world().rank() == 0 ) {
+#endif 
 #ifdef EDUS_FFTWTHREADS
     fftw_init_threads();
 #endif
@@ -47,11 +54,11 @@ void initialize()
         std::cout << std::left << std::setw(95) << fftw_planner_nthreads() << "*\n";
         std::cout << "******************************************************************************************************************************\n";
 #endif
+#ifdef EDUS_MPI
+    }
+#endif 
 
 #ifdef EDUS_MPI
-    mpi::Communicator::initialize(MPI_THREAD_FUNNELED);
-    NumberKpools = mpi::Communicator::world().size();
-    fftw_mpi_init();  
 
     assert( mpi::Communicator::world().size()%NumberKpools == 0 );//for now i just implemented a rectangular MPI grid
     

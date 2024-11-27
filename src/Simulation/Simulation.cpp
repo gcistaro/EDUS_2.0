@@ -1,8 +1,12 @@
+#include <filesystem>
 #include "Simulation/Simulation.hpp"
 #include "core/mpi/Communicator.hpp"
 
 Simulation::Simulation(const std::string& JsonFileName__)
 {
+    std::filesystem::create_directories(std::string(std::filesystem::current_path())+"/Output");
+    std::filesystem::current_path(std::string(std::filesystem::current_path())+"/Output");
+
 #ifdef EDUS_MPI
     if(mpi::Communicator::world().rank() == 0)
 #endif
@@ -168,8 +172,19 @@ Simulation::Simulation(const std::string& JsonFileName__)
     //---------------------------------------------------------------------------------------
 
     // ---------------------- create recap file ---------------------------------------------
-    data["num_bands"]   = material.H.get_Operator_R().get_nrows();
-    data["num_kpoints"] = material.H.get_Operator_k().get_MeshGrid()->get_TotalSize();
+    data["num_bands"] = {material.H.get_Operator_R().get_nrows()};
+    data["num_kpoints"] = {material.H.get_Operator_k().get_MeshGrid()->get_TotalSize()};
+
+    
+    mdarray<double,2> bare_k({material.H.get_Operator_k().get_MeshGrid()->get_TotalSize(),3});
+    for( int ik=0; ik < material.H.get_Operator_k().get_MeshGrid()->get_mesh().size(); ++ik ) {
+        for(auto& ix : {0, 1, 2}) {
+            bare_k(ik,ix) = (*(material.H.get_Operator_k().get_MeshGrid()))[ik].get(LatticeVectors(k))[ix];
+        }
+    }
+    data["kpoints"] = bare_k;
+    data["A"] = Coordinate::get_Basis(LatticeVectors(R)).get_M();
+    data["B"] = Coordinate::get_Basis(LatticeVectors(k)).get_M();
 
 #ifdef EDUS_HDF5
     std::string name = "recap.h5";
@@ -178,13 +193,16 @@ Simulation::Simulation(const std::string& JsonFileName__)
     }
     HDF5_tree fout(name, hdf5_access_t::truncate);
     dump_json_in_h5( data, name );
+
     material.H.get_Operator_k().write_h5(name, "H0");
+    mpi::Communicator::world().barrier();
     for(auto& ix : {0, 1, 2}) {
         material.r[ix].get_Operator_k().write_h5(name, "r"+std::to_string(ix));
     }
-    fout.create_node("DM0");
     DensityMatrix.get_Operator_k().write_h5(name, "DM");
+    mpi::Communicator::world().barrier();
 #endif
+
     //---------------------------------------------------------------------------------------
 }
 
@@ -322,7 +340,17 @@ void Simulation::do_onestep()
     auto CurrentTime = RK_object.get_CurrentTime();
     //------------------------Print population-------------------------------------
     
-    if( PrintObservables( CurrentTime) ){
+    if( PrintObservables( CurrentTime ) ){
+#ifdef EDUS_HDF5
+        std::string name_ = std::to_string(get_it_sparse(CurrentTime)) + ".h5";
+        if (!file_exists(name_)) {
+            HDF5_tree(name_, hdf5_access_t::truncate);
+        }
+        HDF5_tree fout(name_, hdf5_access_t::truncate);
+        fout.write("time_au", CurrentTime);
+        H.get_Operator_k().write_h5(name_, "Hk");
+#endif 
+
         //print time 
         os_Time << CurrentTime << std::endl;
         //print laser
@@ -512,6 +540,10 @@ int Simulation::get_it(const double& time) const
     return int(time/RK_object.get_ResolutionTime());
 }
 
+int Simulation::get_it_sparse(const double& time) const
+{
+    return int(round(time/RK_object.get_ResolutionTime()/PrintResolution));
+}
 
 
 

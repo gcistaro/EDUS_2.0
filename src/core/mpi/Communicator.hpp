@@ -196,30 +196,29 @@ class Communicator {
         template<typename T>
         void send( const T* message, const int& receiver, const int& count=1 ) const
         {
-            MPI_Send( &message, count, type_wrapper<T>(), receiver, mpi::tag(rank(), receiver), communicator_);
+            MPI_Send( message, count, type_wrapper<T>(), receiver, mpi::tag(rank(), receiver), communicator_);
         }
 
         template<typename T>
         void receive( T* message, const int& sender, const int& count=1 ) const
         {
-            MPI_Recv( &message, count, type_wrapper<T>(), sender, mpi::tag(sender, rank()), communicator_, MPI_STATUS_IGNORE);
+            MPI_Recv( message, count, type_wrapper<T>(), sender, mpi::tag(sender, rank()), communicator_, MPI_STATUS_IGNORE);
         }
 
         //send message -- to be optimized with any type 
         template<typename T>
-        void isend( T* message, const int& sender, const int& count=1 ) const
+        void isend( T* message, const int& receiver, const int& count, MPI_Request& request) const
         {
-            MPI_Request request;
-            MPI_Isend( &message, count, type_wrapper<T>(), sender, mpi::tag(sender, rank()), communicator_, &request);
-            MPI_Wait(&request, MPI_STATUS_IGNORE);
+            MPI_Isend( message, count, type_wrapper<T>(), receiver, mpi::tag(rank(), receiver), communicator_, &request);
         }
+
+
 
         //receive message -- to be optimized with any type 
         template<typename T>
-        void ireceive( T* message, const int& sender, const int& count=1 ) const
+        void ireceive( T* message, const int& sender, const int& count, MPI_Request& request ) const
         {
-            MPI_Request request;
-            MPI_Irecv( &message, count, type_wrapper<T>(), sender, mpi::tag(sender, rank()), communicator_, &request);
+            MPI_Irecv( message, count, type_wrapper<T>(), sender, mpi::tag(sender, rank()), communicator_, &request);
         }
 
         //gather

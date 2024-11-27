@@ -54,7 +54,6 @@ template<typename T, size_t dim>
 mdarray<T,dim>::mdarray(const std::array<int,dim>& Size_) 
 {
     this->initialize(Size_);
-    this->multindex.initialize(Size_);
 
 }
 
@@ -62,7 +61,6 @@ template<typename T, size_t dim>
 mdarray<T,dim>::mdarray(T* Ptr_, const std::array<int,dim>& Size_)
 {
     this->initialize(Ptr_, Size_);
-    this->multindex.initialize(Size_);
 }
 
 template<typename T, size_t dim> 
@@ -84,11 +82,9 @@ void mdarray<T,dim>::initialize(const std::array<int,dim>& Size_)
     Size = Size_;
     this->multindex.initialize(Size_);
     TotalSizeAndOffset();
-
     //allocate contiguous memory ot totalsize
     this->Ptr = new T[TotalSize];
     std::fill((*this).begin(), (*this).end(), 0.);
-
 }
 
 template<typename T, size_t dim> 

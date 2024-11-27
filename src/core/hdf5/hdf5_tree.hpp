@@ -20,7 +20,7 @@
 #include <string>
 #include <initializer_list>
 #include "mdContainers/mdContainers.hpp"
-
+#include "core/mpi/Communicator.hpp"
 
 enum class hdf5_access_t
 {
@@ -132,6 +132,11 @@ class HDF5_tree
         /// Constructor which openes the existing group.
         HDF5_group(hid_t file_id, std::string const& path)
         {
+#ifndef EDUS_HDF5PARALLEL
+#ifdef EDUS_MPI
+if ( mpi::Communicator::world().rank() != 0 ) return;
+#endif
+#endif
             if ((id_ = H5Gopen(file_id, path.c_str(), H5P_DEFAULT)) < 0) {
                 std::stringstream s;
                 s << "error in H5Gopen()" << std::endl << "path : " << path;
@@ -142,6 +147,11 @@ class HDF5_tree
         /// Constructor which creates the new group.
         HDF5_group(HDF5_group const& g, std::string const& name)
         {
+#ifndef EDUS_HDF5PARALLEL
+#ifdef EDUS_MPI
+if ( mpi::Communicator::world().rank() != 0 ) return;
+#endif
+#endif
             if ((id_ = H5Gcreate(g.id(), name.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT)) < 0) {
                 std::stringstream s;
                 s << "error in H5Gcreate()" << std::endl << "name : " << name;
@@ -152,6 +162,11 @@ class HDF5_tree
         /// Destructor.
         ~HDF5_group()
         {
+#ifndef EDUS_HDF5PARALLEL
+#ifdef EDUS_MPI
+if ( mpi::Communicator::world().rank() != 0 ) return;
+#endif
+#endif
             if (H5Gclose(id_) < 0) {
                 // == RTE_THROW("error in H5Gclose()");
             }
@@ -176,6 +191,12 @@ class HDF5_tree
         /// Constructor which creates the new dataspace object.
         HDF5_dataspace(std::vector<int> const dims)
         {
+#ifndef EDUS_HDF5PARALLEL
+#ifdef EDUS_MPI
+if ( mpi::Communicator::world().rank() != 0 ) return;
+#endif
+#endif
+
             std::vector<hsize_t> current_dims(dims.size());
             for (int i = 0; i < (int)dims.size(); i++) {
                 current_dims[dims.size() - i - 1] = dims[i];
@@ -189,6 +210,11 @@ class HDF5_tree
         /// Destructor.
         ~HDF5_dataspace()
         {
+#ifndef EDUS_HDF5PARALLEL
+#ifdef EDUS_MPI
+if ( mpi::Communicator::world().rank() != 0 ) return;
+#endif
+#endif
             if (H5Sclose(id_) < 0) {
                 // == RTE_THROW("error in H5Sclose()");
             }
@@ -213,6 +239,11 @@ class HDF5_tree
         /// Constructor which openes the existing dataset object.
         HDF5_dataset(hid_t group_id, std::string const& name)
         {
+#ifndef EDUS_HDF5PARALLEL
+#ifdef EDUS_MPI
+if ( mpi::Communicator::world().rank() != 0 ) return;
+#endif
+#endif
             if ((id_ = H5Dopen(group_id, name.c_str(), H5P_DEFAULT)) < 0) {
                 // == RTE_THROW("error in H5Dopen()");
             }
@@ -221,6 +252,11 @@ class HDF5_tree
         /// Constructor which creates the new dataset object.
         HDF5_dataset(HDF5_group& group, HDF5_dataspace& dataspace, std::string const& name, hid_t type_id)
         {
+#ifndef EDUS_HDF5PARALLEL
+#ifdef EDUS_MPI
+if ( mpi::Communicator::world().rank() != 0 ) return;
+#endif
+#endif
             if ((id_ = H5Dcreate(group.id(), name.c_str(), type_id, dataspace.id(), H5P_DEFAULT, H5P_DEFAULT,
                                  H5P_DEFAULT)) < 0) {
                 // == RTE_THROW("error in H5Dcreate()");
@@ -230,6 +266,11 @@ class HDF5_tree
         /// Destructor.
         ~HDF5_dataset()
         {
+#ifndef EDUS_HDF5PARALLEL
+#ifdef EDUS_MPI
+if ( mpi::Communicator::world().rank() != 0 ) return;
+#endif
+#endif
             if (H5Dclose(id_) < 0) {
                 // == RTE_THROW("error in H5Dclose()");
             }
@@ -269,6 +310,11 @@ class HDF5_tree
         /// @param type_id Type ID for the attribute
         HDF5_attribute(hid_t parent_id, std::string const& name, hid_t type_id)
         {
+#ifndef EDUS_HDF5PARALLEL
+#ifdef EDUS_MPI
+if ( mpi::Communicator::world().rank() != 0 ) return;
+#endif
+#endif
             hid_t dataspace_id;
 
             // Create SCALAR Dataspace
@@ -284,6 +330,11 @@ class HDF5_tree
         /// Destructor
         ~HDF5_attribute()
         {
+#ifndef EDUS_HDF5PARALLEL
+#ifdef EDUS_MPI
+if ( mpi::Communicator::world().rank() != 0 ) return;
+#endif
+#endif
             if (H5Aclose(id_) < 0) {
                 // == RTE_THROW("error in H5Aclose()");
             }
@@ -331,6 +382,12 @@ class HDF5_tree
     void
     write(std::string const& name, T const* data, std::vector<int> const& dims)
     {
+#ifndef EDUS_HDF5PARALLEL
+#ifdef EDUS_MPI
+if ( mpi::Communicator::world().rank() != 0 ) return;
+#endif
+#endif
+
         /* open group */
         HDF5_group group(file_id_, path_);
 
@@ -438,6 +495,11 @@ class HDF5_tree
     HDF5_tree(std::string const& file_name__, hdf5_access_t access__)
         : file_name_(file_name__)
     {
+#ifndef EDUS_HDF5PARALLEL
+#ifdef EDUS_MPI
+if ( mpi::Communicator::world().rank() != 0 ) return;
+#endif
+#endif
         if (H5open() < 0) {
             // == RTE_THROW("error in H5open()");
         }
@@ -473,6 +535,11 @@ class HDF5_tree
     /// Destructor.
     ~HDF5_tree()
     {
+#ifndef EDUS_HDF5PARALLEL
+#ifdef EDUS_MPI
+if ( mpi::Communicator::world().rank() != 0 ) return;
+#endif
+#endif
         if (root_node_) {
             if (H5Fclose(file_id_) < 0) {
                 // == RTE_THROW("error in H5Fclose()");

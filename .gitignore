@@ -4,6 +4,7 @@ build/
 src/core/projectdir.hpp
 ci-test/inputs/simulation.json
 ci-test/inputs/hBN.json
+ci-test/inputs/MoS2.json
 ci-test/inputs/hBN_coulomb.json
 ci-test/outputs/
 CTEST/
