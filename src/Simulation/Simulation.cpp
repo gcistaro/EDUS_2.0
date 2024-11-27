@@ -349,8 +349,14 @@ void Simulation::do_onestep()
         }
         HDF5_tree fout(name_, hdf5_access_t::truncate);
         fout.write("time_au", CurrentTime);
-        H.get_Operator_k().write_h5(name_, "Hk");
-        DensityMatrix.get_Operator_k().write_h5(name_, "DMk")
+        Calculate_TDHamiltonian(CurrentTime, true);
+        H.get_Operator_k().write_h5(name_, "(H0+e.r");
+        DensityMatrix.go_to_R(true);
+        H.go_to_R(false);
+        coulomb.EffectiveHamiltonian( H, DensityMatrix, true); 
+        H.go_to_k(true);
+        H.get_Operator_k().write_h5(name_, "SelfEnergy");
+        DensityMatrix.get_Operator_k().write_h5(name_, "DensityMatrix_k");
 #endif 
 
         //print time 
