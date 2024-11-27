@@ -4,9 +4,6 @@
 
 Simulation::Simulation(const std::string& JsonFileName__)
 {
-    std::filesystem::create_directories(std::string(std::filesystem::current_path())+"/Output");
-    std::filesystem::current_path(std::string(std::filesystem::current_path())+"/Output");
-
 #ifdef EDUS_MPI
     if(mpi::Communicator::world().rank() == 0)
 #endif
@@ -132,12 +129,17 @@ Simulation::Simulation(const std::string& JsonFileName__)
 
     kgradient.initialize(*(DensityMatrix.get_Operator(R).get_MeshGrid()));
     coulomb.initialize(material.H.get_Operator_R().get_nrows(), DensityMatrix.get_Operator(R).get_MeshGrid(), material.r);
+    coulomb.set_DM0(DensityMatrix);
 
 
     print_recap();
     //---------------------------------------------------------------------------------------
 
     //print DM in R to prove it decays and is zero for large R
+    std::filesystem::create_directories(std::string(std::filesystem::current_path())+"/Output");
+    std::filesystem::current_path(std::string(std::filesystem::current_path())+"/Output");
+
+
     std::stringstream rank;
 #ifdef EDUS_MPI
     rank << "DM" << mpi::Communicator::world().rank() << ".txt";
@@ -156,7 +158,6 @@ Simulation::Simulation(const std::string& JsonFileName__)
     }
     os.close();
 
-    coulomb.set_DM0(DensityMatrix);
 
     Calculate_Velocity();
     DensityMatrix.go_to_k();
@@ -349,6 +350,7 @@ void Simulation::do_onestep()
         HDF5_tree fout(name_, hdf5_access_t::truncate);
         fout.write("time_au", CurrentTime);
         H.get_Operator_k().write_h5(name_, "Hk");
+        DensityMatrix.get_Operator_k().write_h5(name_, "DMk")
 #endif 
 
         //print time 
