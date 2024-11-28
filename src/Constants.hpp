@@ -22,6 +22,7 @@ constexpr double threshold = 1.e-08;
 
 enum Space{k,R};
 enum BandGauge{bloch, wannier};
+enum SolverType{AB4, RK4};
 
 //Global functions
 std::string LatticeVectors(const Space& space);

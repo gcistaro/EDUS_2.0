@@ -71,9 +71,9 @@ int main()
     
     #include "Simulation/Functional_SourceTerm.hpp"
     std::cout << "Initializing RK_object..\n";
-    simulation.RK_object.initialize(simulation.DensityMatrix, 
-                                    InitialConditionToUse, SourceTerm);
-    simulation.RK_object.set_ResolutionTime(0.1);
+    simulation.DEsolver.initialize(simulation.DensityMatrix, 
+                                    InitialConditionToUse, SourceTerm, RK4);
+    simulation.DEsolver.set_ResolutionTime(0.1);
     //---------------------------------check correctness of Source term--------------------------------------
     //Operator<std::complex<double>> ST;
     //ST.initialize_fft(*(simulation.DensityMatrix.get_Operator_R().get_MeshGrid()), 
@@ -129,7 +129,7 @@ int main()
         simulation.DensityMatrix.go_to_k();
         auto DMk = simulation.DensityMatrix.get_Operator_k();
         for(int ik=0; ik < DMk.get_nblocks(); ik++){
-            auto t = simulation.RK_object.get_CurrentTime();
+            auto t = simulation.DEsolver.get_CurrentTime();
             auto Hk = simulation.Band_energies[ik](1);
             auto Analytical = DMk0[ik](0,1)*std::exp(im*2.*Hk*t);
             auto RelativeError =  std::abs( DMk[ik](0,1) - Analytical)/std::abs(Analytical)*100.;
