@@ -8,7 +8,8 @@
     "printresolution": 1,
     "initialtime" : [0, "femtoseconds"],
     "finaltime": [1, "femtoseconds"],
-    "solver": "rk4",
+    "solver": "RK",
+    "order": 4,
 
     "lasers":
     [

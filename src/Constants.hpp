@@ -2,6 +2,7 @@
 #define CONSTANTS_HPP
 
 #include <complex>
+#include <map>
 
 constexpr std::complex<double> im(0.,1.);
 constexpr double pi = 3.14159265358979323846;
@@ -22,6 +23,8 @@ constexpr double threshold = 1.e-08;
 
 enum Space{k,R};
 enum BandGauge{bloch, wannier};
+enum SolverType{AB, RK};
+const std::map<std::string, SolverType> solver = {{"AB", SolverType::AB}, {"RK", SolverType::RK}};
 
 //Global functions
 std::string LatticeVectors(const Space& space);

@@ -96,7 +96,7 @@ set(_SOURCES src/initialize.cpp
              src/Laser/Laser.cpp
              src/fftPair/fftPair.cpp
              src/kGradient/kGradient.cpp
-             src/RungeKutta/RungeKutta.cpp
+             src/DESolver/DESolver.cpp
              src/Simulation/Simulation.cpp
              src/core/profiler.cpp 
              src/core/print_timing.cpp 
@@ -188,8 +188,8 @@ add_executable(FourierTransform_speed speed-apps/FourierTransform.cpp)
 add_executable(Containers_test ci-test/test_mdarray.cpp) 
 add_executable(Matrix_test ci-test/test_matrix.cpp)
 add_executable(Eigen_test ci-test/test_eigen.cpp) 
-add_executable(RK_test ci-test/test_RK.cpp)
-add_executable(RK2_test ci-test/test_RK2.cpp)
+add_executable(DE_test ci-test/test_DEsolver.cpp)
+add_executable(DE2_test ci-test/test_DEsolver2.cpp)
 #add_executable(fft-many_test ci-test/test_fft_many.cpp)
 add_executable(fft_test ci-test/test_fft_mpi.cpp)
 add_executable(Gradient_R_test ci-test/test_Gradient_R.cpp)
@@ -203,8 +203,8 @@ enable_testing()
 add_test(NAME Containers_test COMMAND Containers_test)
 add_test(NAME Matrix_test COMMAND Matrix_test)
 add_test(NAME Eigen_test COMMAND Eigen_test)
-add_test(NAME RK_test COMMAND RK_test)
-add_test(NAME RK2_test COMMAND RK2_test)
+add_test(NAME DE_test COMMAND DE_test)
+add_test(NAME DE2_test COMMAND DE2_test)
 add_test(NAME Gradient_R_test COMMAND Gradient_R_test)
 add_test(NAME Bandstructure_test COMMAND 
 					bash -c "${CMAKE_CURRENT_BINARY_DIR}/Bandstructure_test ; \

@@ -5,7 +5,7 @@
 #include "ostream.hpp"
 #include "ConvertUnits.hpp"
 #include "Constants.hpp"
-#include "RungeKutta/RungeKutta.hpp"
+#include "DESolver/DESolver.hpp"
 
 //here we solve y'=2*i*H00*y
 //to compare with NEQpop2 (same EOM but with numbers!)
@@ -40,9 +40,9 @@ int main()
     std::vector<std::complex<double>> Function0;
     InitialCondition(Function0);
 
-    auto rungekutta = RungeKutta<std::vector<std::complex<double>>>(Function_, InitialCondition, SourceTerm);
-    rungekutta.set_InitialTime(InitialTime);
-    rungekutta.set_ResolutionTime(ResolutionTime);
+    auto DEsolver = DESolver<std::vector<std::complex<double>>>(Function_, InitialCondition, SourceTerm, RK, 4);
+    DEsolver.set_InitialTime(InitialTime);
+    DEsolver.set_ResolutionTime(ResolutionTime);
 
     std::cout << "+---------+------------+--------------------+---------------------+-------------------+\n";
     std::cout << "|  step   |    time    | Numerical solution | Analytical solution |      Error(%)     |\n";
@@ -50,12 +50,12 @@ int main()
     for(double it=0; it<=1e+4; it++){
         //if(int(it)%100==0){
             for( int ik=0; ik<N; ++ik ) {
-                auto AnalyticalSolution = Function0[ik]*std::exp(2.*im*H00*rungekutta.get_CurrentTime());
-                auto&& NumericalSolution = rungekutta.get_Function()[ik];
+                auto AnalyticalSolution = Function0[ik]*std::exp(2.*im*H00*DEsolver.get_CurrentTime());
+                auto&& NumericalSolution = DEsolver.get_Function()[ik];
                 std::cout << "|";
                 std::cout << std::setw(7) << std::fixed << int(it);
                 std::cout << "  |  ";
-                std::cout << std::setw(6) << std::setprecision(2) <<  std::scientific << rungekutta.get_CurrentTime();
+                std::cout << std::setw(6) << std::setprecision(2) <<  std::scientific << DEsolver.get_CurrentTime();
                 std::cout << "  ";
                 std::cout << "|";
                 std::cout << "  ";
@@ -76,7 +76,7 @@ int main()
             }
         //}    
 
-        rungekutta.Propagate();
+        DEsolver.Propagate();
     }
 
     

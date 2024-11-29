@@ -120,10 +120,12 @@ Simulation::Simulation(const std::string& JsonFileName__)
     //------------------------setting up TD equations----------------------------------------
     #include "Functional_InitialCondition.hpp"
     #include "Functional_SourceTerm.hpp"
-    RK_object.initialize(DensityMatrix, 
-                        InitialCondition, SourceTerm);
-    RK_object.set_InitialTime(InitialTime);
-    RK_object.set_ResolutionTime( Convert(data["dt"][0].template get<double>(), 
+    DEsolver.initialize(DensityMatrix, 
+                        InitialCondition, SourceTerm, 
+                        solver.at(data["solver"].template get<std::string>()),
+                        data["order"].template get<int>()  );
+    DEsolver.set_InitialTime(InitialTime);
+    DEsolver.set_ResolutionTime( Convert(data["dt"][0].template get<double>(), 
                                           unit(data["dt"][1].template get<std::string>()), 
                                         AuTime ));
 
@@ -212,7 +214,7 @@ Simulation::Simulation(const std::string& JsonFileName__)
 
 bool Simulation::PrintObservables(const double& time) const
 {
-    return ( int( round( time/RK_object.get_ResolutionTime() ) ) % PrintResolution == 0 );
+    return ( int( round( time/DEsolver.get_ResolutionTime() ) ) % PrintResolution == 0 );
 }
 
 void Simulation::SettingUp_EigenSystem()
@@ -295,7 +297,7 @@ void Simulation::Calculate_TDHamiltonian(const double& time, const bool& erase_H
 void Simulation::Propagate()
 {
     PROFILE("Simulation::Propagate");
-    int iFinalTime = int((FinalTime - InitialTime)/RK_object.get_ResolutionTime())+2;
+    int iFinalTime = int((FinalTime - InitialTime)/DEsolver.get_ResolutionTime())+2;
 #ifdef EDUS_MPI
     if(mpi::Communicator::world().rank() == 0)
 #endif
@@ -338,7 +340,7 @@ void Simulation::Propagate()
 
 void Simulation::do_onestep()
 {
-    auto CurrentTime = RK_object.get_CurrentTime();
+    auto CurrentTime = DEsolver.get_CurrentTime();
     //------------------------Print population-------------------------------------
     
     if( PrintObservables( CurrentTime ) ){
@@ -363,14 +365,14 @@ void Simulation::do_onestep()
         //print time 
         os_Time << CurrentTime << std::endl;
         //print laser
-        os_Laser << setoflaser(RK_object.get_CurrentTime()).get("Cartesian");
-        os_VectorPot << setoflaser.VectorPotential(RK_object.get_CurrentTime()).get("Cartesian");
+        os_Laser << setoflaser(DEsolver.get_CurrentTime()).get("Cartesian");
+        os_VectorPot << setoflaser.VectorPotential(DEsolver.get_CurrentTime()).get("Cartesian");
 
         Print_Population();
         Print_Velocity();
     }
     //------------------------------------------------------------------------------
-    RK_object.Propagate();
+    DEsolver.Propagate();
 }
 
 
@@ -489,9 +491,9 @@ void Simulation::print_recap()
         std::cout << std::right << std::setw(4) << DensityMatrix.get_Operator_R().get_MeshGrid()->get_Size()[2];
         std::cout << std::left << std::setw(78) << "]" << "*\n";     
         std::cout << "*   Resolution time:    *     ";
-        std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << RK_object.get_ResolutionTime();
+        std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << DEsolver.get_ResolutionTime();
         std::cout << std::left << std::setw(15) << " a.u.";
-        std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << Convert(RK_object.get_ResolutionTime(), AuTime, FemtoSeconds);
+        std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << Convert(DEsolver.get_ResolutionTime(), AuTime, FemtoSeconds);
         std::cout << std::left << std::setw(60) << " fs" << "*\n";
         std::cout << "*   Print Resolution:   *     ";
         std::cout << std::left << std::setw(95) << PrintResolution <<  "*\n";
@@ -547,12 +549,12 @@ void Simulation::print_recap()
 
 int Simulation::get_it(const double& time) const
 {
-    return int(time/RK_object.get_ResolutionTime());
+    return int(time/DEsolver.get_ResolutionTime());
 }
 
 int Simulation::get_it_sparse(const double& time) const
 {
-    return int(round(time/RK_object.get_ResolutionTime()/PrintResolution));
+    return int(round(time/DEsolver.get_ResolutionTime()/PrintResolution));
 }
 
 

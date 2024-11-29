@@ -3,7 +3,7 @@
 
 #include "ConvertUnits.hpp"
 #include "Model/Model.hpp"
-#include "RungeKutta/RungeKutta.hpp"
+#include "DESolver/DESolver.hpp"
 #include "Laser/Laser.hpp"
 #include "ostream.hpp"
 #include "kGradient/kGradient.hpp"
@@ -23,7 +23,7 @@ class Simulation
         double FermiEnergy = 0.;
         SetOfLaser setoflaser;
         Operator<std::complex<double>> DensityMatrix;
-        RungeKutta<Operator<std::complex<double>>> RK_object;
+        DESolver<Operator<std::complex<double>>> DEsolver;
         int PrintResolution; //steps needed to print a variable
         double FinalTime;
         double InitialTime;

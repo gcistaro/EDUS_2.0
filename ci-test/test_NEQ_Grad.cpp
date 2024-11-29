@@ -59,10 +59,10 @@ int main()
     };
 
     #include "Simulation/Functional_SourceTerm.hpp"
-    std::cout << "Initializing RK_object..\n";
-    simulation.RK_object.initialize(simulation.DensityMatrix, 
-                                    InitialConditionToUse, SourceTerm);
-    simulation.RK_object.set_ResolutionTime(0.1);
+    std::cout << "Initializing DEsolver..\n";
+    simulation.DEsolver.initialize(simulation.DensityMatrix, 
+                                    InitialConditionToUse, SourceTerm, RK,4);
+    simulation.DEsolver.set_ResolutionTime(0.1);
 
     //------------------------------- FINAL CHECK ON PROPAGATOR -----------------------------------------
     std::cout << "Checking correctness of propagator...\n";
@@ -73,7 +73,7 @@ int main()
         for(int ik_loc=0; ik_loc < simulation.DensityMatrix.mpindex.nlocal; ++ik_loc){
             auto ik_glob = simulation.DensityMatrix.mpindex.loc1D_to_glob1D(ik_loc);
             auto k_ = (*(simulation.DensityMatrix.get_Operator_k().get_MeshGrid()))[ik_glob].get(LatticeVectors(k));
-            auto t = simulation.RK_object.get_CurrentTime();
+            auto t = simulation.DEsolver.get_CurrentTime();
 
             auto Analytical = std::exp(2.*pi*im*(k_[0]+laser.VectorPotential(t).get(LatticeVectors(k))[0]))/std::sqrt(N);
             auto RelativeError =  std::abs( DMk[ik_loc](0,1) - Analytical)/std::abs(Analytical)*100.;
