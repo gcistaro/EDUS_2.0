@@ -190,19 +190,12 @@ Simulation::Simulation(const std::string& JsonFileName__)
     data["B"] = Coordinate::get_Basis(LatticeVectors(k)).get_M();
 
 #ifdef EDUS_HDF5
-    std::string name = "recap.h5";
+    std::string name = "output.h5";
     if (!file_exists(name)) {
         HDF5_tree(name, hdf5_access_t::truncate);
     }
     HDF5_tree fout(name, hdf5_access_t::truncate);
     dump_json_in_h5( data, name );
-
-    material.H.get_Operator_k().write_h5(name, "H0");
-    mpi::Communicator::world().barrier();
-    for(auto& ix : {0, 1, 2}) {
-        material.r[ix].get_Operator_k().write_h5(name, "r"+std::to_string(ix));
-    }
-    DensityMatrix.get_Operator_k().write_h5(name, "DM");
     mpi::Communicator::world().barrier();
 #endif
 
@@ -345,20 +338,21 @@ void Simulation::do_onestep()
     
     if( PrintObservables( CurrentTime ) ){
 #ifdef EDUS_HDF5
-        std::string name_ = std::to_string(get_it_sparse(CurrentTime)) + ".h5";
-        if (!file_exists(name_)) {
-            HDF5_tree(name_, hdf5_access_t::truncate);
-        }
+        std::string name_ = "output.h5";
+        auto node = get_it_sparse(CurrentTime);
+
         HDF5_tree fout(name_, hdf5_access_t::truncate);
+
+        fout.create_node(node);
         fout.write("time_au", CurrentTime);
         Calculate_TDHamiltonian(CurrentTime, true);
-        H.get_Operator_k().write_h5(name_, "(H0+e.r");
+        H.get_Operator_k().write_h5(name_, node, "(H0+e.r)");
         DensityMatrix.go_to_R(true);
         H.go_to_R(false);
         coulomb.EffectiveHamiltonian( H, DensityMatrix, true); 
         H.go_to_k(true);
-        H.get_Operator_k().write_h5(name_, "SelfEnergy");
-        DensityMatrix.get_Operator_k().write_h5(name_, "DensityMatrix_k");
+        H.get_Operator_k().write_h5(name_, node, "SelfEnergy");
+        DensityMatrix.get_Operator_k().write_h5(name_, node,"DensityMatrix_k");
         DensityMatrix.go_to_k(false);
 #endif 
 

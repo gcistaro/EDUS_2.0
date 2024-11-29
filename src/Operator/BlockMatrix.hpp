@@ -122,7 +122,7 @@ class BlockMatrix{
         void make_hermitian();
         void make_antihermitian();
         void cut(const double& threshold__);
-        void write_h5(const std::string& name__, const std::string& label__="");
+        void write_h5(const std::string& name__, const int& node, const std::string& label__="");
 };
 
 
