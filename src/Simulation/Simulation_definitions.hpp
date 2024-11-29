@@ -62,7 +62,8 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
     #include "Functional_InitialCondition.hpp"
     #include "Functional_SourceTerm.hpp"
     DEsolver.initialize(DensityMatrix, 
-                        InitialCondition, SourceTerm, RK4);
+                        InitialCondition, SourceTerm, 
+                        RK, 4);
     DEsolver.set_InitialTime(0.);
     //DEsolver.set_ResolutionTime( ( laser.get_Duration()/laser.get_NumberOfCycles() )/ 1000. );
     PrintResolution = 10;

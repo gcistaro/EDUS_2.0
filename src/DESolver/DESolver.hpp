@@ -31,15 +31,15 @@ class DESolver{
         std::function<void(T&)> EvaluateInitialCondition;
         std::function<void(T&, const double&, const T&)> EvaluateSourceFunction;
 
-        std::array<T,4> aux_Function;                        //temporary arrays to store quantities needed in DE numerical methods 
+        std::array<T,5> aux_Function;                        //temporary arrays to store quantities needed in DE numerical methods 
 
-        std::array<int, 4> index = {0, 1, 2, 3};              // to rotate indices in AB method, if not we need to do many copies
-        std::array<double,4> beta = {55./24., -59./24., 37./24., -3./8.}; //coefficients in AB method
+        std::array<int, 5> index = {0, 1, 2, 3, 4};              // to rotate indices in AB method, if not we need to do many copies
+        std::array<double,5> beta; //coefficients in AB method
 
-        void Propagate_RK4();
-        void Propagate_AB4();
+        void Propagate_RK();
+        void Propagate_AB();
         SolverType type;
-
+        int order;
     public:
         DESolver(){};
 
@@ -50,7 +50,7 @@ class DESolver{
         DESolver& operator=(DESolver&& DEsolver__) = default; 
 
 
-        DESolver(T& Function_, const std::function<void(T&)>& EvaluateInitialCondition__, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction__, SolverType type__); 
+        DESolver(T& Function_, const std::function<void(T&)>& EvaluateInitialCondition__, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction__, SolverType type__, int order); 
 
         const T& get_Function() const; 
         T& get_Function(); 
@@ -59,18 +59,19 @@ class DESolver{
         void set_InitialTime(const double& InitialTime_){InitialTime = InitialTime_;}
         void set_ResolutionTime(const double& ResolutionTime_){ResolutionTime = ResolutionTime_;}
         void set_EvaluateInitialCondition(const std::function<void(T&)>& EvaluateInitialCondition_);
-        void initialize(T& Function_, const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_, SolverType type__);
+        void initialize(T& Function_, const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_, SolverType type__, int order);
         void Propagate();
-        void set_aux_Function(const T& a, const T& b, const T& c, const T& d){aux_Function[0] = a, aux_Function[1] = b, aux_Function[2] = c, aux_Function[3] = d;}
+        void set_aux_Function(const T& a, const T& b, const T& c, const T& d, const T& e){aux_Function[0] = a, aux_Function[1] = b, aux_Function[2] = c, aux_Function[3] = d; aux_Function[4] = e;}
         void set_type(SolverType t){type = t;}
         SolverType get_type(){return type;}	
 };
 
 template<typename T>
-void DESolver<T>::initialize(T& Function__, const std::function<void(T&)>& EvaluateInitialCondition__, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction__, SolverType type__)
+void DESolver<T>::initialize(T& Function__, const std::function<void(T&)>& EvaluateInitialCondition__, 
+    const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction__, SolverType type__, int order__)
 {
-    std::cout << "Not specialized\n"; exit(0);
     type = type__;
+    order = order__;
     Function = &Function__;
     EvaluateInitialCondition = EvaluateInitialCondition__;
     EvaluateSourceFunction = EvaluateSourceFunction__;
@@ -80,19 +81,34 @@ void DESolver<T>::initialize(T& Function__, const std::function<void(T&)>& Evalu
         aux_ = *Function;
         std::fill(aux_.begin(), aux_.end(), 0.);
     }
+
+    if ( type == AB ) {
+        if( order == 4) {
+            beta = {55./24., -59./24., 37./24., -3./8., 0.};
+        }
+        else if( order == 5) {
+            beta = {1901./720., -2774./720., 
+                2616./720., -1274./720., 251./720.};
+        }
+        else {
+            std::cout << "order " << order << "not implemented for AB" << std::endl;
+            exit(1);
+        }
+    }
 }
 
 template<typename T>
 DESolver<T>::DESolver(T& Function__, const std::function<void(T&)>& EvaluateInitialCondition__, 
-                        const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction__, SolverType type__)
+                        const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction__, SolverType type__, int order__)
 {
-    initialize(Function__, EvaluateInitialCondition__, EvaluateSourceFunction__, type__);
+    initialize(Function__, EvaluateInitialCondition__, EvaluateSourceFunction__, type__, order__);
 }
 
 
 template<typename T>
-void DESolver<T>::Propagate_RK4()
+void DESolver<T>::Propagate_RK()
 {
+    assert(order == 4);
     /*
         Equations implemented here: 
         dy/dt= f(t,y) with y(t0) = y0  
@@ -133,8 +149,9 @@ void DESolver<T>::Propagate_RK4()
     CurrentTime += ResolutionTime;
 }
 
+
 template<typename T>
-void DESolver<T>::Propagate_AB4()
+void DESolver<T>::Propagate_AB()
 {
     /*
         Equations implemented here: 
@@ -151,33 +168,32 @@ void DESolver<T>::Propagate_AB4()
       index rotates in order to avoid copies                          */
 
     //get f(t(n-1), y(n-1))
+    //std::cout << "index:" << index[0] << " " << index[1] << " " << index[2] << " " << index[3] <<  " " << index[4] << std::endl;
     EvaluateSourceFunction(aux_Function[index[0]], CurrentTime, *Function);
 
-    // y_n = y_{n-1} + h*b_1*f(t_{n-1}, y_{n-1})
-    SumWithProduct(*Function, 1., *Function, ResolutionTime*beta[0], aux_Function[index[0]]);
+    for( int i = 0; i < order; ++i ) {
+        // y_n = y_{n-i} + h*b_i*f(t_{n-i}, y_{n-i})
+        SumWithProduct(*Function, 1., *Function, ResolutionTime*beta[i], aux_Function[index[i]]);
+    }
 
-    // y_{n} += h*b_2*f(t_{n-2}, y_{n-2})
-    SumWithProduct(*Function, 1., *Function, ResolutionTime*beta[1], aux_Function[index[1]]);
-
-    // y_{n} += h*b_3*f(t_{n-3}, y_{n-3})
-    SumWithProduct(*Function, 1., *Function, ResolutionTime*beta[2], aux_Function[index[2]]);
-
-    // y_{n} += h*b_4*f(t_{n-4}, y_{n-4})
-    SumWithProduct(*Function, 1., *Function, ResolutionTime*beta[3], aux_Function[index[3]]);
-
-    index[3] = index[2];
-    index[2] = index[1];
-    index[1] = index[0];
-    index[0] = 6 - (index[1] + index[2] + index[3]);
-
+    //slice indices one step to the right
+    int temp_index = index[order-1];
+    for( int i = order-1; i > 0; --i ) {
+        index[i] = index[i-1];
+    }
+    index[0] = temp_index;
 
     CurrentTime += ResolutionTime;
 }
 
 template<typename T>
 void DESolver<T>::Propagate(){
-    if (type == RK4){Propagate_RK4();}
-    else if (type == AB4){Propagate_AB4();}
+    if (type == RK){
+        Propagate_RK();
+    }
+    else if (type == AB){
+        Propagate_AB();
+    }
 }
 
 template<typename T>
@@ -199,7 +215,7 @@ void DESolver<Operator<std::complex<double>>>::initialize(Operator<std::complex<
                 const std::function<void(Operator<std::complex<double>>&)>& EvaluateInitialCondition_, 
                 const std::function<void(Operator<std::complex<double>>&, 
                 const double&, const Operator<std::complex<double>>&)>& EvaluateSourceFunction_,
-                SolverType type__);
+                SolverType type__, int order__);
 
 
 #endif

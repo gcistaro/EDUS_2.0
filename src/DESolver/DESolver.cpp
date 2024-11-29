@@ -8,8 +8,10 @@ void DESolver<Operator<std::complex<double>>>::initialize(Operator<std::complex<
                 const std::function<void(Operator<std::complex<double>>&)>& EvaluateInitialCondition_, 
                 const std::function<void(Operator<std::complex<double>>&, 
                 const double&, const Operator<std::complex<double>>&)>& EvaluateSourceFunction_,
-                SolverType type__)
+                SolverType type__,
+                int order__)
 {
+    order = order__;
     type = type__;
     Function = &Function_;
     EvaluateInitialCondition = EvaluateInitialCondition_;

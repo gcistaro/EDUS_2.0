@@ -2,7 +2,7 @@
 #include <iomanip>
 #include <vector>
 #include <math.h>
-#include <Constants.hpp>
+#include "Constants.hpp"
 #include "core/print_timing.hpp"
 #include "DESolver/DESolver.hpp"
 #include "core/cmd_args/cmd_args.hpp"
@@ -10,13 +10,15 @@
 int main(int argn, char** argv)
 {
     cmd_args args(argn, argv, 
-                  {{"solver=", "{string} type of solver. supported: RK4, AB4"}}
+                  {{"solver=", "{string} type of solver. supported: RK, AB"},
+                   {"order=", "{int} order of the solver. supported RK->4, AB->AB4"}}
                  );    
     std::vector<double> Function_;
 
-    auto solver = args.value<std::string>("solver", "RK4");
-    auto solver_type = ( solver == "RK4" ? RK4 : AB4 );
-    auto threshold   = ( solver == "RK4" ? 1.e-08 : 1.e-04 );
+    auto solver_string = args.value<std::string>("solver", "RK");
+    auto mysolver = solver.at(solver_string);
+    auto order = args.value<int>("order", 4);
+    auto threshold   = 1.e-08;
 
     double InitialTime = 0.;
     double ResolutionTime = 0.001;
@@ -41,13 +43,14 @@ int main(int argn, char** argv)
     };
 
 
-    auto DEsolver = DESolver<std::vector<double>>(Function_, InitialCondition, SourceTerm, solver_type);
-    
-    auto a = RateOfIncrease*InitialConstant*exp(RateOfIncrease*DEsolver.get_CurrentTime() - 0*ResolutionTime);
-    auto b = RateOfIncrease*InitialConstant*exp(RateOfIncrease*DEsolver.get_CurrentTime() - 1*ResolutionTime);
-    auto c = RateOfIncrease*InitialConstant*exp(RateOfIncrease*DEsolver.get_CurrentTime() - 2*ResolutionTime);
-    auto d = RateOfIncrease*InitialConstant*exp(RateOfIncrease*DEsolver.get_CurrentTime() - 3*ResolutionTime);
-    DEsolver.set_aux_Function({a}, {b}, {c}, {d});
+    auto DEsolver = DESolver<std::vector<double>>(Function_, InitialCondition, SourceTerm, mysolver, order);
+
+    auto a = RateOfIncrease*InitialConstant*exp(RateOfIncrease*(DEsolver.get_CurrentTime() - 0*ResolutionTime));
+    auto b = RateOfIncrease*InitialConstant*exp(RateOfIncrease*(DEsolver.get_CurrentTime() - 1*ResolutionTime));
+    auto c = RateOfIncrease*InitialConstant*exp(RateOfIncrease*(DEsolver.get_CurrentTime() - 2*ResolutionTime));
+    auto d = RateOfIncrease*InitialConstant*exp(RateOfIncrease*(DEsolver.get_CurrentTime() - 3*ResolutionTime));
+    auto e = RateOfIncrease*InitialConstant*exp(RateOfIncrease*(DEsolver.get_CurrentTime() - 4*ResolutionTime));
+    DEsolver.set_aux_Function({a}, {b}, {c}, {d}, {e});
 
     DEsolver.set_InitialTime(InitialTime);
     DEsolver.set_ResolutionTime(ResolutionTime);
@@ -59,7 +62,7 @@ int main(int argn, char** argv)
     std::cout << "+---------+------------+--------------------+---------------------+-------------------+\n";
 
     PROFILE_START("Solve_DE");
-    for(double it=0; it<=10000; it++) {
+    for(double it=1; it<=10000; it++) {
         if(int(it)%100==0){
             auto AnalyticalSolution = InitialConstant*exp(RateOfIncrease*DEsolver.get_CurrentTime());
             auto&& NumericalSolution = DEsolver.get_Function()[0];

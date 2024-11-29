@@ -120,9 +120,10 @@ Simulation::Simulation(const std::string& JsonFileName__)
     //------------------------setting up TD equations----------------------------------------
     #include "Functional_InitialCondition.hpp"
     #include "Functional_SourceTerm.hpp"
-    auto solver = (data["solver"] == "rk4" ? RK4 : AB4 );
     DEsolver.initialize(DensityMatrix, 
-                        InitialCondition, SourceTerm, solver);
+                        InitialCondition, SourceTerm, 
+                        solver.at(data["solver"].template get<std::string>()),
+                        data["order"].template get<int>()  );
     DEsolver.set_InitialTime(InitialTime);
     DEsolver.set_ResolutionTime( Convert(data["dt"][0].template get<double>(), 
                                           unit(data["dt"][1].template get<std::string>()), 

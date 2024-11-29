@@ -40,7 +40,7 @@ int main()
     std::vector<std::complex<double>> Function0;
     InitialCondition(Function0);
 
-    auto DEsolver = DESolver<std::vector<std::complex<double>>>(Function_, InitialCondition, SourceTerm, RK4);
+    auto DEsolver = DESolver<std::vector<std::complex<double>>>(Function_, InitialCondition, SourceTerm, RK, 4);
     DEsolver.set_InitialTime(InitialTime);
     DEsolver.set_ResolutionTime(ResolutionTime);
 

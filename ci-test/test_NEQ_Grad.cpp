@@ -61,7 +61,7 @@ int main()
     #include "Simulation/Functional_SourceTerm.hpp"
     std::cout << "Initializing DEsolver..\n";
     simulation.DEsolver.initialize(simulation.DensityMatrix, 
-                                    InitialConditionToUse, SourceTerm, RK4);
+                                    InitialConditionToUse, SourceTerm, RK,4);
     simulation.DEsolver.set_ResolutionTime(0.1);
 
     //------------------------------- FINAL CHECK ON PROPAGATOR -----------------------------------------
