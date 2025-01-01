@@ -23,7 +23,7 @@ class Simulation
         double FermiEnergy = 0.;
         SetOfLaser setoflaser;
         Operator<std::complex<double>> DensityMatrix;
-        DESolver<Operator<std::complex<double>>> DEsolver;
+        DESolver<Operator<std::complex<double>>> DEsolver_DM;
         int PrintResolution; //steps needed to print a variable
         double FinalTime;
         double InitialTime;
@@ -40,6 +40,7 @@ class Simulation
         std::ofstream os_Time;
         std::ofstream os_Velocity;
         
+        Simulation(){};
         template<class T>
         Simulation(const std::string& FileName, const T& arg_meshinit);
         Simulation(const std::string& JsonFileName);

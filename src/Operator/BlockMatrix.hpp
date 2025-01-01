@@ -35,7 +35,6 @@ class Operator;
 template<typename T=std::complex<double>>
 class BlockMatrix{
     private:
-
         std::vector<Matrix<T>> submatrix;
         std::shared_ptr<MeshGrid> meshgrid;    
         static Matrix<T> EmptyMatrix;    
@@ -121,8 +120,20 @@ class BlockMatrix{
         bool is_hermitian();
         void make_hermitian();
         void make_antihermitian();
+        void make_dagger();
+
         void cut(const double& threshold__);
-        void write_h5(const std::string& name__, const int& node, const std::string& label__="");
+        void write_h5(const std::string& name__, const int& node__, const std::string& label__="");
+        void load    (const std::string& name__, const int& node__, const std::string& label__="");
+        void identity()
+        {
+            this->fill(0.);
+            for ( auto& sub_ : submatrix ) {
+                for (int ibnd = 0; ibnd < sub_.get_nrows(); ++ibnd ) {
+                    sub_(ibnd, ibnd) = 1.;
+                }
+            }
+        }
 };
 
 

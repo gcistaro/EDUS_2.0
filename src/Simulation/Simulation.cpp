@@ -120,12 +120,12 @@ Simulation::Simulation(const std::string& JsonFileName__)
     //------------------------setting up TD equations----------------------------------------
     #include "Functional_InitialCondition.hpp"
     #include "Functional_SourceTerm.hpp"
-    DEsolver.initialize(DensityMatrix, 
+    DEsolver_DM.initialize(DensityMatrix, 
                         InitialCondition, SourceTerm, 
                         solver.at(data["solver"].template get<std::string>()),
                         data["order"].template get<int>()  );
-    DEsolver.set_InitialTime(InitialTime);
-    DEsolver.set_ResolutionTime( Convert(data["dt"][0].template get<double>(), 
+    DEsolver_DM.set_InitialTime(InitialTime);
+    DEsolver_DM.set_ResolutionTime( Convert(data["dt"][0].template get<double>(), 
                                           unit(data["dt"][1].template get<std::string>()), 
                                         AuTime ));
 
@@ -207,7 +207,7 @@ Simulation::Simulation(const std::string& JsonFileName__)
 
 bool Simulation::PrintObservables(const double& time) const
 {
-    return ( int( round( time/DEsolver.get_ResolutionTime() ) ) % PrintResolution == 0 );
+    return ( int( round( time/DEsolver_DM.get_ResolutionTime() ) ) % PrintResolution == 0 );
 }
 
 void Simulation::SettingUp_EigenSystem()
@@ -271,6 +271,13 @@ void Simulation::Calculate_TDHamiltonian(const double& time, const bool& erase_H
     //---------------------------------------------------------------------------------
 
     //------------------------H(R) = H0(R) + E.r(R)-------------------------------------
+    // == /* H_ = H0_ + las_x \cdot x */
+    // == SumWithProduct(H_, 1., H0_, las[0], x_);
+    // == /* H_ = H_ + las_y \cdot y */
+    // == SumWithProduct(H_, 1., H_, las[1], y_);
+    // == /* H_ = H_ + las_z \cdot z */
+    // == SumWithProduct(H_, 1., H0_, las[1], y_);
+
     #pragma omp parallel for schedule(static) collapse(3)
     for(int iblock=0; iblock<H0_.get_nblocks(); ++iblock){
         for(int irow=0; irow<H0_.get_nrows(); ++irow){
@@ -290,7 +297,7 @@ void Simulation::Calculate_TDHamiltonian(const double& time, const bool& erase_H
 void Simulation::Propagate()
 {
     PROFILE("Simulation::Propagate");
-    int iFinalTime = int((FinalTime - InitialTime)/DEsolver.get_ResolutionTime())+2;
+    int iFinalTime = int((FinalTime - InitialTime)/DEsolver_DM.get_ResolutionTime())+2;
 #ifdef EDUS_MPI
     if(mpi::Communicator::world().rank() == 0)
 #endif
@@ -333,7 +340,7 @@ void Simulation::Propagate()
 
 void Simulation::do_onestep()
 {
-    auto CurrentTime = DEsolver.get_CurrentTime();
+    auto CurrentTime = DEsolver_DM.get_CurrentTime();
     //------------------------Print population-------------------------------------
     
     if( PrintObservables( CurrentTime ) ){
@@ -346,27 +353,27 @@ void Simulation::do_onestep()
         fout.create_node(node);
         fout.write("time_au", CurrentTime);
         Calculate_TDHamiltonian(CurrentTime, true);
-        H.get_Operator_k().write_h5(name_, node, "(H0+e.r)");
+        H.get_Operator_k().write_h5(name_, node, nodename::fullH);
         DensityMatrix.go_to_R(true);
         H.go_to_R(false);
         coulomb.EffectiveHamiltonian( H, DensityMatrix, true); 
         H.go_to_k(true);
         H.get_Operator_k().write_h5(name_, node, "SelfEnergy");
-        DensityMatrix.get_Operator_k().write_h5(name_, node,"DensityMatrix_k");
+        DensityMatrix.get_Operator_k().write_h5(name_, node, nodename::DMk);
         DensityMatrix.go_to_k(false);
 #endif 
 
         //print time 
         os_Time << CurrentTime << std::endl;
         //print laser
-        os_Laser << setoflaser(DEsolver.get_CurrentTime()).get("Cartesian");
-        os_VectorPot << setoflaser.VectorPotential(DEsolver.get_CurrentTime()).get("Cartesian");
+        os_Laser << setoflaser(DEsolver_DM.get_CurrentTime()).get("Cartesian");
+        os_VectorPot << setoflaser.VectorPotential(DEsolver_DM.get_CurrentTime()).get("Cartesian");
 
         Print_Population();
         Print_Velocity();
     }
     //------------------------------------------------------------------------------
-    DEsolver.Propagate();
+    DEsolver_DM.Propagate();
 }
 
 
@@ -485,9 +492,9 @@ void Simulation::print_recap()
         std::cout << std::right << std::setw(4) << DensityMatrix.get_Operator_R().get_MeshGrid()->get_Size()[2];
         std::cout << std::left << std::setw(78) << "]" << "*\n";     
         std::cout << "*   Resolution time:    *     ";
-        std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << DEsolver.get_ResolutionTime();
+        std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << DEsolver_DM.get_ResolutionTime();
         std::cout << std::left << std::setw(15) << " a.u.";
-        std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << Convert(DEsolver.get_ResolutionTime(), AuTime, FemtoSeconds);
+        std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << Convert(DEsolver_DM.get_ResolutionTime(), AuTime, FemtoSeconds);
         std::cout << std::left << std::setw(60) << " fs" << "*\n";
         std::cout << "*   Print Resolution:   *     ";
         std::cout << std::left << std::setw(95) << PrintResolution <<  "*\n";
@@ -543,12 +550,12 @@ void Simulation::print_recap()
 
 int Simulation::get_it(const double& time) const
 {
-    return int(time/DEsolver.get_ResolutionTime());
+    return int(time/DEsolver_DM.get_ResolutionTime());
 }
 
 int Simulation::get_it_sparse(const double& time) const
 {
-    return int(round(time/DEsolver.get_ResolutionTime()/PrintResolution));
+    return int(round(time/DEsolver_DM.get_ResolutionTime()/PrintResolution));
 }
 
 

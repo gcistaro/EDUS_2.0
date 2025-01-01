@@ -291,11 +291,36 @@ void BlockMatrix<T>::make_hermitian()
             std::cout << "Implement me\n";
             exit(1);
         }
-        
     }
-
 }
 
+template<typename T>
+void BlockMatrix<T>::make_dagger()
+{
+    PROFILE("make_dagger");
+    switch(space) 
+    {
+        case(Space::k) :
+        {
+            #pragma omp parallel for
+            for(int ik=0; ik<this->get_nblocks(); ++ik) {
+                for( int irow=0; irow<this->get_nrows(); irow++ ) {
+                    for(int icol=0; icol < this->get_ncols(); ++icol ) {
+                        auto term = (*this)(ik,icol,irow);
+                        (*this)(ik,icol,irow) = std::conj( (*this)(ik,irow,icol) );
+                        (*this)(ik,icol,irow) = std::conj( term );
+                    }
+                }
+            }
+            break;
+        }
+        case(Space::R) :
+        {
+            std::cout << "Implement me\n";
+            exit(1);
+        }
+    }
+}
 
 template<typename T>
 void BlockMatrix<T>::make_antihermitian()
@@ -359,6 +384,30 @@ void BlockMatrix<T>::write_h5(const std::string& name__, const int& node__, cons
 #endif //EDUS_HDF5PARALLEL
 #endif //EDUS_HDF5
 }
+
+template<typename T>
+void BlockMatrix<T>::load(const std::string& name__, const int& node__, const std::string& label__)
+{
+#ifdef EDUS_HDF5
+    PROFILE("load");
+
+    HDF5_tree fout(name__, hdf5_access_t::read_write);
+
+    MPI_Request req;
+    static BlockMatrix<T> aux_(this->space, this->get_nblocks(), this->get_nrows(), this->get_ncols());
+
+    if( kpool_comm.rank() == 0 ) {
+        for(int ik_rank = 0; ik_rank < kpool_comm.size(); ++ik_rank) {
+            fout[node__][label__][ik_rank].read("local", 
+                reinterpret_cast<double*>(aux_.data()), (this->get_TotalSize() * 2) );
+            kpool_comm.isend(&(aux_(0,0,0)), ik_rank, this->get_TotalSize(), req);
+        }
+    }
+    kpool_comm.receive(&((*this)(0,0,0)), 0, this->get_TotalSize());
+    MPI_Wait(&req, MPI_STATUS_IGNORE);
+#endif //EDUS_HDF5
+}
+
 
 
 template<typename T>

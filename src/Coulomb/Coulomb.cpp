@@ -15,7 +15,7 @@ Coulomb::Coulomb(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid__, cons
 void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid__)
 {}
 
-void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid__, const std::array<Operator<std::complex<double>>,3>& r)
+void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid__, const std::array<Operator<std::complex<double>>,3>& r__)
 {
     if(!DoCoulomb) {
         return;
@@ -23,18 +23,15 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
     Rgrid = Rgrid__;
     auto size_MG_global =  Rgrid__->get_TotalSize();
     auto size_MG_local = Rgrid__->get_LocalSize();
-    //W = mdarray<std::complex<double>, 6>( { size_MG, nbnd, nbnd, size_MG, nbnd, nbnd } );
     HF = mdarray<std::complex<double>,3> ( { int( size_MG_local ), nbnd, nbnd } );
-    /* initializing W in point like approximation */ 
-    auto RytovaKeldysh_TB = mdarray<std::complex<double>,3> ( { int( size_MG_global ), nbnd, nbnd } );
-/*
-    RytovaKeldysh RytKel;
-    RytKel.initialize(r, 2, Rgrid__);
 
-*/
+    auto RytovaKeldysh_TB = mdarray<std::complex<double>,3> ( { int( size_MG_global ), nbnd, nbnd } );
+
     std::filesystem::path cwd = std::filesystem::current_path() / "RytovaKeldysh.txt";
     auto file = ReadFile(cwd.string());
     auto index = 1;
+    
+    /* Read Rytova Keldysh (screened) potential produced with RytovaKeldysh.py */
     for( int iR = 0; iR < int(RytovaKeldysh_TB.get_Size(0)); ++iR ) {
         for( int irow = 0; irow < int(RytovaKeldysh_TB.get_Size(1)); ++irow ) {
             for( int icol = 0; icol < int(RytovaKeldysh_TB.get_Size(1)); ++icol ) {
@@ -46,35 +43,40 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
     }
     assert(index == int(file.size()));
 
-    //Fock part
+    /* Get local part and add the minus sign */
     #pragma omp parallel for
     for( int iR_local = 0; iR_local < size_MG_local; ++iR_local ){
         for( int irow = 0; irow < nbnd; ++irow ){
             for( int icol = 0; icol < nbnd; ++icol ){
                 auto iR_global = int( Rgrid__->mpindex.loc1D_to_glob1D(iR_local) );
-                HF( iR_local, irow, icol ) = - RytovaKeldysh_TB( iR_global, irow, icol ); 
+                HF( iR_local, irow, icol ) = -RytovaKeldysh_TB( iR_global, irow, icol ); 
             }
         }
     }
 
+    /* Get unscreened (only on-site for point-like approximation) potential */
+    auto index_origin_dft = r__[0].get_Operator(R).get_MeshGrid()->find(Coordinate(0,0,0));
     int index_origin_global = Rgrid__->find(Coordinate(0,0,0));
+    std::array<double, 3> bare_ratom;
     if( Rgrid__->mpindex.is_local(index_origin_global) ) {
         int index_origin_local = Rgrid__->mpindex.glob1D_to_loc1D(index_origin_global);
 
-        for( int iR = 0; iR < int(RytovaKeldysh_TB.get_Size(0)); ++iR ) {
+        for( int iR = 0; iR < size_MG_global; ++iR ) {
+            auto& R = (*Rgrid__)[iR];
             for( int irow = 0; irow < nbnd; ++irow ){
-                HF( index_origin_local, irow, irow ) += 2.*RytovaKeldysh_TB( iR, irow, irow );
+                for( auto& ix : {0,1,2}) {
+                    bare_ratom[ix] = real(r__[ix].get_Operator(Space::R)(index_origin_dft,irow,irow));
+                }
+
+                auto ratom = Coordinate(bare_ratom[0], bare_ratom[1], bare_ratom[2]);
+                auto norm = ratom.norm();
+
+                HF( index_origin_local, irow, irow ) += ( ratom.norm() < 1.e-06 
+                                                                        ? 0. 
+                                                                        : 1./((ratom + R).norm()) *2.); //2 for spin degeneracy
             }
         }
     }
-        std::ofstream HFF("HF.txt");
-    for( int iR = 0; iR < size_MG_local; ++iR ){
-        for( int irow = 0; irow < nbnd; ++irow ){
-            for( int icol = 0; icol < nbnd; ++icol ){
-                HFF << HF( iR, irow, icol ).real() << " " << HF( iR, irow, icol ).imag() <<  std::endl;
-            }}}
-            HFF.close();
-
 }
 
 void Coulomb::set_DM0( const Operator<std::complex<double>>& DM0__ )

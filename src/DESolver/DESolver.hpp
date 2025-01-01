@@ -58,9 +58,9 @@ class DESolver{
         const double& get_ResolutionTime() const {return ResolutionTime;};
         void set_InitialTime(const double& InitialTime_){InitialTime = InitialTime_;}
         void set_ResolutionTime(const double& ResolutionTime_){ResolutionTime = ResolutionTime_;}
-        void set_EvaluateInitialCondition(const std::function<void(T&)>& EvaluateInitialCondition_);
         void initialize(T& Function_, const std::function<void(T&)>& EvaluateInitialCondition_, const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction_, SolverType type__, int order);
         void Propagate();
+        void Propagate(const int& nstep__);
         void set_aux_Function(const T& a, const T& b, const T& c, const T& d, const T& e){aux_Function[0] = a, aux_Function[1] = b, aux_Function[2] = c, aux_Function[3] = d; aux_Function[4] = e;}
         void set_type(SolverType t){type = t;}
         SolverType get_type(){return type;}	
@@ -195,6 +195,14 @@ void DESolver<T>::Propagate(){
         Propagate_AB();
     }
 }
+
+template<typename T>
+void DESolver<T>::Propagate(const int& nstep__){
+    for( int istep = 0; istep < nstep__; ++istep ) {
+        Propagate();
+    }
+}
+
 
 template<typename T>
 const T& DESolver<T>::get_Function() const 
