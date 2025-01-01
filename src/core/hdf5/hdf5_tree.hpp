@@ -14,6 +14,7 @@
 #ifndef __HDF5_TREE_HPP__
 #define __HDF5_TREE_HPP__
 
+#ifdef EDUS_HDF5
 #include <fstream>
 #include <hdf5.h>
 #include <vector>
@@ -822,5 +823,6 @@ if ( mpi::Communicator::world().rank() != 0 ) return;
     }
 };
 
+#endif // EDUS_HDF5
 
 #endif // __HDF5_TREE_HPP__

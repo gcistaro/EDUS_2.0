@@ -18,10 +18,11 @@ file_exists(std::string file_name)
 
 void dump_json_in_h5( const nlohmann::json& data__, const std::string& name__ )
 {
+#ifdef EDUS_HDF5
+
 #ifdef EDUS_MPI
     if ( mpi::Communicator::world().rank() == 0 ) 
 #endif
-#ifdef EDUS_HDF5
     {
         HDF5_tree fout(name__, hdf5_access_t::read_write);
         fout.create_node("json");

@@ -78,8 +78,9 @@ configure_file("${PROJECT_SOURCE_DIR}/ci-test/inputs/hBN.json.in" "${PROJECT_SOU
 configure_file("${PROJECT_SOURCE_DIR}/ci-test/inputs/hBN_coulomb.json.in" "${PROJECT_SOURCE_DIR}/ci-test/inputs/hBN_coulomb.json" @ONLY)
 configure_file("${PROJECT_SOURCE_DIR}/ci-test/inputs/MoS2.json.in" "${PROJECT_SOURCE_DIR}/ci-test/inputs/MoS2.json" @ONLY)
 
-#compile sources as library INTERFACE (not a real library, just objects to be reused)
 include_directories("${PROJECT_SOURCE_DIR}/src/")
+########add_subdirectory(src/)
+
 
 set(_SOURCES src/initialize.cpp
              src/GlobalFunctions.cpp
@@ -87,7 +88,7 @@ set(_SOURCES src/initialize.cpp
              src/ConvertUnits.cpp
              src/ostream.cpp
              src/StreamFile.cpp
-             src/Geometry/Matrix.cpp 
+             src/Geometry/Matrix.cpp
              src/Geometry/Coordinate.cpp
              src/MeshGrid/MeshGrid.cpp
              src/Wannier/Wannier.cpp
@@ -98,19 +99,20 @@ set(_SOURCES src/initialize.cpp
              src/kGradient/kGradient.cpp
              src/DESolver/DESolver.cpp
              src/Simulation/Simulation.cpp
-             src/core/profiler.cpp 
-             src/core/print_timing.cpp 
-             src/core/cmd_args/cmd_args.cpp 
+             src/core/profiler.cpp
+             src/core/print_timing.cpp
+             src/core/cmd_args/cmd_args.cpp
              src/core/rt_graph.cpp
              src/core/mpi/Communicator.cpp
              src/Coulomb/Coulomb.cpp
+             src/GreenFunction/GreenFunction.cpp
              src/RytovaKeldysh/RytovaKeldysh.cpp
     )
+add_library(OBJECTS OBJECT ${_SOURCES} )
 	
 
 
 #adding all sources to target
-add_library(OBJECTS OBJECT ${_SOURCES} )
 link_libraries(OBJECTS)
 
 #adding OpenMP

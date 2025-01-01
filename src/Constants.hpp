@@ -29,4 +29,12 @@ const std::map<std::string, SolverType> solver = {{"AB", SolverType::AB}, {"RK",
 //Global functions
 std::string LatticeVectors(const Space& space);
 
+
+namespace nodename {
+    const std::string H0         = "H0";
+    const std::string H0pCoulomb = "H0+Coulomb";
+    const std::string fullH      = "fullH";
+    const std::string DMk        = "DensityMatrix_k";
+    const std::string G_lesser   = "G_lesser";
+};//end namespace nodename 
 #endif

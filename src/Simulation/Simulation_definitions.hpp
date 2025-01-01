@@ -61,11 +61,11 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
     //------------------------setting up TD equations----------------------------------------
     #include "Functional_InitialCondition.hpp"
     #include "Functional_SourceTerm.hpp"
-    DEsolver.initialize(DensityMatrix, 
+    DEsolver_DM.initialize(DensityMatrix, 
                         InitialCondition, SourceTerm, 
                         RK, 4);
-    DEsolver.set_InitialTime(0.);
-    //DEsolver.set_ResolutionTime( ( laser.get_Duration()/laser.get_NumberOfCycles() )/ 1000. );
+    DEsolver_DM.set_InitialTime(0.);
+    //DEsolver_DM.set_ResolutionTime( ( laser.get_Duration()/laser.get_NumberOfCycles() )/ 1000. );
     PrintResolution = 10;
     kgradient.initialize(*(DensityMatrix.get_Operator(R).get_MeshGrid()));
 
