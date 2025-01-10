@@ -51,9 +51,9 @@ mdarray<T,dim>& mdarray<T,dim>::operator=(mdarray<T,dim>&& ToBeMoved)
 
 
 template<typename T, size_t dim> 
-mdarray<T,dim>::mdarray(const std::array<int,dim>& Size_) 
+mdarray<T,dim>::mdarray(const std::array<int,dim>& Size_, const int& real_dims__) 
 {
-    this->initialize(Size_);
+    this->initialize(Size_, real_dims__);
 
 }
 
@@ -77,13 +77,17 @@ void mdarray<T,dim>::TotalSizeAndOffset()
 }
 
 template<typename T, size_t dim> 
-void mdarray<T,dim>::initialize(const std::array<int,dim>& Size_)
+void mdarray<T,dim>::initialize(const std::array<int,dim>& Size_, const int& real_dims__)
 {
     Size = Size_;
     this->multindex.initialize(Size_);
     TotalSizeAndOffset();
+    real_dims = (real_dims__ == 0 ? TotalSize : real_dims__);
+    if( real_dims < TotalSize ) {
+        std::runtime_error("ERROR in mdarray::initialize. You are trying to initialize dimensions that are lower than the totalsize\n");
+    }
     //allocate contiguous memory ot totalsize
-    this->Ptr = new T[TotalSize];
+    this->Ptr = new T[real_dims];
     std::fill((*this).begin(), (*this).end(), 0.);
 }
 

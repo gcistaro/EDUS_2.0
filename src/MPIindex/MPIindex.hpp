@@ -19,6 +19,7 @@ class MPIindex
         std::array<int, dim> ValuesToSplit;
         std::array<int, dim> Offset;
         MultiIndex<dim> multindex;
+        int howmany; //so far, this is just for getting right allocation.
 #ifdef EDUS_MPI
         std::shared_ptr<mpi::Communicator> mpi_comm_;
 #endif
@@ -27,10 +28,10 @@ class MPIindex
 
         MPIindex(){};
 
-        MPIindex( const std::array<int, 3>& ValuesToSplit__);
+        MPIindex( const std::array<int, 3>& ValuesToSplit__, const int& howmany__=1);
         MPIindex( const std::array<int, 2>& ValuesToSplit__);
 
-        void initialize( const std::array<int, 3>& ValuesToSplit__ );
+        void initialize( const std::array<int, 3>& ValuesToSplit__, const int& howmany__=1);
         void initialize( const std::array<int, 2>& ValuesToSplit__ );
         
         inline std::ptrdiff_t glob1D_to_loc1D(const std::ptrdiff_t& global);
@@ -54,7 +55,8 @@ class MPIindex
 
         inline const auto& get_LocalRange() const {return LocalRange_1D; };
         inline auto& get_LocalRange() {return LocalRange_1D; };
-
+        
+        inline int get_nlocal() const;
         bool is_local(const int& index) const;
 
 };

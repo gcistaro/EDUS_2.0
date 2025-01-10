@@ -197,9 +197,11 @@ class Operator
             initialized_fft = true;
             
 #ifdef EDUS_MPI
-            Operator_R = BlockMatrix<std::complex<double>>(R, mpindex.get_RecommendedAllocate_fftw(), nbnd, nbnd);
+            Operator_R = BlockMatrix<std::complex<double>>(R,mpindex.get_nlocal(), nbnd, nbnd, 
+                                                            mpindex.get_RecommendedAllocate_fftw());
 #else
-            Operator_R = BlockMatrix<std::complex<double>>(R, MG.get_mesh().size(), nbnd, nbnd);
+            Operator_R = BlockMatrix<std::complex<double>>(R,mpindex.get_nlocal(), nbnd, nbnd, 
+                                                            mpindex.get_RecommendedAllocate_fftw());
 #endif
             switch(MG.get_space())
             {
@@ -245,7 +247,8 @@ class Operator
             MG2.close();
             //endofproof
             */
-            Operator_k = BlockMatrix<std::complex<double>>(k, mpindex.get_RecommendedAllocate_fftw(), nbnd, nbnd);
+            Operator_k = BlockMatrix<std::complex<double>>(k,mpindex.get_nlocal(), nbnd, nbnd, 
+                                                           mpindex.get_RecommendedAllocate_fftw());
             auto& kgrid = Operator_k.get_MeshGrid();
             kgrid = FT_meshgrid_k;
             //bandindex.initialize(nbnd);
@@ -254,8 +257,8 @@ class Operator
             //bandindex FTfriendly_Operator_k = mdarray<std::complex<double>, 2>({nbnd*(nbnd+1)/2, mpindex.get_RecommendedAllocate_fftw()});
             //bandindex FTfriendly_Operator_R = mdarray<std::complex<double>, 2>({nbnd*(nbnd+1)/2, mpindex.get_RecommendedAllocate_fftw()});
 #ifdef EDUS_MPI
-            FTfriendly_Operator_k = mdarray<std::complex<double>, 2>( Operator_k.data(), {mpindex.get_RecommendedAllocate_fftw(),nbnd*nbnd} );
-            FTfriendly_Operator_R = mdarray<std::complex<double>, 2>( Operator_R.data(), {mpindex.get_RecommendedAllocate_fftw(),nbnd*nbnd} );
+            FTfriendly_Operator_k = mdarray<std::complex<double>, 2>( Operator_k.data(), {mpindex.get_nlocal(),nbnd*nbnd} );
+            FTfriendly_Operator_R = mdarray<std::complex<double>, 2>( Operator_R.data(), {mpindex.get_nlocal(),nbnd*nbnd} );
 #else
             FTfriendly_Operator_k = mdarray<std::complex<double>, 2>({nbnd*nbnd, mpindex.get_RecommendedAllocate_fftw()});
             FTfriendly_Operator_R = mdarray<std::complex<double>, 2>({nbnd*nbnd, mpindex.get_RecommendedAllocate_fftw()});
@@ -272,47 +275,10 @@ class Operator
         };
 
         void initialize_fft(const Operator& Op__, const std::string& tagname__="")
-        {
-            tagname = tagname__;
-            //for now this is the only case implemented. it will be more general.
-            //we enter in this function only once
-            if(initialized_fft){
-                return;
-            }
-            initialized_fft = true;
-            
+        {            
             auto nbnd = Op__.get_Operator_R().get_nrows();
-#ifdef EDUS_MPI
-            Operator_R = BlockMatrix<std::complex<double>>(R, mpindex.get_RecommendedAllocate_fftw(), nbnd, nbnd);
-#else
-            Operator_R = BlockMatrix<std::complex<double>>(R, MG.get_mesh().size(), nbnd, nbnd);
-#endif
-            auto& Rgrid = Operator_R.get_MeshGrid();
-            Rgrid = Op__.get_Operator_R().get_MeshGrid();
-            FT_meshgrid_k = Op__.FT_meshgrid_k;
-            FT_meshgrid_R = Op__.FT_meshgrid_R;
-            
-            Operator_k = BlockMatrix<std::complex<double>>(k, mpindex.get_RecommendedAllocate_fftw(), nbnd, nbnd);
-            auto& kgrid = Operator_k.get_MeshGrid();
-            kgrid = FT_meshgrid_k;
-            bandindex.initialize({nbnd, nbnd});
-
-#ifdef EDUS_MPI
-            FTfriendly_Operator_k = mdarray<std::complex<double>, 2>( Operator_k.data(), {mpindex.get_RecommendedAllocate_fftw(),nbnd*nbnd} );
-            FTfriendly_Operator_R = mdarray<std::complex<double>, 2>( Operator_R.data(), {mpindex.get_RecommendedAllocate_fftw(),nbnd*nbnd} );
-#else
-            FTfriendly_Operator_k = mdarray<std::complex<double>, 2>({nbnd*nbnd, mpindex.get_RecommendedAllocate_fftw()});
-            FTfriendly_Operator_R = mdarray<std::complex<double>, 2>({nbnd*nbnd, mpindex.get_RecommendedAllocate_fftw()});
-#endif
-            //use convolution index for shuffle index.
-            std::vector<int> Dimensions(3);
-            for(int ix=0; ix<3; ix++){
-                Dimensions[ix] = FT_meshgrid_k->get_Size()[ix];
-            }
-            ft_.initialize(FTfriendly_Operator_k, FTfriendly_Operator_R, Dimensions, tagname);
-            //shuffle_to_fft();
-            this->space = R;
-            locked_space = true;
+            auto& MG = Op__.get_Operator_R().get_MeshGrid();
+            initialize_fft(*MG, nbnd, tagname);
         };
 
         void dft(const std::vector<Coordinate>& path, const int& sign, const bool& UseMPI=true)

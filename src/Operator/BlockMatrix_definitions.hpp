@@ -21,9 +21,9 @@ void BlockMatrix<T>::initialize_submatrix()
 
 
 template<typename T>
-void BlockMatrix<T>::initialize(const Space& space__, const int& nblocks, const int& nrows, const int& ncols)
+void BlockMatrix<T>::initialize(const Space& space__, const int& nblocks, const int& nrows, const int& ncols, const int& real_dims__)
 {
-    Values.initialize({nblocks, nrows, ncols});
+    Values.initialize({nblocks, nrows, ncols}, real_dims__);
     space = space__;
     initialize_submatrix();
 }

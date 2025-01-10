@@ -74,7 +74,7 @@ Simulation::Simulation(const std::string& JsonFileName__)
     FinalTime = Convert(FinalTime, unit(data["finaltime"][1].template get<std::string>()), AuTime);
     
     std::array<int, 3> MG_size = {MasterRgrid->get_Size()[0], MasterRgrid->get_Size()[1], MasterRgrid->get_Size()[2]};
-    Operator<std::complex<double>>::mpindex.initialize(MG_size);
+    Operator<std::complex<double>>::mpindex.initialize(MG_size, material.H.get_Operator_R().get_nrows()*material.H.get_Operator_R().get_nrows());
 #ifdef EDUS_MPI
     if(mpi::Communicator::world().rank() == 0)
 #endif
@@ -159,8 +159,6 @@ Simulation::Simulation(const std::string& JsonFileName__)
         os << " " << std::abs(max(DensityMatrix.get_Operator_R()[iR_loc])) << std::endl;
     }
     os.close();
-
-
     Calculate_Velocity();
     DensityMatrix.go_to_k();
     assert(DensityMatrix.get_Operator_k().is_hermitian());
@@ -415,6 +413,12 @@ void Simulation::Calculate_Velocity()
         Velocity[ix].initialize_fft(DensityMatrix);
         Velocity[ix].lock_space(k);
         Velocity[ix].get_Operator_k().fill(0.);
+        
+        std::cout << "Recap velocity dims \n";
+        std::cout << Velocity[ix].get_Operator_k().get_nblocks() << " " << material.r[ix].get_Operator_k().get_nblocks() << " " << H.get_Operator_k().get_nblocks() << std::endl;
+        std::cout << Velocity[ix].get_Operator_k().get_nrows() << " " << material.r[ix].get_Operator_k().get_nrows() << " " << H.get_Operator_k().get_nrows() << std::endl;
+        std::cout << Velocity[ix].get_Operator_k().get_ncols() << " " << material.r[ix].get_Operator_k().get_ncols() << " " << H.get_Operator_k().get_ncols() << std::endl;
+
         commutator(Velocity[ix].get_Operator_k(), -im, material.r[ix].get_Operator_k(), H.get_Operator_k());
         Velocity[ix].go_to_R();
         //part with R
