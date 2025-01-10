@@ -21,7 +21,7 @@ Simulation::Simulation(const std::string& FileName, const T& arg_meshinit)
     //--------------------------initializing grids and arrays--------------------------------
     auto MasterRgrid = std::make_shared<MeshGrid>(R, arg_meshinit);
     std::array<int, 3> MG_size = {MasterRgrid->get_Size()[0], MasterRgrid->get_Size()[1], MasterRgrid->get_Size()[2]};
-    Operator<std::complex<double>>::mpindex.initialize(MG_size);
+    Operator<std::complex<double>>::mpindex.initialize(MG_size, material.H.get_Operator_k().get_nrows()*material.H.get_Operator_k().get_nrows());
     DensityMatrix.initialize_fft(*MasterRgrid, material.H.get_Operator_R().get_nrows());
     Operator<std::complex<double>>::SpaceOfPropagation = SpaceOfPropagation;
 

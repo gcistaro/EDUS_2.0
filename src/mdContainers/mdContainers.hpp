@@ -26,7 +26,7 @@ class mdarray
         MultiIndex<dim> multindex;
         bool NotDestruct = false;
         void TotalSizeAndOffset();
-
+        int real_dims;
     public:
         mdarray() = default;
         mdarray(const mdarray<T,dim>& ToBeCopied);
@@ -35,8 +35,8 @@ class mdarray
         mdarray(mdarray<T,dim>&& ToBeMoved);
         mdarray<T,dim>& operator=(mdarray<T,dim>&& ToBeMoved);
 
-        mdarray(const std::array<int,dim>& Size_);        
-        void initialize(const std::array<int,dim>& Size_);
+        mdarray(const std::array<int,dim>& Size_, const int& real_dims__=0);
+        void initialize(const std::array<int,dim>& Size_, const int& real_dims__=0);
 
         mdarray(T* Ptr_, const std::array<int,dim>& Size_);
         void initialize(T* Ptr_, const std::array<int,dim>& Size_);

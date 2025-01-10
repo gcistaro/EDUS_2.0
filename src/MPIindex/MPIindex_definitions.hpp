@@ -4,15 +4,16 @@
 
 //constructor for splitting k point using fftw functions
 template<size_t dim>
-MPIindex<dim>::MPIindex( const std::array<int, 3>& ValuesToSplit__ )
+MPIindex<dim>::MPIindex( const std::array<int, 3>& ValuesToSplit__, const int& howmany__ )
 {
-    initialize(ValuesToSplit__ );
+    initialize(ValuesToSplit__, howmany__);
 }
 
 //for kpools
 template<size_t dim>
-void MPIindex<dim>::initialize( const std::array<int, 3>& ValuesToSplit__)
+void MPIindex<dim>::initialize( const std::array<int, 3>& ValuesToSplit__, const int& howmany__ )
 {
+    howmany = howmany__;
     //Global arrays are in range [0,values)
 #ifdef EDUS_MPI    
     assert(ValuesToSplit__[0] > 1);//we dont want MPI to work without splitting anything, and fftw splits over this index.
@@ -37,13 +38,14 @@ void MPIindex<dim>::initialize( const std::array<int, 3>& ValuesToSplit__)
     GlobalRange_1D.second = ValuesToSplit[0]*ValuesToSplit[1]*ValuesToSplit[2]-1;
 
 #ifdef EDUS_MPI
-    auto alloc_local = fftw_mpi_local_size_many(int(dim), dimensions, 1,//howmany 
+    auto alloc_local = fftw_mpi_local_size_many(int(dim), dimensions, howmany,
                                    FFTW_MPI_DEFAULT_BLOCK, MPI_COMM_WORLD,
                                    &local_n0, &local_0_start);
 
-    //initialize class variables using what we have obtained
-    //std::cout << "local_0_start " << local_0_start << " local_n0 " << local_n0 <<  std::endl;
-    //std::cout << "alloc_local  " << alloc_local <<  std::endl;
+    //std::cout << "howmany: "  << howmany << std::endl;
+    //std::cout << mpi::Communicator::world().rank() <<  " local_0_start " << local_0_start << " local_n0 " << local_n0 <<  std::endl;
+    //std::cout << mpi::Communicator::world().rank() <<  " alloc_local  " << alloc_local <<  std::endl;
+    //
     LocalRange_1D.first  = multindex.oneDindex(int(local_0_start),0,0);
     LocalRange_1D.second = multindex.oneDindex(int(local_0_start + local_n0-1),ValuesToSplit[1]-1,ValuesToSplit[2]-1);
 
@@ -111,4 +113,10 @@ template<size_t dim>
 bool MPIindex<dim>::is_local(const int& index) const
 {
     return ( index <= LocalRange_1D.second && index >= LocalRange_1D.first );
+}
+
+template<size_t dim>
+int MPIindex<dim>::get_nlocal() const 
+{
+    return nlocal;
 }

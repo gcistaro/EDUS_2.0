@@ -47,10 +47,10 @@ class BlockMatrix{
 
         mdarray<T,3> Values; //first index -> block, others -> matrix
         BlockMatrix() : Values(mdarray<T,3>()){};
-        BlockMatrix(const Space& space__, const int& nblocks, const int& nrows, const int& ncols)
-            {this->initialize(space__, nblocks, nrows, ncols);}
+        BlockMatrix(const Space& space__, const int& nblocks, const int& nrows, const int& ncols, const int& real_dims__=0)
+            {this->initialize(space__, nblocks, nrows, ncols, real_dims__);}
         void initialize(const Space& space__, mdarray<T,3>& Values);
-        void initialize(const Space& space__, const int& nblocks, const int& nrows, const int& ncols);
+        void initialize(const Space& space__, const int& nblocks, const int& nrows, const int& ncols, const int& real_dims__=0);
         BlockMatrix(const BlockMatrix<T>& A);
         BlockMatrix<T>& operator=(const BlockMatrix<T>& m);
         
