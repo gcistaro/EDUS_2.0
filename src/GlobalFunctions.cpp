@@ -63,3 +63,22 @@ void dump_json_in_h5( const nlohmann::json& data__, const std::string& name__ )
     }
 #endif
 }
+
+
+namespace output {
+    void stars()
+    {
+        std::cout << std::string(output::linesize, '*') << '\n';
+    }
+
+    void title(const std::string& str__)
+    {
+        std::stringstream title;
+        title << std::string(5, ' ') <<  str__ << std::string(5, ' ');
+        std::cout << title.str().length() << std::endl;
+        int num_stars = (output::linesize - title.str().length())/2;
+        std:: cout << std::string(num_stars,'*') << title.str() << std::string(num_stars,'*') << std::endl;
+
+    }
+
+}

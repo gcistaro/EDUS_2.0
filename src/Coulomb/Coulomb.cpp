@@ -114,31 +114,8 @@ void Coulomb::EffectiveHamiltonian(Operator<std::complex<double>>& H__, const Op
     if ( !DoCoulomb ) {
         return;
     }
-    #pragma omp parallel for
-    for( int iblock = 0; iblock < HR.get_nblocks(); ++iblock ) {
-        for( int irow = 0; irow < HR.get_nrows(); ++irow ) {
-            for( int icol = 0; icol < HR.get_ncols(); ++icol ) {
-                HR( iblock, irow, icol ) += HF( iblock, irow, icol )*( DMR( iblock, irow, icol ) - DM0R( iblock, irow, icol ) );
-            }
-        }
-    } 
-    //std::cout << "max(Delta_DM): " << *max(Delta_DM)<<std::endl;
-    /*
-    auto& HR = H__.get_Operator(R);
-    auto& DMR = DM__.get_Operator(R);
-    auto& DM0R = DM0.get_Operator(R);
 
-    if( EraseH__ ) {
-        HR.fill(0.);
-    }
-
-    if ( !DoCoulomb ) {
-        return;
-    }
-
-    assert( HR.get_MeshGrid()->get_id() == DMR.get_MeshGrid()->get_id() );
-
-    //PointLike approximation
+    /* Point-like approximation */
     #pragma omp parallel for
     for( int iblock = 0; iblock < HR.get_nblocks(); ++iblock ) {
         for( int irow = 0; irow < HR.get_nrows(); ++irow ) {
@@ -155,7 +132,6 @@ void Coulomb::EffectiveHamiltonian(Operator<std::complex<double>>& H__, const Op
     //        }
     //    }
     //} 
-*/
 }    
 
 

@@ -29,7 +29,6 @@ void MPIindex<dim>::initialize( const std::array<int, 3>& ValuesToSplit__, const
     ValuesToSplit[1] = ValuesToSplit__[1];
     ValuesToSplit[2] = ValuesToSplit__[2];
 
-    //std::cout << "Initializing multindex..\n";
     multindex.initialize(ValuesToSplit);
     //here we suppose the splitting happens with fftw. for the future must be fixed
     std::ptrdiff_t local_n0;
@@ -42,10 +41,6 @@ void MPIindex<dim>::initialize( const std::array<int, 3>& ValuesToSplit__, const
                                    FFTW_MPI_DEFAULT_BLOCK, MPI_COMM_WORLD,
                                    &local_n0, &local_0_start);
 
-    //std::cout << "howmany: "  << howmany << std::endl;
-    //std::cout << mpi::Communicator::world().rank() <<  " local_0_start " << local_0_start << " local_n0 " << local_n0 <<  std::endl;
-    //std::cout << mpi::Communicator::world().rank() <<  " alloc_local  " << alloc_local <<  std::endl;
-    //
     LocalRange_1D.first  = multindex.oneDindex(int(local_0_start),0,0);
     LocalRange_1D.second = multindex.oneDindex(int(local_0_start + local_n0-1),ValuesToSplit[1]-1,ValuesToSplit[2]-1);
 

@@ -58,7 +58,6 @@ class BandIndex
         for(int i=0; i<NumberOfBands; ++i){
             RowIndexBoundary[i].first = StartingIndex(i);
             RowIndexBoundary[i].second = StartingIndex(i) + (NumberOfBands - i) - 1;
-            //std::cout << "row " << i << " boundaries: [" << RowIndexBoundary[i].first << " , " << RowIndexBoundary[i].second << "]" << std::endl;
         }
 
     }

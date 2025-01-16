@@ -9,7 +9,7 @@
 #include <thread>
 #include <iomanip>
 #include "initialize.hpp"
-
+#include "GlobalFunctions.hpp"
 
 #ifdef EDUS_MPI
 mpi::Communicator kpool_comm;
@@ -36,28 +36,19 @@ void initialize()
     mpi::Communicator::initialize(MPI_THREAD_FUNNELED);
     NumberKpools = mpi::Communicator::world().size();
     fftw_mpi_init();  
-
-    if( mpi::Communicator::world().rank() == 0 ) {
 #endif 
 #ifdef EDUS_FFTWTHREADS
     fftw_init_threads();
 #endif
     print_header();
-    std::cout << "**************************************************    PARALLELIZATION RECAP     **********************************************\n";
-        std::cout << "*    OpenMP  threads:   *     ";
-        std::cout << std::left << std::setw(95) << omp_get_max_threads() << "*\n";
-        std::cout << "*    MKL  threads:      *     ";
-        std::cout << std::left << std::setw(95) << mkl_get_max_threads() << "*\n";
+    output::title("PARALLELIZATION RECAP");  
+    output::print("OpenMP  threads:   *", omp_get_max_threads());
+    output::print("MKL  threads:      *", mkl_get_max_threads());
 #ifdef EDUS_FFTWTHREADS
     fftw_plan_with_nthreads(omp_get_max_threads());
-        std::cout << "*    fftw3 threads:     *     ";
-        std::cout << std::left << std::setw(95) << fftw_planner_nthreads() << "*\n";
-        std::cout << "******************************************************************************************************************************\n";
+    output::print("fftw  threads:     *", fftw_planner_nthreads());
+    output::stars();
 #endif
-#ifdef EDUS_MPI
-    }
-#endif 
-
 #ifdef EDUS_MPI
 
     assert( mpi::Communicator::world().size()%NumberKpools == 0 );//for now i just implemented a rectangular MPI grid
@@ -82,12 +73,11 @@ void initialize()
         mpi::Communicator::world().send( &aux, 0 );
     }
     else {
-        std::cout << "*    MPI world size:    *     ";
-        std::cout << std::left << std::setw(95) << mpi::Communicator::world().size() << "*\n";
-        //std::cout << "MPI parallelization recap. \n";
-        //std::cout << "WORLD RANK: " << mpi::Communicator::world().rank() << "/" << mpi::Communicator::world().size();
-        //std::cout << " KPOOL RANK: " << kpool_comm.rank() << "/" << kpool_comm.size();
-        //std::cout << " BAND RANK: " << band_comm.rank()<< "/" << band_comm.size() << std::endl;
+        output::print("MPI world size:    *     ", mpi::Communicator::world().size());
+        //output::title("MPI parallelization recap");
+        //output::print("WORLD RANK: " , mpi::Communicator::world().rank(),  "/" , mpi::Communicator::world().size());
+        //output::print("KPOOL RANK: " , kpool_comm.rank(),  "/" , kpool_comm.size());
+        //output::print(" BAND RANK: " , band_comm.rank(),  "/" , band_comm.size());
 
         for(int irank_ = 1; irank_ < mpi::Communicator::world().size(); ++irank_ ) {
             int world_comm_rank = 10, kpool_comm_rank, kpool_comm_size, band_comm_rank, band_comm_size;
@@ -97,9 +87,9 @@ void initialize()
             mpi::Communicator::world().receive( &band_comm_rank, irank_ );
             mpi::Communicator::world().receive( &band_comm_size, irank_ );
 
-            //std::cout << "WORLD RANK: " << world_comm_rank << "/" << mpi::Communicator::world().size();
-            //std::cout << " KPOOL RANK: " << kpool_comm_rank << "/" << kpool_comm_size;
-            //std::cout << " BAND RANK: " << band_comm_rank << "/" << band_comm_size << std::endl;
+        //output::print("WORLD RANK: " , world_comm_rank,  "/" , mpi::Communicator::world().size());
+        //output::print("KPOOL RANK: " , kpool_comm_rank,  "/" , kpool_comm_size);
+        //output::print(" BAND RANK: " , band_comm_rank,  "/" , band_comm_size);
         }
     }
 #endif
@@ -111,15 +101,11 @@ void finalize()
 {  
 #ifdef EDUS_MPI
     mpi::Communicator::finalize();
-    if( mpi::Communicator::world().rank() == 0 ) {
-        std::cout << "MPI Communicator finalized!\n";
-        time_t now = time(0);
-        char* dt = ctime(&now);
-        std::cout << "Execution finished: " << dt << std::endl;
-    }
-#else
-        time_t now = time(0);
-        char* dt = ctime(&now);
-        std::cout << "Execution finished: " << dt << std::endl;
+    output::print("MPI Communicator finalized!");
 #endif
+    time_t now = time(0);
+    char* dt = ctime(&now);
+    std::stringstream ss;
+    ss << "Execution finished: " << dt << std::endl;
+    output::print(ss.str());
 }

@@ -196,13 +196,6 @@ void convolution(BlockMatrix<T>& Output, U Scalar, const BlockMatrix<T>& Input1,
             Matrix_gemm(Output[iblock_o], Scalar+im*0., Input1[iblock_i1], Input2[iblock_i2], 1.+im*0.);
         }
     }
-
-    //auto maximum1 = max(Input1);
-    //auto maximum2 = max(Input2);
-    //auto maximum3 = max(Output);
-    //std::cout << "MAX INPUT1:  " << maximum1 << std::endl;
-    //std::cout << "MAX INPUT2:  " << maximum2 << std::endl;
-    //std::cout << "MAX OUTPUT:  " << maximum3 << std::endl;
     PROFILE_STOP("BlockMatrix::convolution");
 }
 
@@ -254,13 +247,10 @@ bool BlockMatrix<T>::is_hermitian()
     for(int ik=0; ik<this->get_nblocks(); ++ik) {
         for( int irow=0; irow<this->get_nrows(); irow++ ) {
             for(int icol=irow; icol < this->get_nrows(); ++icol ) {
-                //std::cout << (*this)[ik](irow, icol) << "    " << (*this)[ik](icol, irow) << "  " ;
-                //std::cout << std::abs( (*this)[ik](irow, icol) - std::conj((*this)[ik](icol, irow)) ) << std::endl;  
                 hermitian = hermitian && ( std::abs( (*this)[ik](irow, icol) - std::conj((*this)[ik](icol, irow)) ) < 1.e-15) ;
             }
         }
     }
-    //std::cout <<  ( hermitian ? "IS HERMITIAN!!":"IS NOT HERMITIAN :(" ) << std::endl;
     return hermitian;
 }
 
@@ -276,8 +266,6 @@ void BlockMatrix<T>::make_hermitian()
             for(int ik=0; ik<this->get_nblocks(); ++ik) {
                 for( int irow=0; irow<this->get_nrows(); irow++ ) {
                     for(int icol=irow; icol < this->get_nrows(); ++icol ) {
-                        //std::cout << (*this)[ik](irow, icol) << "    " << (*this)[ik](icol, irow) << "  " ;
-                        //std::cout << std::abs( (*this)[ik](irow, icol) - std::conj((*this)[ik](icol, irow)) ) << std::endl;
                         auto term = ((*this)(ik,irow,icol) + std::conj((*this)(ik,icol,irow)))/2.;
                         (*this)(ik,irow,icol) = term;
                         (*this)(ik,icol,irow) = std::conj(term);
@@ -288,8 +276,8 @@ void BlockMatrix<T>::make_hermitian()
         }
         case(Space::R) :
         {
-            std::cout << "Implement me\n";
-            exit(1);
+            throw std::runtime_error("make_hermitian from R not implemented");
+            break;
         }
     }
 }
@@ -316,8 +304,7 @@ void BlockMatrix<T>::make_dagger()
         }
         case(Space::R) :
         {
-            std::cout << "Implement me\n";
-            exit(1);
+            throw std::runtime_error("make_dagger not implemented from R space");
         }
     }
 }
@@ -329,8 +316,6 @@ void BlockMatrix<T>::make_antihermitian()
     for(int ik=0; ik<this->get_nblocks(); ++ik) {
         for( int irow=0; irow<this->get_nrows(); irow++ ) {
             for(int icol=irow; icol < this->get_nrows(); ++icol ) {
-                //std::cout << (*this)[ik](irow, icol) << "    " << (*this)[ik](icol, irow) << "  " ;
-                //std::cout << std::abs( (*this)[ik](irow, icol) - std::conj((*this)[ik](icol, irow)) ) << std::endl;
                 auto term = ((*this)(ik,irow,icol) - std::conj((*this)(ik,icol,irow)))/2.;
                 (*this)(ik,irow,icol) = term;
                 (*this)(ik,icol,irow) = -std::conj(term);
@@ -419,7 +404,6 @@ auto max(const BlockMatrix<T>& m)
 template<class T>
 std::ostream& operator<<(std::ostream& os, const BlockMatrix<T>& m)
 {
-    std::cout << m.get_nblocks();
     for(int i=0; i<m.get_nblocks(); i++){
         os << i << " " << (*((const_cast<BlockMatrix<T>&>(m)).get_MeshGrid()))[i].get(LatticeVectors(m.get_space())) << m[i] << std::endl;
     }

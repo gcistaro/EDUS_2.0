@@ -36,9 +36,8 @@ class TimeGrid{
 
         friend std::ostream& operator<<(std::ostream& os, TimeGrid& tg)
         {
-            os << "here i am.\n";
             for(auto& time : tg.timegrid){
-                std::cout << std::setw(12) << std::setprecision(5) << time << std::endl; 
+                os << std::setw(12) << std::setprecision(5) << time << std::endl; 
             }
             return os;
         }

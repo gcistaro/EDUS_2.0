@@ -62,7 +62,6 @@ class BandIndex
         for(int i=0; i<NumberOfBands; ++i){
             RowIndexBoundary[i].first = StartingIndex(i);
             RowIndexBoundary[i].second = StartingIndex(i) + (NumberOfBands - i) - 1;
-            //std::cout << "row " << i << " boundaries: [" << RowIndexBoundary[i].first << " , " << RowIndexBoundary[i].second << "]" << std::endl;
         }
 
     }
@@ -217,36 +216,10 @@ class Operator
                 {
                     //FT_meshgrid_R = std::make_shared<MeshGrid<R>>(fftPair<R,k>(MG));
                     //FT_meshgrid_k = std::make_shared<MeshGrid<k>>(fftPair<R,k>(*FT_meshgrid_R));
-                    std::cout <<"Initialize fft from k Not yet implemented!\n";
-                    exit(1);
+                    throw std::runtime_error("Initialize fft from k Not yet implemented!\n");
                 }
             }
-            //mdarray<double,2> bare_mg({1,3});
-            //bare_mg.fill(0);
-            //MeshGrid_Null = std::make_shared<MeshGrid<R>>(bare_mg, "Cartesian");
-            //std::cout << "Calculate convolution index MG, FT_meshgrid_R, MeshGrid_null\n";
-            //MeshGrid::Calculate_ConvolutionIndex(MG , *FT_meshgrid_R, *MeshGrid_Null);
-            //std::cout << "Calculate convolution index MeshGrid_null, MG, MG\n";
-            //MeshGrid::Calculate_ConvolutionIndex(*MeshGrid_Null, MG, MG);
 
-            //prove that is working
-            /*
-            std::ofstream MG1, MG2;
-            MG1.open("Mg1.txt");
-            MG2.open("Mg2.txt");
-            for(int iR=0; iR<FT_meshgrid_R->get_mesh().size(); iR++){
-                MG1 <<  (*FT_meshgrid_R)[iR].get("LatticeVectors");
-            }
-            for(int iR=0; iR<MG.get_mesh().size(); iR++){
-                auto& ci = MeshGrid<R>::ConvolutionIndex1[{MG.get_id(), FT_meshgrid_R->get_id(), MeshGrid_Null->get_id()}];
-                if(ci(iR, 0) != -1){
-                    MG2 << (*FT_meshgrid_R)[ci(iR,0)].get("LatticeVectors"); 
-                }
-            }
-            MG1.close();
-            MG2.close();
-            //endofproof
-            */
             Operator_k = BlockMatrix<std::complex<double>>(k,mpindex.get_nlocal(), nbnd, nbnd, 
                                                            mpindex.get_RecommendedAllocate_fftw());
             auto& kgrid = Operator_k.get_MeshGrid();
@@ -360,8 +333,6 @@ class Operator
                 Mesh_FT[im][0] = mesh_operator[im].get(LatticeVectors(R))[0];
                 Mesh_FT[im][1] = mesh_operator[im].get(LatticeVectors(R))[1];
                 Mesh_FT[im][2] = mesh_operator[im].get(LatticeVectors(R))[2];
-                //std::cout <<"MESH_FT: "<< Mesh_FT[im][0] <<" " << Mesh_FT[im][1] << " " << Mesh_FT[im][2] << std::endl;
-                //std::cout << Mesh_FT[im][0] << " " << Mesh_FT[im][1] << Mesh_FT[im][2] << std::endl;
             }
             ft_.initialize(FTfriendly_Operator_R, Mesh_FT);
         }
@@ -375,7 +346,6 @@ class Operator
                 path_bare[i][0] = path[i].get(LatticeVectors(k))[0];
                 path_bare[i][1] = path[i].get(LatticeVectors(k))[1];
                 path_bare[i][2] = path[i].get(LatticeVectors(k))[2];
-//                std::cout << path_bare[i][0] << " " << path_bare[i][1] << " "<< path_bare[i][2] << std::endl;
             }
             FTfriendly_Operator_k = ft_.dft(path_bare, +1);
         }
@@ -464,16 +434,6 @@ class Operator
                     }
                 }
             }
-
-            // bandindex for(int iR=0; iR<Operator_R.get_nblocks(); iR++){
-            // bandindex     assert(ciminus(0,iR) != -1);
-            // bandindex     for(int ibnd1=0; ibnd1<Operator_R.get_nrows(); ++ibnd1){
-            // bandindex         for(int ibnd2=ibnd1+1; ibnd2<Operator_R.get_ncols(); ++ibnd2){
-            // bandindex             //std::cout << iR << " " << (*(Operator_R.get_MeshGrid()))[iR] <<
-            // bandindex             Operator_R(iR, ibnd2, ibnd1) = std::conj(Operator_R(ciminus(0,iR), ibnd1, ibnd2));
-            // bandindex         }
-            // bandindex     }
-            // bandindex }
 #endif
         }
 

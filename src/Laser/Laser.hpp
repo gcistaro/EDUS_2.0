@@ -4,6 +4,7 @@
 //#include <math.h>
 
 #include "Constants.hpp"
+#include "GlobalFunctions.hpp"
 #include "ConvertUnits.hpp"
 #include "Geometry/Coordinate.hpp"
 #include "TimeGrid/TimeGrid.hpp"
