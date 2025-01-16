@@ -67,11 +67,6 @@ class Material
             H.lock_gauge(wannier);         H.lock_space(R);         
         }
 
-	void print_info()
-	{
-        std::cout << Coordinate::get_Basis(LatticeVectors(R));
-	    std::cout << Coordinate::get_Basis(LatticeVectors(k));
-	}
 };
 
 

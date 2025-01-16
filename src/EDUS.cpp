@@ -11,13 +11,13 @@
 #define variable(x)  (#x)
 #include "core/githash.hpp"
 
-
+#include <typeinfo>
 
 int main(int argc, char *argv[])
-{   
+{
     PROFILE_START("EDUS");
     if ( argc != 2 ) {
-        std::cout << "To start the program: EDUS <input.json>" << std::endl;
+        throw std::runtime_error("To start the program: EDUS <input.json>");
         exit(0);
     }
 

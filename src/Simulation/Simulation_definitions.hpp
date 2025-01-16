@@ -123,7 +123,6 @@ void SumWithProduct(Operator<std::complex<double>>& Output,
 #endif
     auto& SpaceOfPropagation = Operator<std::complex<double>>::SpaceOfPropagation;
 
-    //std::cout << "space of propagation: "<< (SpaceOfPropagation==k? "k":"R") << std::endl;
     auto& Output_ = Output.get_Operator( SpaceOfPropagation );
     auto& FirstAddend_ = FirstAddend.get_Operator( SpaceOfPropagation );
     auto& SecondAddend_ = SecondAddend.get_Operator( SpaceOfPropagation );

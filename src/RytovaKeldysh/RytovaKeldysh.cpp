@@ -12,7 +12,6 @@ double struve(const double& x, const double& v)
         auto tgamma__ = std::tgamma(k+v+1.5);
         int sign = (k%2 == 0 ? 1 : -1);
         H += sign*pow(.5*x, 2*k+v+1)/(std::tgamma(k+1.5)*std::tgamma(k+v+1.5));
-        //std::cout << "rnorm " << x << " " << sign*pow(.5*x, 2*k+v+1)<<  " k " << k << " v " << v << " H "<< H << " tgamma " << std::tgamma(k+1.5) << " " << std::tgamma(k+v+1.5) << std::endl;
     }
     return H;
 }
@@ -27,8 +26,7 @@ void RytovaKeldysh::initialize(const std::array<Operator<std::complex<double>>,3
                              const std::shared_ptr<MeshGrid>& MasterRGrid)
 {
     if(dim_ != 2){
-        std::cout << "Warning ! Only 2d coulomb is implemented!\n";
-        exit(1);
+        throw std::runtime_error("Warning ! Only 2d coulomb is implemented!");
     }
     
     if(dim_==2) dim=twoD;
@@ -44,10 +42,6 @@ void RytovaKeldysh::initialize(const std::array<Operator<std::complex<double>>,3
                                  r[0].get_Operator_R().get_nrows(), 
                                  r[0].get_Operator_R().get_ncols()});
     Rgrid = MasterRGrid;
-
-    //Calculate values of the potential
-    std::cout << "TB.get_Size(0): " << TB.get_Size(0) << std::endl;
-    std::cout << "TB.get_Size(1): " << TB.get_Size(1) << std::endl;
 
 //    #pragma omp parallel for schedule(static)
     for(int iR=0; iR<1; ++iR) {//TB.get_Size(0); ++iR) {
@@ -65,11 +59,9 @@ void RytovaKeldysh::initialize(const std::array<Operator<std::complex<double>>,3
                                           z0(im,im).real());//+Scart[2]);
 
                 TB(iR, in, im) = Potential(ratom_n - ratom_m);
-                std::cout << TB(iR, in, im) << std::endl;
             }
         }
     }
-    std::cout << "out of loop!\n";
 }
 
 /*
@@ -88,7 +80,7 @@ std::complex<double> Coulomb::W(const Coordinate& q)
         }
         case threeD:
         {
-            std::cout << "threed not implemented\n";
+            throw std::runtime_error("threed not implemented");
             break;
         }
     }
@@ -113,9 +105,6 @@ std::complex<double> RytovaKeldysh::Potential(const Coordinate& r)
             //done via Fourier transform dft on W(q)
             //set up W(q)
 /*            MeshGrid<k> aux_mg(50., {50, 50, 50});
-            for(int im=0; im<aux_mg.get_mesh().size(); im++){
-                std::cout << aux_mg[im].get("LatticeVectors") << std::endl;
-            }
             mdarray<std::complex<double>, 2> Wq({1, aux_mg.get_mesh().size()});
             for(int im=0; im<aux_mg.get_mesh().size(); im++){
                 Wq(0,im) = W(aux_mg[im]);
@@ -145,13 +134,12 @@ std::complex<double> RytovaKeldysh::Potential(const Coordinate& r)
         }
         case threeD:
         {
-            std::cout << "Not implemented!\n";
-            exit(1);
+            throw std::runtime_error("Not implemented!");
+            break;
         }
         default:
             break;
     }
-        std::cout << r_norm << " "<< Wr << std::endl;
 
     return Wr;
 }

@@ -29,8 +29,6 @@ void kGradient::initialize()
         mpindex.initialize(kmesh->get_Size());
         ikshell = SortInShells(*kmesh);
         Calculate_nshellsAndweights(nshells, Weight, *kmesh, ikshell);
-        std::cout <<"nshells: " << nshells;
-        std::cout << "Weight: " << Weight;
         ikpb = Find_kpb(*kmesh, ikshell);
     }
     else if(Rmesh && !kmesh) {
@@ -38,7 +36,7 @@ void kGradient::initialize()
         mpindex.initialize(Rmesh->get_Size());
     }
     else {
-        std::cout << "Something went wrong in kGradient::initialize() -> either both or none Rmesh and kmesh are initialized\n";
+        std::runtime_error("Something went wrong in kGradient::initialize() -> either both or none Rmesh and kmesh are initialized\n");
     }
 }
 
@@ -107,15 +105,11 @@ void Calculate_nshellsAndweights(int& nshells, mdarray<double,1>& Weight,
         nshells++;
         auto A_ = GradientMatrix(nshells, kmesh, ikshell); //computes A as in CPC 178 (2008) 685-599 between eq.25 and 26
         
-        std::cout << "A_:\n" << A_;
         //compute w = A^{-1}*q
         auto invA = A_.pseudoinv();
-        std::cout << "invA:\n" << invA;
         w = invA*q;
-        std::cout << "w\n" << w;
         //try A*w = qguess
         auto qguess = A_*w;
-        std::cout << "qguess\n"<<qguess;
         //we have enough shells only when qguess is equal to q.
         EnoughShells = ( ( qguess - q ).norm() < threshold );
     }
@@ -184,14 +178,11 @@ Matrix<double> GradientMatrix(const size_t& nshells, const MeshGrid& kmesh, cons
 std::vector<std::vector<std::vector<int>>> kGradient::Find_kpb(const MeshGrid& kmesh, const std::vector<std::vector<int>>& ikshell)
 {
 #ifdef EDUS_MPI
-    try{
-        if( mpi::Communicator::world().size() > 1 ) {
-            throw(mpi::Communicator::world().size());
-        }
-    }
-    catch( int size ){
-        std::cout << "\nfind_kpb still not implemented in MPI and you are using "<< size << "processors\n";
-        std::cout << "SUGGESTION: Propagate gradient in R!\n";
+    if( mpi::Communicator::world().size() > 1 ) {
+        std::stringstream ss;
+        ss << "\nfind_kpb still not implemented in MPI and you are using "<< mpi::Communicator::world().size() << "processors\n";
+        ss << "SUGGESTION: Propagate gradient in R!\n";
+        std::runtime_error(ss.str());
     }
 #endif
     PROFILE("kgradient::Find_kpb");
@@ -204,7 +195,6 @@ std::vector<std::vector<std::vector<int>>> kGradient::Find_kpb(const MeshGrid& k
             ikpb_local[ik][ishell].resize( ikshell[ishell].size() );
         }
     }
-    std::cout << "Calculating map ik, ib ---> ikpb...\n";
     //find k+b in kmesh for every k, every b
 
     #pragma omp parallel for schedule(static)
@@ -216,7 +206,6 @@ std::vector<std::vector<std::vector<int>>> kGradient::Find_kpb(const MeshGrid& k
             }
         }
     }
-    std::cout << "DONE!\n";
     return ikpb_local;
 }
 

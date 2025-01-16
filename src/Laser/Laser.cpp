@@ -234,27 +234,15 @@ double Laser::get_Lambda()
 
 void Laser::print_info()
 {
-    std::cout << "****************************************************       LASER INFO        *************************************************\n";
-    std::cout << "*   Frequency:          *     ";
-    std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << PlaneWave.get_Omega();
-    std::cout << std::left << std::setw(15) << " a.u.";
-    std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << Convert(PlaneWave.get_Omega(), AuEnergy, ElectronVolt);
-    std::cout << std::left << std::setw(60) << " eV" << "*\n";
-    std::cout << "*   Wavelength:         *     ";
-    std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << PlaneWave.get_Lambda();
-    std::cout << std::left << std::setw(15) << " a.u.";
-    std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << Convert(PlaneWave.get_Lambda(), AuLength, NanoMeters);
-    std::cout << std::left << std::setw(60) << " nm" << "*\n";
-    std::cout << "*   Period:             *     ";
-    std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << PlaneWave.get_Period();
-    std::cout << std::left << std::setw(15) << " a.u.";
-    std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << Convert(PlaneWave.get_Period(), AuTime, FemtoSeconds);
-    std::cout << std::left << std::setw(60) << " fs" << "*\n";
-    std::cout << "*   Intensity:          *     ";
-    std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << Amplitude*Amplitude;
-    std::cout << std::left << std::setw(15) << " a.u.";
-    std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << Convert(Amplitude*Amplitude, AuIntensity, Wcm2);
-    std::cout << std::left << std::setw(60) << " Wcm2" << "*\n";
-    std::cout << "******************************************************************************************************************************\n";
+    std::stringstream title;
+    title << std::string(5, ' ') <<  "LASER INFO" << std::string(5, ' ');
+    int num_stars = (output::linesize - title.str().length())/2-2;
+
+    output::print(std::string(num_stars,'*'), title.str(), std::string(num_stars,'*'));
+    output::print("Frequency:          *     ", PlaneWave.get_Omega(),  " a.u.", Convert(PlaneWave.get_Omega(), AuEnergy, ElectronVolt), " eV");
+    output::print("Wavelength:         *     ", PlaneWave.get_Lambda(), " a.u.", Convert(PlaneWave.get_Lambda(), AuLength, NanoMeters), " nm");
+    output::print("Period:             *     ", PlaneWave.get_Period(), " a.u.", Convert(PlaneWave.get_Period(), AuTime, FemtoSeconds), " fs");
+    output::print("Intensity:          *     ", Amplitude*Amplitude,    " a.u.", Convert(Amplitude*Amplitude, AuIntensity, Wcm2), " Wcm2");
+    output::stars();
 }
 

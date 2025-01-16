@@ -37,4 +37,9 @@ namespace nodename {
     const std::string DMk        = "DensityMatrix_k";
     const std::string G_lesser   = "G_lesser";
 };//end namespace nodename 
+
+
+namespace output {
+    constexpr int linesize = 125;
+}
 #endif

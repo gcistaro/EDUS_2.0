@@ -4,39 +4,23 @@
 
 Simulation::Simulation(const std::string& JsonFileName__)
 {
-#ifdef EDUS_MPI
-    if(mpi::Communicator::world().rank() == 0)
-#endif
-    {
-        std::cout << std::setw(125) << "* -> initializing simulation";
-        std::cout << "*\n";
-    }
+    output::print("-> initializing simulation");
+
     JsonFile = JsonFileName__;
     std::ifstream f(JsonFileName__);
 
     nlohmann::json data = nlohmann::json::parse(f);
 
-    //read model from tb_file    
     PROFILE("Simulation::Initialize");
+
     //---------------------------getting info from tb----------------------------------------
     tb_model = data["tb_file"].template get<std::string>();
-#ifdef EDUS_MPI
-    if(mpi::Communicator::world().rank() == 0)
-#endif
-    {
-        std::cout << std::setw(125) << "* -> initializing material";
-        std::cout << "*\n";
-    }
+    output::print("-> initializing material");
     material = Material(tb_model);
     
     //---------------------------------------------------------------------------------------
-#ifdef EDUS_MPI
-    if(mpi::Communicator::world().rank() == 0)
-#endif
-    {
-        std::cout << std::setw(125) << "* -> initializing lasers";
-        std::cout << "*\n";
-    }
+    output::print("-> initializing lasers");
+
     for ( int ilaser = 0; ilaser < int( data["lasers"].size() ); ++ilaser ) {
         auto& currentdata = data["lasers"][ilaser];
         Laser laser_;
@@ -75,43 +59,21 @@ Simulation::Simulation(const std::string& JsonFileName__)
     
     std::array<int, 3> MG_size = {MasterRgrid->get_Size()[0], MasterRgrid->get_Size()[1], MasterRgrid->get_Size()[2]};
     Operator<std::complex<double>>::mpindex.initialize(MG_size, material.H.get_Operator_R().get_nrows()*material.H.get_Operator_R().get_nrows());
-#ifdef EDUS_MPI
-    if(mpi::Communicator::world().rank() == 0)
-#endif
-    {
-        std::cout << std::setw(125) << "* -> initializing DensityMatrix";
-        std::cout << "*\n";
-    }
+
+    output::print("-> initializing DensityMatrix");
     DensityMatrix.initialize_fft(*MasterRgrid, material.H.get_Operator_R().get_nrows());
     Operator<std::complex<double>>::SpaceOfPropagation = SpaceOfPropagation;
-#ifdef EDUS_MPI
-    if(mpi::Communicator::world().rank() == 0)
-#endif
-    {
-        std::cout << std::setw(125) << "* -> H to k";
-        std::cout << "*\n";
-    }
-
+    output::print("-> H to k");
     material.H.dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
     for(auto ix : {0,1,2}) {
         material.r[ix].dft(DensityMatrix.get_FT_meshgrid_k().get_mesh(), +1);
         material.r[ix].get_Operator(Space::k).make_hermitian();
     }
-#ifdef EDUS_MPI
-    if(mpi::Communicator::world().rank() == 0)
-#endif
-    {
-        std::cout << std::setw(125) << "* -> initialize fft";
-        std::cout << "*\n";
-    }
+
+    output::print("-> initialize fft");
     H.initialize_fft(DensityMatrix);
-#ifdef EDUS_MPI
-    if(mpi::Communicator::world().rank() == 0)
-#endif
-    {
-        std::cout << std::setw(125) << "* -> eigensolver";
-        std::cout << "*\n";
-    }
+
+    output::print("-> solve eigensystem");
     SettingUp_EigenSystem();
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
 
@@ -296,44 +258,23 @@ void Simulation::Propagate()
 {
     PROFILE("Simulation::Propagate");
     int iFinalTime = int((FinalTime - InitialTime)/DEsolver_DM.get_ResolutionTime())+2;
-#ifdef EDUS_MPI
-    if(mpi::Communicator::world().rank() == 0)
-#endif
-    {
-        std::cout << "*******************************************************    PROPAGATION     ***************************************************\n";
-        std::cout << "*   Initial time:       *     ";
-        std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << InitialTime;
-        std::cout << std::left << std::setw(15) << " a.u.";
-        std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << Convert(InitialTime, AuTime, FemtoSeconds);
-        std::cout << std::left << std::setw(60) << " fs" << "*\n";
-        std::cout << "*   Final time:         *     ";
-        std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << FinalTime;
-        std::cout << std::left << std::setw(15) << " a.u.";
-        std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << Convert(FinalTime, AuTime, FemtoSeconds);
-        std::cout << std::left << std::setw(60) << " fs" << "*\n";
-        std::cout << "*   Number of steps:    *     ";
-        std::cout << std::left << std::setw(95) << iFinalTime <<  "*\n";
-    }
+
+    /* print info on output */
+    output::title("PROPAGATION");
+    output::print("Initial time:       *", InitialTime, " a.u.", Convert(InitialTime, AuTime, FemtoSeconds), " fs");
+    output::print("Final time:         *", FinalTime, " a.u.", Convert(FinalTime, AuTime, FemtoSeconds), " fs");
+    output::print("Number of steps:    *", iFinalTime);
+
+
+    /* do steps */
     for( int it = 0; it < iFinalTime; ++it ) {
         if(it%100 == 0) {
-#ifdef EDUS_MPI
-    if(mpi::Communicator::world().rank() == 0)
-#endif
-            {
-            std::cout << "*   it:                 *     ";
-            std::cout << std::setw(5) << std::left <<  it;
-            std::cout << " / "; 
-            std::cout << std::setw(10) << std::left << iFinalTime;
-            std::cout << std::fixed << std::left << std::setw(8) << std::setprecision(4) << 100*double(it)/iFinalTime << "%";
-            std::cout << std::right << std::setw(69) << "*" << std::endl;
-            }
+            output::print( "it:                 *", it, " / ", iFinalTime, 100*double(it)/iFinalTime, " %");
         }
         do_onestep();
     }
-#ifdef EDUS_MPI
-    if(mpi::Communicator::world().rank() == 0)
-#endif
-    std::cout << "******************************************************************************************************************************\n";
+
+    output::print(std::string(output::linesize-5, '*'));
 }
 
 void Simulation::do_onestep()
@@ -413,12 +354,7 @@ void Simulation::Calculate_Velocity()
         Velocity[ix].initialize_fft(DensityMatrix);
         Velocity[ix].lock_space(k);
         Velocity[ix].get_Operator_k().fill(0.);
-        
-        std::cout << "Recap velocity dims \n";
-        std::cout << Velocity[ix].get_Operator_k().get_nblocks() << " " << material.r[ix].get_Operator_k().get_nblocks() << " " << H.get_Operator_k().get_nblocks() << std::endl;
-        std::cout << Velocity[ix].get_Operator_k().get_nrows() << " " << material.r[ix].get_Operator_k().get_nrows() << " " << H.get_Operator_k().get_nrows() << std::endl;
-        std::cout << Velocity[ix].get_Operator_k().get_ncols() << " " << material.r[ix].get_Operator_k().get_ncols() << " " << H.get_Operator_k().get_ncols() << std::endl;
-
+    
         commutator(Velocity[ix].get_Operator_k(), -im, material.r[ix].get_Operator_k(), H.get_Operator_k());
         Velocity[ix].go_to_R();
         //part with R
@@ -460,96 +396,44 @@ void Simulation::Print_Velocity()
 
 void Simulation::print_recap()
 {
-    //std::cout << "*************  GRIDS: *************\n";
-    //std::cout << "Total number of grids:  " << MeshGrid::get_counter_id() << std::endl;
-    //std::cout << "              ";
-    //std::cout << "| id |";
-    //std::cout << " size  |\n";
-    //std::cout << "material grid ";
-    //std::cout << "|" << std::setw(4) << material.H.get_Operator_R().get_MeshGrid()->get_id() << "|";
-    //std::cout<<  std::setw(7)  <<  material.H.get_Operator_R().get_MeshGrid()->get_mesh().size() << "|"<< std::endl;
-    //std::cout << "DM grid (R)   ";
-    //std::cout << "|" << std::setw(4) << DensityMatrix.get_Operator_R().get_MeshGrid()->get_id() << "|";
-    //std::cout <<  std::setw(7) << DensityMatrix.get_Operator_R().get_MeshGrid()->get_mesh().size() << "|"<< std::endl;
-    //std::cout << "DM grid (k)   ";
-    //std::cout << "|" << std::setw(4) << DensityMatrix.get_Operator_k().get_MeshGrid()->get_id() << "|";
-    //std::cout <<  std::setw(7) << DensityMatrix.get_Operator_k().get_MeshGrid()->get_mesh().size() << "|"<< std::endl;
-    //"tb_file": "/home/gcistaro/EDUS/tb_models/hBN_gap7.25eV_a2.5A",
-    //"dt": [0.1, "autime"],
-    //"solver": "RungeKutta",
-    //"printresolution": 6,
-    //"coulomb": false,
-#ifdef EDUS_MPI
-    if(mpi::Communicator::world().rank() == 0)
-#endif
-    {
-        std::cout << "*******************************************************    INPUT RECAP     ***************************************************\n";
-        std::cout << "*   input file:         *     ";
-        std::cout << std::left << std::setw(95) << JsonFile << "*\n";
-        std::cout << "*   tb_model  :         *     ";
-        std::cout << std::left << std::setw(95) << tb_model << "*\n";
-        std::cout << "*   grid:               *     [";
-        std::cout << std::right << std::setw(4) << DensityMatrix.get_Operator_R().get_MeshGrid()->get_Size()[0];
-        std::cout << ", ";
-        std::cout << std::right << std::setw(4) << DensityMatrix.get_Operator_R().get_MeshGrid()->get_Size()[1];
-        std::cout << ", ";
-        std::cout << std::right << std::setw(4) << DensityMatrix.get_Operator_R().get_MeshGrid()->get_Size()[2];
-        std::cout << std::left << std::setw(78) << "]" << "*\n";     
-        std::cout << "*   Resolution time:    *     ";
-        std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << DEsolver_DM.get_ResolutionTime();
-        std::cout << std::left << std::setw(15) << " a.u.";
-        std::cout << std::left << std::scientific << std::setw(10) << std::setprecision(4) << Convert(DEsolver_DM.get_ResolutionTime(), AuTime, FemtoSeconds);
-        std::cout << std::left << std::setw(60) << " fs" << "*\n";
-        std::cout << "*   Print Resolution:   *     ";
-        std::cout << std::left << std::setw(95) << PrintResolution <<  "*\n";
-        std::cout << "*   Coulomb:            *     ";
-        std::cout << std::left << std::setw(95)  << (coulomb.get_DoCoulomb() ? "True" : "False") << "*\n";
-        std::cout << "******************************************************************************************************************************\n";
-        std::cout << "*******************************************************   WANNIER     ********************************************************\n";
-        std::cout << "*   #R points :         *     ";
-        std::cout << std::setw(95) << std::left<< material.H.get_Operator_R().get_nblocks();
-        std::cout << "*\n";
-        auto& A = Coordinate::get_Basis(LatticeVectors(R)).get_M();
-        std::cout << "*             :         *   ";
-        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  A(0,0);
-        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  A(0,1);
-        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  A(0,2);
-        std::cout << std::setw(56) << std::right << "*" << std::endl;
-        std::cout << "*      A      :         *   ";
-        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  A(1,0);
-        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  A(1,1);
-        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  A(1,2);
-        std::cout << std::setw(56) << std::right << "*" << std::endl;
-        std::cout << "*             :         *   ";
-        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  A(2,0);
-        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  A(2,1);
-        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  A(2,2);
-        std::cout << std::setw(56) << std::right << "*" << std::endl;
-        std::cout << "*";
-        std::cout << std::setw(124) << " ";
-        std::cout << "*\n";
-        auto& B = Coordinate::get_Basis(LatticeVectors(k)).get_M();
-        std::cout << "*             :         *   ";
-        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  B(0,0);
-        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  B(0,1);
-        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  B(0,2);
-        std::cout << std::setw(56) << std::right << "*" << std::endl;
-        std::cout << "*      B      :         *   ";
-        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  B(1,0);
-        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  B(1,1);
-        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  B(1,2);
-        std::cout << std::setw(56) << std::right << "*" << std::endl;
-        std::cout << "*             :         *   ";
-        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  B(2,0);
-        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  B(2,1);
-        std::cout << std::scientific << std::right << std::setw(14) << std::setprecision(6) <<  B(2,2);
-        std::cout << std::setw(56) << std::right << "*" << std::endl;
-        std::cout << "******************************************************************************************************************************\n";
-        for( int ilaser=0; ilaser<int(setoflaser.size()); ++ilaser) {
-            setoflaser[ilaser].print_info();
-        }
+    std::stringstream title;
+    title << std::string(5, ' ') <<  "INPUT RECAP" << std::string(5, ' ');
+    int num_stars = (output::linesize - title.str().length())/2-2;
+
+    output::print(std::string(num_stars,'*'), title.str(), std::string(num_stars,'*'));
+    output::print("input file:         *", std::string(8, ' '), JsonFile );
+    output::print("tb_model  :         *", std::string(8, ' '), tb_model);
+    output::print("grid      :         *", std::string(8, ' '), "[", 
+                                        DensityMatrix.get_Operator_R().get_MeshGrid()->get_Size()[0], ", ",
+                                        DensityMatrix.get_Operator_R().get_MeshGrid()->get_Size()[1], ", ",
+                                        DensityMatrix.get_Operator_R().get_MeshGrid()->get_Size()[2], "]");
+    output::print("Resolution time:    *", DEsolver_DM.get_ResolutionTime(), " a.u.", Convert(DEsolver_DM.get_ResolutionTime(), AuTime, FemtoSeconds), " fs");
+    output::print("PrintResolution:    *", PrintResolution);
+    output::print("Coulomb        :    *", std::string(8, ' '), (coulomb.get_DoCoulomb() ? "True" : "False"));
+    output::stars();
+
+    output::stars();
+    title.clear();
+    title << std::string(5, ' ') <<  "WANNIER" << std::string(5, ' ');
+    num_stars = (output::linesize - title.str().length())/2-2;
+    output::print(std::string(num_stars,'*'), title.str(), std::string(num_stars,'*'));
+
+    output::print("#R points :         *", material.H.get_Operator_R().get_nblocks());
+    auto& A = Coordinate::get_Basis(LatticeVectors(R)).get_M();
+    output::print("          :         *", A(0,0), A(0,1), A(0,2));
+    output::print("    A     :         *", A(1,0), A(1,1), A(1,2));
+    output::print("          :         *", A(2,0), A(2,1), A(2,2));
+    auto& B = Coordinate::get_Basis(LatticeVectors(k)).get_M();
+    output::print("          :         *", B(0,0), B(0,1), B(0,2));
+    output::print("    B     :         *", B(1,0), B(1,1), B(1,2));
+    output::print("          :         *", B(2,0), B(2,1), B(2,2));
+    output::stars();
+
+    for( int ilaser=0; ilaser<int(setoflaser.size()); ++ilaser) {
+        setoflaser[ilaser].print_info();
     }
 }
+
 
 
 int Simulation::get_it(const double& time) const
@@ -600,8 +484,7 @@ std::string wavelength_or_frequency(const nlohmann::json& data)
     if( is_frequency) return "frequency";
     bool is_wavelength = ( data.find("wavelength") != data.end() );
     if( !is_wavelength ) {
-        std::cout << "You must specify frequency *xor* wavelength!\n";
-        exit(1);
+        throw std::runtime_error("You must specify frequency *xor* wavelength!");
     }
     return "wavelength";
 }

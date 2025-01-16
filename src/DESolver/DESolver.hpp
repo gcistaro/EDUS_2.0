@@ -91,8 +91,9 @@ void DESolver<T>::initialize(T& Function__, const std::function<void(T&)>& Evalu
                 2616./720., -1274./720., 251./720.};
         }
         else {
-            std::cout << "order " << order << "not implemented for AB" << std::endl;
-            exit(1);
+            std::stringstream ss;
+            ss<< "order " << order << "not implemented for AB" << std::endl;
+            throw std::runtime_error(ss.str());
         }
     }
 }
@@ -168,7 +169,6 @@ void DESolver<T>::Propagate_AB()
       index rotates in order to avoid copies                          */
 
     //get f(t(n-1), y(n-1))
-    //std::cout << "index:" << index[0] << " " << index[1] << " " << index[2] << " " << index[3] <<  " " << index[4] << std::endl;
     EvaluateSourceFunction(aux_Function[index[0]], CurrentTime, *Function);
 
     for( int i = 0; i < order; ++i ) {
