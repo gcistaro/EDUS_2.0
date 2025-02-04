@@ -49,49 +49,49 @@ void initialize()
     output::print("fftw  threads:     *", fftw_planner_nthreads());
     output::stars();
 #endif
-#ifdef EDUS_MPI
-
-    assert( mpi::Communicator::world().size()%NumberKpools == 0 );//for now i just implemented a rectangular MPI grid
-    
-    //create k point communicator
-    kpool_comm.generate( mpi::Communicator::world(), mpi::Communicator::world().rank()/NumberKpools );
-
-    //create band communicator
-    band_comm.generate( mpi::Communicator::world(), mpi::Communicator::world().rank()%NumberKpools );
-
-    //recap of mpi ranks -- to be done only for high verbosity
-    if ( mpi::Communicator::world().rank() != 0 ) {
-        auto aux = mpi::Communicator::world().rank();
-        mpi::Communicator::world().send( &aux, 0 );
-        aux = kpool_comm.rank();
-        mpi::Communicator::world().send( &aux, 0 );
-        aux = kpool_comm.size();
-        mpi::Communicator::world().send( &aux, 0 );
-        aux = band_comm.rank();
-        mpi::Communicator::world().send( &aux, 0 );
-        aux = band_comm.size();
-        mpi::Communicator::world().send( &aux, 0 );
-    }
-    else {
-        output::print("MPI world size:    *     ", mpi::Communicator::world().size());
-        //output::title("MPI parallelization recap");
-        //output::print("WORLD RANK: " , mpi::Communicator::world().rank(),  "/" , mpi::Communicator::world().size());
-        //output::print("KPOOL RANK: " , kpool_comm.rank(),  "/" , kpool_comm.size());
-        //output::print(" BAND RANK: " , band_comm.rank(),  "/" , band_comm.size());
-
-        for(int irank_ = 1; irank_ < mpi::Communicator::world().size(); ++irank_ ) {
-            int world_comm_rank = 10, kpool_comm_rank, kpool_comm_size, band_comm_rank, band_comm_size;
-            mpi::Communicator::world().receive( &world_comm_rank, irank_ );
-            mpi::Communicator::world().receive( &kpool_comm_rank, irank_ );
-            mpi::Communicator::world().receive( &kpool_comm_size, irank_ );
-            mpi::Communicator::world().receive( &band_comm_rank, irank_ );
-            mpi::Communicator::world().receive( &band_comm_size, irank_ );
-
-        //output::print("WORLD RANK: " , world_comm_rank,  "/" , mpi::Communicator::world().size());
-        //output::print("KPOOL RANK: " , kpool_comm_rank,  "/" , kpool_comm_size);
-        //output::print(" BAND RANK: " , band_comm_rank,  "/" , band_comm_size);
-        }
-    }
+ #ifdef EDUS_MPI
+ 
+     assert( mpi::Communicator::world().size()%NumberKpools == 0 );//for now i just implemented a rectangular MPI grid
+     
+     //create k point communicator
+     kpool_comm.generate( mpi::Communicator::world(), mpi::Communicator::world().rank()/NumberKpools );
+ 
+     //create band communicator
+     band_comm.generate( mpi::Communicator::world(), mpi::Communicator::world().rank()%NumberKpools );
+// == 
+// ==     //recap of mpi ranks -- to be done only for high verbosity
+// ==     if ( mpi::Communicator::world().rank() != 0 ) {
+// ==         auto aux = mpi::Communicator::world().rank();
+// ==         mpi::Communicator::world().send( &aux, 0 );
+// ==         aux = kpool_comm.rank();
+// ==         mpi::Communicator::world().send( &aux, 0 );
+// ==         aux = kpool_comm.size();
+// ==         mpi::Communicator::world().send( &aux, 0 );
+// ==         aux = band_comm.rank();
+// ==         mpi::Communicator::world().send( &aux, 0 );
+// ==         aux = band_comm.size();
+// ==         mpi::Communicator::world().send( &aux, 0 );
+// ==     }
+// ==     else {
+// ==         output::print("MPI world size:    *     ", mpi::Communicator::world().size());
+// ==         output::title("MPI parallelization recap");
+// ==         output::print("WORLD RANK: " , mpi::Communicator::world().rank(),  "/" , mpi::Communicator::world().size());
+// ==         output::print("KPOOL RANK: " , kpool_comm.rank(),  "/" , kpool_comm.size());
+// ==         output::print(" BAND RANK: " , band_comm.rank(),  "/" , band_comm.size());
+// == 
+// ==         for(int irank_ = 1; irank_ < mpi::Communicator::world().size(); ++irank_ ) {
+// ==             int world_comm_rank = 10, kpool_comm_rank, kpool_comm_size, band_comm_rank, band_comm_size;
+// ==             mpi::Communicator::world().receive( &world_comm_rank, irank_ );
+// ==             mpi::Communicator::world().receive( &kpool_comm_rank, irank_ );
+// ==             mpi::Communicator::world().receive( &kpool_comm_size, irank_ );
+// ==             mpi::Communicator::world().receive( &band_comm_rank, irank_ );
+// ==             mpi::Communicator::world().receive( &band_comm_size, irank_ );
+// == 
+// ==         //output::print("WORLD RANK: " , world_comm_rank,  "/" , mpi::Communicator::world().size());
+// ==         //output::print("KPOOL RANK: " , kpool_comm_rank,  "/" , kpool_comm_size);
+// ==         //output::print(" BAND RANK: " , band_comm_rank,  "/" , band_comm_size);
+// ==         }
+// ==     }
 #endif
 }
 

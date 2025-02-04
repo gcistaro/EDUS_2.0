@@ -78,6 +78,13 @@ configure_file("${PROJECT_SOURCE_DIR}/ci-test/inputs/hBN.json.in" "${PROJECT_SOU
 configure_file("${PROJECT_SOURCE_DIR}/ci-test/inputs/hBN_coulomb.json.in" "${PROJECT_SOURCE_DIR}/ci-test/inputs/hBN_coulomb.json" @ONLY)
 configure_file("${PROJECT_SOURCE_DIR}/ci-test/inputs/MoS2.json.in" "${PROJECT_SOURCE_DIR}/ci-test/inputs/MoS2.json" @ONLY)
 
+# generate schema
+file(READ "${PROJECT_SOURCE_DIR}/src/InputVariables/input_schema.json" EDUS_INPUT_SCHEMA NEWLINE_CONSUME)
+configure_file("${PROJECT_SOURCE_DIR}/src/InputVariables/input_schema.hpp.in"
+               "${PROJECT_SOURCE_DIR}/src/InputVariables/input_schema.hpp"
+               @ONLY)
+
+
 include_directories("${PROJECT_SOURCE_DIR}/src/")
 ########add_subdirectory(src/)
 
@@ -88,6 +95,7 @@ set(_SOURCES src/initialize.cpp
              src/ConvertUnits.cpp
              src/ostream.cpp
              src/StreamFile.cpp
+             src/InputVariables/simulation_parameters.cpp
              src/Geometry/Matrix.cpp
              src/Geometry/Coordinate.cpp
              src/MeshGrid/MeshGrid.cpp

@@ -2,6 +2,7 @@
 
 #include <ctime>
 #include <iostream>
+#include "InputVariables/simulation_parameters.hpp"
 #include "Simulation/Simulation.hpp"
 #include "core/print_timing.hpp"
 #include "initialize.hpp"
@@ -22,8 +23,10 @@ int main(int argc, char *argv[])
     }
 
     initialize();
-{    
-    Simulation simulation(argv[1]);
+{
+    auto ctx = std::make_shared<Simulation_parameters>();
+    ctx->import(std::string(argv[1]));
+    Simulation simulation(ctx);
     simulation.Propagate();
 }
     finalize();

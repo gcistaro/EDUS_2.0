@@ -75,7 +75,6 @@ namespace output {
     {
         std::stringstream title;
         title << std::string(5, ' ') <<  str__ << std::string(5, ' ');
-        std::cout << title.str().length() << std::endl;
         int num_stars = (output::linesize - title.str().length())/2;
         std:: cout << std::string(num_stars,'*') << title.str() << std::string(num_stars,'*') << std::endl;
 
