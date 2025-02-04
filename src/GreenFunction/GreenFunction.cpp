@@ -1,44 +1,43 @@
 #include "GreenFunction.hpp"
 
-void GreenFunction::initialize( DESolver<Operator<std::complex<double>>>& DEsolver_DM__ )
+void GreenFunction::initialize()
 {
 #ifndef EDUS_HDF5
-    std::runtime_error("Error in GreenFunction::initialize: Compiled without HDF5 support");
+    throw std::runtime_error("Error in GreenFunction::initialize: Compiled without HDF5 support");
 #endif
     /* allocate memory for operators */
-    DEsolver_DM_ = &DEsolver_DM__;
-    DM_           .initialize_fft(DEsolver_DM__.get_Function());
-    H_            .initialize_fft(DEsolver_DM__.get_Function());
-    Ut_           .initialize_fft(DEsolver_DM__.get_Function());
-    Utime_        .initialize_fft(DEsolver_DM__.get_Function());
-    Uptime_       .initialize_fft(DEsolver_DM__.get_Function());
-    GR_           .initialize_fft(DEsolver_DM__.get_Function());
+//    DM_           .initialize_fft(DEsolver_DM_.get_Function());
+//    H_            .initialize_fft(DEsolver_DM_.get_Function());
+    Ut_           .initialize_fft(DEsolver_DM_.get_Function());
+    Utime_        .initialize_fft(DEsolver_DM_.get_Function());
+    Uptime_       .initialize_fft(DEsolver_DM_.get_Function());
+    GR_           .initialize_fft(DEsolver_DM_.get_Function());
     
     /* initialize solver for Ut */
     std::function<void(Operator<std::complex<double>>&)> 
-    InitialCondition = 
-    [&](Operator<std::complex<double>>& U)
+    InitialCondition_U = 
+    [&](Operator<std::complex<double>>& U__)
     {
         /* the initial evolution operator is the identity */
-        U.get_Operator(Space::k).identity();
+        U__.get_Operator(Space::k).identity();
     };
 
     std::function<void(Operator<std::complex<double>>&, double const&, Operator<std::complex<double>> const&)> 
-    SourceTerm = 
-    [&](Operator<std::complex<double>>& Output, const double& time, const Operator<std::complex<double>>& Input)
+    SourceTerm_U = 
+    [&](Operator<std::complex<double>>& Output__, const double& time__, const Operator<std::complex<double>>& Input__)
     {
         /* EOM:      i\dot{U} = H.U */
         /* read H from saved datas */
-        auto CurrentTime = DEsolver_DM_->get_CurrentTime();
+        auto CurrentTime = DEsolver_DM_.get_CurrentTime();
         std::string name_ = "output.h5";
-        auto node = get_it_sparse(CurrentTime);
+        auto node = get_it_sparse(CurrentTime); 
         H_.get_Operator(Space::k).load(name_, node, nodename::H0pCoulomb); 
         /* Output = -i H.U */
-        multiply(Output.get_Operator(Space::k), -im, 
+        multiply(Output__.get_Operator(Space::k), -im, 
                  H_.get_Operator(Space::k), 
-                 Input.get_Operator(Space::k));
+                 Input__.get_Operator(Space::k));
     };
-    DEsolver_Ut_.initialize( Ut_, InitialCondition, SourceTerm, AB, 5 );
+    DEsolver_Ut_.initialize( Ut_, InitialCondition_U, SourceTerm_U, AB, 5 );
 }
 
 void GreenFunction::Propagator(Operator<std::complex<double>>& Ut__, const double t__)
@@ -85,10 +84,10 @@ BlockMatrix<std::complex<double>>& GreenFunction::GKBA(const double time__, cons
     /* DM_ <- rho(t') */
     std::string name_ = "output.h5";
     auto node = get_it_sparse(  ptime__ );
-    DM_.get_Operator(Space::k).load(name_, node, nodename::DMk); 
+    DensityMatrix_.get_Operator(Space::k).load(name_, node, nodename::DMk); 
 
     if( std::abs(time__-ptime__) < 1.e-06 ) {
-        return DM_.get_Operator(Space::k);
+        return DensityMatrix_.get_Operator(Space::k);
     }
 
     /* here we calculate U(t)U^\dagger(t')G<(t',t') */
@@ -105,12 +104,6 @@ BlockMatrix<std::complex<double>>& GreenFunction::GKBA(const double time__, cons
     /* we use Utime_ array as it is not needed anymore */
     auto& Lesser = Utime_.get_Operator(Space::k);
     multiply( Lesser, 1.+0.*im, 
-              GR_.get_Operator(Space::k), DM_.get_Operator(Space::k) );
+              GR_.get_Operator(Space::k), DensityMatrix_.get_Operator(Space::k) );
     return Lesser;
-}
-
-
-int GreenFunction::get_it_sparse(const double& time) const
-{
-    return int(round(time/DEsolver_DM_->get_ResolutionTime()/PrintResolution_));
 }

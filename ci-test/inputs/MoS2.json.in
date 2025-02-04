@@ -1,21 +1,25 @@
 {
     "tb_file": "@PROJECT_SOURCE_DIR@/tb_models/MoS2_Camarasa_SOC_cutD0p3_cutH5",
-    "fermienergy": [0, "electronvolt"],
-    "coulomb": false,
+    "fermienergy": 0, 
+    "fermienergy_units" : "electronvolt",
+    "coulomb": true,
     "grid": [40,40,1],
     "filledbands" : 26,
-    "dt": [0.01, "femtoseconds"],
+    "dt": 0.01, 
+    "dt_units" : "femtoseconds",
     "printresolution": 1,
-    "initialtime" : [0, "femtoseconds"],
-    "finaltime": [1, "femtoseconds"],
-    "solver": "RK",
-    "order": 4,
+    "initialtime" : 0,
+    "initialtime_units" : "femtoseconds",
+    "finaltime": 1, 
+    "finaltime_units" : "femtoseconds",
 
     "lasers":
     [
       {
-      "intensity": [1e06, "wcm2"],
-      "frequency": [6, "electronvolt"],
+      "intensity": 1e06,
+      "intensity_units" : "wcm2",
+      "frequency": 6,
+      "frequency_units" : "electronvolt",
       "polarization": [1,0,0],
       "cycles" : 1
       }
