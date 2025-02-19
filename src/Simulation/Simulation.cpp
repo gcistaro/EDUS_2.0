@@ -52,12 +52,12 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
         if(freq_wavelength == "frequency") {
             laser.set_Omega(currentdata.frequency(),  
                             unit(currentdata.frequency_units()));
-//            currentdata.wavelength(laser_.get_Lambda());
+            ctx_->cfg().dict()["lasers"][ilaser]["wavelength"] = laser.get_Lambda();
         }
         else {
             laser.set_Lambda(currentdata.wavelength(), 
                             unit(currentdata.wavelength_units()));
-//            currentdata["frequency"] = {laser_.get_Omega()};
+            ctx_->cfg().dict()["lasers"][ilaser]["frequency"] = laser.get_Omega();
         }
         laser.set_NumberOfCycles(currentdata.cycles());
         Coordinate pol(currentdata.polarization()[0], currentdata.polarization()[1],
@@ -128,30 +128,29 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     os_Velocity_.open("Velocity.txt");
 
     // ---------------------- create recap file ---------------------------------------------
-// ==     data["num_bands"] = {material.H.get_Operator_R().get_nrows()};
-// ==     data["num_kpoints"] = {material.H.get_Operator_k().get_MeshGrid()->get_TotalSize()};
-// == 
-// ==     
-// ==     mdarray<double,2> bare_k({material.H.get_Operator_k().get_MeshGrid()->get_TotalSize(),3});
-// ==     for( int ik=0; ik < material.H.get_Operator_k().get_MeshGrid()->get_mesh().size(); ++ik ) {
-// ==         for(auto& ix : {0, 1, 2}) {
-// ==             bare_k(ik,ix) = (*(material.H.get_Operator_k().get_MeshGrid()))[ik].get(LatticeVectors(k))[ix];
-// ==         }
-// ==     }
-// ==     data["kpoints"] = bare_k;
-// ==     data["A"] = Coordinate::get_Basis(LatticeVectors(R)).get_M();
-// ==     data["B"] = Coordinate::get_Basis(LatticeVectors(k)).get_M();
-// == 
-// == #ifdef EDUS_HDF5
-// ==     std::string name = "output.h5";
-// ==     if (!file_exists(name)) {
-// ==         HDF5_tree(name, hdf5_access_t::truncate);
-// ==     }
-// ==     HDF5_tree fout(name, hdf5_access_t::truncate);
-// ==     dump_json_in_h5( data, name );
-// ==     mpi::Communicator::world().barrier();
-// == #endif
-// == 
+     ctx_->cfg().dict()["num_bands"] = DensityMatrix_.get_Operator_R().get_nrows();
+     ctx_->cfg().dict()["num_kpoints"] = DensityMatrix_.get_Operator_k().get_MeshGrid()->get_TotalSize();
+ 
+     
+     mdarray<double,2> bare_k({DensityMatrix_.get_Operator_k().get_MeshGrid()->get_TotalSize(),3});
+     for( int ik=0; ik < DensityMatrix_.get_Operator_k().get_MeshGrid()->get_mesh().size(); ++ik ) {
+         for(auto& ix : {0, 1, 2}) {
+             bare_k(ik,ix) = (*(DensityMatrix_.get_Operator_k().get_MeshGrid()))[ik].get(LatticeVectors(k))[ix];
+         }
+     }
+     ctx_->cfg().dict()["kpoints"] = bare_k;
+     ctx_->cfg().dict()["A"] = Coordinate::get_Basis(LatticeVectors(R)).get_M();
+     ctx_->cfg().dict()["B"] = Coordinate::get_Basis(LatticeVectors(k)).get_M();
+ 
+ #ifdef EDUS_HDF5
+     std::string name = "output.h5";
+     if (!file_exists(name)) {
+         HDF5_tree(name, hdf5_access_t::truncate);
+     }
+     HDF5_tree fout(name, hdf5_access_t::truncate);
+     dump_json_in_h5( ctx_->cfg().dict(), name );
+     mpi::Communicator::world().barrier();
+ #endif
     //---------------------------------------------------------------------------------------
 }
 

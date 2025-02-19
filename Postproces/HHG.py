@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import sys
 
 from custom_functions.read import read_observables
-from custom_functions.absorbance import absorbance
+from custom_functions.fouriertransform import FourierTransform
 
 
 
@@ -18,14 +18,18 @@ if len(sys.argv) > 2:
 else:
     version = "new"
 
-t_au, _, Et_au, Vt_au = read_observables(folder, version)
+t_au, _, _, Vt_au = read_observables(folder, version)
 
 plt.plot(t_au, Vt_au[0])
 plt.show()
-freq_eV, Absorbance = absorbance(t_au, Vt_au, Et_au,[4,59])
+freq_eV, Vw = FourierTransform(t_au, Vt_au, True)
+
+#rw = Vt_au/(1j*freq_eV)
+Vw = np.linalg.norm(Vw, axis=0)
+print("Vw shape:" , Vw.shape)
 
 
-plt.plot(freq_eV, Absorbance, label="Abs(w)")
+plt.plot(freq_eV, np.log10(Vw), label="$log_{10}(r(\omega))$")
 #plt.axvline(x=7.25)
 plt.legend()
 plt.show()

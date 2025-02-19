@@ -22,6 +22,43 @@ void Matrix<std::complex<double>>::diagonalize(Matrix<std::complex<double>>& Eig
     LAPACKE_zheev( LAPACK_ROW_MAJOR, 'V', 'U', n, &EigenVectors(0,0), lda, &EigenValues(0) );
 }
 
+template<>
+void Matrix<double>::LUdecompose(Matrix<double>& LU, lapack_int** pointer_to_ipiv) const
+{
+    //output: LU decomposition in a lone matrix. (upper part -> U , lower part-> L)
+    //L has diagonal elements equal to 1 and are not saved; the diagonal elements are that of U.
+    LU = *this;
+    int m = (*this).get_nrows();
+    int n = (*this).get_ncols();
+    lapack_int lda = n;
+    //if(*pointer_to_ipiv != nullptr){
+    //	    delete[] *pointer_to_ipiv;
+    //}
+    *pointer_to_ipiv= new lapack_int[n];
+    
+    //LU decomposition
+    LAPACKE_dgetrf(LAPACK_ROW_MAJOR, m, n, 
+                   &(LU(0,0)), lda, *pointer_to_ipiv);  
+}
+
+template<>
+void Matrix<std::complex<double>>::LUdecompose(Matrix<std::complex<double>>& LU, lapack_int** pointer_to_ipiv) const
+{
+    //output: LU decomposition in a lone matrix. (upper part -> U , lower part-> L)
+    //L has diagonal elements equal to 1 and are not saved; the diagonal elements are that of U.
+    LU = *this;
+    int m = (*this).get_nrows();
+    int n = (*this).get_ncols();
+    lapack_int lda = n;
+    //if(*pointer_to_ipiv != nullptr){
+    //	    delete[] *pointer_to_ipiv;
+    //}
+    *pointer_to_ipiv= new lapack_int[n];
+    
+    //LU decomposition
+    auto info = LAPACKE_zgetrf(LAPACK_ROW_MAJOR, m, n, 
+                   &(LU(0,0)), lda, *pointer_to_ipiv);  
+}
 
 
 template<>
@@ -37,6 +74,24 @@ Matrix<double> Matrix<double>::inverse() const
     lapack_int n = invM.get_ncols();
     lapack_int lda = n;
     LAPACKE_dgetri(LAPACK_ROW_MAJOR, n, &invM(0,0),
+                    lda, ipiv);
+    delete[] ipiv;
+    return invM;
+}
+
+template<>
+Matrix<std::complex<double>> Matrix<std::complex<double>>::inverse() const
+{
+    assert((*this).get_nrows() == (*this).get_ncols());
+    //assert((std::is_same<T,double>::value));
+    assert(abs(this->determinant()) > 1.e-08);
+    Matrix<std::complex<double>> invM;
+    lapack_int* ipiv;
+    LUdecompose(invM, &ipiv);
+    //inverse
+    lapack_int n = invM.get_ncols();
+    lapack_int lda = n;
+    LAPACKE_zgetri(LAPACK_ROW_MAJOR, n, &invM(0,0),
                     lda, ipiv);
     delete[] ipiv;
     return invM;

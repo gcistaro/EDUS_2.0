@@ -1,0 +1,152 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "tb_file": {
+            "type": "string",
+            "default": "",
+            "title": "name of the file _tb.dat"
+        },
+        "fermienergy": {
+            "type": "number",
+            "default": 0.0,
+            "title": "Fermi energy of the system"
+        },
+        "fermienergy_units": {
+            "type": "string",
+            "default": "eV",
+            "enum" : [
+                "eV",
+                "au"
+            ],
+            "title": "Units used for the Fermi energy of the system"
+        },
+        "coulomb": {
+            "type": "boolean",
+            "default": false,
+            "title": "If true, we go beyond IPA using HSEX theory"
+        },
+        "grid": {
+            "type": "array",
+            "items": {
+                "type": "integer"
+            },
+            "minItems": 3,
+            "maxItems": 3,
+            "default": [10,10,1],
+            "title": "Dimension of the k grid (R as well) used for the simulation"
+        },
+        "filledbands": {
+            "type": "integer",
+            "default": 0,
+            "title": "Number of filled bands for the simulation (ideally will be either this of fermienergy"
+        },
+        "dt": {
+            "type": "number",
+            "default": 0.01,
+            "title": "Time resolution used for propagating Density Matrix"
+        },
+        "dt_units": {
+            "type": "string",
+            "default": "au",
+            "enum" : ["au", "fs"],
+            "title": "Units for the Time resolution used for propagating Density Matrix"
+        },
+        "printresolution": {
+            "type": "integer",
+            "default": 1,
+            "title": "Time steps needed to print in hdf5 and observables"
+        },
+        "initialtime": {
+            "type": "number",
+            "default": 0.0,
+            "title": "Initial time of the simulation"
+        },
+        "initialtime_units": {
+            "type": "string",
+            "default": "au",
+            "enum" : ["au", "fs"],
+            "title": "Units for the Time resolution used for Initial time of the simulation"
+        },
+        "finaltime": {
+            "type": "number",
+            "default": 0.0,
+            "title": "Final time of the simulation"
+        },
+        "finaltime_units": {
+            "type": "string",
+            "default": "au",
+            "enum" : ["au", "fs"],
+            "title": "Units for the Time resolution used for Final time of the simulation"
+        },
+        "solver": {
+            "type": "string",
+            "default": "RK",
+            "enum" : ["RK", "AB"],
+            "title": "Solver used for time propagation of the Density Matrix"
+        },
+        "order": {
+            "type": "integer",
+            "default": 4,
+            "title": "Order of the Solver used for time propagation of the Density Matrix"
+        },
+        "lasers": {
+            "type": "array",
+            "title": "description of all the lasers",
+            "minItems": 1,
+            "maxItems": 10,
+            "items": {
+                "type": "object",
+                "title": "laser",
+                "properties": {
+                    "intensity": {
+                        "type": "number",
+                        "default": 0.0,
+                        "title": "Intensity of the laser"
+                    },
+                    "intensity_units": {
+                        "type": "string",
+                        "default": "Wcm2",
+                        "enum" : ["Wcm2", "au"],
+                        "title": "Units for intensity of the laser"
+                    },
+                    "frequency": {
+                        "type": "number",
+                        "default": 0.0,
+                        "title": "Frequency of the laser"
+                    },
+                    "frequency_units": {
+                        "type": "string",
+                        "default": "eV",
+                        "enum" : ["eV", "au"],
+                        "title": "Units for frequency of the laser"
+                    },
+                    "wavelength": {
+                        "type": "number",
+                        "default": 0.0,
+                        "title": "Wavelength of the laser"
+                    },
+                    "wavelength_units": {
+                        "type": "string",
+                        "default": "nm",
+                        "enum" : ["nm", "au"],
+                        "title": "Units for wavelength of the laser"
+                    },
+                    "polarization": {
+                        "type": "array",
+                        "items" : {
+                            "type": "number",
+                            "default": 0.0
+                        },
+                        "title": "Polarization of the laser in cartesian coordinates"
+                    },
+                    "cycles": {
+                        "type": "number",
+                        "default": 0.0,
+                        "title": "Number of cycles the sin2 laser last."
+                    }
+                }
+            }
+        }
+    }
+}

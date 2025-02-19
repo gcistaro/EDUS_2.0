@@ -18201,8 +18201,13 @@ class serializer
                     o->write_characters("[]", 2);
                     return;
                 }
+                bool is_primitive_array{true};
+                for (auto i = val.m_data.m_value.array->cbegin(); i != val.m_data.m_value.array->cend(); ++i)
+                {
+                    is_primitive_array = is_primitive_array & i->is_primitive();
+                }
 
-                if (pretty_print)
+                if (!is_primitive_array)
                 {
                     o->write_characters("[\n", 2);
 

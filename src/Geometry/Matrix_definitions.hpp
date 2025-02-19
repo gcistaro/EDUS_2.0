@@ -65,25 +65,6 @@ void Matrix_gemm(Matrix<T>& OutputMatrix, const T_& alpha, const Matrix<T>& Inpu
 }
 
 
-template<class T>
-void Matrix<T>::LUdecompose(Matrix<T>& LU, lapack_int** pointer_to_ipiv) const
-{
-    //output: LU decomposition in a lone matrix. (upper part -> U , lower part-> L)
-    //L has diagonal elements equal to 1 and are not saved; the diagonal elements are that of U.
-    assert((std::is_same<T,double>::value));
-    LU = *this;
-    int m = (*this).get_nrows();
-    int n = (*this).get_ncols();
-    lapack_int lda = n;
-    //if(*pointer_to_ipiv != nullptr){
-    //	    delete[] *pointer_to_ipiv;
-    //}
-    *pointer_to_ipiv= new lapack_int[n];
-    
-    //LU decomposition
-    LAPACKE_dgetrf(LAPACK_ROW_MAJOR, m, n, 
-                   &(LU(0,0)), lda, *pointer_to_ipiv);  
-}
 
 
 template<typename T>
@@ -95,6 +76,7 @@ T Matrix<T>::determinant() const
     Matrix<T> LU;
     lapack_int* ipiv;
     this->LUdecompose(LU, &ipiv);
+
     T determinant = 1.;
     
     for(int i=0; i < (*this).get_nrows(); ++i){
