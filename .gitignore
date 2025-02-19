@@ -11,3 +11,4 @@ ci-test/inputs/MoS2.json
 ci-test/inputs/hBN_coulomb.json
 ci-test/outputs/
 CTEST/
+Postproces/custom_functions/__pycache__/
