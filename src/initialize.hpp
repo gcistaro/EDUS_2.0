@@ -9,6 +9,7 @@
 #include <sstream>
 #include <fstream>
 
+#include "omp.h"
 #include "core/print_header.hpp"
 #include "core/mpi/Communicator.hpp"
 #include "fftw3-mpi.h"
