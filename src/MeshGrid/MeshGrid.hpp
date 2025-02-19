@@ -20,7 +20,8 @@ struct ShellInfo
 
 enum TypeMeshGrid{cube, read_, sphere, path};
  
-class MeshGrid{
+class MeshGrid
+{
     private:
         std::vector<Coordinate> mesh;
         
@@ -41,6 +42,7 @@ class MeshGrid{
         int id; //each MeshGrid has a unique id,  to exchange the indices with others
         static int counter_id; //neded to count objects
 
+        double shift_k = 0;
 
     public:
         MPIindex<3> mpindex;
@@ -55,11 +57,11 @@ class MeshGrid{
 
         MeshGrid(const Space& space__, const std::vector<Coordinate>& ReadMesh); 
         MeshGrid(const Space& space__, const mdarray<double,2>& bare_mg, const std::string& KeyForBasis);
-        MeshGrid(const Space& space__, const std::array<int,3>& Size_);
+        MeshGrid(const Space& space__, const std::array<int,3>& Size__, const double& shiftk__=0.);
         MeshGrid(const Space& space__, const double& Radius_, const std::array<double, 3>& resolution = {1., 1., 1.});
         MeshGrid(const Space& space__, const std::vector<Coordinate>& PathPoints, const double& resolution);
 
-        void initialize(const Space& space__, const std::array<int,3>& Size_);
+        void initialize(const Space& space__, const std::array<int,3>& Size__, const double& shiftk__=0.);
         void initialize(const Space& space__, const double& Radius_, const std::array<double, 3>& resolution = {1., 1., 1.});
         void initialize(const Space& space__, const mdarray<double,2>& bare_mg, const std::string& KeyForBasis);
         void initialize(const Space& space__, const std::vector<Coordinate>& PathPoints, const double& resolution);
@@ -74,9 +76,9 @@ class MeshGrid{
         const Coordinate& operator[](const int& i) const;
 
         int find(const Coordinate& v) const;
-        inline Coordinate reduce(const Coordinate& v) const;
-        inline Coordinate reduce(Coordinate& v, const double& low_limit, const double& up_limit) const;
-        inline Coordinate reduce(Coordinate& v, const std::array<double,3>& low_limit, const std::array<double,3>& up_limit) const;
+        Coordinate reduce(const Coordinate& v) const;
+        Coordinate reduce(const Coordinate& v, const double& low_limit, const double& up_limit) const;
+        Coordinate reduce(const Coordinate& v, const std::array<double,3>& low_limit, const std::array<double,3>& up_limit) const;
 
         std::pair<int,int> get_shellindices(int shellNumber) const;
         const std::vector<Coordinate>& get_mesh() const;
@@ -101,6 +103,8 @@ class MeshGrid{
         friend MeshGrid get_GammaCentered_grid(const MeshGrid& kmesh__);
         friend class kGradient;
 };
+
+
 
 
 #endif

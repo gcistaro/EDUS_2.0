@@ -113,6 +113,7 @@ set(_SOURCES src/initialize.cpp
              src/core/rt_graph.cpp
              src/core/mpi/Communicator.cpp
              src/Coulomb/Coulomb.cpp
+             src/Screened_potential/Screened_potential.cpp
              src/GreenFunction/GreenFunction.cpp
              src/RytovaKeldysh/RytovaKeldysh.cpp
     )
@@ -126,6 +127,9 @@ link_libraries(OBJECTS)
 #adding OpenMP
 find_package(OpenMP)
 link_libraries(OpenMP::OpenMP_CXX)
+set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 
 #adding MPI
 if(EDUS_MPI)
@@ -207,6 +211,7 @@ add_executable(NonEQ ci-test/test_NEQ_H0.cpp)
 add_executable(NonEQ3 ci-test/test_NEQ_Grad.cpp)
 add_executable(Bandstructure_test ci-test/test_bandstructure.cpp)
 add_executable(Pseudoinv_test ci-test/test_pseudoinverse.cpp)
+add_executable(ScreenedPotential ci-test/test_Response.cpp)
 
 #build for ctest
 enable_testing()

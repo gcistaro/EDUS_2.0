@@ -4,9 +4,8 @@
 //- MPI_COMM_WORLD
 //- fftw initialization
 
-#include "omp.h"
 #include "mkl.h"
-#include <thread>
+//#include <thread>
 #include <iomanip>
 #include "initialize.hpp"
 #include "GlobalFunctions.hpp"
@@ -31,7 +30,9 @@ int NumberKpools;
 */
 void initialize()
 {  
+#ifdef EDUS_MKL_THREAD
     mkl_set_num_threads(omp_get_max_threads());
+#endif
 #ifdef EDUS_MPI
     mpi::Communicator::initialize(MPI_THREAD_FUNNELED);
     NumberKpools = mpi::Communicator::world().size();

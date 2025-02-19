@@ -54,9 +54,9 @@ mesh(ReadMesh), type(read_), space(space__)
     id = counter_id;
 }
 
-MeshGrid::MeshGrid(const Space& space__, const std::array<int,3>& Size_)
+MeshGrid::MeshGrid(const Space& space__, const std::array<int,3>& Size__, const double& shiftk__)
 {
-    this->initialize(space__, Size_);
+    this->initialize(space__, Size__, shiftk__);
 }
 
 MeshGrid::MeshGrid(const Space& space__, const mdarray<double,2>& bare_mg, const std::string& KeyForBasis)
@@ -91,7 +91,7 @@ void MeshGrid::initialize(const Space& space__, const std::vector<Coordinate>& P
     TotalSize = mesh.size();
 }
 
-void MeshGrid::initialize(const Space& space__, const std::array<int,3>& Size_)
+void MeshGrid::initialize(const Space& space__, const std::array<int,3>& Size__, const double& shiftk__)
 {
     //cubic grids are always [0, Size-1] so that are fft friendly
     id = ++counter_id;
@@ -99,9 +99,10 @@ void MeshGrid::initialize(const Space& space__, const std::array<int,3>& Size_)
     space = space__;
     type=cube;
 
-    Size[0] = Size_[0];
-    Size[1] = Size_[1];
-    Size[2] = Size_[2];
+    Size[0] = Size__[0];
+    Size[1] = Size__[1];
+    Size[2] = Size__[2];
+    shift_k = shiftk__;
 
     TotalSize = Size[0]*Size[1]*Size[2];
     mesh.resize(TotalSize);
@@ -114,9 +115,9 @@ void MeshGrid::initialize(const Space& space__, const std::array<int,3>& Size_)
                 for(int ix1=0; ix1<Size[1]; ix1++){
                     for(int ix2=0; ix2<Size[2]; ix2++){
                         int index = ix2 + Size[2] * (ix1 + Size[1] * ix0);
-                        mesh[index].initialize(double(ix0)/Size[0],
-                                               double(ix1)/Size[1],
-                                               double(ix2)/Size[2],
+                        mesh[index].initialize((Size[0]==1 ? 0. : shift_k) + double(ix0)/Size[0],
+                                               (Size[1]==1 ? 0. : shift_k) + double(ix1)/Size[1],
+                                               (Size[2]==1 ? 0. : shift_k) + double(ix2)/Size[2],
                                                LatticeVectors(space));
                     }
                 }
@@ -284,10 +285,10 @@ int MeshGrid::find(const Coordinate& v) const
         {
             auto v_reduced = reduce(v);
             auto notcart = v_reduced.get(LatticeVectors(space));
-            
+
             if ( space == k ) {
                 for ( auto& ix : { 0, 1, 2 } ) {
-                    notcart[ix]*=Size[ix];
+                    notcart[ix]= (notcart[ix]-(Size[ix]==1 ? 0. : shift_k) )*Size[ix];
                 }
             } 
             index = int(round(notcart[2] + Size[2] * (notcart[1] + Size[1] * notcart[0])));//warning! round is important, if not it will get the integer part, usually wrong.
@@ -309,7 +310,7 @@ int MeshGrid::find(const Coordinate& v) const
         case read_:
         {
 
-            auto v_iterator = std::find_if(mesh.begin(), mesh.end(), [&v](const auto& v_){return (v_-v).norm() < 1.e-07;});
+            auto v_iterator = std::find_if(mesh.begin(), mesh.end(), [&v](const auto& v_){ return (v_-v).norm() < 1.e-06;});
             if(v_iterator == mesh.end()){
                 return -1;
             }
@@ -323,30 +324,33 @@ int MeshGrid::find(const Coordinate& v) const
     return index;
 }
 
+
 Coordinate MeshGrid::reduce(const Coordinate& v) const
 {
     assert(type == cube);
     auto notcart = v.get(LatticeVectors(space));
-    std::array<int,3> grid_limit = (space==k) ? std::array<int,3>{1, 1, 1}
-                                              : Size;
+    
+    std::array<double,3> low_limit = (space==k) ? std::array<double,3>{shift_k,shift_k,shift_k} 
+                                                : std::array<double,3>{0.,0.,0.};
+    std::array<double,3> up_limit = (space==k) ? std::array<double,3>{shift_k+1., 
+                                                                      shift_k+1., 
+                                                                      shift_k+1.}
+                                              : std::array<double,3>{double(Size[0]), 
+                                                                     double(Size[1]), 
+                                                                     double(Size[2])};
 
-    for(int ix=0; ix<3; ix++){
-        while(notcart[ix]<0 && abs(notcart[ix])>threshold){
-            notcart[ix] += grid_limit[ix];
-        }
-    }
-
-    Coordinate v_reduced;
-    v_reduced.initialize(std::fmod(notcart[0], grid_limit[0]),
-                         std::fmod(notcart[1], grid_limit[1]),
-                         std::fmod(notcart[2], grid_limit[2]),
-                         LatticeVectors(space));    
+    auto v_reduced = reduce(v, low_limit, up_limit);
+//    Coordinate v_reduced;
+//    v_reduced.initialize(std::fmod(notcart[0], grid_limit[0]),
+//                         std::fmod(notcart[1], grid_limit[1]),
+//                         std::fmod(notcart[2], grid_limit[2]),
+//                         LatticeVectors(space));    
     return v_reduced;
 }
 
-Coordinate MeshGrid::reduce(Coordinate& v, const std::array<double,3>& low_limit, const std::array<double,3>& up_limit) const
+Coordinate MeshGrid::reduce(const Coordinate& v, const std::array<double,3>& low_limit, const std::array<double,3>& up_limit) const
 {
-    assert(type == cube);
+    //assert(type == cube);
 
     std::array<int,3> grid_limit = (space==k) ? std::array<int,3>{1, 1, 1}
                                               : Size;
@@ -356,7 +360,7 @@ Coordinate MeshGrid::reduce(Coordinate& v, const std::array<double,3>& low_limit
         while( notcart[ix] < low_limit[ix] && std::abs( notcart[ix]-low_limit[ix] ) > threshold ){
             notcart[ix] += grid_limit[ix];
         }
-        while( notcart[ix] >= up_limit[ix] ){
+        while( notcart[ix] > up_limit[ix] || std::abs(notcart[ix]-up_limit[ix]) < threshold ){
             notcart[ix] -= grid_limit[ix];
         }
     }
@@ -370,7 +374,7 @@ Coordinate MeshGrid::reduce(Coordinate& v, const std::array<double,3>& low_limit
 
 }
 
-Coordinate MeshGrid::reduce(Coordinate& v, const double& low_limit, const double& up_limit) const
+Coordinate MeshGrid::reduce(const Coordinate& v, const double& low_limit, const double& up_limit) const
 {
     assert( space == k ||  ( Size[0] == Size[1] && Size[1] == Size[2] ) );
     std::array<double,3> low_limit_array = {low_limit, low_limit, low_limit};
@@ -378,6 +382,7 @@ Coordinate MeshGrid::reduce(Coordinate& v, const double& low_limit, const double
     return this->reduce(v, low_limit_array, up_limit_array);
 
 }
+
 
 const std::vector<Coordinate>& MeshGrid::get_mesh() const
 {

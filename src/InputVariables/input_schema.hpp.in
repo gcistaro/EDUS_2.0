@@ -1,0 +1,8 @@
+namespace EDUS {
+
+#pragma once
+const nlohmann::json input_schema = R"schema(
+@EDUS_INPUT_SCHEMA@
+)schema"_json;
+
+};
