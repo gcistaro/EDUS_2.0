@@ -67,16 +67,25 @@ void dump_json_in_h5( const nlohmann::json& data__, const std::string& name__ )
 namespace output {
     void stars()
     {
-        std::cout << std::string(output::linesize, '*') << '\n';
+#ifdef EDUS_MPI
+        if ( mpi::Communicator::world().rank() == 0 ) 
+#endif
+        {
+            std::cout << std::string(output::linesize, '*') << '\n';
+        }
     }
 
     void title(const std::string& str__)
     {
-        std::stringstream title;
-        title << std::string(5, ' ') <<  str__ << std::string(5, ' ');
-        int num_stars = (output::linesize - title.str().length())/2;
-        std:: cout << std::string(num_stars,'*') << title.str() << std::string(num_stars,'*') << std::endl;
-
+#ifdef EDUS_MPI
+        if ( mpi::Communicator::world().rank() == 0 ) 
+#endif
+        {
+            std::stringstream title;
+            title << std::string(5, ' ') <<  str__ << std::string(5, ' ');
+            int num_stars = (output::linesize - title.str().length())/2;
+            std:: cout << std::string(num_stars,'*') << title.str() << std::string(num_stars,'*') << std::endl;
+        }
     }
 
 }

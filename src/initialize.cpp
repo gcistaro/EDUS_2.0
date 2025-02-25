@@ -74,7 +74,7 @@ void initialize()
 // ==         mpi::Communicator::world().send( &aux, 0 );
 // ==     }
 // ==     else {
-// ==         output::print("MPI world size:    *     ", mpi::Communicator::world().size());
+         output::print("MPI world size:    *", mpi::Communicator::world().size());
 // ==         output::title("MPI parallelization recap");
 // ==         output::print("WORLD RANK: " , mpi::Communicator::world().rank(),  "/" , mpi::Communicator::world().size());
 // ==         output::print("KPOOL RANK: " , kpool_comm.rank(),  "/" , kpool_comm.size());
