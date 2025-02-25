@@ -281,6 +281,30 @@ class Operator
         }
 
 
+        void print_Rdecay(const std::string& str__, const std::vector<Coordinate>& rwann__)
+        {
+            std::stringstream rank;
+#ifdef EDUS_MPI
+            rank << str__ << mpi::Communicator::world().rank() << ".txt";
+#else
+            rank << str__ << "0.txt";
+#endif
+            std::ofstream os;
+            os.open(rank.str());
+            auto Rgamma_centered = get_GammaCentered_grid(*this->get_Operator_R().get_MeshGrid());
+            for( int iR_loc=0; iR_loc< this->get_Operator_R().get_nblocks(); ++iR_loc ){
+                //os << DensityMatrix.get_Operator_R()[i] << std::endl;
+                auto iR_glob = this->mpindex.loc1D_to_glob1D(iR_loc);
+                for( int ialpha = 0; ialpha < this->get_Operator_R().get_nrows(); ++ialpha ) {
+                    for( int ibeta = 0; ibeta < this->get_Operator_R().get_nrows(); ++ibeta ) {
+                        os << (rwann__[ialpha] + Rgamma_centered[iR_glob] -rwann__[ibeta]).norm() ;
+                        os << this->get_Operator_R()[iR_loc](ialpha, ibeta) << std::endl;
+                    }
+                }
+            }
+            os.close();
+
+        }
 
 
 

@@ -22,7 +22,7 @@ t_au, _, Et_au, Vt_au = read_observables(folder, version)
 
 plt.plot(t_au, Vt_au[0])
 plt.show()
-freq_eV, Absorbance = absorbance(t_au, Vt_au, Et_au,[4,59])
+freq_eV, Absorbance = absorbance(t_au, Vt_au, Et_au,[1,7])
 
 
 plt.plot(freq_eV, Absorbance, label="Abs(w)")

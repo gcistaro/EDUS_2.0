@@ -4,20 +4,12 @@
 void ScreenedPotential::initialize()
 {
     /* Initialize all the dimensions */
-    W_      .initialize_fft(DensityMatrix_);
-    V_      .initialize_fft(DensityMatrix_);
-    X_      .initialize_fft(DensityMatrix_);
-    Epsilon_.initialize_fft(DensityMatrix_);
+    W_             .initialize_fft(DensityMatrix_);
+    V_             .initialize_fft(DensityMatrix_);
+    X_             .initialize_fft(DensityMatrix_);
+    Epsilon_       .initialize_fft(DensityMatrix_);
     InverseEpsilon_.initialize_fft(DensityMatrix_);
-
-    auto index_origin = material_.r[0].get_Operator_R().get_MeshGrid()->find(Coordinate(0,0,0));
-    auto& x0 = (material_.r[0].get_Operator_R())[index_origin];
-    auto& y0 = (material_.r[1].get_Operator_R())[index_origin];
-    auto& z0 = (material_.r[2].get_Operator_R())[index_origin];
-    rwann_ = std::vector<Coordinate>(Epsilon_.get_Operator(k).get_nrows());
-    for(int iwann=0; iwann<Epsilon_.get_Operator(k).get_nrows(); ++iwann) {
-        rwann_[iwann] = Coordinate(x0(iwann,iwann).real(), y0(iwann,iwann).real(), z0(iwann,iwann).real());
-    }
+    nodename_ = "-1";
 }
 
 void ScreenedPotential::ResponseFunction()
@@ -52,8 +44,8 @@ void ScreenedPotential::ResponseFunction()
                         for ( int ival = 0; ival < num_filledbands; ++ival ) {
                             //sum over k, v, c 
                             Xk(iq, ialpha, ibeta) += 
-                                (Uk(ialpha, ival)*Ukp(ibeta, icond)*Udkp(icond, ialpha)*Udk(ival, ibeta) + Uk(ialpha, icond)*Ukp(ibeta, ival)*Udkp(ival, ialpha)*Udk(icond, ibeta)) /
-                                                        (kmesh->get_TotalSize()*std::sqrt(kmesh->get_TotalSize())*(Band_energies_[ik](ival)-Band_energies_[ikp](icond)));
+                                (Uk(ialpha, ival)*Ukp(ibeta, icond)*Udkp(icond, ialpha)*Udk(ival, ibeta)) /
+                                                        (kmesh->get_TotalSize()*(Band_energies_[ik](ival)-Band_energies_[ikp](icond)));
                         }
                     }
                 }//ibeta
@@ -63,7 +55,7 @@ void ScreenedPotential::ResponseFunction()
 
     X_.go_to_R();
 
-    X_.print_Rdecay("X", rwann_);
+    X_.print_Rdecay("X", material_.rwann_);
 
 #ifdef EDUS_HDF5
     std::string name = "output.h5";
@@ -72,9 +64,9 @@ void ScreenedPotential::ResponseFunction()
     }
     HDF5_tree fout(name, hdf5_access_t::read_write);
     mpi::Communicator::world().barrier();
-    fout.create_node(-1);
-    X_.get_Operator_k().write_h5("output.h5",-1,"Xk");
-    Operator<std::complex<double>>::EigenVectors.write_h5("output.h5", -1, "Uk");
+    fout.create_node(nodename_);
+    X_.get_Operator_k().write_h5("output.h5",nodename_,"Xk");
+    Operator<std::complex<double>>::EigenVectors.write_h5("output.h5", nodename_, "Uk");
 #endif
 
 }
@@ -94,7 +86,7 @@ void ScreenedPotential::BareCoulomb()
         auto& Rvec = Rgamma_centered[iR_glob];
         for( int irow = 0; irow < VR.get_nrows(); ++irow ) {
             for(int icol = 0; icol < VR.get_ncols(); ++icol) {
-                auto ratom = rwann_[irow] + Rvec - rwann_[icol];
+                auto ratom = material_.rwann_[irow] + Rvec - material_.rwann_[icol];
                 if( ratom.norm() < 1.e-05 ) {
                     VR(iR_loc, irow, icol) = 0.;
                 }
@@ -107,13 +99,13 @@ void ScreenedPotential::BareCoulomb()
         }
     }
 
-    V_.print_Rdecay("V", rwann_);
+    V_.print_Rdecay("V", material_.rwann_);
 
 #ifdef EDUS_HDF5
     V_.go_to_k(true);
     HDF5_tree fout("output.h5", hdf5_access_t::read_write);
     mpi::Communicator::world().barrier();
-    V_.get_Operator_k().write_h5("output.h5",-1,"Vk");
+    V_.get_Operator_k().write_h5("output.h5",nodename_,"Vk");
     V_.go_to_R(false);
 #endif
 }
@@ -140,13 +132,13 @@ void ScreenedPotential::Epsilon()
         }
     }
 
-    Epsilon_.print_Rdecay("Epsilon", rwann_);
+    Epsilon_.print_Rdecay("Epsilon", material_.rwann_);
 
 #ifdef EDUS_HDF5
     Epsilon_.go_to_k(true);
     HDF5_tree fout("output.h5", hdf5_access_t::read_write);
     mpi::Communicator::world().barrier();
-    Epsilon_.get_Operator_k().write_h5("output.h5",-1,"Epsilonk");
+    Epsilon_.get_Operator_k().write_h5("output.h5",nodename_,"Epsilonk");
     Epsilon_.go_to_R(false);
 #endif
 }
@@ -169,17 +161,17 @@ void ScreenedPotential::Calculate()
 
         for( int irow = 0; irow < EpsR.get_nrows(); ++irow ) {
             for( int icol = 0; icol < EpsR.get_ncols(); ++icol ) {
-                invEpsR(iR_loc, irow, icol) = (std::abs(EpsR(iR_loc, irow, icol)) < 1.e-03) ? 0 : 1./EpsR(iR_loc, irow, icol);              
+                invEpsR(iR_loc, irow, icol) = (std::abs(EpsR(iR_loc, irow, icol)) < 1.e-03) ? 0 : 1./(EpsR(iR_loc, irow, icol));              
             }
         }
     }
 
-    InverseEpsilon_.print_Rdecay("InverseEpsilon", rwann_);
+    InverseEpsilon_.print_Rdecay("InverseEpsilon", material_.rwann_);
 #ifdef EDUS_HDF5
     InverseEpsilon_.go_to_k(true);
     HDF5_tree fout("output.h5", hdf5_access_t::read_write);
     mpi::Communicator::world().barrier();
-    InverseEpsilon_.get_Operator_k().write_h5("output.h5",-1,"Epsilonk");
+    InverseEpsilon_.get_Operator_k().write_h5("output.h5",nodename_,"Epsilonk");
     InverseEpsilon_.go_to_R(false);
 #endif
 
@@ -196,11 +188,11 @@ void ScreenedPotential::Calculate()
         }
     }
 
-    W_.print_Rdecay("W", rwann_);
+    W_.print_Rdecay("W", material_.rwann_);
 #ifdef EDUS_HDF5
     W_.go_to_k(true);
     mpi::Communicator::world().barrier();
-    W_.get_Operator_k().write_h5("output.h5",-1,"Wk");
+    W_.get_Operator_k().write_h5("output.h5",nodename_,"Wk");
     W_.go_to_R(false);
 #endif
 

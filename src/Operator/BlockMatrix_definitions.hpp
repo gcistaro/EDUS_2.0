@@ -341,7 +341,7 @@ void BlockMatrix<T>::cut(const double& threshold__)
 
 
 template<typename T>
-void BlockMatrix<T>::write_h5(const std::string& name__, const int& node__, const std::string& label__)
+void BlockMatrix<T>::write_h5(const std::string& name__, const std::string& node__, const std::string& label__)
 {
 #ifdef EDUS_HDF5
     PROFILE("write_h5");

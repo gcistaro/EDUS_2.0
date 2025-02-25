@@ -89,16 +89,20 @@ FourierTransform::initialize
 void FourierTransform::fft(const int& sign)
 {
     assert(IsFFT);
+    assert( sign == 1 || sign == -1 );
     auto& output = (sign == +1 ? (*Array_x) : (*Array_k) ); 
     auto& MyPlan = (sign == +1 ? (MyPlan_BWD) : (MyPlan_FWD) );
 
     fftw_execute(MyPlan);
 
-    #pragma omp parallel for schedule(static)
-    for(int index = 0; index < output.end()-output.begin(); ++index) {
-        auto& output_el = output[index];
-    //for(auto& output_el : output){
-        output_el /= SqrtTotalSize;
+    if( sign == -1 ) {
+        #pragma omp parallel for schedule(static)
+        for(int index = 0; index < output.end()-output.begin(); ++index) {
+            auto& output_el = output[index];
+        //for(auto& output_el : output){
+            output_el /= TotalSize;
+    }
+
     }
 }
 

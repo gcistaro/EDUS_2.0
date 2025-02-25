@@ -35,6 +35,8 @@ namespace nodename {
     const std::string H0pCoulomb = "H0+Coulomb";
     const std::string fullH      = "fullH";
     const std::string DMk        = "DensityMatrix_k";
+    const std::string DMk_bloch  = "DensityMatrix_k_bloch";
+    const std::string SelfEnergy = "SelfEnergy";
     const std::string G_lesser   = "G_lesser";
 };//end namespace nodename 
 
