@@ -1,0 +1,30 @@
+{
+    "tb_file": "@PROJECT_SOURCE_DIR@/tb_models/Trivial_Hamiltonian",
+    "fermienergy": 0, 
+    "fermienergy_units" : "electronvolt",
+    "coulomb": false,
+    "grid": [100,100,1],
+    "filledbands" : 1,
+    "dt": 0.01, 
+    "dt_units" : "femtoseconds",
+    "printresolution": 1,
+    "initialtime" : 0,
+    "initialtime_units" : "femtoseconds",
+    "finaltime": 1, 
+    "finaltime_units" : "femtoseconds",
+
+    "solver": "RK",
+    "order": 4,
+
+    "lasers":
+    [
+      {
+      "intensity": 1e+10,
+      "intensity_units" : "wcm2",
+      "wavelength": 800,
+      "wavelength_units" : "nm",
+      "polarization": [1,0,0],
+      "cycles" : 5
+      }
+    ]
+  }
