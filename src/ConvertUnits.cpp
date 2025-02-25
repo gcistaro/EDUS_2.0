@@ -23,6 +23,7 @@ Unit unit( const std::string& to_unit)
 {
     if( to_unit == "angstrom"    )    {return Angstrom; }
     if( to_unit == "nanometers"  )    {return NanoMeters;  }
+    if( to_unit == "nm"          )    {return NanoMeters;  }
     if( to_unit == "electronvolt")    {return ElectronVolt;  }
     if( to_unit == "joule"       )    {return Joule;  }
     if( to_unit == "wcm2"        )    {return Wcm2;  }

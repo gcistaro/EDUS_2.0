@@ -123,7 +123,7 @@ class BlockMatrix{
         void make_dagger();
 
         void cut(const double& threshold__);
-        void write_h5(const std::string& name__, const int& node__, const std::string& label__="");
+        void write_h5(const std::string& name__, const std::string& node__, const std::string& label__="");
         void load    (const std::string& name__, const int& node__, const std::string& label__="");
         void identity()
         {

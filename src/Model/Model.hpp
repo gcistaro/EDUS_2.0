@@ -21,6 +21,8 @@ class Material
         Operator<std::complex<double>> H;
         std::array< Operator<std::complex<double>>, 3> r;
 
+        std::vector<Coordinate> rwann_;
+
 
         Material(){};
         //Material(const Material& m) = default;
@@ -64,9 +66,18 @@ class Material
             r[0].lock_gauge(wannier);      r[0].lock_space(R);        
             r[1].lock_gauge(wannier);      r[1].lock_space(R);        
             r[2].lock_gauge(wannier);      r[2].lock_space(R);        
-            H.lock_gauge(wannier);         H.lock_space(R);         
+            H.lock_gauge(wannier);         H.lock_space(R);        
+    
+            /* assume wannier centers are the R=0 components, diagonal of r*/
+            rwann_ = std::vector<Coordinate>(r[0].get_Operator(R).get_nrows());
+            auto index_origin = r[0].get_Operator_R().get_MeshGrid()->find(Coordinate(0,0,0));
+            auto& x0 = (r[0].get_Operator_R())[index_origin];
+            auto& y0 = (r[1].get_Operator_R())[index_origin];
+            auto& z0 = (r[2].get_Operator_R())[index_origin];
+            for(int iwann=0; iwann<x0.get_nrows(); ++iwann) {
+                rwann_[iwann] = Coordinate(x0(iwann,iwann).real(), y0(iwann,iwann).real(), z0(iwann,iwann).real());
+            }
         }
-
 };
 
 

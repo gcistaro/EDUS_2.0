@@ -64,6 +64,7 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
                        currentdata.polarization()[2]);
         pol = pol/pol.norm(); 
         laser.set_Polarization(pol);
+        laser.print_info();
         setoflaser_.push_back(laser);
     }
 
@@ -100,22 +101,10 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     std::filesystem::current_path(std::string(std::filesystem::current_path())+"/Output");
 
     /* print DM in real space */
-    std::stringstream rank;
-#ifdef EDUS_MPI
-    rank << "DM" << mpi::Communicator::world().rank() << ".txt";
-#else
-    rank << "DM0.txt";
-#endif
-    std::ofstream os;
-    os.open(rank.str());
-    auto Rgamma_centered = get_GammaCentered_grid(*DensityMatrix_.get_Operator_R().get_MeshGrid());
-    for(int iR_loc=0; iR_loc< DensityMatrix_.get_Operator_R().get_nblocks(); ++iR_loc){
-        //os << DensityMatrix.get_Operator_R()[i] << std::endl;
-        auto iR_glob = DensityMatrix_.mpindex.loc1D_to_glob1D(iR_loc);
-        os << Rgamma_centered[iR_glob].norm();
-        os << " " << std::abs(max(DensityMatrix_.get_Operator_R()[iR_loc])) << std::endl;
-    }
-    os.close();
+    std::cout << material_.rwann_.size() << std::endl;
+    
+    DensityMatrix_.print_Rdecay("DM", material_.rwann_);
+
     Calculate_Velocity();
     DensityMatrix_.go_to_k();
     assert(DensityMatrix_.get_Operator_k().is_hermitian());
@@ -128,28 +117,32 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     os_Velocity_.open("Velocity.txt");
 
     // ---------------------- create recap file ---------------------------------------------
-     ctx_->cfg().dict()["num_bands"] = DensityMatrix_.get_Operator_R().get_nrows();
-     ctx_->cfg().dict()["num_kpoints"] = DensityMatrix_.get_Operator_k().get_MeshGrid()->get_TotalSize();
+    ctx_->cfg().dict()["num_bands"] = DensityMatrix_.get_Operator_R().get_nrows();
+    ctx_->cfg().dict()["num_kpoints"] = DensityMatrix_.get_Operator_k().get_MeshGrid()->get_TotalSize();
  
-     
-     mdarray<double,2> bare_k({DensityMatrix_.get_Operator_k().get_MeshGrid()->get_TotalSize(),3});
-     for( int ik=0; ik < DensityMatrix_.get_Operator_k().get_MeshGrid()->get_mesh().size(); ++ik ) {
-         for(auto& ix : {0, 1, 2}) {
-             bare_k(ik,ix) = (*(DensityMatrix_.get_Operator_k().get_MeshGrid()))[ik].get(LatticeVectors(k))[ix];
-         }
-     }
-     ctx_->cfg().dict()["kpoints"] = bare_k;
-     ctx_->cfg().dict()["A"] = Coordinate::get_Basis(LatticeVectors(R)).get_M();
-     ctx_->cfg().dict()["B"] = Coordinate::get_Basis(LatticeVectors(k)).get_M();
+    
+    mdarray<double,2> bare_k({DensityMatrix_.get_Operator_k().get_MeshGrid()->get_TotalSize(),3});
+    for( int ik=0; ik < DensityMatrix_.get_Operator_k().get_MeshGrid()->get_mesh().size(); ++ik ) {
+        for(auto& ix : {0, 1, 2}) {
+            bare_k(ik,ix) = (*(DensityMatrix_.get_Operator_k().get_MeshGrid()))[ik].get(LatticeVectors(k))[ix];
+        }
+    }
+    ctx_->cfg().dict()["kpoints"] = bare_k;
+    ctx_->cfg().dict()["A"] = Coordinate::get_Basis(LatticeVectors(R)).get_M();
+    ctx_->cfg().dict()["B"] = Coordinate::get_Basis(LatticeVectors(k)).get_M();
  
  #ifdef EDUS_HDF5
-     std::string name = "output.h5";
-     if (!file_exists(name)) {
-         HDF5_tree(name, hdf5_access_t::truncate);
-     }
-     HDF5_tree fout(name, hdf5_access_t::truncate);
-     dump_json_in_h5( ctx_->cfg().dict(), name );
-     mpi::Communicator::world().barrier();
+    std::string name = "output.h5";
+    if (!file_exists(name)) {
+        HDF5_tree(name, hdf5_access_t::truncate);
+    }
+    HDF5_tree fout(name, hdf5_access_t::truncate);
+    dump_json_in_h5( ctx_->cfg().dict(), name );
+    fout.create_node(nodename::fullH);
+    fout.create_node(nodename::DMk);
+    fout.create_node(nodename::DMk_bloch);
+    fout.create_node(nodename::SelfEnergy);
+    mpi::Communicator::world().barrier();
  #endif
     //---------------------------------------------------------------------------------------
 }
@@ -277,21 +270,23 @@ void Simulation::do_onestep()
     if( PrintObservables( CurrentTime ) ){
 #ifdef EDUS_HDF5
         std::string name = "output.h5";
-        auto node = get_it_sparse(CurrentTime);
+        std::stringstream node;
+        node << get_it_sparse(CurrentTime);
 
-        HDF5_tree fout(name, hdf5_access_t::truncate);
+        HDF5_tree fout(name, hdf5_access_t::read_write);
 
-        fout.create_node(node);
-        fout.write("time_au", CurrentTime);
         Calculate_TDHamiltonian(CurrentTime, true);
-        H_.get_Operator_k().write_h5(name, node, nodename::fullH);
+        H_.get_Operator_k().write_h5(name, nodename::fullH, node.str());
         DensityMatrix_.go_to_R(true);
         H_.go_to_R(false);
         coulomb_.EffectiveHamiltonian( H_, DensityMatrix_, true); 
         H_.go_to_k(true);
-        H_.get_Operator_k().write_h5(name, node, "SelfEnergy");
-        DensityMatrix_.get_Operator_k().write_h5(name, node, nodename::DMk);
+        H_.get_Operator_k().write_h5(name, nodename::SelfEnergy, node.str());
+        DensityMatrix_.get_Operator_k().write_h5(name, nodename::DMk, node.str());
         DensityMatrix_.go_to_k(false);
+        DensityMatrix_.go_to_bloch();
+        DensityMatrix_.get_Operator_k().write_h5(name, nodename::DMk_bloch, node.str());
+        DensityMatrix_.go_to_wannier();
 #endif 
 
         //print time 
@@ -471,9 +466,9 @@ void Simulation::print_grids()
 
 std::string Simulation::wavelength_or_frequency(const int& idx__)
 {
-    bool is_frequency = ( std::abs( ctx_->cfg().lasers(idx__).frequency() ) > 1.e-08);
+    bool is_frequency = ( ctx_->cfg().lasers(idx__).contains("frequency") );
     if( is_frequency) return "frequency";
-    bool is_wavelength = ( std::abs( ctx_->cfg().lasers(idx__).wavelength() ) > 1.e-08 );
+    bool is_wavelength = ( ctx_->cfg().lasers(idx__).contains("wavelength") );
     if( !is_wavelength ) {
         throw std::runtime_error("You must specify (nonzero) frequency *xor* wavelength!");
     }

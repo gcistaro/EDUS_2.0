@@ -77,6 +77,7 @@ configure_file("${PROJECT_SOURCE_DIR}/src/core/projectdir.h.in" "${PROJECT_SOURC
 configure_file("${PROJECT_SOURCE_DIR}/ci-test/inputs/hBN.json.in" "${PROJECT_SOURCE_DIR}/ci-test/inputs/hBN.json" @ONLY)
 configure_file("${PROJECT_SOURCE_DIR}/ci-test/inputs/hBN_coulomb.json.in" "${PROJECT_SOURCE_DIR}/ci-test/inputs/hBN_coulomb.json" @ONLY)
 configure_file("${PROJECT_SOURCE_DIR}/ci-test/inputs/MoS2.json.in" "${PROJECT_SOURCE_DIR}/ci-test/inputs/MoS2.json" @ONLY)
+configure_file("${PROJECT_SOURCE_DIR}/ci-test/inputs/input_NonEQ_Grad.json.in" "${PROJECT_SOURCE_DIR}/ci-test/inputs/input_NonEQ_Grad.json" @ONLY)
 
 # generate schema
 file(READ "${PROJECT_SOURCE_DIR}/src/InputVariables/input_schema.json" EDUS_INPUT_SCHEMA NEWLINE_CONSUME)
@@ -208,7 +209,7 @@ add_executable(DE2_test ci-test/test_DEsolver2.cpp)
 add_executable(fft_test ci-test/test_fft_mpi.cpp)
 add_executable(Gradient_R_test ci-test/test_Gradient_R.cpp)
 add_executable(NonEQ ci-test/test_NEQ_H0.cpp)
-add_executable(NonEQ3 ci-test/test_NEQ_Grad.cpp)
+add_executable(NonEQ_Grad ci-test/test_NEQ_Grad.cpp)
 add_executable(Bandstructure_test ci-test/test_bandstructure.cpp)
 add_executable(Pseudoinv_test ci-test/test_pseudoinverse.cpp)
 add_executable(ScreenedPotential ci-test/test_Response.cpp)
@@ -226,7 +227,13 @@ add_test(NAME Bandstructure_test COMMAND
 					python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_CURRENT_BINARY_DIR}/BANDSTRUCTURE.txt ${CMAKE_SOURCE_DIR}/ci-test/Reference/BANDSTRUCTURE.txt")
 add_test(NAME fft_test COMMAND fft_test)
 add_test(NAME NonEQ_H0 COMMAND NonEQ)
-add_test(NAME NonEQ_Grad COMMAND NonEQ3)
+add_test(NAME NonEQ_Grad COMMAND 
+            bash -c "mkdir ${CMAKE_SOURCE_DIR}/CTEST; 
+            rm -rf ${CMAKE_SOURCE_DIR}/CTEST/NonEQ_Grad/; \ 
+            mkdir ${CMAKE_SOURCE_DIR}/CTEST/NonEQ_Grad/; \ 
+            cd ${CMAKE_SOURCE_DIR}/CTEST/NonEQ_Grad/; \ 
+            ${CMAKE_CURRENT_BINARY_DIR}/NonEQ_Grad ${PROJECT_SOURCE_DIR}/ci-test/inputs/input_NonEQ_Grad.json"
+            )
 
 add_test(NAME hBN COMMAND
              bash -c "mkdir ${CMAKE_SOURCE_DIR}/CTEST; 

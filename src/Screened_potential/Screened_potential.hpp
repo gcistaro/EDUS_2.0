@@ -9,7 +9,7 @@ class ScreenedPotential : public Simulation
         Operator<std::complex<double>> Epsilon_;        //permittivity
         Operator<std::complex<double>> InverseEpsilon_; //inverse of permittivity
 
-        std::vector<Coordinate> rwann_; 
+        std::string nodename_;
 
     public: 
         using Simulation::Simulation;
