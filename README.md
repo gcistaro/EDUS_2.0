@@ -54,7 +54,10 @@ A sample input file can be found in `<repository>/ci-test/inputs`. For now you n
 
 ## Usage
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur non metus nisl. Duis mattis sit. 
+Upon building, the EDUS executable will be inside the build directory. For a generic `input.json` file, EDUS can be run from the root of the project as
+```
+./build/EDUS ./path/to/input.json 1> output.log 2> output.err
+```
 
 ---
 
