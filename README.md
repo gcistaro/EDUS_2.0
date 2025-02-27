@@ -46,15 +46,15 @@ ctest
 ```
 
 ## Input file
-A sample input file can be found in `<repository>/ci-test/inputs`. For now you need to define all the variables, I will soon make something to have default values. One thing is that now the code supports just reading the coulomb interaction from file. You need to produce it using the script in `PostProces/RytovaKeldysh.py <nk1> <nk2> <nk3> tb_file`.
+A sample input file can be found in `<repository>/ci-test/inputs`. For now you need to define all the variables, we will soon assign default values to many of the variables. One thing is that, currently, the code supports just reading the coulomb interaction from a file. You need to produce it using the script in `PostProces/RytovaKeldysh.py <nk1> <nk2> <nk3> tb_file`.
 
 
 ## Adding new code
-1. Before adding something new, make sure you are not repeating something is already there
+1. Before adding something new, make sure you are not repeating something is already there.
 2. To add new code, create a new class, unless you don’t just want to add some features (methods) in a class that already exists. Whenever you want to push something in the remote folder, do not do it in the main branch, but create a new branch with small changes, only related to what you want to add. When you are done with the changes, the first step is to make sure that you did not break old parts of the code, unless you did not find a bug. So, make everything and run ctest. If your tests are failing, consider what you changed in the “old” code that was working before. 
-3. To create a new branch, give meaningful names, so that if it stays there for years we will remember what we were doing in that branch
-4. IMPORTANT:  push only the files you want to really to change. To see what you changed, you can use the terminal command git status. If something changed and you did not change it, you can run git diff \<file>, that will compare your local file with the remote one. If you did some changes (even spaces) that are not needed, you can restore the remote file with `git restore <file>`
-5. After your changes are done, create a pull request and we will add them in main
+3. To create a new branch, give meaningful names, so that if it stays there for years we will remember what we were doing in that branch.
+4. IMPORTANT:  push only the files you want to really to change. To see what you changed, you can use the terminal command git status. If something changed and you did not change it, you can run `git diff <file>`, that will compare your local file with the remote one. If you did some changes (even spaces) that are not needed, you can restore the remote file with `git restore <file>`.
+5. After your changes are done, create a pull request and we will add them in main.
 
 ### HOW TO ADD A CLASS
 If you want to add a class from scratch, you need to add to the code two different files:
