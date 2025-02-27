@@ -45,9 +45,18 @@ make
 ctest
 ```
 
+---
+
 ## Input file
 A sample input file can be found in `<repository>/ci-test/inputs`. For now you need to define all the variables, we will soon assign default values to many of the variables. One thing is that, currently, the code supports just reading the coulomb interaction from a file. You need to produce it using the script in `PostProces/RytovaKeldysh.py <nk1> <nk2> <nk3> tb_file`.
 
+---
+
+## Usage
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur non metus nisl. Duis mattis sit. 
+
+---
 
 ## Adding new code
 1. Before adding something new, make sure you are not repeating something is already there.
