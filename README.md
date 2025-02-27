@@ -46,7 +46,7 @@ ctest
 ```
 
 ## Input file
-A sample input file can be found in `\<repository>/ci-test/inputs`. For now you need to define all the variables, I will soon make something to have default values. One thing is that now the code supports just reading the coulomb interaction from file. You need to produce it using the script in `PostProces/RytovaKeldysh.py \<nk1> \<nk2> \<nk3> tb_file`.
+A sample input file can be found in `<repository>/ci-test/inputs`. For now you need to define all the variables, I will soon make something to have default values. One thing is that now the code supports just reading the coulomb interaction from file. You need to produce it using the script in `PostProces/RytovaKeldysh.py \<nk1> \<nk2> \<nk3> tb_file`.
 
 
 ## Adding new code
