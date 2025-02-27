@@ -68,7 +68,7 @@ Upon building, the EDUS executable will be inside the build directory. For a gen
 4. IMPORTANT:  push only the files you want to really to change. To see what you changed, you can use the terminal command git status. If something changed and you did not change it, you can run `git diff <file>`, that will compare your local file with the remote one. If you did some changes (even spaces) that are not needed, you can restore the remote file with `git restore <file>`.
 5. After your changes are done, create a pull request and we will add them in main.
 
-### HOW TO ADD A CLASS
+### Adding a class
 If you want to add a class from scratch, you need to add to the code two different files:
 1. A header file .hpp, that you will link to all the parts of the code that need your class using `#include <”file”.hpp>`. This class contains the declaration of your class together with the declaration of all the methods. “Declaration” means a line where you define return type, name, arguments but never their definition. This will be included in many parts of the code, so make sure it will be compiled only once with #ifdef.
 2. A source file .cpp, which contains the actual code to be used. You need to add this file in the list of __SOURCES in CMakeLists.txt so it will be compiled as an object file with the code. In this file you need to write the definition of everything you just declared in your .hpp file. 
