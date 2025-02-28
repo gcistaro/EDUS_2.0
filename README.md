@@ -48,7 +48,9 @@ ctest
 ---
 
 ## Input file
-A sample input file can be found in `<repository>/ci-test/inputs`. For now you need to define all the variables, we will soon assign default values to many of the variables. One thing is that, currently, the code supports just reading the coulomb interaction from a file. You need to produce it using the script in `PostProces/RytovaKeldysh.py <nk1> <nk2> <nk3> tb_file`.
+A sample input file can be found in `<repository>/ci-test/inputs`. For now you need to define all the variables, we will soon assign default values to many of the variables. 
+
+Currently, the code only supports reading the coulomb interaction from a file. You need to produce it via the script in `PostProces/RytovaKeldysh.py` by calling it as `PostProces/RytovaKeldysh.py <nk1> <nk2> <nk3> file_tb.dat`, where `<nk1> <nk2> <nk3>` are the number of kpoints in each cartesian direction and `file_tb.dat` is the Wannier90 output that will be used in the computation.
 
 ---
 
