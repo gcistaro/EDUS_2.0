@@ -100,9 +100,7 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     std::filesystem::create_directories(std::string(std::filesystem::current_path())+"/Output");
     std::filesystem::current_path(std::string(std::filesystem::current_path())+"/Output");
 
-    /* print DM in real space */
-    std::cout << material_.rwann_.size() << std::endl;
-    
+    /* print DM in real space */  
     DensityMatrix_.print_Rdecay("DM", material_.rwann_);
 
     Calculate_Velocity();
