@@ -23,7 +23,8 @@ git
     • MKL (for lapack/blas routines, eventually for fftw)
     • MPI (openmpi/mpich)
     • fftw (mpi version if you want to compile with mpi)
-    • hdf5 (for ouputing results in an output.h5 data file)
+    • hdf5 (for outputing results in an output.h5 data file) 
+    • python3 + numpy (at runtime, for building the RytovaKeldysh potential)
 
 It is important to note that the `mpi`, `fftw`, and `hdf5` must have matching version numbers. I.e.,
 ```bash
@@ -50,7 +51,11 @@ ctest
 ## Input file
 A sample input file can be found in `<repository>/ci-test/inputs`. For now you need to define all the variables, we will soon assign default values to many of the variables. 
 
-Currently, the code only supports reading the coulomb interaction from a file. You need to produce it via the script in `PostProces/RytovaKeldysh.py` by calling it as `PostProces/RytovaKeldysh.py <nk1> <nk2> <nk3> file_tb.dat`, where `<nk1> <nk2> <nk3>` are the number of kpoints in each cartesian direction and `file_tb.dat` is the Wannier90 output that will be used in the computation.
+Currently, the code only supports reading the coulomb interaction from a file. This file is created automatically when the computation starts by calling the script `PostProces/RytovaKeldysh.py`. Currently, the screening length $`r_0`$ (in Angstrom) and the dielectric constant of the surrounding medium $`\epsilon`$ (dimensionless) need to be updated in the python script. 
+
+[comment]: # (by calling it as `PostProces/RytovaKeldysh.py <nk1> <nk2> <nk3> file_tb.dat`, where `<nk1> <nk2> <nk3>` are the number of kpoints in each cartesian direction and `file_tb.dat` is the Wannier90 output that will be used in the computation. )
+
+
 
 ---
 
