@@ -120,6 +120,18 @@ class config_t
         }
         dict_["/printresolution"_json_pointer] = printresolution__;
     }
+    /// Time steps needed to print in hdf5 and observables
+    inline auto printresolution_pulse() const
+    {
+        return dict_.at("/printresolution_pulse"_json_pointer).get<int>();
+    }
+    inline void printresolution_pulse(int printresolution__)
+    {
+        if (dict_.contains("locked")) {
+            throw std::runtime_error(locked_msg);
+        }
+        dict_["/printresolution_pulse"_json_pointer] = printresolution__;
+    }
     /// Initial time of the simulation
     inline auto initialtime() const
     {

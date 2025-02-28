@@ -133,7 +133,7 @@ class SetOfLaser
         SetOfLaser(){};
         Laser& operator[](const int& i)
         {
-            return const_cast<Laser&>(static_cast<const SetOfLaser&>(*this)[i]);
+            return LaserArray[i];
         };
         const Laser& operator[](const int& i) const
         {

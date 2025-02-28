@@ -45,7 +45,7 @@ class Simulation
         void Propagate();
         void do_onestep();
         void print_recap();
-        bool PrintObservables(const double& time__) const;
+        bool PrintObservables(const double& time__);
         void Print_Population();
         void Print_Velocity();
         int get_it(const double& time__) const;

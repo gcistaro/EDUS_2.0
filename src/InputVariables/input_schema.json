@@ -57,6 +57,11 @@
             "default": 1,
             "title": "Time steps needed to print in hdf5 and observables"
         },
+        "printresolution_pulse": {
+            "type": "integer",
+            "default": 1,
+            "title": "Time steps needed to print in hdf5 and observables during the pulse"
+        },
         "initialtime": {
             "type": "number",
             "default": 0.0,

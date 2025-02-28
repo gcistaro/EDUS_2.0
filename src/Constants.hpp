@@ -37,6 +37,7 @@ namespace nodename {
     const std::string DMk        = "DensityMatrix_k";
     const std::string DMk_bloch  = "DensityMatrix_k_bloch";
     const std::string SelfEnergy = "SelfEnergy";
+    const std::string time_au    = "time_au";
     const std::string G_lesser   = "G_lesser";
 };//end namespace nodename 
 

@@ -142,6 +142,7 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     fout.create_node(nodename::DMk);
     fout.create_node(nodename::DMk_bloch);
     fout.create_node(nodename::SelfEnergy);
+    fout.create_node(nodename::time_au);
     mpi::Communicator::world().barrier();
  #endif
     //---------------------------------------------------------------------------------------
@@ -150,9 +151,22 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
 
 
 
-bool Simulation::PrintObservables(const double& time__) const
+bool Simulation::PrintObservables(const double& time__) 
 {
-    return ( int( round( time__/DEsolver_DM_.get_ResolutionTime() ) ) % ctx_->cfg().printresolution() == 0 );
+    /* check if we are within (any) pulse */
+    int printresolution;
+    for( int ilaser = 0; ilaser < setoflaser_.size(); ++ilaser ) {
+        if ( time__ > setoflaser_[ilaser].get_InitialTime() + 1.e-07 &&
+             time__ < setoflaser_[ilaser].get_FinalTime()   + 1.e-07 ) {
+                printresolution = ctx_->cfg().printresolution_pulse();
+                break;
+        }
+        else {
+                printresolution = ctx_->cfg().printresolution();
+        }
+    }
+
+    return ( int( round( time__/DEsolver_DM_.get_ResolutionTime() ) ) % printresolution == 0 );
 }
 
 void Simulation::SettingUp_EigenSystem()
@@ -282,6 +296,7 @@ void Simulation::do_onestep()
         coulomb_.EffectiveHamiltonian( H_, DensityMatrix_, true); 
         H_.go_to_k(true);
         H_.get_Operator_k().write_h5(name, nodename::SelfEnergy, node.str());
+        fout[nodename::time_au].write(node.str(), CurrentTime);
         DensityMatrix_.get_Operator_k().write_h5(name, nodename::DMk, node.str());
         DensityMatrix_.go_to_k(false);
         DensityMatrix_.go_to_bloch();
@@ -397,6 +412,7 @@ void Simulation::print_recap()
     output::print("Resolution time:    *", DEsolver_DM_.get_ResolutionTime(), " a.u.", 
                             Convert(DEsolver_DM_.get_ResolutionTime(), AuTime, FemtoSeconds), " fs");
     output::print("PrintResolution:    *", ctx_->cfg().printresolution());
+    output::print("PrintResolution(pulse):*", ctx_->cfg().printresolution_pulse());
     output::print("Coulomb        :    *", std::string(8, ' '), (coulomb_.get_DoCoulomb() ? "True" : "False"));
     output::stars();
 
@@ -429,7 +445,10 @@ int Simulation::get_it(const double& time__) const
 
 int Simulation::get_it_sparse(const double& time__) const
 {
-    return int(round(time__/DEsolver_DM_.get_ResolutionTime()/ctx_->cfg().printresolution()));
+    static int counter = -1;
+    counter++;
+    return counter; 
+    //return int(round(time__/DEsolver_DM_.get_ResolutionTime()/ctx_->cfg().printresolution()));
 }
 
 
