@@ -15,7 +15,7 @@
         "fermienergy_units": {
             "type": "string",
             "default": "eV",
-            "enum" : [
+            "enum": [
                 "eV",
                 "au"
             ],
@@ -26,6 +26,16 @@
             "default": false,
             "title": "If true, we go beyond IPA using HSEX theory"
         },
+        "epsilon": {
+            "type": "number",
+            "default": 1.0,
+            "title": "Dielectric constant for RK potential"
+        },
+        "r0": {
+            "type": "number",
+            "default": 10.0,
+            "title": "r0 screening length for RK potential"
+        },
         "grid": {
             "type": "array",
             "items": {
@@ -33,7 +43,11 @@
             },
             "minItems": 3,
             "maxItems": 3,
-            "default": [10,10,1],
+            "default": [
+                10,
+                10,
+                1
+            ],
             "title": "Dimension of the k grid (R as well) used for the simulation"
         },
         "filledbands": {
@@ -49,7 +63,10 @@
         "dt_units": {
             "type": "string",
             "default": "au",
-            "enum" : ["au", "fs"],
+            "enum": [
+                "au",
+                "fs"
+            ],
             "title": "Units for the Time resolution used for propagating Density Matrix"
         },
         "printresolution": {
@@ -70,7 +87,10 @@
         "initialtime_units": {
             "type": "string",
             "default": "au",
-            "enum" : ["au", "fs"],
+            "enum": [
+                "au",
+                "fs"
+            ],
             "title": "Units for the Time resolution used for Initial time of the simulation"
         },
         "finaltime": {
@@ -81,13 +101,19 @@
         "finaltime_units": {
             "type": "string",
             "default": "au",
-            "enum" : ["au", "fs"],
+            "enum": [
+                "au",
+                "fs"
+            ],
             "title": "Units for the Time resolution used for Final time of the simulation"
         },
         "solver": {
             "type": "string",
             "default": "RK",
-            "enum" : ["RK", "AB"],
+            "enum": [
+                "RK",
+                "AB"
+            ],
             "title": "Solver used for time propagation of the Density Matrix"
         },
         "order": {
@@ -112,7 +138,10 @@
                     "intensity_units": {
                         "type": "string",
                         "default": "Wcm2",
-                        "enum" : ["Wcm2", "au"],
+                        "enum": [
+                            "Wcm2",
+                            "au"
+                        ],
                         "title": "Units for intensity of the laser"
                     },
                     "frequency": {
@@ -123,7 +152,10 @@
                     "frequency_units": {
                         "type": "string",
                         "default": "eV",
-                        "enum" : ["eV", "au"],
+                        "enum": [
+                            "eV",
+                            "au"
+                        ],
                         "title": "Units for frequency of the laser"
                     },
                     "wavelength": {
@@ -134,12 +166,15 @@
                     "wavelength_units": {
                         "type": "string",
                         "default": "nm",
-                        "enum" : ["nm", "au"],
+                        "enum": [
+                            "nm",
+                            "au"
+                        ],
                         "title": "Units for wavelength of the laser"
                     },
                     "polarization": {
                         "type": "array",
-                        "items" : {
+                        "items": {
                             "type": "number",
                             "default": 0.0
                         },
