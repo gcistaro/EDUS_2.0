@@ -23,6 +23,18 @@ If true, we go beyond IPA using HSEX theory
  - **default**: If true, we go beyond IPA using HSEX theory
  - **title**: If true, we go beyond IPA using HSEX theory
 
+# epsilon
+Dielectric constant for RK potential
+ - **type**: Dielectric constant for RK potential
+ - **default**: Dielectric constant for RK potential
+ - **title**: Dielectric constant for RK potential
+
+# r0
+r0 screening length for RK potential
+ - **type**: r0 screening length for RK potential
+ - **default**: r0 screening length for RK potential
+ - **title**: r0 screening length for RK potential
+
 # grid
 Dimension of the k grid (R as well) used for the simulation
  - **type**: Dimension of the k grid (R as well) used for the simulation
