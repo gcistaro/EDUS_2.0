@@ -1,0 +1,32 @@
+
+{
+    "tb_file": "/home/sa_m/EDUS_2.0/tb_models/Si",
+    "fermienergy": 0, 
+    "fermienergy_units" : "electronvolt",
+    "coulomb": true,
+    "grid": [10,10,10],
+    "filledbands" : 1,
+    "dt": 0.01, 
+    "dt_units" : "femtoseconds",
+    "printresolution": 1,
+    "printresolution_pulse": 1,
+    "initialtime" : 0,
+    "initialtime_units" : "femtoseconds",
+    "finaltime": 1, 
+    "finaltime_units" : "femtoseconds",
+
+    "solver": "RK",
+    "order": 4,
+
+    "lasers":
+    [
+      {
+      "intensity": 1e10,
+      "intensity_units" : "wcm2",
+      "frequency": 10,
+      "frequency_units" : "electronvolt",
+      "polarization": [1,1,0],
+      "cycles" : 1
+      }
+    ]
+  }
