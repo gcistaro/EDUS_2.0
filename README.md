@@ -34,6 +34,12 @@ fftw/3.3.10_mpi5_gcc13
 hdf5/1.14.3_gcc13_mpi5
 ```
 
+Additionally, the load order is important for compilation. Ideally, the modules should be loaded as  
+```bash
+module purge
+module load python/3.11.4 gcc/13.2.0 intel/2022.3 openmpi_gcc/5.0.2_gcc13.2.0 fftw/3.3.10_mpi5_gcc13 hdf5/1.14.3_gcc13_mpi5
+```
+
 
 #### Building
 For all distros:
@@ -49,9 +55,9 @@ ctest
 ---
 
 ## Input file
-A sample input file can be found in `<repository>/ci-test/inputs`. For now you need to define all the variables, we will soon assign default values to many of the variables. 
+Sample input files can be found in `<repository>/ci-test/inputs`. For now you need to define all the variables, we will soon assign default values to many of the variables. 
 
-Currently, the code only supports reading the coulomb interaction from a file. This file is created automatically when the computation starts by calling the script `PostProces/RytovaKeldysh.py`. Currently, the screening length $`r_0`$ (in Angstrom) and the dielectric constant of the surrounding medium $`\epsilon`$ (dimensionless) need to be updated in the python script. 
+Currently, the code only supports reading the coulomb interaction from a file. This file is created automatically when the computation starts by calling the script `PostProces/RytovaKeldysh.py` using the screening length $`r_0`$ (in Angstrom) and the dielectric constant of the surrounding medium $`\epsilon`$ (dimensionless) as defined in the input file. 
 
 [comment]: # (by calling it as `PostProces/RytovaKeldysh.py <nk1> <nk2> <nk3> file_tb.dat`, where `<nk1> <nk2> <nk3>` are the number of kpoints in each cartesian direction and `file_tb.dat` is the Wannier90 output that will be used in the computation. )
 
@@ -61,9 +67,9 @@ Currently, the code only supports reading the coulomb interaction from a file. T
 
 ## Usage
 
-Upon building, the EDUS executable will be inside the build directory. For a generic `input.json` file, EDUS can be run from the root of the project as
+Upon building, the EDUS executable will be inside the build directory. For a generic `input.json.in` file, EDUS can be run from the root of the project as
 ```
-./build/EDUS ./path/to/input.json 1> output.log 2> output.err
+./build/EDUS ./path/to/input.json.in 1> output.log 2> output.err
 ```
 
 ---
