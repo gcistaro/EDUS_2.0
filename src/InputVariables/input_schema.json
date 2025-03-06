@@ -180,6 +180,20 @@
                         },
                         "title": "Polarization of the laser in cartesian coordinates"
                     },
+                    "t0": {
+                        "type": "number",
+                        "default": 0.0,
+                        "title": "initial time of the laser"
+                    },
+                    "t0_units": {
+                        "type": "string",
+                        "default": "fs",
+                        "enum": [
+                            "fs",
+                            "au"
+                        ],
+                        "title": "Units for initial time of the laser"
+                    },
                     "cycles": {
                         "type": "number",
                         "default": 0.0,

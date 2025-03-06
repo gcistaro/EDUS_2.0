@@ -27,7 +27,9 @@
       "frequency": 10,
       "frequency_units" : "electronvolt",
       "polarization": [1,1,0],
-      "cycles" : 1
+      "cycles" : 1,
+      "t0" : 0.0,
+      "t0_units" : "fs"
       }
     ]
   }

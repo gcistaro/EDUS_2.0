@@ -27,7 +27,9 @@
       "wavelength": 800,
       "wavelength_units" : "nm",
       "polarization": [1,0,0],
-      "cycles" : 5
+      "cycles" : 5,
+      "t0" : 0.0,
+      "t0_units" : "fs"
       }
     ]
   }

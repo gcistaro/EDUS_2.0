@@ -97,7 +97,7 @@ double Envelope::operator()(const double& Time)
 {
     double t = Time - InitialTime;
 
-    if( std::abs(t) <= 1.e-07 || t > Duration){
+    if( t <= 1.e-07 || t > Duration){
         return 0.;
     }
     return std::pow(std::sin(pi*t/Duration), 2.);
@@ -171,8 +171,9 @@ void Laser::set_Lambda(const double& WaveLength_, const Unit& InputUnit)
 
 void Laser::set_InitialTime(const double& InitialTime_, const Unit& InputUnit) 
 {
-    PlaneWave.set_InitialTime(InitialTime_);  
-    envelope.set_InitialTime(InitialTime_); 
+    auto t0au = Convert(InitialTime_, InputUnit, AuTime);
+    PlaneWave.set_InitialTime(t0au);  
+    envelope.set_InitialTime(t0au); 
 }
 
 void Laser::set_Phase(const double& Phase_)
@@ -243,6 +244,8 @@ void Laser::print_info()
     output::print("Wavelength:         *     ", PlaneWave.get_Lambda(), " a.u.", Convert(PlaneWave.get_Lambda(), AuLength, NanoMeters), " nm");
     output::print("Period:             *     ", PlaneWave.get_Period(), " a.u.", Convert(PlaneWave.get_Period(), AuTime, FemtoSeconds), " fs");
     output::print("Intensity:          *     ", Amplitude*Amplitude,    " a.u.", Convert(Amplitude*Amplitude, AuIntensity, Wcm2), " Wcm2");
+    auto t0 = envelope.InitialTime;
+    output::print("Initial Time:       *     ", t0,                     " a.u.", Convert(t0, AuTime, FemtoSeconds), " fs");
     output::stars();
 }
 
