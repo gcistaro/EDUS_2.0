@@ -20,11 +20,11 @@ def read_wannierTB(filename):
             [float(fsplit[3][0]), float(fsplit[3][1]), float(fsplit[3][2])],
         ]
     )
-    print("\n Unit cell: ", unit_cell)
+    ###print("\n Unit cell: ", unit_cell)
     num_bands = int(fsplit[4][0])
-    print("\n num_bands: ", num_bands)
+    ###print("\n num_bands: ", num_bands)
     num_R = int(fsplit[5][0])
-    print("\n num_R: ", num_R)
+    ###print("\n num_R: ", num_R)
 
     # skip lines with degeneracies
     index = 8 + int(num_R / 15)
@@ -67,10 +67,10 @@ def read_wannierTB(filename):
 
 # r0 = 10.
 r0 = float(sys.argv[5])
-print(r0)
+###print(r0)
 r0_au = r0 * 1.0e-10 / constants.physical_constants["Bohr radius"][0]
 epsilon = float(sys.argv[6])
-print(epsilon)
+###print(epsilon)
 
 # calculate the Rytova-Keldysh potential on the grid given
 grid = [int(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3])]
@@ -79,7 +79,7 @@ A, num_R, num_bands, R, H, r = read_wannierTB(name_tb)
 R_cart = np.matmul(R, A)
 index_origin = np.where(np.linalg.norm(R_cart - np.zeros([1, 3]), axis=1) < 1.0e-07)
 r_atom = np.array([r[0][index_origin], r[1][index_origin], r[2][index_origin]])
-print(r_atom.shape)
+###print(r_atom.shape)
 r_atom = np.reshape(r_atom, [3, num_bands, num_bands])
 r_atom = np.array([np.diag(r_atom[0]), np.diag(r_atom[1]), np.diag(r_atom[2])])
 r_atom = np.transpose(r_atom)
@@ -90,7 +90,7 @@ R = np.array(np.meshgrid(range(grid[0]), range(grid[1]), range(grid[2])))
 R = np.reshape(R, [3, grid[0] * grid[1] * grid[2]])
 R = np.array([R[1, :], R[0, :], R[2, :]])
 R = np.transpose(R)
-print(R.shape)
+###print(R.shape)
 
 for iR, R_ in enumerate(R):
     for ix in range(3):
@@ -99,7 +99,7 @@ for iR, R_ in enumerate(R):
 R = np.matmul(R, A)
 
 
-print("Calculating rytova keldysh")
+###print("Calculating rytova keldysh")
 RytovaKeldysh = np.zeros([R.shape[0], num_bands, num_bands])
 for iR, R_ in enumerate(R):
     for ibnd1 in range(num_bands):
@@ -129,10 +129,10 @@ for iR, R_ in enumerate(R):
                         yn(0, rnorm / r0),
                         "is nan",
                     )
-print("Done")
-print(np.max(RytovaKeldysh), np.min(RytovaKeldysh))
+###print("Done")
+###print(np.max(RytovaKeldysh), np.min(RytovaKeldysh))
 
-print("Saving RK potential in " + os.getcwd() + "/RytovaKeldysh.txt")
+###print("Saving RK potential in " + os.getcwd() + "/RytovaKeldysh.txt")
 f = open(os.getcwd() + "/RytovaKeldysh.txt", "w")
 f.write(
     "#File generated from "
