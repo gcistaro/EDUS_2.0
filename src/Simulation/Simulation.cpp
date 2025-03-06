@@ -62,7 +62,8 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     for (int ilaser = 0; ilaser < int(ctx_->cfg().lasers().size()); ++ilaser) {
         auto currentdata = ctx_->cfg().lasers(ilaser);
         Laser laser;
-        laser.set_InitialTime(0., FemtoSeconds);
+        
+        laser.set_InitialTime(currentdata.t0(), unit(currentdata.t0_units()));
         laser.set_Intensity(currentdata.intensity(), unit(currentdata.intensity_units()));
         auto freq_wavelength = wavelength_or_frequency(ilaser);
         if (freq_wavelength == "frequency") {

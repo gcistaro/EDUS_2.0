@@ -28,6 +28,7 @@ Unit unit( const std::string& to_unit)
     if( to_unit == "joule"       )    {return Joule;  }
     if( to_unit == "wcm2"        )    {return Wcm2;  }
     if( to_unit == "femtoseconds")    {return FemtoSeconds;  }
+    if( to_unit == "fs")              {return FemtoSeconds;  }
     if( to_unit == "auintensity" )    {return AuIntensity; }
     if( to_unit == "autime"      )    {return AuTime;  }
     if( to_unit == "aulength"    )    {return AuLength;  }
