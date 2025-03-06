@@ -3,7 +3,7 @@
     "fermienergy": 0, 
     "fermienergy_units" : "electronvolt",
     "coulomb": false,
-    "epsilon": 1.0,
+    "epsilon": 2.0,
     "r0": 10,
     "grid": [50,50,1],
     "filledbands" : 1,
