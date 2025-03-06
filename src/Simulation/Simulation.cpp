@@ -40,7 +40,7 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
         command << ctx_->cfg().tb_file() << "_tb.dat";
         command << " " << r0 << " " << epsilon;
         output::print("-> creating Rytova Keldish file with python");
-        output::print(command.str());
+        //output::print(command.str());
         system(command.str().c_str());
     }
     Operator<std::complex<double>>::SpaceOfPropagation = SpaceOfPropagation_;
@@ -406,16 +406,19 @@ void Simulation::print_recap()
 
     output::title("INPUT RECAP");
     //==    output::print("input file:         *", std::string(8, ' '), JsonFile_ );
-    output::print("tb_model  :         *", std::string(8, ' '), ctx_->cfg().tb_file());
-    output::print("grid      :         *", std::string(8, ' '), "[",
+    output::print("tb_model                 *", std::string(8, ' '), ctx_->cfg().tb_file());
+    output::print("grid                     *", std::string(8, ' '), "[",
         DensityMatrix_.get_Operator_R().get_MeshGrid()->get_Size()[0], ", ",
         DensityMatrix_.get_Operator_R().get_MeshGrid()->get_Size()[1], ", ",
         DensityMatrix_.get_Operator_R().get_MeshGrid()->get_Size()[2], "]");
-    output::print("Resolution time:    *", DEsolver_DM_.get_ResolutionTime(), " a.u.",
+    output::print("Resolution time          *", DEsolver_DM_.get_ResolutionTime(), " a.u.",
         Convert(DEsolver_DM_.get_ResolutionTime(), AuTime, FemtoSeconds), " fs");
-    output::print("PrintResolution:    *", ctx_->cfg().printresolution());
-    output::print("PrintResolution(pulse):*", ctx_->cfg().printresolution_pulse());
-    output::print("Coulomb        :    *", std::string(8, ' '), (coulomb_.get_DoCoulomb() ? "True" : "False"));
+    output::print("PrintResolution          *", ctx_->cfg().printresolution());
+    output::print("PrintResolution(pulse):  *", ctx_->cfg().printresolution_pulse());
+    output::print("Coulomb                  *", std::string(8, ' '), (coulomb_.get_DoCoulomb() ? "True" : "False"));
+    output::print("epsilon                  *", ctx_->cfg().epsilon());
+    output::print("r0                       *", Convert(ctx_->cfg().r0(), Angstrom, AuLength), " a.u.",
+        ctx_->cfg().r0(), " angstrom");
     output::stars();
 
     output::stars();
