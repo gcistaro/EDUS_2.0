@@ -9,6 +9,7 @@
 #endif
 #include <string>
 #include "Json/json.hpp"
+#include "core/mpi/Communicator.hpp"
 
 std::string LatticeVectors(const Space& space);
 bool file_exists(std::string file_name);
