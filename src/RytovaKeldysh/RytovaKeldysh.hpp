@@ -5,6 +5,8 @@
 #include "Operator/Operator.hpp"
 #include "fftPair/fftPair.hpp"
 
+#ifndef __RYTOVAKELDYSH_HPP
+#define __RYTOVAKELDYSH_HPP
 //computes H_v(x)
 double struve(const double& x, const double& v);
 //computes Y_v(x)
@@ -30,3 +32,5 @@ class RytovaKeldysh
 
         mdarray<std::complex<double>,3> TB;
 };
+
+#endif
