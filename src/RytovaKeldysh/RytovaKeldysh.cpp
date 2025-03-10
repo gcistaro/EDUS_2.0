@@ -1,19 +1,43 @@
 #include "RytovaKeldysh.hpp"
 
 //computes H_v(x)
-double struve(const double& x, const double& v)
+double struve(const double& X, const double& v)
 {
-    if(abs(x)<threshold){
-        return 0.;
+    if (v!=0) {
+        throw std::runtime_error("struve functions are defined only for oder 0.");
     }
+    double SH0;
+    double A0,BY0,P0,Q0,R,S,T,T2,TA0;
+	int K, KM;
 
-    double H = 0;
-    for(int k=0; k<100; k++){
-        auto tgamma__ = std::tgamma(k+v+1.5);
-        int sign = (k%2 == 0 ? 1 : -1);
-        H += sign*pow(.5*x, 2*k+v+1)/(std::tgamma(k+1.5)*std::tgamma(k+v+1.5));
-    }
-    return H;
+        S=1.0;
+        R=1.0;
+        if (X <= 20.0) {
+           A0=2.0*X/pi;
+           for (K=1; K<61; K++) {
+              R=-R*X/(2.0*K+1.0)*X/(2.0*K+1.0);
+              S=S+R;
+              if (fabs(R) < fabs(S)*1.0e-12) goto e15;
+           }
+    e15:       SH0=A0*S;
+        }
+        else {
+           KM=int(0.5*(X+1.0));
+           if (X >= 50.0) KM=25;
+           for (K=1; K<=KM; K++) {
+              R=-R*pow((2.0*K-1.0)/X,2);
+              S=S+R;
+              if (fabs(R) < fabs(S)*1.0e-12) goto e25;
+           }
+    e25:       T=4.0/X;
+           T2=T*T;
+           P0=((((-.37043e-5*T2+.173565e-4)*T2-.487613e-4)*T2+.17343e-3)*T2-0.1753062e-2)*T2+.3989422793;
+           Q0=T*(((((.32312e-5*T2-0.142078e-4)*T2+0.342468e-4)*T2-0.869791e-4)*T2+0.4564324e-3)*T2-0.0124669441);
+           TA0=X-0.25*pi;
+           BY0=2.0/sqrt(X)*(P0*sin(TA0)+Q0*cos(TA0));
+           SH0=2.0/(pi*X)*S+BY0;
+        }    std::cout << X << " " << SH0 << " ";
+    return SH0;
 }
 
 RytovaKeldysh::RytovaKeldysh(const std::array<Operator<std::complex<double>>,3>& r, const int& dim_,            
@@ -41,10 +65,10 @@ void RytovaKeldysh::initialize(const std::array<Operator<std::complex<double>>,3
     TB.initialize({MasterRGrid->get_TotalSize(),
                                  r[0].get_Operator_R().get_nrows(), 
                                  r[0].get_Operator_R().get_ncols()});
-    Rgrid = MasterRGrid;
+    Rgrid = std::make_shared<MeshGrid>(get_GammaCentered_grid(*MasterRGrid));
 
 //    #pragma omp parallel for schedule(static)
-    for(int iR=0; iR<1; ++iR) {//TB.get_Size(0); ++iR) {
+    for(int iR=0; iR<Rgrid->get_TotalSize(); ++iR) {//TB.get_Size(0); ++iR) {
         auto& Rcart = (*Rgrid)[iR].get("Cartesian");
         for(int in=0; in<TB.get_Size(1); in++){
             //ratom_n = rn - R
@@ -57,7 +81,6 @@ void RytovaKeldysh::initialize(const std::array<Operator<std::complex<double>>,3
                 auto ratom_m = Coordinate(x0(im,im).real(),//+Scart[0],
                                           y0(im,im).real(),//+Scart[1],
                                           z0(im,im).real());//+Scart[2]);
-
                 TB(iR, in, im) = Potential(ratom_n - ratom_m);
             }
         }
@@ -99,7 +122,8 @@ std::complex<double> RytovaKeldysh::Potential(const Coordinate& r)
                 Wr = 0.;
             }
             else{
-                Wr = pi/(2.*r0*epsilon)*(struve(r_norm/r0,0)-y0(r_norm/r0));
+                Wr = pi/(r0*epsilon)*(struve(r_norm/r0,0)-y0(r_norm/r0));
+                std::cout << y0(r_norm/r0) << std::endl;
             }
 
             //done via Fourier transform dft on W(q)
