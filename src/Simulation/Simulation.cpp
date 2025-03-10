@@ -30,19 +30,19 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     coulomb_.set_DoCoulomb(ctx_->cfg().coulomb());
 
     /* getting rytova keldysh with python */
-    if (ctx_->cfg().coulomb()) {
-        std::stringstream command;
-        auto grid = ctx_->cfg().grid();
-        auto epsilon = ctx_->cfg().epsilon();
-        auto r0 = ctx_->cfg().r0();
-        command << "python3 " << ProjectDirectory << "/Postproces/RytovaKeldysh.py ";
-        command << grid[0] << " " << grid[1] << " " << grid[2] << " ";
-        command << ctx_->cfg().tb_file() << "_tb.dat";
-        command << " " << r0 << " " << epsilon;
-        output::print("-> creating Rytova Keldish file with python");
-        //output::print(command.str());
-        system(command.str().c_str());
-    }
+    // ==if (ctx_->cfg().coulomb()) {
+    // ==    std::stringstream command;
+    // ==    auto grid = ctx_->cfg().grid();
+    // ==    auto epsilon = ctx_->cfg().epsilon();
+    // ==    auto r0 = ctx_->cfg().r0();
+    // ==    command << "python3 " << ProjectDirectory << "/Postproces/RytovaKeldysh.py ";
+    // ==    command << grid[0] << " " << grid[1] << " " << grid[2] << " ";
+    // ==    command << ctx_->cfg().tb_file() << "_tb.dat";
+    // ==    command << " " << r0 << " " << epsilon;
+    // ==    output::print("-> creating Rytova Keldish file with python");
+    // ==    //output::print(command.str());
+    // ==    system(command.str().c_str());
+    // ==}
     Operator<std::complex<double>>::SpaceOfPropagation = SpaceOfPropagation_;
     auto& HR = material_.H.get_Operator_R();
     Operator<std::complex<double>>::mpindex.initialize(MasterRgrid->get_Size(), HR.get_nrows() * HR.get_nrows());
