@@ -171,4 +171,20 @@ void Coulomb::EffectiveHamiltonian(Operator<std::complex<double>>& H__, const Op
 }    
 
 
-
+void read_rk_py(mdarray<std::complex<double>,3>& RytovaKeldysh_TB, const std::string& filename)
+{
+    auto file = ReadFile(filename);
+    auto index = 1;
+    
+    /* Read Rytova Keldysh (screened) potential produced with RytovaKeldysh.py */
+    for( int iR = 0; iR < int(RytovaKeldysh_TB.get_Size(0)); ++iR ) {
+        for( int irow = 0; irow < int(RytovaKeldysh_TB.get_Size(1)); ++irow ) {
+            for( int icol = 0; icol < int(RytovaKeldysh_TB.get_Size(1)); ++icol ) {
+                assert(file[index].size() == 1);
+                RytovaKeldysh_TB( iR, irow, icol ) = std::atof( file[index][0].c_str() );
+                index++;
+            }
+        }
+    }
+    assert(index == int(file.size()));
+}
