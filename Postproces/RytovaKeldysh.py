@@ -94,7 +94,7 @@ R = np.transpose(R)
 
 for iR, R_ in enumerate(R):
     for ix in range(3):
-        if R[iR][ix] > int(grid[ix] / 2):
+        if R[iR][ix] >= int(grid[ix] / 2) and grid[ix] > 1:
             R[iR][ix] = R[iR][ix] - int(grid[ix])
 R = np.matmul(R, A)
 
@@ -148,6 +148,15 @@ f.write(
 for iR, R_ in enumerate(R):
     for ibnd1 in range(num_bands):
         for ibnd2 in range(num_bands):
-            f.write("{:12.8f}".format(RytovaKeldysh[iR][ibnd1][ibnd2]))
+            #== f.write("{:15.8f}".format(R_[0]))
+            #== f.write("{:15.8f}".format(R_[1]))
+            #== f.write("{:15.8f}".format(R_[2]))
+            #== f.write("{:15.8f}".format(np.real(r_atom[ibnd1][0])))
+            #== f.write("{:15.8f}".format(np.real(r_atom[ibnd1][1])))
+            #== f.write("{:15.8f}".format(np.real(r_atom[ibnd1][2])))
+            #== f.write("{:15.8f}".format(np.real(r_atom[ibnd2][0])))
+            #== f.write("{:15.8f}".format(np.real(r_atom[ibnd2][1])))
+            #== f.write("{:15.8f}".format(np.real(r_atom[ibnd2][2])))
+            f.write("{:15.8f}".format(RytovaKeldysh[iR][ibnd1][ibnd2]))
             f.write("\n")
 f.close()
