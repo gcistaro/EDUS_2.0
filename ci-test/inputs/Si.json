@@ -1,5 +1,5 @@
 {
-    "tb_file": "/home/sa_m/EDUS_2.0/tb_models/Si2",
+    "tb_file": "/home/sa_m/EDUS_2.0/tb_models/Si_kcw",
     "fermienergy": 0, 
     "fermienergy_units" : "electronvolt",
     "coulomb": false,
