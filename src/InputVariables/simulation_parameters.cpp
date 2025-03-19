@@ -20,16 +20,10 @@ compose_default_json(nlohmann::json const& schema__, nlohmann::json& output__)
     for (auto it : schema__.items()) {
         auto key = it.key();
         /* this is a final node with the description of the data type */
-        if (it.value().contains("type") &&  it.value()["type"] != "object") {
+        if (it.value().contains("type") && it.value()["type"] != "object") {
             /* check if default parameter is present */
             if (it.value().contains("default")) {
                 output__[key] = it.value()["default"];
-            }
-            else if(it.value().contains("items")) {
-                if (!output__.contains(key)) {
-                    output__[key] = nlohmann::json{};
-                    compose_default_json(it.value()["items"], output__[key]);
-                }
             }
         } else { /* otherwise continue to traverse the schema */
             if (!output__.contains(key)) {
@@ -37,10 +31,11 @@ compose_default_json(nlohmann::json const& schema__, nlohmann::json& output__)
             }
             if (it.value().contains("properties")) {
                 compose_default_json(it.value()["properties"], output__[key]);
-            } 
+            }
         }
     }
 }
+
 
 /// Append the input dictionary to the existing dictionary.
 /** Use JSON schema to traverse the existing dictionary and add on top the values from the input dictionary. In this
@@ -48,52 +43,57 @@ compose_default_json(nlohmann::json const& schema__, nlohmann::json& output__)
 void
 compose_json(nlohmann::json const& schema__, nlohmann::json const& in__, nlohmann::json& inout__)
 {
+    compose_default_json(schema__, inout__);
     std::unordered_set<std::string> visited;
 
-    for (auto it : in__.items()) {
-        visited.insert(it.key());
-    }
 
     for (auto it : schema__.items()) {
         auto key = it.key();
 
-        // Remove visited items.
-        auto found = visited.find(key);
-        if (found != visited.end()) {
-            visited.erase(found);
-        }
-
         /* this is a final node with the description of the data type */
-        if (it.value().contains("type") && it.value()["type"] != "object") {
+         if(it.value().contains("type") && it.value()["type"] == "array" && 
+            it.value().contains("items") && it.value()["items"].contains("type") &&
+            it.value()["items"]["type"] == "object" &&
+            it.value()["items"].contains("properties")) {
+             /* go though the object properties */
+             if( in__.contains(key) ) {
+                 auto aux = inout__[key]["properties"];
+                 inout__[key] = nlohmann::json();
+                 for ( auto iobj=0; iobj < in__[key].size(); ++iobj ) {
+                    std::stringstream iobj_str;
+                    iobj_str << iobj;
+                    inout__[key] = std::vector<nlohmann::json>(in__[key].size());
+                    inout__[key][iobj]=nlohmann::json();
+                    compose_json(aux, 
+                              in__[key][iobj], inout__[key][iobj]); 
+                 }
+             }
+             else {
+                 compose_json(inout__[key], 
+                              nlohmann::json(), inout__[key]); 
+             }
+        }
+        else if (it.value().contains("type") && it.value()["type"] != "object") {
             if (in__.contains(key)) {
                 /* copy the new input */
                 inout__[key] = in__[key];
             }
-        } else { /* otherwise continue to traverse the schema */
-            /* not simple data type : a section with parameter, a dictionary map, etc.*/
-            if (it.value().contains("properties")) {
-                compose_json(it.value()["properties"], in__.contains(key) ? in__[key] : nlohmann::json{}, inout__[key]);
-            } else if (in__.contains(key)) {
-                inout__[key] = in__[key];
-            } else if (!inout__.contains(key)) {
-                inout__[key] = nlohmann::json();
-            }
-        }
+        } 
     }
-
     // Emit warnings about keys that were set but unused.
-    if (!visited.empty()) {
-        std::stringstream ss;
-        ss << "The following configuration parameters were not recognized and ignored: ";
-        std::copy(visited.begin(), visited.end(), std::ostream_iterator<std::string>(ss, " "));
-        output::print(ss.str());
-    }
+    //if (!visited.empty()) {
+    //    std::stringstream ss;
+    //    ss << "The following configuration parameters were not recognized and ignored: ";
+    //    std::copy(visited.begin(), visited.end(), std::ostream_iterator<std::string>(ss, " "));
+    //    output::print(ss.str());
+    //}
 }
 
 Config::Config()
 {
     /* initialize JSON dictionary with default parameters */
     compose_default_json(EDUS::input_schema["properties"], this->dict_);
+
 }
 
 void
