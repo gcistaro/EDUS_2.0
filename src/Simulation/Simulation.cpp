@@ -160,12 +160,12 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     //---------------------------------------------------------------------------------------
 }
 
-bool Simulation::PrintObservables(const double& time__)
+bool Simulation::PrintObservables(const double& time__, const bool& use_sparse)
 {
     /* check if we are within (any) pulse */
     int printresolution;
     for (int ilaser = 0; ilaser < setoflaser_.size(); ++ilaser) {
-        if (time__ > setoflaser_[ilaser].get_InitialTime() + 1.e-07 && time__ < setoflaser_[ilaser].get_FinalTime() + 1.e-07) {
+        if (use_sparse && time__ > setoflaser_[ilaser].get_InitialTime() + 1.e-07 && time__ < setoflaser_[ilaser].get_FinalTime() + 1.e-07) {
             printresolution = ctx_->cfg().printresolution_pulse();
             break;
         } else {
@@ -190,6 +190,11 @@ void Simulation::SettingUp_EigenSystem()
     auto& UkDagger = Operator<std::complex<double>>::EigenVectors_dagger;
 
     material_.H.get_Operator_k().diagonalize(Band_energies_, Uk);
+
+    /* open the gap */
+    
+
+
     //------------------------------------------------------------------------------
 
     //-------------------get U dagger-----------------------------------------------
@@ -286,7 +291,7 @@ void Simulation::do_onestep()
     auto CurrentTime = DEsolver_DM_.get_CurrentTime();
     //------------------------Print population-------------------------------------
 
-    if (PrintObservables(CurrentTime)) {
+    if (PrintObservables(CurrentTime, true)) {
 #ifdef EDUS_HDF5
         std::string name = "output.h5";
         std::stringstream node;
@@ -294,27 +299,38 @@ void Simulation::do_onestep()
 
         HDF5_tree fout(name, hdf5_access_t::read_write);
 
-        Calculate_TDHamiltonian(CurrentTime, true);
-        H_.get_Operator_k().write_h5(name, nodename::fullH, node.str());
-        DensityMatrix_.go_to_R(true);
-        H_.go_to_R(false);
-        coulomb_.EffectiveHamiltonian(H_, DensityMatrix_, true);
-        H_.go_to_k(true);
-        H_.get_Operator_k().write_h5(name, nodename::SelfEnergy, node.str());
+        if(ctx_->cfg().dict()["toprint"]["DMk_wannier"] == true) {
+            DensityMatrix_.go_to_k(false);
+            DensityMatrix_.get_Operator_k().write_h5(name, nodename::DMk, node.str());
+        }
+        if(ctx_->cfg().dict()["toprint"]["DMk_bloch"] == true) {
+            DensityMatrix_.go_to_k(false);
+            DensityMatrix_.go_to_bloch();
+            DensityMatrix_.get_Operator_k().write_h5(name, nodename::DMk_bloch, node.str());
+            DensityMatrix_.go_to_wannier();
+        } 
+        if(ctx_->cfg().dict()["toprint"]["SelfEnergy"] == true) {
+            DensityMatrix_.go_to_R(true);
+            H_.go_to_R(false);
+            coulomb_.EffectiveHamiltonian(H_, DensityMatrix_, true);
+            H_.go_to_k(true);
+            H_.get_Operator_k().write_h5(name, nodename::SelfEnergy, node.str());
+            DensityMatrix_.go_to_k(false);
+        }
+        if(ctx_->cfg().dict()["toprint"]["fullH"] == true) {
+            Calculate_TDHamiltonian(CurrentTime, true);
+            H_.get_Operator_k().write_h5(name, nodename::fullH, node.str());
+        }
         fout[nodename::time_au].write(node.str(), CurrentTime);
-        DensityMatrix_.get_Operator_k().write_h5(name, nodename::DMk, node.str());
-        DensityMatrix_.go_to_k(false);
-        DensityMatrix_.go_to_bloch();
-        DensityMatrix_.get_Operator_k().write_h5(name, nodename::DMk_bloch, node.str());
-        DensityMatrix_.go_to_wannier();
 #endif
+    }
 
+    if (PrintObservables(CurrentTime, false)) {
         // print time
         os_Time_ << CurrentTime << std::endl;
         // print laser
         os_Laser_ << setoflaser_(DEsolver_DM_.get_CurrentTime()).get("Cartesian");
         os_VectorPot_ << setoflaser_.VectorPotential(DEsolver_DM_.get_CurrentTime()).get("Cartesian");
-
         Print_Population();
         Print_Velocity();
     }
