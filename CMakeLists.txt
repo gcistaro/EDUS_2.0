@@ -80,7 +80,7 @@ configure_file("${PROJECT_SOURCE_DIR}/ci-test/inputs/MoS2.json.in" "${PROJECT_SO
 configure_file("${PROJECT_SOURCE_DIR}/ci-test/inputs/input_NonEQ_Grad.json.in" "${PROJECT_SOURCE_DIR}/ci-test/inputs/input_NonEQ_Grad.json" @ONLY)
 
 # generate schema
-file(READ "${PROJECT_SOURCE_DIR}/src/InputVariables/input_schema.json" EDUS_INPUT_SCHEMA NEWLINE_CONSUME)
+file(READ "${PROJECT_SOURCE_DIR}/src/InputVariables/input_schema.json.in" EDUS_INPUT_SCHEMA NEWLINE_CONSUME)
 configure_file("${PROJECT_SOURCE_DIR}/src/InputVariables/input_schema.hpp.in"
                "${PROJECT_SOURCE_DIR}/src/InputVariables/input_schema.hpp"
                @ONLY)
