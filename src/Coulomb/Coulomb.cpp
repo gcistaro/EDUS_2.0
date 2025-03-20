@@ -25,23 +25,13 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
     auto size_MG_local = Rgrid__->get_LocalSize();
     HF = mdarray<std::complex<double>,3> ( { int( size_MG_local ), nbnd, nbnd } );
 
-    auto RytovaKeldysh_TB = mdarray<std::complex<double>,3> ( { int( size_MG_global ), nbnd, nbnd } );
+    //old version -> rytovekeldysh read from python output
+    //auto RytovaKeldysh_TB = mdarray<std::complex<double>,3> ( { int( size_MG_global ), nbnd, nbnd } );
+    //std::filesystem::path cwd = std::filesystem::current_path() / "RytovaKeldysh.txt";
+    //read_rk_py( RytovaKeldysh_TB, cwd.str());
 
-    std::filesystem::path cwd = std::filesystem::current_path() / "RytovaKeldysh.txt";
-    auto file = ReadFile(cwd.string());
-    auto index = 1;
-    
-    /* Read Rytova Keldysh (screened) potential produced with RytovaKeldysh.py */
-    for( int iR = 0; iR < int(RytovaKeldysh_TB.get_Size(0)); ++iR ) {
-        for( int irow = 0; irow < int(RytovaKeldysh_TB.get_Size(1)); ++irow ) {
-            for( int icol = 0; icol < int(RytovaKeldysh_TB.get_Size(1)); ++icol ) {
-                assert(file[index].size() == 1);
-                RytovaKeldysh_TB( iR, irow, icol ) = std::atof( file[index][0].c_str() );
-                index++;
-            }
-        }
-    }
-    assert(index == int(file.size()));
+    rytovakeldysh.initialize(r__, 2, Rgrid__);
+    auto& RytovaKeldysh_TB = rytovakeldysh.TB;
 
     /* Get local part and add the minus sign */
     #pragma omp parallel for
@@ -135,4 +125,20 @@ void Coulomb::EffectiveHamiltonian(Operator<std::complex<double>>& H__, const Op
 }    
 
 
-
+void read_rk_py(mdarray<std::complex<double>,3>& RytovaKeldysh_TB, const std::string& filename)
+{
+    auto file = ReadFile(filename);
+    auto index = 1;
+    
+    /* Read Rytova Keldysh (screened) potential produced with RytovaKeldysh.py */
+    for( int iR = 0; iR < int(RytovaKeldysh_TB.get_Size(0)); ++iR ) {
+        for( int irow = 0; irow < int(RytovaKeldysh_TB.get_Size(1)); ++irow ) {
+            for( int icol = 0; icol < int(RytovaKeldysh_TB.get_Size(1)); ++icol ) {
+                assert(file[index].size() == 1);
+                RytovaKeldysh_TB( iR, irow, icol ) = std::atof( file[index][0].c_str() );
+                index++;
+            }
+        }
+    }
+    assert(index == int(file.size()));
+}

@@ -17,7 +17,7 @@
             "default": "eV",
             "enum": [
                 "eV",
-                "au"
+                "auenergy"
             ],
             "title": "Units used for the Fermi energy of the system"
         },
@@ -62,9 +62,9 @@
         },
         "dt_units": {
             "type": "string",
-            "default": "au",
+            "default": "autime",
             "enum": [
-                "au",
+                "autime",
                 "fs"
             ],
             "title": "Units for the Time resolution used for propagating Density Matrix"
@@ -86,9 +86,9 @@
         },
         "initialtime_units": {
             "type": "string",
-            "default": "au",
+            "default": "autime",
             "enum": [
-                "au",
+                "autime",
                 "fs"
             ],
             "title": "Units for the Time resolution used for Initial time of the simulation"
@@ -100,9 +100,9 @@
         },
         "finaltime_units": {
             "type": "string",
-            "default": "au",
+            "default": "autime",
             "enum": [
-                "au",
+                "autime",
                 "fs"
             ],
             "title": "Units for the Time resolution used for Final time of the simulation"
@@ -121,86 +121,41 @@
             "default": 4,
             "title": "Order of the Solver used for time propagation of the Density Matrix"
         },
+        "toprint": {
+            "type":  "array",
+            "title": "Big quantities that we want to print",
+            "minItems": 1,
+            "maxItems": 10,
+            "items" : {
+                "DMk_wannier" : {
+                    "type"    : "boolean",
+                    "default" : "false",
+                    "title"   : "true if you want to print DM in k, wannier gauge"
+                },
+                "DMk_bloch"   : {
+                    "type"    : "boolean",
+                    "default" : "false",
+                    "title"   : "true if you want to print DM in k, bloch gauge"
+                },
+                "fullH"       : {
+                    "type"    : "boolean",
+                    "default" : "false",
+                    "title"   : "true if you want to print H=H0+Er in k, wannier gauge"
+                },
+                "SelfEnergy"  : {
+                    "type"    : "boolean",
+                    "default" : "false",
+                    "title"   : "true if you want to print the self energy in k, wannier gauge"
+                }
+            }
+        },
         "lasers": {
             "type": "array",
             "title": "description of all the lasers",
             "minItems": 1,
             "maxItems": 10,
-            "items": {
-                "type": "object",
-                "title": "laser",
-                "properties": {
-                    "intensity": {
-                        "type": "number",
-                        "default": 0.0,
-                        "title": "Intensity of the laser"
-                    },
-                    "intensity_units": {
-                        "type": "string",
-                        "default": "Wcm2",
-                        "enum": [
-                            "Wcm2",
-                            "au"
-                        ],
-                        "title": "Units for intensity of the laser"
-                    },
-                    "frequency": {
-                        "type": "number",
-                        "default": 0.0,
-                        "title": "Frequency of the laser"
-                    },
-                    "frequency_units": {
-                        "type": "string",
-                        "default": "eV",
-                        "enum": [
-                            "eV",
-                            "au"
-                        ],
-                        "title": "Units for frequency of the laser"
-                    },
-                    "wavelength": {
-                        "type": "number",
-                        "default": 0.0,
-                        "title": "Wavelength of the laser"
-                    },
-                    "wavelength_units": {
-                        "type": "string",
-                        "default": "nm",
-                        "enum": [
-                            "nm",
-                            "au"
-                        ],
-                        "title": "Units for wavelength of the laser"
-                    },
-                    "polarization": {
-                        "type": "array",
-                        "items": {
-                            "type": "number",
-                            "default": 0.0
-                        },
-                        "title": "Polarization of the laser in cartesian coordinates"
-                    },
-                    "t0": {
-                        "type": "number",
-                        "default": 0.0,
-                        "title": "initial time of the laser"
-                    },
-                    "t0_units": {
-                        "type": "string",
-                        "default": "fs",
-                        "enum": [
-                            "fs",
-                            "au"
-                        ],
-                        "title": "Units for initial time of the laser"
-                    },
-                    "cycles": {
-                        "type": "number",
-                        "default": 0.0,
-                        "title": "Number of cycles the sin2 laser last."
-                    }
-                }
-            }
+            "default" : @EDUS_DEFAULT_LASER@, 
+            "items" : @EDUS_DEFAULT_LASER@
         }
     }
 }

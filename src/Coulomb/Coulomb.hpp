@@ -3,6 +3,7 @@
 #include "MeshGrid/MeshGrid.hpp"
 #include "Operator/Operator.hpp"
 #include "StreamFile.hpp"
+#include "RytovaKeldysh/RytovaKeldysh.hpp"
 
 class Coulomb 
 {
@@ -12,6 +13,8 @@ class Coulomb
         Operator<std::complex<double>> DM0;
         mdarray<std::complex<double>, 3> HF;
         bool DoCoulomb = false;
+
+        RytovaKeldysh rytovakeldysh;
     public:
         Coulomb(){};
         
