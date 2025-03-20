@@ -1,9 +1,9 @@
 {
-    "tb_file": "/home/sa_m/EDUS_2.0/tb_models/Si_kcw",
+    "tb_file": "/home/sa_m/EDUS_2.0/tb_models/Si2",
     "fermienergy": 0, 
     "fermienergy_units" : "electronvolt",
     "coulomb": false,
-    "grid": [30,30,30],
+    "grid": [70,70,70],
     "filledbands" : 4,
     "dt": 0.01, 
     "dt_units" : "femtoseconds",

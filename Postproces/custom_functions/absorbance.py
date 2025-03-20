@@ -44,6 +44,18 @@ def absorbance(t_au, Vt_au, Et_au, limits=[]):
 
     freq_au = freq_eV*constants.physical_constants["hartree-electron volt relationship"][0]
     alpha = constants.physical_constants["fine-structure constant"][0]
+
+    linear_conductivity = Jw_au[0]/Ew_au[0]
+    np.savetxt('linear_conductivity.txt', np.transpose([freq_eV, linear_conductivity]))
+    plt.figure(figsize=(10, 7.5))
+    plt.plot(freq_eV, np.real(linear_conductivity), label = r'Real{$\omega$}')
+    plt.plot(freq_eV, np.imag(linear_conductivity), label = r'Imag{$\omega$}')
+    plt.xlabel(r'$\omega$ (eV)')
+    plt.ylabel(r'$\tilde{\sigma}}(\omega)$')
+    plt.legend()
+    plt.savefig('linear_conductivity', dpi=800)
+    plt.show()
+    plt.close()
     
     rw_au = 1j*freq_au*Jw_au
     Sw_au  = -(2*np.imag( np.sum( [ np.conj(Ew_au[ix])*rw_au[ix] for ix in [0,1,2] ], axis=0) ) )        #response function
