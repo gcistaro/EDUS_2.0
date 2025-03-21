@@ -9,6 +9,7 @@ class Coulomb
 {
     private:
         mdarray<std::complex<double>, 6> W; //contains Coulomb Interaction in Wannier basis
+        MeshGrid RCoulomb;
         std::shared_ptr<MeshGrid> Rgrid;
         Operator<std::complex<double>> DM0;
         mdarray<std::complex<double>, 3> HF;

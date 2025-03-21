@@ -82,7 +82,9 @@ void MeshGrid::initialize(const Space& space__, const std::vector<Coordinate>& P
 
     mesh.push_back(PathPoint[0]);
     for(int iline=0; iline<NumberOfLines; ++iline){
-        int NumberOfPointsInLine = (PathPoint[iline+1]-PathPoint[iline]).norm()/resolution;
+      int NumberOfPointsInLine;
+      if (resolution != 0.0) NumberOfPointsInLine = (PathPoint[iline+1]-PathPoint[iline]).norm()/resolution;
+      else NumberOfPointsInLine = 2;
         for(int it=1; it<NumberOfPointsInLine; ++it){
             double t = double(it)/(NumberOfPointsInLine-1);
             mesh.push_back( (1-t)*PathPoint[iline] + t*PathPoint[iline+1] );
@@ -422,7 +424,7 @@ void MeshGrid::Calculate_ConvolutionIndex(const MeshGrid& m1, const MeshGrid& m2
 
     ci = mdarray<int,2>({m1.get_TotalSize(), m3.get_TotalSize()});
 
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for(int iR1=0; iR1<m1.get_TotalSize(); iR1++){
         for(int iR3=0; iR3<m3.get_TotalSize(); iR3++){
                 ci(iR1, iR3) = m2.find(m1[iR1]-m3[iR3]);
