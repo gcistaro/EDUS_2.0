@@ -56,12 +56,12 @@ def absorbance(t_au, Vt_au, Et_au, limits=[]):
     plt.savefig('linear_conductivity', dpi=800)
     plt.show()
     plt.close()
-    
-    rw_au = 1j*freq_au*Jw_au
-    Sw_au  = -(2*np.imag( np.sum( [ np.conj(Ew_au[ix])*rw_au[ix] for ix in [0,1,2] ], axis=0) ) )        #response function
-    Iw_au = 2*np.sum( [np.abs(Ew_au[ix])*np.abs(Ew_au[ix]) for ix in [0,1,2] ], axis=0)/(4.*np.pi*alpha*freq_au)
-    plt.plot(freq_eV, np.real(rw_au[0]), label = r'Real($\tilde{\left\langle \mathbf{r}\right\rangle }(\omega)$)')
-    plt.plot(freq_eV, np.imag(rw_au[1]), label = r'Imag($\tilde{\left\langle \mathbf{r}\right\rangle }(\omega)$)')
+
+    dw_au = -1j*Jw_au/freq_au # constants are missing (volume)
+    Sw_au  = (2*np.imag( np.sum( [ np.conj(Ew_au[ix])*dw_au[ix] for ix in [0,1,2] ], axis=0) ) )        #response function
+    Iw_au = 2*np.sum( [np.abs(Ew_au[ix])*np.abs(Ew_au[ix]) for ix in [0,1,2] ], axis=0)/(4.*np.pi*alpha*freq_au) # not sure about these constants
+    plt.plot(freq_eV, np.real(dw_au[0]), label = r'Real($\tilde{\left\langle \mathbf{d}\right\rangle }(\omega)$)')
+    plt.plot(freq_eV, np.imag(dw_au[1]), label = r'Imag($\tilde{\left\langle \mathbf{d}\right\rangle }(\omega)$)')
     plt.legend()
     plt.show()
     
@@ -69,7 +69,7 @@ def absorbance(t_au, Vt_au, Et_au, limits=[]):
     print("Ew[2] min and max: ", np.min(np.abs(Ew_au[2])), np.max(np.abs(Ew_au[2])))
     print("Ew min and max: ", np.min(np.abs(Ew_au)), np.max(np.abs(Ew_au)))
     print("Vw min and max: ", np.min(np.abs(Jw_au)), np.max(np.abs(Jw_au)))
-    print("rw min and max: ", np.min(np.abs(rw_au)), np.max(np.abs(rw_au)))
+    print("rw min and max: ", np.min(np.abs(dw_au)), np.max(np.abs(dw_au)))
     print("Sw min and max: ", np.min(np.abs(Sw_au)), np.max(np.abs(Sw_au)))
     print("Iw min and max: ", np.min(np.abs(Iw_au)), np.max(np.abs(Iw_au)))
     Absorbance =Sw_au/Iw_au

@@ -3,7 +3,7 @@
     "fermienergy": 0, 
     "fermienergy_units" : "electronvolt",
     "coulomb": false,
-    "grid": [70,70,70],
+    "grid": [10,10,10],
     "filledbands" : 4,
     "dt": 0.01, 
     "dt_units" : "femtoseconds",
