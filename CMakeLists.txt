@@ -83,13 +83,7 @@ configure_file("${PROJECT_SOURCE_DIR}/ci-test/inputs/input_NonEQ_Grad.json.in" "
 file(READ "${PROJECT_SOURCE_DIR}/src/InputVariables/input_schema.json" EDUS_INPUT_SCHEMA NEWLINE_CONSUME)
 configure_file("${PROJECT_SOURCE_DIR}/src/InputVariables/input_schema.hpp.in"
                "${PROJECT_SOURCE_DIR}/src/InputVariables/input_schema.hpp"
-               @ONLY)
-
-file(READ "${PROJECT_SOURCE_DIR}/src/InputVariables/default_laser.json" EDUS_DEFAULT_LASER NEWLINE_CONSUME)
-configure_file("${PROJECT_SOURCE_DIR}/src/InputVariables/input_schema.json.in"
-               "${PROJECT_SOURCE_DIR}/src/InputVariables/input_schema.json"
-               @ONLY)
-               
+               @ONLY)             
 
 include_directories("${PROJECT_SOURCE_DIR}/src/")
 ########add_subdirectory(src/)

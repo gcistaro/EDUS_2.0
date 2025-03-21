@@ -1,6 +1,5 @@
 src/core/githash.hpp
 src/InputVariables/input_schema.hpp
-src/InputVariables/input_schema.json
 build/
 .vscode/launch.json
 .vscode/settings.json
