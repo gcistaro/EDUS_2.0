@@ -49,9 +49,9 @@ RytovaKeldysh::RytovaKeldysh(const std::array<Operator<std::complex<double>>,3>&
 void RytovaKeldysh::initialize(const std::array<Operator<std::complex<double>>,3>& r, const int& dim_,            
                              const std::shared_ptr<MeshGrid>& MasterRGrid)
 {
-    if(dim_ != 2){
-        throw std::runtime_error("Warning ! Only 2d coulomb is implemented!");
-    }
+    //if(dim_ != 2){
+    //    throw std::runtime_error("Warning ! Only 2d coulomb is implemented!");
+    //}
     
     if(dim_==2) dim=twoD;
     if(dim_==3) dim=threeD;
@@ -157,8 +157,10 @@ std::complex<double> RytovaKeldysh::Potential(const Coordinate& r)
         }
         case threeD:
         {
-            throw std::runtime_error("Not implemented!");
-            break;
+            //throw std::runtime_error("Not implemented!");
+            //break;
+            if (r_norm > 1e-6) Wr = 1/(10*r_norm);
+            else Wr = 0;
         }
         default:
             break;
