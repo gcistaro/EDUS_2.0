@@ -164,15 +164,18 @@ bool Simulation::PrintObservables(const double& time__, const bool& use_sparse)
 {
     /* check if we are within (any) pulse */
     int printresolution;
-    for (int ilaser = 0; ilaser < setoflaser_.size(); ++ilaser) {
-        if (use_sparse && time__ > setoflaser_[ilaser].get_InitialTime() + 1.e-07 && time__ < setoflaser_[ilaser].get_FinalTime() + 1.e-07) {
-            printresolution = ctx_->cfg().printresolution_pulse();
-            break;
-        } else {
-            printresolution = ctx_->cfg().printresolution();
+    if( !use_sparse ) {
+        printresolution = ctx_->cfg().printresolution_pulse();
+    } else {
+        for (int ilaser = 0; ilaser < setoflaser_.size(); ++ilaser) {
+            if (time__ > setoflaser_[ilaser].get_InitialTime() + 1.e-07 && time__ < setoflaser_[ilaser].get_FinalTime() + 1.e-07) {
+                printresolution = ctx_->cfg().printresolution_pulse();
+                break;
+            } else {
+                printresolution = ctx_->cfg().printresolution();
+            }
         }
     }
-
     return (int(round(time__ / DEsolver_DM_.get_ResolutionTime())) % printresolution == 0);
 }
 
