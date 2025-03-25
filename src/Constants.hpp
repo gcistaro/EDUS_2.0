@@ -18,7 +18,7 @@ constexpr double E0                    = 5.14220674763*1.e+11;//V m^-1 (Atomic u
 constexpr double FineStructure         = 7.2973525693*1.e-03;//pure units
 
 constexpr double SpeedOfLight_SI       = 299792458; // m s^-1 
-constexpr double SpeedOfLight          = 137.035999177;  
+constexpr double SpeedOfLight          = 1./FineStructure; // a.u. 
 constexpr double AtomicUnitOfIntensity = .5*SpeedOfLight_SI*Epsilon0*E0*E0; //W/m2
 constexpr double threshold = 1.e-08;
 
