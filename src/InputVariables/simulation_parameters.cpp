@@ -58,11 +58,10 @@ compose_json(nlohmann::json const& schema__, nlohmann::json const& in__, nlohman
              /* go though the object properties */
              if( in__.contains(key) ) {
                  auto aux = inout__[key]["properties"];
-                 inout__[key] = nlohmann::json();
+                 inout__[key] = std::vector<nlohmann::json>(in__[key].size());
                  for ( auto iobj=0; iobj < in__[key].size(); ++iobj ) {
                     std::stringstream iobj_str;
                     iobj_str << iobj;
-                    inout__[key] = std::vector<nlohmann::json>(in__[key].size());
                     inout__[key][iobj]=nlohmann::json();
                     compose_json(aux, 
                               in__[key][iobj], inout__[key][iobj]); 
