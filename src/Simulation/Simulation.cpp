@@ -22,6 +22,10 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     ctx_->cfg().finaltime_units("autime");
     ctx_->cfg().dt_units("autime");
 
+    if ( ctx_->cfg().printresolution_pulse() == 0 ) {
+        ctx_->cfg().printresolution_pulse(ctx_->cfg().printresolution());
+    }
+
     output::print("-> initializing material");
     material_ = Material(ctx_->cfg().tb_file());
 
