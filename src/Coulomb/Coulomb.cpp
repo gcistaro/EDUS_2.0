@@ -61,12 +61,10 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
         {
             for (int icol=0; icol<nbnd; icol++)
             {
-                int if_spin_is_2_if_nospin_is_1 = 2; // there may be hamiltonians without spin information. in that case this variable should be set to 1. otherwise is 2.
-                int iline = nbnd*if_spin_is_2_if_nospin_is_1*irow + if_spin_is_2_if_nospin_is_1*icol + 
-                (std::pow(nbnd,2)*if_spin_is_2_if_nospin_is_1+1)*iRCoulomb + 1;
+                int iline = nbnd*2*irow + 2*icol + (std::pow(nbnd,2)*2+1)*iRCoulomb + 1; // the 2 is due to spin
 
-                BareCoulomb_TB(ci(iRCoulomb,0), irow, icol) = std::atof(barecoulomb_file[iline][3].c_str()) + 
-                (if_spin_is_2_if_nospin_is_1-1)*std::atof(barecoulomb_file[iline+1][3].c_str());
+                BareCoulomb_TB(ci(iRCoulomb,0), irow, icol) = Convert(std::atof(barecoulomb_file[iline][3].c_str()) + 
+                std::atof(barecoulomb_file[iline+1][3].c_str()) - 0.14891086, Hartree, AuEnergy); // the constant is due to the way Nicola computes something ¯\_(ツ)_/¯
                 //std::cout << "BareCoulomb_TB(ci(" << iRCoulomb << ",0), " << irow << ", " << icol << ") = " << BareCoulomb_TB(ci(iRCoulomb,0), irow, icol) << std::endl;
             }
         }
@@ -88,12 +86,10 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
         {
             for (int icol=0; icol<nbnd; icol++)
             {
-                int if_spin_is_2_if_nospin_is_1 = 2; // there may be hamiltonians without spin information. in that case this variable should be set to 1. otherwise is 2.
-                int iline = nbnd*if_spin_is_2_if_nospin_is_1*irow + if_spin_is_2_if_nospin_is_1*icol + 
-                (std::pow(nbnd,2)*if_spin_is_2_if_nospin_is_1+1)*iRCoulomb + 1;
+                int iline = nbnd*2*irow + 2*icol + (std::pow(nbnd,2)*2+1)*iRCoulomb + 1; // the two is due to spin
 
-                ScreenCoulomb_TB(ci(iRCoulomb,0), irow, icol) = std::atof(screencoulomb_file[iline][3].c_str()) + 
-                (if_spin_is_2_if_nospin_is_1-1)*std::atof(screencoulomb_file[iline+1][3].c_str());
+                ScreenCoulomb_TB(ci(iRCoulomb,0), irow, icol) = Convert(std::atof(screencoulomb_file[iline][3].c_str()) + 
+                std::atof(screencoulomb_file[iline+1][3].c_str()), Hartree, AuEnergy);
                 //std::cout << "ScreenCoulomb_TB(ci(" << iRCoulomb << ",0), " << irow << ", " << icol << ") = " << ScreenCoulomb_TB(ci(iRCoulomb,0), irow, icol) << std::endl;
             }
         }
