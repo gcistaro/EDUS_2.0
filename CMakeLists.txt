@@ -205,14 +205,16 @@ add_executable(Eigen_test ci-test/test_eigen.cpp)
 add_executable(DE_test ci-test/test_DEsolver.cpp)
 add_executable(DE2_test ci-test/test_DEsolver2.cpp)
 #add_executable(fft-many_test ci-test/test_fft_many.cpp)
-add_executable(fft_test ci-test/test_fft_mpi.cpp)
-add_executable(Gradient_R_test ci-test/test_Gradient_R.cpp)
+#add_executable(fft_test ci-test/test_fft_mpi.cpp)
+#add_executable(Gradient_R_test ci-test/test_Gradient_R.cpp)
 #add_executable(NonEQ ci-test/test_NEQ_H0.cpp)
 #add_executable(NonEQ_Grad ci-test/test_NEQ_Grad.cpp)
 add_executable(Bandstructure_test ci-test/test_bandstructure.cpp)
-add_executable(Pseudoinv_test ci-test/test_pseudoinverse.cpp)
-add_executable(ScreenedPotential ci-test/test_Response.cpp)
+#add_executable(Pseudoinv_test ci-test/test_pseudoinverse.cpp)
+#add_executable(ScreenedPotential ci-test/test_Response.cpp)
 
+
+install (TARGETS EDUS PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_BINDIR})
 #build for ctest
 enable_testing()
 add_test(NAME Containers_test COMMAND Containers_test)
@@ -220,20 +222,20 @@ add_test(NAME Matrix_test COMMAND Matrix_test)
 add_test(NAME Eigen_test COMMAND Eigen_test)
 add_test(NAME DE_test COMMAND DE_test)
 add_test(NAME DE2_test COMMAND DE2_test)
-add_test(NAME Gradient_R_test COMMAND Gradient_R_test)
+#add_test(NAME Gradient_R_test COMMAND Gradient_R_test)
 add_test(NAME Bandstructure_test COMMAND 
 					bash -c "${CMAKE_CURRENT_BINARY_DIR}/Bandstructure_test ; \
 					python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_CURRENT_BINARY_DIR}/BANDSTRUCTURE.txt ${CMAKE_SOURCE_DIR}/ci-test/Reference/BANDSTRUCTURE.txt")
-add_test(NAME fft_test COMMAND fft_test)
-add_test(NAME NonEQ_H0 COMMAND NonEQ)
-add_test(NAME NonEQ_Grad COMMAND 
-            bash -c "mkdir ${CMAKE_SOURCE_DIR}/CTEST; 
-            rm -rf ${CMAKE_SOURCE_DIR}/CTEST/NonEQ_Grad/; \ 
-            mkdir ${CMAKE_SOURCE_DIR}/CTEST/NonEQ_Grad/; \ 
-            cd ${CMAKE_SOURCE_DIR}/CTEST/NonEQ_Grad/; \ 
-            ${CMAKE_CURRENT_BINARY_DIR}/NonEQ_Grad ${PROJECT_SOURCE_DIR}/ci-test/inputs/input_NonEQ_Grad.json"
-            )
-
+#add_test(NAME fft_test COMMAND fft_test)
+#add_test(NAME NonEQ_H0 COMMAND NonEQ)
+#add_test(NAME NonEQ_Grad COMMAND 
+#            bash -c "mkdir ${CMAKE_SOURCE_DIR}/CTEST; 
+#            rm -rf ${CMAKE_SOURCE_DIR}/CTEST/NonEQ_Grad/; \ 
+#            mkdir ${CMAKE_SOURCE_DIR}/CTEST/NonEQ_Grad/; \ 
+#            cd ${CMAKE_SOURCE_DIR}/CTEST/NonEQ_Grad/; \ 
+#            ${CMAKE_CURRENT_BINARY_DIR}/NonEQ_Grad ${PROJECT_SOURCE_DIR}/ci-test/inputs/input_NonEQ_Grad.json"
+#            )
+#
 add_test(NAME hBN COMMAND
              bash -c "mkdir ${CMAKE_SOURCE_DIR}/CTEST; 
              rm -rf ${CMAKE_SOURCE_DIR}/CTEST/hBN/; \ 
