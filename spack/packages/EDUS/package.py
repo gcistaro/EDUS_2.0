@@ -12,14 +12,14 @@ class Edus(CMakePackage):
 
     version("1.0", sha256="018827201601495e27cbd4e5434cd0b51e635099")
 
-    depends_on("cxx", type="build")
-    depends_on("c", type="build")
+    #depends_on("cxx", type="build")
+    #depends_on("c", type="build")
 
     depends_on("cmake", type="build")
     depends_on("intel-oneapi-mkl", type="build")
-    depends_on("fftw+mpi+openmp", type="build")
+    depends_on("fftw", type="build")
     depends_on("hdf5", type="build")
-    depends_on("pkgconfig", type="build")
+
     depends_on("mpi")
 
     variant(
