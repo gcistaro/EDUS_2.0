@@ -106,7 +106,7 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
         unit(ctx_->cfg().dt_units()),
         AuTime));
 
-    kgradient_.initialize(*(DensityMatrix_.get_Operator(R).get_MeshGrid()));
+    kgradient_.initialize(*(DensityMatrix_.get_Operator(SpaceOfPropagation_Gradient_).get_MeshGrid()));
     coulomb_.initialize(material_.H.get_Operator_R().get_nrows(),
         DensityMatrix_.get_Operator(R).get_MeshGrid(),
         material_.r);
@@ -384,11 +384,17 @@ void Simulation::Calculate_Velocity()
         Velocity_[ix].lock_space(k);
         Velocity_[ix].get_Operator_k().fill(0.);
 
+        /* V = -i*[r,H0] */
         commutator(Velocity_[ix].get_Operator_k(), -im, material_.r[ix].get_Operator_k(), H_.get_Operator_k());
-        Velocity_[ix].go_to_R();
-        // part with R
-        kgradient_.Calculate(1., Velocity_[ix].get_Operator_R(), H_.get_Operator_R(), direction[ix], false);
-        Velocity_[ix].go_to_k();
+        if (SpaceOfPropagation_Gradient_ == R ) {
+            Velocity_[ix].go_to_R();
+        }
+        /* V += R*H0 */
+        kgradient_.Calculate(1., Velocity_[ix].get_Operator(SpaceOfPropagation_Gradient_), 
+                                H_.get_Operator(SpaceOfPropagation_Gradient_), direction[ix], false);
+        if (SpaceOfPropagation_Gradient_ == R ) {
+            Velocity_[ix].go_to_k();
+        }
     }
 }
 
@@ -504,10 +510,10 @@ void Simulation::print_grids()
 
 std::string Simulation::wavelength_or_frequency(const int& idx__)
 {
-    bool is_frequency = (ctx_->cfg().lasers(idx__).contains("frequency"));
+    bool is_frequency = (std::abs(ctx_->cfg().lasers(idx__).frequency()) > 1.e-07);
     if (is_frequency)
         return "frequency";
-    bool is_wavelength = (ctx_->cfg().lasers(idx__).contains("wavelength"));
+    bool is_wavelength = (ctx_->cfg().lasers(idx__).wavelength());
     if (!is_wavelength) {
         throw std::runtime_error("You must specify (nonzero) frequency *xor* wavelength!");
     }

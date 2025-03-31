@@ -30,6 +30,7 @@ class Simulation
         kGradient kgradient_;
         Coulomb coulomb_;
         Space SpaceOfPropagation_ = k;
+        Space SpaceOfPropagation_Gradient_ = R;
         std::ofstream os_Laser_;
         std::ofstream os_VectorPot_;
         std::ofstream os_Pop_;
@@ -52,7 +53,7 @@ class Simulation
         int get_it_sparse(const double& time__) const;
 
         std::string wavelength_or_frequency(const int&);
-        
+
         template <typename Scalar_T>
         friend void SumWithProduct(Operator<std::complex<double>>& Output__, 
                     const Scalar_T& FirstScalar__, 
