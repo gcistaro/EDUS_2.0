@@ -263,5 +263,23 @@ class Communicator {
 
 
 }//end namespace mpi
-#endif//EDUS_MPI
+#else //EDUS_MPI
+namespace mpi
+{
+    class Communicator 
+    {
+        public:
+            Communicator(){};
+
+            static Communicator& world()
+            {
+                static Communicator comm;
+                return comm;
+            };
+
+            void barrier() {};
+    };
+
+};
+#endif //EDUS_MPI
 #endif//COMMUNICATORS_HPP
