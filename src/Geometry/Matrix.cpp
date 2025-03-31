@@ -19,7 +19,7 @@ void Matrix<std::complex<double>>::diagonalize(Matrix<std::complex<double>>& Eig
     auto lda = n;
     EigenValues.initialize({this->get_nrows()});
     //LAPACKE_dsyev( LAPACK_ROW_MAJOR, 'V', 'U', n, &EigenVectors(0,0), lda, &EigenValues(0) );
-    LAPACKE_zheev( LAPACK_ROW_MAJOR, 'V', 'U', n, &EigenVectors(0,0), lda, &EigenValues(0) );
+    LAPACKE_zheevd( LAPACK_ROW_MAJOR, 'V', 'U', n, &EigenVectors(0,0), lda, &EigenValues(0) );
 }
 
 template<>
