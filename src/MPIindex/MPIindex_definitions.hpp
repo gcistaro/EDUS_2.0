@@ -48,7 +48,7 @@ void MPIindex<dim>::initialize( const std::array<int, 3>& ValuesToSplit__, const
                                             //because of internals of fftw routines.
 #else //trivial case, no splitting at all.
     LocalRange_1D = GlobalRange_1D;
-    RecommendedAllocate_fftw = ValuesToSplit[0]*ValuesToSplit[1]*ValuesToSplit[2];
+    RecommendedAllocate_fftw = howmany*ValuesToSplit[0]*ValuesToSplit[1]*ValuesToSplit[2];
     local_n0 = ValuesToSplit[0];
 #endif
     nlocal = local_n0*ValuesToSplit[1]*ValuesToSplit[2];
