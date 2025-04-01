@@ -94,6 +94,29 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
             }
         }
     }
+
+    Operator<std::complex<double>> Bare;
+    Bare.initialize_fft(*Rgrid__, nbnd);
+    auto& bareR = Bare.get_Operator(Space::R);
+    for (int iRCoulomb=0; iRCoulomb<RCoulomb.get_TotalSize(); iRCoulomb++)// maybe Rgrid__
+    {
+        for (int irow=0; irow<nbnd; irow++)
+        {
+            for (int icol=0; icol<nbnd; icol++)
+            {
+                bareR(iRCoulomb, irow, icol ) = BareCoulomb_TB(iRCoulomb, irow, icol);
+            }
+        }
+    }
+
+    std::vector<Coordinate> rwann(nbnd);
+    for (auto& rwann_iwann : rwann) {
+        rwann_iwann.initialize(0.,0.,0.);
+    }
+    Bare.print_Rdecay("bare",rwann);
+
+
+
                                                     // COMBINING THE TWO TERMS //
 
     /* Get local part and add the minus sign */
