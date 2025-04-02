@@ -2,8 +2,6 @@
 import numpy as np
 from custom_functions.fouriertransform import FourierTransform
 from scipy import constants
-<<<<<<< HEAD
-<<<<<<< HEAD
 
 def get_absorbance(t_au, Vt_au, Et_au, limits=[], smearing=0.):
     """
@@ -12,28 +10,6 @@ def get_absorbance(t_au, Vt_au, Et_au, limits=[], smearing=0.):
     You can also define limits where you want the absorbance in units of eV (is frequency) and the smearing. 
     For more details about the smearing, please check the function FourierTransform.
     """
-=======
-import matplotlib.pyplot as plt
-import plotly.graph_objects as go
-import plotly.io as pio
-
-def absorbance(t_au, Vt_au, Et_au, limits=[]):
-    print("Fourier transforming")
-    freq_eV, Jw_au = FourierTransform(t_au, Vt_au, True)
-    _, Ew_au       = FourierTransform(t_au, Et_au, False)
-    print("done")
->>>>>>> 1. Changed "EDUS_2.0/Postproces/custom_functions/absorbance.py" to:
-=======
-
-def get_absorbance(t_au, Vt_au, Et_au, limits=[], smearing=0.):
-    """
-    This function calculates the absorbance in frequency domain given as input the time grid (WARNING, need to be equally spaced),
-    The velocity over the time grid, the electric field using for the time propagation. 
-    You can also define limits where you want the absorbance in units of eV (is frequency) and the smearing. 
-    For more details about the smearing, please check the function FourierTransform.
-    """
->>>>>>> Update Absorbance script
-
     freq_eV, Vw_au = FourierTransform(t_au, Vt_au, smearing)
     _, Ew_au       = FourierTransform(t_au, Et_au, 0.)
 
@@ -55,7 +31,6 @@ def get_absorbance(t_au, Vt_au, Et_au, limits=[], smearing=0.):
                     if np.abs(Ew_au[freq]) < 1e-14:       #
                         Ew_au[freq] = 0 # set to true 0   #
         #####################################################
-
     #define everything only in the window
     Vw_au   = Vw_au[:,index]
     Ew_au   = Ew_au[:,index]
