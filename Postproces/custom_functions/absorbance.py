@@ -2,6 +2,7 @@
 import numpy as np
 from custom_functions.fouriertransform import FourierTransform
 from scipy import constants
+<<<<<<< HEAD
 
 def get_absorbance(t_au, Vt_au, Et_au, limits=[], smearing=0.):
     """
@@ -10,6 +11,17 @@ def get_absorbance(t_au, Vt_au, Et_au, limits=[], smearing=0.):
     You can also define limits where you want the absorbance in units of eV (is frequency) and the smearing. 
     For more details about the smearing, please check the function FourierTransform.
     """
+=======
+import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+import plotly.io as pio
+
+def absorbance(t_au, Vt_au, Et_au, limits=[]):
+    print("Fourier transforming")
+    freq_eV, Jw_au = FourierTransform(t_au, Vt_au, True)
+    _, Ew_au       = FourierTransform(t_au, Et_au, False)
+    print("done")
+>>>>>>> 1. Changed "EDUS_2.0/Postproces/custom_functions/absorbance.py" to:
 
     freq_eV, Vw_au = FourierTransform(t_au, Vt_au, smearing)
     _, Ew_au       = FourierTransform(t_au, Et_au, 0.)
