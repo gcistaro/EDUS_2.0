@@ -370,6 +370,41 @@ void Simulation::Print_Population()
     }
 }
 
+
+double Simulation::jacobian(const Matrix<double>& A__) const
+{
+    /* check if we are considering a slab or a 3D material, from the k grid */
+    double j = 0.0;
+    auto dim = 0;
+    for (auto& ix : {0,1,2}) {
+        dim += ( ctx_->cfg().grid()[ix] > 1 ? 1 : 0 ); 
+    }
+
+    if ( dim == 3 ) {
+        j = std::abs(A__.determinant());
+    }
+    else if ( dim == 2 ) {
+        /* check which lattice vectors is perpendicular to the slab */
+        int perpendicular = -1;
+        for (auto& ix : {0,1,2}) {
+            if( ctx_->cfg().grid()[ix] <= 1 ) {
+                perpendicular = ix; 
+                break;
+            }
+        }
+        if(perpendicular != 2) {
+            std::stringstream ss;
+            ss << "perpendicular = " << perpendicular << " !=2 -> implement me!\n";
+            throw std::runtime_error(ss.str());
+        }
+        j = std::abs(A__(0,0)*A__(1,1) - A__(1,0)*A__(0,1));
+    }
+    else if ( dim == 1 ) {
+        throw std::runtime_error("Implement me!\n");
+    }
+    return j;
+}
+
 void Simulation::Calculate_Velocity()
 {
     Calculate_TDHamiltonian(-6000, true);
@@ -395,6 +430,17 @@ void Simulation::Calculate_Velocity()
         if (SpaceOfPropagation_Gradient_ == R ) {
             Velocity_[ix].go_to_k();
         }
+
+        /* apply right constants for the normalization of wavefunctions */
+        auto det = jacobian(Coordinate::get_Basis(LatticeVectors(Space::R)).get_M());
+        #pragma omp parallel for 
+        for (int iblock = 0; iblock < Velocity_[ix].get_Operator(Space::k).get_nblocks(); ++iblock) {
+            for (int irow = 0; irow < Velocity_[ix].get_Operator(Space::k).get_nrows(); ++irow) {
+                for (int icol = 0; icol < Velocity_[ix].get_Operator(Space::k).get_ncols(); ++icol) {
+                    Velocity_[ix].get_Operator(Space::k)(iblock, irow, icol) /= det;
+                }
+            }
+        }   
     }
 }
 
@@ -463,11 +509,13 @@ void Simulation::print_recap()
     output::print("          :         *", A(0, 0), A(0, 1), A(0, 2));
     output::print("    A     :         *", A(1, 0), A(1, 1), A(1, 2));
     output::print("          :         *", A(2, 0), A(2, 1), A(2, 2));
-    output::print("");
     auto& B = Coordinate::get_Basis(LatticeVectors(k)).get_M();
     output::print("          :         *", B(0, 0), B(0, 1), B(0, 2));
     output::print("    B     :         *", B(1, 0), B(1, 1), B(1, 2));
     output::print("          :         *", B(2, 0), B(2, 1), B(2, 2));
+    output::print("");
+    output::print(" jacobian(A)        *", jacobian(A));
+    output::print("");
     output::stars();
 
     for (int ilaser = 0; ilaser < int(setoflaser_.size()); ++ilaser) {
