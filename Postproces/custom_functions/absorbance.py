@@ -31,6 +31,7 @@ def get_absorbance(t_au, Vt_au, Et_au, limits=[], smearing=0.):
                     if np.abs(Ew_au[freq]) < 1e-14:       #
                         Ew_au[freq] = 0 # set to true 0   #
         #####################################################
+        
     #define everything only in the window
     Vw_au   = Vw_au[:,index]
     Ew_au   = Ew_au[:,index]

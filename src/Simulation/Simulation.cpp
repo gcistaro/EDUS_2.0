@@ -421,6 +421,7 @@ void Simulation::Calculate_Velocity()
 
         /* V = -i*[r,H0] */
         commutator(Velocity_[ix].get_Operator_k(), -im, material_.r[ix].get_Operator_k(), H_.get_Operator_k());
+
         if (SpaceOfPropagation_Gradient_ == R ) {
             Velocity_[ix].go_to_R();
         }
