@@ -17,6 +17,11 @@ void dump_json_in_h5( const nlohmann::json& data__, const std::string& name__ );
 
 namespace output {
 
+inline void print(std::stringstream& ss__, const std::string& toprint__)
+{
+    ss__ << toprint__;
+}
+
 template <typename T>
 inline void print(std::stringstream& ss__, const T& toprint__)
 {            

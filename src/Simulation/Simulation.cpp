@@ -306,17 +306,17 @@ void Simulation::do_onestep()
 
         HDF5_tree fout(name, hdf5_access_t::read_write);
 
-        if(ctx_->cfg().dict()["toprint"]["DMk_wannier"] == true) {
+        if(ctx_->cfg().dict()["toprint"]["DMk_wannier"] == "true") {
             DensityMatrix_.go_to_k(false);
             DensityMatrix_.get_Operator_k().write_h5(name, nodename::DMk, node.str());
         }
-        if(ctx_->cfg().dict()["toprint"]["DMk_bloch"] == true) {
+        if(ctx_->cfg().dict()["toprint"]["DMk_bloch"] == "true") {
             DensityMatrix_.go_to_k(false);
             DensityMatrix_.go_to_bloch();
             DensityMatrix_.get_Operator_k().write_h5(name, nodename::DMk_bloch, node.str());
             DensityMatrix_.go_to_wannier();
         } 
-        if(ctx_->cfg().dict()["toprint"]["SelfEnergy"] == true) {
+        if(ctx_->cfg().dict()["toprint"]["SelfEnergy"] == "true") {
             DensityMatrix_.go_to_R(true);
             H_.go_to_R(false);
             coulomb_.EffectiveHamiltonian(H_, DensityMatrix_, true);
@@ -324,7 +324,7 @@ void Simulation::do_onestep()
             H_.get_Operator_k().write_h5(name, nodename::SelfEnergy, node.str());
             DensityMatrix_.go_to_k(false);
         }
-        if(ctx_->cfg().dict()["toprint"]["fullH"] == true) {
+        if(ctx_->cfg().dict()["toprint"]["fullH"] == "true") {
             Calculate_TDHamiltonian(CurrentTime, true);
             H_.get_Operator_k().write_h5(name, nodename::fullH, node.str());
         }
@@ -449,6 +449,10 @@ void Simulation::print_recap()
     output::print("epsilon                  *", ctx_->cfg().epsilon());
     output::print("r0                       *", Convert(ctx_->cfg().r0(), Angstrom, AuLength), " a.u.",
         ctx_->cfg().r0(), " angstrom");
+    output::print("toprint-> DMk_wannier    *        ", std::string(ctx_->cfg().dict()["toprint"]["DMk_wannier"]));
+    output::print("toprint-> DMk_bloch      *        ", std::string(ctx_->cfg().dict()["toprint"]["DMk_bloch"]));
+    output::print("toprint-> fullH          *        ", std::string(ctx_->cfg().dict()["toprint"]["fullH"]));
+    output::print("toprint-> SelfEnergy     *        ", std::string(ctx_->cfg().dict()["toprint"]["SelfEnergy"]));
     output::stars();
 
     output::stars();

@@ -51,7 +51,8 @@ compose_json(nlohmann::json const& schema__, nlohmann::json const& in__, nlohman
         auto key = it.key();
 
         /* this is a final node with the description of the data type */
-         if(it.value().contains("type") && it.value()["type"] == "array" && 
+        /* for laser */
+        if(it.value().contains("type") && it.value()["type"] == "array" && 
             it.value().contains("items") && it.value()["items"].contains("type") &&
             it.value()["items"]["type"] == "object" &&
             it.value()["items"].contains("properties")) {
@@ -77,7 +78,7 @@ compose_json(nlohmann::json const& schema__, nlohmann::json const& in__, nlohman
                 /* copy the new input */
                 inout__[key] = in__[key];
             }
-        } 
+        }
     }
     // Emit warnings about keys that were set but unused.
     //if (!visited.empty()) {

@@ -126,6 +126,12 @@
             "title": "Big quantities that we want to print",
             "minItems": 1,
             "maxItems": 10,
+            "default": {
+                "DMk_wannier" : "false",
+                "DMk_bloch"   : "false",
+                "fullH"       : "false",
+                "SelfEnergy"  : "false"
+            },
             "items" : {
                 "DMk_wannier" : {
                     "type"    : "boolean",
