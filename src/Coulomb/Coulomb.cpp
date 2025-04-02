@@ -1,8 +1,6 @@
 #include "Coulomb.hpp"
 #include "RytovaKeldysh/RytovaKeldysh.hpp"
 #include <filesystem>
-//#include <fstream>
-//#include <complex>
 
 Coulomb::Coulomb(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid__)
 {
@@ -57,7 +55,6 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
 
     // build the bare coulomb interaction matrix elements in the imported R vectors
     BareCoulomb_TB.fill(0.0);
-    std::ofstream EDUSbarecoulomb_file("Output/EDUSbarecoulomb.txt");
     for (int iRCoulomb=0; iRCoulomb<RCoulomb.get_TotalSize(); iRCoulomb++)
     {
         for (int irow=0; irow<nbnd; irow++)
@@ -69,11 +66,29 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
                 BareCoulomb_TB(ci(iRCoulomb,0), irow, icol) = Convert(std::atof(barecoulomb_file[iline][3].c_str()) + 
                 std::atof(barecoulomb_file[iline+1][3].c_str()) - 0.14891086, Hartree, AuEnergy); // the constant is due to the way Nicola computes something ¯\_(ツ)_/¯
                 //std::cout << "BareCoulomb_TB(ci(" << iRCoulomb << ",0), " << irow << ", " << icol << ") = " << BareCoulomb_TB(ci(iRCoulomb,0), irow, icol) << std::endl;
-                EDUSbarecoulomb_file << ci(iRCoulomb,0) << '\n' << Rgrid_shifted[ci(iRCoulomb,0)] << '\n' << irow << ' ' << icol << ' ' << BareCoulomb_TB(ci(iRCoulomb,0), irow, icol).real() << ' ' << BareCoulomb_TB(ci(iRCoulomb,0), irow, icol).imag() << '\n' << '\n' << '\n';
             }
         }
     }
-    EDUSbarecoulomb_file.close();
+
+    Operator<std::complex<double>> Bare;
+    Bare.initialize_fft(*Rgrid__, nbnd);
+    auto& bareR = Bare.get_Operator(Space::R);
+    for (int iRCoulomb=0; iRCoulomb<RCoulomb.get_TotalSize(); iRCoulomb++)// maybe Rgrid__
+    {
+        for (int irow=0; irow<nbnd; irow++)
+        {
+            for (int icol=0; icol<nbnd; icol++)
+            {
+                bareR(iRCoulomb, irow, icol ) = BareCoulomb_TB(iRCoulomb, irow, icol);
+            }
+        }
+    }
+
+    std::vector<Coordinate> rwann(nbnd);
+    for (auto& rwann_iwann : rwann) {
+        rwann_iwann.initialize(0.,0.,0.);
+    }
+    Bare.print_Rdecay("EDUSbarecoulomb.txt",rwann);
 
                                             // SCREENED COULOMB INTERACTION //
     
@@ -85,7 +100,6 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
 
     // build the screened coulomb interaction matrix elements in the imported R vectors
     ScreenCoulomb_TB.fill(0.0);
-    std::ofstream EDUSscreencoulomb_file("Output/EDUSscreencoulomb.txt");
     for (int iRCoulomb=0; iRCoulomb<RCoulomb.get_TotalSize(); iRCoulomb++)
     {
         for (int irow=0; irow<nbnd; irow++)
@@ -97,11 +111,32 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
                 ScreenCoulomb_TB(ci(iRCoulomb,0), irow, icol) = Convert(std::atof(screencoulomb_file[iline][3].c_str()) + 
                 std::atof(screencoulomb_file[iline+1][3].c_str()), Hartree, AuEnergy);
                 //std::cout << "ScreenCoulomb_TB(ci(" << iRCoulomb << ",0), " << irow << ", " << icol << ") = " << ScreenCoulomb_TB(ci(iRCoulomb,0), irow, icol) << std::endl;
-                EDUSscreencoulomb_file << ci(iRCoulomb,0) << '\n' << Rgrid_shifted[ci(iRCoulomb,0)] << '\n' << irow << ' ' << icol << ' ' << ScreenCoulomb_TB(ci(iRCoulomb,0), irow, icol).real() << ' ' << ScreenCoulomb_TB(ci(iRCoulomb,0), irow, icol).imag() << '\n' << '\n' << '\n';
             }
         }
     }
-    EDUSscreencoulomb_file.close();
+
+    Operator<std::complex<double>> Screen;
+    Screen.initialize_fft(*Rgrid__, nbnd);
+    auto& screenR = Screen.get_Operator(Space::R);
+    for (int iRCoulomb=0; iRCoulomb<RCoulomb.get_TotalSize(); iRCoulomb++)// maybe Rgrid__
+    {
+        for (int irow=0; irow<nbnd; irow++)
+        {
+            for (int icol=0; icol<nbnd; icol++)
+            {
+                screenR(iRCoulomb, irow, icol ) = ScreenCoulomb_TB(iRCoulomb, irow, icol);
+            }
+        }
+    }
+
+    std::vector<Coordinate> rwann(nbnd);
+    for (auto& rwann_iwann : rwann) {
+        rwann_iwann.initialize(0.,0.,0.);
+    }
+    Screen.print_Rdecay("EDUSscreencoulomb.txt",rwann);
+
+
+
                                                     // COMBINING THE TWO TERMS //
 
     /* Get local part and add the minus sign */
