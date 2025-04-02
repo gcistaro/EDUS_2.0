@@ -30,13 +30,8 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
     //std::filesystem::path cwd = std::filesystem::current_path() / "RytovaKeldysh.txt";
     //read_rk_py( RytovaKeldysh_TB, cwd.str());
 
-                                                // BARE COULOMB INTERACTION //
- 
-    auto BareCoulomb_TB = mdarray<std::complex<double>,3> ( { int( size_MG_global ), nbnd, nbnd } );                                                
- 
-    // locate and open bare coulomb file
-    std::filesystem::path barecoulomb_file_path = std::filesystem::current_path() / "barecoulomb.txt";
-    auto barecoulomb_file = ReadFile(barecoulomb_file_path.string());
+    rytovakeldysh.initialize(r__, 3, Rgrid__);
+    auto& RytovaKeldysh_TB = rytovakeldysh.TB;
 
     /* Get local part and add the minus sign */
     #pragma omp parallel for
