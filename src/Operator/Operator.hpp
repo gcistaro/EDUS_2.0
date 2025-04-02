@@ -297,8 +297,8 @@ class Operator
                 auto iR_glob = this->mpindex.loc1D_to_glob1D(iR_loc);
                 for( int ialpha = 0; ialpha < this->get_Operator_R().get_nrows(); ++ialpha ) {
                     for( int ibeta = 0; ibeta < this->get_Operator_R().get_nrows(); ++ibeta ) {
-                        os << (rwann__[ialpha] + Rgamma_centered[iR_glob] -rwann__[ibeta]).norm() ;
-                        os << this->get_Operator_R()[iR_loc](ialpha, ibeta) << std::endl;
+                        os << (rwann__[ialpha] + Rgamma_centered[iR_glob] -rwann__[ibeta]).norm() << " " ;
+                        os << this->get_Operator_R()[iR_loc](ialpha, ibeta).real() << " " << this->get_Operator_R()[iR_loc](ialpha, ibeta).imag() << std::endl;
                     }
                 }
             }
