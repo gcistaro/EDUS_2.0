@@ -30,8 +30,33 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
     //std::filesystem::path cwd = std::filesystem::current_path() / "RytovaKeldysh.txt";
     //read_rk_py( RytovaKeldysh_TB, cwd.str());
 
-    rytovakeldysh.initialize(r__, 3, Rgrid__);
-    auto& RytovaKeldysh_TB = rytovakeldysh.TB;
+                                                // BARE COULOMB INTERACTION //
+ 
+    auto BareCoulomb_TB = mdarray<std::complex<double>,3> ( { int( size_MG_global ), nbnd, nbnd } );                                                
+ 
+    // locate and open bare coulomb file
+    std::filesystem::path barecoulomb_file_path = std::filesystem::current_path() / "barecoulomb.txt";
+    auto barecoulomb_file = ReadFile(barecoulomb_file_path.string());
+
+    // read from the kcw file the R vectors where the Hamiltonian is computed
+    std::vector<Coordinate> RkcwGrid;
+    std::array<double,3> Rkcw;
+    for (int iline = 0; iline < barecoulomb_file.size(); iline++)
+    {
+        if (barecoulomb_file[iline].size() == 3)
+        {
+            for (int i = 0; i < 3; i++){
+              Rkcw[i] = stoi(barecoulomb_file[iline][i]);}
+            Coordinate R(Rkcw[0], Rkcw[1], Rkcw[2], LatticeVectors(Space::R));
+            RkcwGrid.push_back(R);
+        }
+    }
+
+    // find in the systems grid the R vectors from the kcw file read above
+    RCoulomb.initialize(Space::R, RkcwGrid, 0.0);
+    auto Rgrid_shifted = get_GammaCentered_grid(*Rgrid);
+    MeshGrid::Calculate_ConvolutionIndex(RCoulomb, Rgrid_shifted, *Operator<std::complex<double>>::MeshGrid_Null);
+    auto& ci = MeshGrid::ConvolutionIndex[{RCoulomb.get_id(), Rgrid_shifted.get_id(), Operator<std::complex<double>>::MeshGrid_Null->get_id()}];
 
     // build the bare coulomb interaction matrix elements in the imported R vectors
     BareCoulomb_TB.fill(0.0);
@@ -109,10 +134,6 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
         }
     }
 
-    std::vector<Coordinate> rwann(nbnd);
-    for (auto& rwann_iwann : rwann) {
-        rwann_iwann.initialize(0.,0.,0.);
-    }
     Screen.print_Rdecay("EDUSscreencoulomb",rwann);
 
 
