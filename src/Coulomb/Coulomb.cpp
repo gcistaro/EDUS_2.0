@@ -62,7 +62,7 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
      for (auto& rwann_iwann : rwann) {
          rwann_iwann.initialize(0.,0.,0.);
      }
-     Screen.print_Rdecay("EDUSmodelscreencoulomb.txt",rwann);
+     Screen.print_Rdecay("EDUSmodelscreencoulomb",rwann);
 
     /* Get unscreened (only on-site for point-like approximation) potential */
     auto index_origin_dft = r__[0].get_Operator(R).get_MeshGrid()->find(Coordinate(0,0,0));
@@ -102,7 +102,7 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
          }
      }
  
-     Bare.print_Rdecay("EDUSpointlikebarecoulomb.txt",rwann);
+     Bare.print_Rdecay("EDUSpointlikebarecoulomb",rwann);
 }
 
 
