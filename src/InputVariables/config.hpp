@@ -156,6 +156,10 @@ class config_t
         }
         dict_["/printresolution_pulse"_json_pointer] = printresolution__;
     }
+    inline auto gradient_space() const
+    {
+        return dict_.at("/gradient_space"_json_pointer).get<std::string>();
+    }
     /// Initial time of the simulation
     inline auto initialtime() const
     {
