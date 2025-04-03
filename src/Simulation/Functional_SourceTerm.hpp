@@ -4,8 +4,10 @@ SourceTerm =
 {
     
     /* Gradient term:    Output +=   (E.Nabla) * Input */
-    Output__.go_to_R(false);
-    const_cast<Operator<std::complex<double>>&>(Input__).go_to_R(true);
+    if ( SpaceOfPropagation_Gradient_ == R ) {
+        Output__.go_to_R(false);
+        const_cast<Operator<std::complex<double>>&>(Input__).go_to_R(true);
+    }
     kgradient_.Calculate(1.+0.*im, Output__.get_Operator(SpaceOfPropagation_Gradient_), 
                         Input__.get_Operator(SpaceOfPropagation_Gradient_), 
                         setoflaser_(time__), true);
