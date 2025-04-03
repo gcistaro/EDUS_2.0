@@ -108,5 +108,7 @@ void finalize()
     char* dt = ctime(&now);
     std::stringstream ss;
     ss << "Execution finished: " << dt << std::endl;
-    output::print(ss.str());
+    auto end_str = ss.str();
+    end_str.erase(std::remove(end_str.begin(), end_str.end(), '\n'), end_str.end());
+    output::print(end_str);
 }
