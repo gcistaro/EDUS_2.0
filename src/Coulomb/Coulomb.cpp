@@ -86,6 +86,13 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
          }
      }
 
+     std::vector<Coordinate> rwann(nbnd);
+     for (auto& rwann_iwann : rwann) {
+         rwann_iwann.initialize(0.,0.,0.);
+     }
+
+     Screen.print_Rdecay("EDUSscreencoulomb",rwann);
+
                                                         // BARE COULOMB INTERACTION //
  
     auto BareCoulomb_TB = mdarray<std::complex<double>,3> ( { int( size_MG_global ), nbnd, nbnd } );                                                
@@ -103,7 +110,6 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
             for (int icol=0; icol<nbnd; icol++)
             {
                 int iline = nbnd*2*irow + 2*icol + (std::pow(nbnd,2)*2+1)*iRCoulomb + 1;
-
                 BareCoulomb_TB(ci(iRCoulomb,0), irow, icol) = std::atof(barecoulomb_file[iline][3].c_str()) + std::atof(barecoulomb_file[iline+1][3].c_str());
             }
         }
@@ -149,7 +155,7 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
          }
      }
  
-     Bare.print_Rdecay("EDUSpointlikebarecoulomb",rwann);
+     Bare.print_Rdecay("EDUSbarecoulomb",rwann);
 }
 
 
