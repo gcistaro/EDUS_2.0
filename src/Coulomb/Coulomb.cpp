@@ -30,16 +30,44 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
     //std::filesystem::path cwd = std::filesystem::current_path() / "RytovaKeldysh.txt";
     //read_rk_py( RytovaKeldysh_TB, cwd.str());
 
-    rytovakeldysh.initialize(r__, 3, Rgrid__);
-    auto& RytovaKeldysh_TB = rytovakeldysh.TB;
+                                                    // SCREENED COULOMB INTERACTION //
+     
+    auto ScreenCoulomb_TB = mdarray<std::complex<double>,3> ( { int( size_MG_global ), nbnd, nbnd } );
+ 
+    // import screened coulomb interaction
+    std::filesystem::path screencoulomb_file_path = std::filesystem::current_path() / "screencoulomb.txt";
+    auto screencoulomb_file = ReadFile(screencoulomb_file_path.string());
 
-    /* Get local part and add the minus sign */
-    #pragma omp parallel for
-    for( int iR_local = 0; iR_local < size_MG_local; ++iR_local ){
-        for( int irow = 0; irow < nbnd; ++irow ){
-            for( int icol = 0; icol < nbnd; ++icol ){
-                auto iR_global = int( Rgrid__->mpindex.loc1D_to_glob1D(iR_local) );
-                HF( iR_local, irow, icol ) = -RytovaKeldysh_TB( iR_global, irow, icol );
+    // read from the kcw file the R vectors where the Hamiltonian is computed
+    std::vector<Coordinate> RkcwGrid;
+    std::array<double,3> Rkcw;
+    for (int iline = 0; iline < screencoulomb_file.size(); iline++)
+    {
+        if (screencoulomb_file[iline].size() == 3)
+        {
+            for (int i = 0; i < 3; i++){
+              Rkcw[i] = stoi(barecoulomb_file[iline][i]);}
+            Coordinate R(Rkcw[0], Rkcw[1], Rkcw[2], LatticeVectors(Space::R));
+            RkcwGrid.push_back(R);
+        }
+    }
+
+    // find in the systems grid the R vectors from the kcw file read above
+    RCoulomb.initialize(Space::R, RkcwGrid, 0.0);
+    auto Rgrid_shifted = get_GammaCentered_grid(*Rgrid);
+    MeshGrid::Calculate_ConvolutionIndex(RCoulomb, Rgrid_shifted, *Operator<std::complex<double>>::MeshGrid_Null);
+    auto& ci = MeshGrid::ConvolutionIndex[{RCoulomb.get_id(), Rgrid_shifted.get_id(), Operator<std::complex<double>>::MeshGrid_Null->get_id()}];
+
+    // build the screened coulomb interaction matrix elements in the imported R vectors
+    ScreenCoulomb_TB.fill(0.0);
+    for (int iRCoulomb=0; iRCoulomb<RCoulomb.get_TotalSize(); iRCoulomb++)
+    {
+        for (int irow=0; irow<nbnd; irow++)
+        {
+            for (int icol=0; icol<nbnd; icol++)
+            {
+                int iline = nbnd*2*irow + 2*icol + (std::pow(nbnd,2)*2+1)*iRCoulomb + 1;
+                ScreenCoulomb_TB(ci(iRCoulomb,0), irow, icol) = std::atof(screencoulomb_file[iline][3].c_str()) + std::atof(screencoulomb_file[iline+1][3].c_str());
             }
         }
     }
@@ -53,18 +81,36 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
          {
              for (int icol=0; icol<nbnd; icol++)
              {
-                 screenR(iRCoulomb, irow, icol ) = RytovaKeldysh_TB(iRCoulomb, irow, icol);
+                 screenR(iRCoulomb, irow, icol ) = ScreenCoulomb_TB(iRCoulomb, irow, icol);
              }
          }
      }
- 
-     std::vector<Coordinate> rwann(nbnd);
-     for (auto& rwann_iwann : rwann) {
-         rwann_iwann.initialize(0.,0.,0.);
-     }
-     Screen.print_Rdecay("EDUSmodelscreencoulomb",rwann);
 
-    /* Get unscreened (only on-site for point-like approximation) potential */
+                                                        // BARE COULOMB INTERACTION //
+ 
+    auto BareCoulomb_TB = mdarray<std::complex<double>,3> ( { int( size_MG_global ), nbnd, nbnd } );                                                
+ 
+    // locate and open bare coulomb file
+    std::filesystem::path barecoulomb_file_path = std::filesystem::current_path() / "barecoulomb.txt";
+    auto barecoulomb_file = ReadFile(barecoulomb_file_path.string());
+
+    // build the bare coulomb interaction matrix elements in the imported R vectors
+    BareCoulomb_TB.fill(0.0);
+    for (int iRCoulomb=0; iRCoulomb<RCoulomb.get_TotalSize(); iRCoulomb++)
+    {
+        for (int irow=0; irow<nbnd; irow++)
+        {
+            for (int icol=0; icol<nbnd; icol++)
+            {
+                int iline = nbnd*2*irow + 2*icol + (std::pow(nbnd,2)*2+1)*iRCoulomb + 1;
+
+                BareCoulomb_TB(ci(iRCoulomb,0), irow, icol) = std::atof(barecoulomb_file[iline][3].c_str()) + std::atof(barecoulomb_file[iline+1][3].c_str());
+            }
+        }
+    }
+
+
+    // building the hamiltonian hartree matrix element from the potentials imported above
     auto index_origin_dft = r__[0].get_Operator(R).get_MeshGrid()->find(Coordinate(0,0,0));
     int index_origin_global = Rgrid__->find(Coordinate(0,0,0));
     std::array<double, 3> bare_ratom;
@@ -75,15 +121,19 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
             auto& R = (*Rgrid__)[iR];
             for( int irow = 0; irow < nbnd; ++irow ){
                 for( auto& ix : {0,1,2}) {
-                    bare_ratom[ix] = real(r__[ix].get_Operator(Space::R)(index_origin_dft,irow,irow));
+                    bare_ratom1[ix] = real(r__[ix].get_Operator(Space::R)(index_origin_dft,irow,irow));
                 }
+                for (int icol = 0; icol < nbnd; ++icol){
+                    for( auto& ix : {0,1,2}) {
+                        bare_ratom2[ix] = real(r__[ix].get_Operator(Space::R)(index_origin_dft,icol,icol));
+                    }
+                    auto ratom = Coordinate(bare_ratom1[0]-bare_ratom2[0], bare_ratom1[1]-bare_ratom2[1], bare_ratom1[2]-bare_ratom2[2]);
 
-                auto ratom = Coordinate(bare_ratom[0], bare_ratom[1], bare_ratom[2]);
-                auto norm = ratom.norm();
-
-                HF( index_origin_local, irow, irow ) += ( ratom.norm() < 1.e-06 
-                                                                        ? 0. 
-                                                                        : 1./((ratom + R).norm()) *2.); //2 for spin degeneracy
+                    HF( index_origin_local, irow, irow ) += ( ratom.norm() < 1.e-06 
+                                                                            ? 0. 
+                                                                            //: 1./((ratom + R).norm()) *2.); //2 for spin degeneracy
+                                                                            : BareCoulomb_TB(iR, irow, icol));
+                }
             }
         }
     }
