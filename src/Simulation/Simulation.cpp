@@ -26,6 +26,8 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
         ctx_->cfg().printresolution_pulse(ctx_->cfg().printresolution());
     }
 
+    SpaceOfPropagation_Gradient_ = (ctx_->cfg().gradient_space() == "R" ? Space::R : Space::k);
+
     output::print("-> initializing material");
     material_ = Material(ctx_->cfg().tb_file());
 
@@ -53,13 +55,30 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
 
     output::print("-> Initializing fft and dft");
     DensityMatrix_.initialize_fft(*MasterRgrid, HR.get_nrows());
+    
+#ifdef __DEBUG_MODE
+    for(int ik=0; ik<DensityMatrix_.get_Operator(Space::k).get_MeshGrid()->get_TotalSize(); ++ik){
+        for(int iR=0; iR<DensityMatrix_.get_Operator(Space::R).get_MeshGrid()->get_TotalSize(); ++iR) {
+            auto& kp = (*(DensityMatrix_.get_Operator(Space::k).get_MeshGrid()))[ik];
+            auto& Rp = (*(DensityMatrix_.get_Operator(Space::R).get_MeshGrid()))[iR];
+            auto& kcrys = kp.get(LatticeVectors(k));
+            auto& Rcrys = Rp.get(LatticeVectors(R));
+            if( std::abs(kp.dot(Rp) - 2.*pi*(kcrys[0]*Rcrys[0]+kcrys[1]*Rcrys[1]+kcrys[2]*Rcrys[2])) > 1.e-14) {
+                std::cout << kp.get("Cartesian") << Rp.get("Cartesian");
+                std::cout << kcrys << Rcrys;
+                std::cout << ik << " " << iR <<" "  << kp.dot(Rp) << " " << 2.*pi*(kcrys[0]*Rcrys[0]+kcrys[1]*Rcrys[1]+kcrys[2]*Rcrys[2]) <<   std::endl;
+                std::cout << std::endl;
+            }
+        }
+    }
+#endif
+    
     material_.H.dft(DensityMatrix_.get_FT_meshgrid_k().get_mesh(), +1);
     for (auto ix : { 0, 1, 2 }) {
         material_.r[ix].dft(DensityMatrix_.get_FT_meshgrid_k().get_mesh(), +1);
         material_.r[ix].get_Operator(Space::k).make_hermitian();
     }
 
-    output::print("-> initialize fft");
     H_.initialize_fft(DensityMatrix_);
 
     output::print("-> initializing lasers");
@@ -84,7 +103,6 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
             currentdata.polarization()[2]);
         pol = pol / pol.norm();
         laser.set_Polarization(pol);
-        laser.print_info();
         setoflaser_.push_back(laser);
     }
 
@@ -484,6 +502,7 @@ void Simulation::print_recap()
     output::title("INPUT RECAP");
     //==    output::print("input file:         *", std::string(8, ' '), JsonFile_ );
     output::print("tb_model                 *", std::string(8, ' '), ctx_->cfg().tb_file());
+    output::print("Space for gradient       *", std::string(8, ' '), (SpaceOfPropagation_Gradient_ == R? "R" : "k"));
     output::print("grid                     *", std::string(8, ' '), "[",
         DensityMatrix_.get_Operator_R().get_MeshGrid()->get_Size()[0], ", ",
         DensityMatrix_.get_Operator_R().get_MeshGrid()->get_Size()[1], ", ",
