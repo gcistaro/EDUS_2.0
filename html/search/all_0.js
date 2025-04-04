@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['barepotential_5f_0',['BarePotential_',['../classModelCoulomb.html#a461c21c5798aebba5e9b7682b61a21df',1,'ModelCoulomb']]]
+  ['band_5fenergies_5f_0',['Band_energies_',['../classSimulation.html#a6a59e1656df49d80e2aebcbb1be084d6',1,'Simulation']]],
+  ['barepotential_5f_1',['BarePotential_',['../classModelCoulomb.html#a461c21c5798aebba5e9b7682b61a21df',1,'ModelCoulomb']]]
 ];

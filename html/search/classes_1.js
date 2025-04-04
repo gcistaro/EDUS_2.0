@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['modelcoulomb_21',['ModelCoulomb',['../classModelCoulomb.html',1,'']]]
+  ['modelcoulomb_62',['ModelCoulomb',['../classModelCoulomb.html',1,'']]]
 ];

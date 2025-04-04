@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['modelcoulomb_8',['ModelCoulomb',['../classModelCoulomb.html',1,'ModelCoulomb'],['../classModelCoulomb.html#a44bae074eef56c9ae898dbf770c12181',1,'ModelCoulomb::ModelCoulomb()'],['../classModelCoulomb.html#ad7cecc8f11356fc7e076a92adaab742e',1,'ModelCoulomb::ModelCoulomb(const std::array&lt; Operator&lt; std::complex&lt; double &gt;&gt;, 3 &gt; &amp;r__, const int &amp;dim__, const std::shared_ptr&lt; MeshGrid &gt; &amp;MasterRGrid__)']]],
-  ['modelcoulomb_2ecpp_9',['ModelCoulomb.cpp',['../ModelCoulomb_8cpp.html',1,'']]],
-  ['modelcoulomb_2ehpp_10',['ModelCoulomb.hpp',['../ModelCoulomb_8hpp.html',1,'']]]
+  ['get_5fdocoulomb_15',['get_DoCoulomb',['../classCoulomb.html#ac23a1942bd24739f7b1e0c768deb81cd',1,'Coulomb::get_DoCoulomb() const'],['../classCoulomb.html#a9164fdeb203035d8c182b01c263c191f',1,'Coulomb::get_DoCoulomb()']]],
+  ['get_5fit_16',['get_it',['../classSimulation.html#ade0bd87a9390b31c84b14352ecf597ec',1,'Simulation']]],
+  ['get_5fit_5fsparse_17',['get_it_sparse',['../classSimulation.html#a31ac3d6ce374600c311b4fecd751f645',1,'Simulation']]]
 ];

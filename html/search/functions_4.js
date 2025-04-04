@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['modelcoulomb_31',['ModelCoulomb',['../classModelCoulomb.html#a44bae074eef56c9ae898dbf770c12181',1,'ModelCoulomb::ModelCoulomb()'],['../classModelCoulomb.html#ad7cecc8f11356fc7e076a92adaab742e',1,'ModelCoulomb::ModelCoulomb(const std::array&lt; Operator&lt; std::complex&lt; double &gt;&gt;, 3 &gt; &amp;r__, const int &amp;dim__, const std::shared_ptr&lt; MeshGrid &gt; &amp;MasterRGrid__)']]]
+  ['initialize_81',['initialize',['../classModelCoulomb.html#a8c8a5f6dce24245dd6d6cbdbe5fc413b',1,'ModelCoulomb::initialize()'],['../classCoulomb.html#a6511de42d8ca4b19e90c7ab2b5e943eb',1,'Coulomb::initialize()']]],
+  ['initialize_5fpotential_82',['initialize_Potential',['../classModelCoulomb.html#aecb2591f6285aa1d3908d0794825dc7e',1,'ModelCoulomb']]]
 ];

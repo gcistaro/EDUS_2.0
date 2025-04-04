@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['screenedpotential_5f_41',['ScreenedPotential_',['../classModelCoulomb.html#a9362a33da0b1e56f9d3d8e650b0c4179',1,'ModelCoulomb']]]
+  ['coulomb_5f_106',['coulomb_',['../classSimulation.html#a2a4571c38c533eb2e8cee96f2f313327',1,'Simulation']]],
+  ['ctx_5f_107',['ctx_',['../classSimulation.html#a0b20ffe41299460cb1c47e932d999499',1,'Simulation']]]
 ];
