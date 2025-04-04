@@ -153,7 +153,6 @@ void MeshGrid::initialize(const Space& space__, const mdarray<double,2>& bare_mg
     for(int i=0; i<bare_mg.get_Size(0); ++i){
         mesh.push_back(Coordinate(bare_mg(i,0), bare_mg(i,1), bare_mg(i,2), KeyForBasis));
     }
-    mpindex.initialize(this->get_Size());
     TotalSize = mesh.size();
 }
 
@@ -482,5 +481,6 @@ MeshGrid get_GammaCentered_grid(const MeshGrid& mesh__)
     mg.initialize( mesh__.get_space(), bare_mg, LatticeVectors(space) );
     mg.type = mesh__.type;
     mg.Size = mesh__.Size;
+    mg.mpindex = mesh__.mpindex;
     return mg;
 }
