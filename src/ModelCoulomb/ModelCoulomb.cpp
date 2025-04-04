@@ -1,6 +1,9 @@
-#include "RytovaKeldysh.hpp"
+#include "ModelCoulomb.hpp"
 
-//computes H_v(x)
+/// @brief Calculates the struve special function using the algorithm from XATU
+/// @param X variable on which we calculate the struve function
+/// @param v Order of the struve function; only 0 is allowed
+/// @return H_v(X)
 double struve(const double& X, const double& v)
 {
     if (v!=0) {
@@ -40,15 +43,24 @@ double struve(const double& X, const double& v)
     return SH0;
 }
 
-RytovaKeldysh::RytovaKeldysh(const std::array<Operator<std::complex<double>>,3>& r, const int& dim_,            
+/// @brief Constructor that calls the initialization of the class 
+/// @param r The position operator read from Wannier90, in a.u.
+/// @param dim_ The dimension of the system: 2->monolayer; 3->bulk
+/// @param MasterRGrid The grid in R space used in the code, (N.B: it is different than the one in r because that one is read from _tb file)
+ModelCoulomb::ModelCoulomb(const std::array<Operator<std::complex<double>>,3>& r, const int& dim_,            
                              const std::shared_ptr<MeshGrid>& MasterRGrid)
 {
     initialize(r, dim_, MasterRGrid);
 }
 
-void RytovaKeldysh::initialize(const std::array<Operator<std::complex<double>>,3>& r, const int& dim_,            
+/// @brief Initialization of the variables of the class
+/// @param r The position operator read from Wannier90, in a.u.
+/// @param dim_ The dimension of the system: 2->monolayer; 3->bulk
+/// @param MasterRGrid The grid in R space used in the code, (N.B: it is different than the one in r because that one is read from _tb file)
+void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>& r, const int& dim_,            
                              const std::shared_ptr<MeshGrid>& MasterRGrid)
 {
+    
     if(dim_ != 2){
         throw std::runtime_error("Warning ! Only 2d coulomb is implemented!");
     }
@@ -62,7 +74,7 @@ void RytovaKeldysh::initialize(const std::array<Operator<std::complex<double>>,3
     auto& z0 = (r[2].get_Operator_R())[index_origin];
 
     //I use W(n'R1', m'R2', nR1, mR2) = 1/Omega^2*delta(nn')delta(R1R1')delta(mm')delta(R2R2')W(rn+R1-rm-R2)
-    TB.initialize({MasterRGrid->get_TotalSize(),
+    ScreenedPotential_.initialize({MasterRGrid->get_TotalSize(),
                                  r[0].get_Operator_R().get_nrows(), 
                                  r[0].get_Operator_R().get_ncols()});
     Rgrid = std::make_shared<MeshGrid>(get_GammaCentered_grid(*MasterRGrid));
@@ -70,47 +82,27 @@ void RytovaKeldysh::initialize(const std::array<Operator<std::complex<double>>,3
 //    #pragma omp parallel for schedule(static)
     for(int iR=0; iR<Rgrid->get_TotalSize(); ++iR) {//TB.get_Size(0); ++iR) {
         auto& Rcart = (*Rgrid)[iR].get("Cartesian");
-        for(int in=0; in<TB.get_Size(1); in++){
+        for(int in=0; in<ScreenedPotential_.get_Size(1); in++){
             //ratom_n = rn - R
             auto ratom_n = Coordinate(x0(in,in).real() - Rcart[0],
                                       y0(in,in).real() - Rcart[1],
                                       z0(in,in).real() - Rcart[2]);
 
-            for(int im=0; im<TB.get_Size(2); im++){
+            for(int im=0; im<ScreenedPotential_.get_Size(2); im++){
                 //ratom_m = rm + S
                 auto ratom_m = Coordinate(x0(im,im).real(),//+Scart[0],
                                           y0(im,im).real(),//+Scart[1],
                                           z0(im,im).real());//+Scart[2]);
-                TB(iR, in, im) = Potential(ratom_n - ratom_m);
+                ScreenedPotential_(iR, in, im) = Potential(ratom_n - ratom_m);
             }
         }
     }
 }
 
-/*
-std::complex<double> Coulomb::W(const Coordinate& q)
-{
-
-    double qnorm = q.norm();
-    std::complex<double> Wq;
-    switch(dim)
-    {
-        case twoD:
-        {
-            //Rytova-Keldish potential
-            Wq = 1./(epsilon*Area*qnorm*(r0*qnorm+1.));
-            break;
-        }
-        case threeD:
-        {
-            throw std::runtime_error("threed not implemented");
-            break;
-        }
-    }
-    return Wq;
-}
-*/
-std::complex<double> RytovaKeldysh::Potential(const Coordinate& r)
+/// @brief Calculation of the screened interaction on a point r in real space
+/// @param r The point on which we calculate the screened interaction
+/// @return The screened interaction on the point r: W(r)
+std::complex<double> ModelCoulomb::W(const Coordinate& r)
 {
     std::complex<double> Wr;
     auto r_norm = r.norm();
@@ -124,35 +116,6 @@ std::complex<double> RytovaKeldysh::Potential(const Coordinate& r)
             else{
                 Wr = pi/(r0*epsilon)*(struve(r_norm/r0,0)-y0(r_norm/r0));
             }
-
-            //done via Fourier transform dft on W(q)
-            //set up W(q)
-/*            MeshGrid<k> aux_mg(50., {50, 50, 50});
-            mdarray<std::complex<double>, 2> Wq({1, aux_mg.get_mesh().size()});
-            for(int im=0; im<aux_mg.get_mesh().size(); im++){
-                Wq(0,im) = W(aux_mg[im]);
-            }
-
-            //go to plain MeshGrid and plain r
-            std::vector<std::vector<double>> plain_mg(aux_mg.get_mesh().size(), std::vector<double>(3));
-            for(int im=0; im<plain_mg.size(); im++){
-                auto& aux_vec = aux_mg[im].get("LatticeVectors");
-                for(auto& ix : {0,1,2}){
-                    plain_mg[im][ix] = aux_vec[ix];
-                }
-            }
-            auto& aux_r = r.get("LatticeVectors");
-            std::vector<double> plain_r(3);
-            for(auto& ix : {0,1,2}){
-                plain_r[ix] = aux_r(ix);
-            }
-
-            //dft on W(q)
-            FourierTransform ft_;
-            ft_.initialize(Wq, plain_mg);
-
-            Wr = ft_.dft(plain_r, +1)(0);
-*/
             break;
         }
         case threeD:
@@ -165,5 +128,23 @@ std::complex<double> RytovaKeldysh::Potential(const Coordinate& r)
     }
 
     return Wr;
+}
+
+/// @brief Calculation of the bare interaction on a point r in real space
+/// @param r The point on which we calculate the bare interaction
+/// @return The bare interaction on the point r: @f$ V(r) = 2./r @f$. The factor 2 is for spin degeneracy
+std::complex<double> ModelCoulomb::V(const Coordinate& r)
+{
+    std::complex<double> Vr;
+    auto r_norm = r.norm();
+    
+    if(r_norm < threshold ){
+        Vr = 0.;
+    }
+    else{
+        Vr = 2./r_norm;
+    }
+
+    return Vr;
 }
 
