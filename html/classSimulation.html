@@ -110,7 +110,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a15feeafc4fb78b2660e9e6faa1215034"><td class="mdescLeft">&#160;</td><td class="mdescRight">Function to calculate the time dependent Hamiltonian (one-body) as a sum of H0 and the interaction with the laser:  <a href="classSimulation.html#a15feeafc4fb78b2660e9e6faa1215034">More...</a><br /></td></tr>
 <tr class="separator:a15feeafc4fb78b2660e9e6faa1215034"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5d2c0dfb2782baab484e636eb216dada"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSimulation.html#a5d2c0dfb2782baab484e636eb216dada">Calculate_Velocity</a> ()</td></tr>
-<tr class="memdesc:a5d2c0dfb2782baab484e636eb216dada"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculation of the matrix elements of the velocity operator on the basis in k. As the density matrix is propagated in wannier gauge, this is the gauge where we calculate it. The equation implemented here is: \( \textbf{v}_{nm}(\textbf{k}) = -i[\textbf{X}(\textbf{k}), H_0(\textbf{k})] + \nabla_{\textbf{k}} H_0(\textbf{k}) \) or, in R space: \( \textbf{v}_{nm}(\textbf{R}) = -i[\textbf{r}, H_0(\textbf{k})] + i \textbf{R} H_0(\textbf{k}) \).  <a href="classSimulation.html#a5d2c0dfb2782baab484e636eb216dada">More...</a><br /></td></tr>
+<tr class="memdesc:a5d2c0dfb2782baab484e636eb216dada"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculation of the matrix elements of the velocity operator on the basis in k. As the density matrix is propagated in wannier gauge, this is the gauge where we calculate it. The equation implemented here is:  <a href="classSimulation.html#a5d2c0dfb2782baab484e636eb216dada">More...</a><br /></td></tr>
 <tr class="separator:a5d2c0dfb2782baab484e636eb216dada"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afba18f70cf7cc1103f6e38d6ec6be243"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classSimulation.html#afba18f70cf7cc1103f6e38d6ec6be243">Propagate</a> ()</td></tr>
 <tr class="memdesc:afba18f70cf7cc1103f6e38d6ec6be243"><td class="mdescLeft">&#160;</td><td class="mdescRight">Driver for the full time propagation. It prints every 100 steps in the standard output a message.  <a href="classSimulation.html#afba18f70cf7cc1103f6e38d6ec6be243">More...</a><br /></td></tr>
@@ -309,7 +309,17 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Calculation of the matrix elements of the velocity operator on the basis in k. As the density matrix is propagated in wannier gauge, this is the gauge where we calculate it. The equation implemented here is: \( \textbf{v}_{nm}(\textbf{k}) = -i[\textbf{X}(\textbf{k}), H_0(\textbf{k})] + \nabla_{\textbf{k}} H_0(\textbf{k}) \) or, in R space: \( \textbf{v}_{nm}(\textbf{R}) = -i[\textbf{r}, H_0(\textbf{k})] + i \textbf{R} H_0(\textbf{k}) \). </p>
+<p>Calculation of the matrix elements of the velocity operator on the basis in k. As the density matrix is propagated in wannier gauge, this is the gauge where we calculate it. The equation implemented here is: </p>
+<p class="formulaDsp">
+\[ \textbf{v}_{nm}(\textbf{k}) = -i[\textbf{\xi}(\textbf{k}), H_0(\textbf{k})] + \nabla_{\textbf{k}} H_0(\textbf{k}) \]
+</p>
+<p> or, in R space: </p><p class="formulaDsp">
+\[ \textbf{v}_{nm}(\textbf{R}) = -i[\textbf{r}, H_0(\textbf{k})] + i \textbf{R} H_0(\textbf{k}) \]
+</p>
+<p> It must be noticed that because we want to represent the infinite system, when we sum over k an additional constant need to be added, to take into account the elementary volume in the integral: </p><p class="formulaDsp">
+\[ \delta k = \frac{\Omega_{\text{BZ}}}{N_k} = \frac{(2\pi)^d}{N_k \Omega_{\text{UC}}} \]
+</p>
+<p> where \(\Omega_{\text{BZ}}\) and \(\Omega_{\text{UC}}\) are, respectively, the volume(/area) of the Brillouin zone and of the unit cell, while d is the dimension of the system. In this function we multiply by everything but \(\frac{1}{N_k}\) </p>
 
 </div>
 </div>
@@ -445,9 +455,10 @@ Friends</h2></td></tr>
 
 <p>Prints in Population.txt the Population for each band: </p>
 <p class="formulaDsp">
-\[ P_n(t) = \frac{1}{N}\sum_{\textbf{k}} \rho_{nn}(\textbf{k}) where @f$ \rho_{nn}(\textbf{k}) @f$ is the density matrix in the bloch gauge. \]
+\[ P_n(t) = \frac{1}{N}\sum_{\textbf{k}} \rho_{nn}(\textbf{k}) \]
 </p>
- 
+<p> where \( \rho_{nn}(\textbf{k}) \) is the density matrix in the bloch gauge. </p>
+
 </div>
 </div>
 <a id="a887515981cb00ee66f5a9631fcaa59d4"></a>

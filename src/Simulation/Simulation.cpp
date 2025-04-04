@@ -384,8 +384,8 @@ void Simulation::do_onestep()
 /// @brief Prints in Population.txt the Population for each band:
 /// @f[
 /// P_n(t) = \frac{1}{N}\sum_{\textbf{k}} \rho_{nn}(\textbf{k})
-/// where @f$ \rho_{nn}(\textbf{k}) @f$ is the density matrix in the bloch gauge.
 /// @f]
+/// where @f$ \rho_{nn}(\textbf{k}) @f$ is the density matrix in the bloch gauge.
 void Simulation::Print_Population()
 {
     static Operator<std::complex<double>> aux_DM;
@@ -452,9 +452,16 @@ double Simulation::jacobian(const Matrix<double>& A__) const
 /// @brief Calculation of the matrix elements of the velocity operator on the basis in k. 
 /// As the density matrix is propagated in wannier gauge, this is the gauge where we calculate it. 
 /// The equation implemented here is:
-/// @f$ \textbf{v}_{nm}(\textbf{k}) = -i[\textbf{X}(\textbf{k}), H_0(\textbf{k})] + \nabla_{\textbf{k}} H_0(\textbf{k}) @f$
+/// @f[ \textbf{v}_{nm}(\textbf{k}) = -i[\textbf{\xi}(\textbf{k}), H_0(\textbf{k})] + \nabla_{\textbf{k}} H_0(\textbf{k}) @f]
 /// or, in R space:
-/// @f$ \textbf{v}_{nm}(\textbf{R}) = -i[\textbf{r}, H_0(\textbf{k})] + i \textbf{R} H_0(\textbf{k}) @f$
+/// @f[ \textbf{v}_{nm}(\textbf{R}) = -i[\textbf{r}, H_0(\textbf{k})] + i \textbf{R} H_0(\textbf{k}) @f]
+/// It must be noticed that because we want to represent the infinite system, when we sum over k an additional constant 
+/// need to be added, to take into account the elementary volume in the integral: 
+/// @f[ 
+/// \delta k = \frac{\Omega_{\text{BZ}}}{N_k} = \frac{(2\pi)^d}{N_k \Omega_{\text{UC}}} 
+/// @f]
+/// where @f$\Omega_{\text{BZ}}@f$ and @f$\Omega_{\text{UC}}@f$ are, respectively, the volume(/area) of the Brillouin zone and of 
+/// the unit cell, while d is the dimension of the system. In this function we multiply by everything but @f$\frac{1}{N_k}@f$
 void Simulation::Calculate_Velocity()
 {
     Calculate_TDHamiltonian(-6000, true);

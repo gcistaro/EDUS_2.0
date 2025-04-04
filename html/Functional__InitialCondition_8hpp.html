@@ -93,6 +93,7 @@ This graph shows which files directly or indirectly include this file:</div>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
 <tr class="memitem:ad5588af2ff08294b36ae1d1428d901fb"><td class="memItemLeft" align="right" valign="top">std::function&lt; void(Operator&lt; std::complex&lt; double &gt;&gt; &amp;)&gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="Functional__InitialCondition_8hpp.html#ad5588af2ff08294b36ae1d1428d901fb">InitialCondition</a></td></tr>
+<tr class="memdesc:ad5588af2ff08294b36ae1d1428d901fb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Standard function defining the initial density matrix. The initial density matrix in the bloch gauge is set:  <a href="Functional__InitialCondition_8hpp.html#ad5588af2ff08294b36ae1d1428d901fb">More...</a><br /></td></tr>
 <tr class="separator:ad5588af2ff08294b36ae1d1428d901fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Variable Documentation</h2>
@@ -130,6 +131,17 @@ Variables</h2></td></tr>
 <div class="line">    <span class="keywordflow">if</span>(SpaceOfPropagation_ == R) DM__.go_to_R();</div>
 <div class="line">}</div>
 </div><!-- fragment -->
+<p>Standard function defining the initial density matrix. The initial density matrix in the bloch gauge is set: </p>
+<p class="formulaDsp">
+\[ \rho_{nn}(\textbf{k}) = 1. \text{if n&lt; filledbands} \rho_{nm}(\textbf{k}) = 0. \quad \text{if } n\neq m \]
+</p>
+<p> Then with a rotation we go to the wannier gauge, where the equations are propagated. </p><dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">DM__</td><td>The Operator where we want to store the initial density matrix The initial density matrix in the bloch gauge is set: </td></tr>
+  </table>
+  </dd>
+</dl>
+
 </div>
 </div>
 </div><!-- contents -->
