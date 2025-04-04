@@ -34,7 +34,8 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     output::print("-> initializing grid and arrays");
     auto MasterRgrid = std::make_shared<MeshGrid>(R, ctx_->cfg().grid());
     coulomb_.set_DoCoulomb(ctx_->cfg().coulomb());
-
+    coulomb_.set_epsilon(ctx_->cfg().epsilon());
+    coulomb_.set_r0(Convert(ctx_->cfg().r0(), Angstrom, AuLength));
     /* getting rytova keldysh with python */
     // ==if (ctx_->cfg().coulomb()) {
     // ==    std::stringstream command;
