@@ -72,9 +72,10 @@ void ModelCoulomb::initialize_Potential( const std::shared_ptr<MeshGrid>& Rgrid_
         auto iR_global = int( Rgrid__->mpindex.loc1D_to_glob1D(iR_local) );
         auto& R = (*Rgrid__)[iR_global];
 
-        for(int in=0; in<ScreenedPotential_.get_Size(1); in++) {
-            for(int im=0; im<ScreenedPotential_.get_Size(2); im++){
-                auto r = wannier_centers__[in] - R - wannier_centers__[im];
+        for(int in=0; in<Potential__.get_Size(1); in++) {
+            auto r = wannier_centers__[in] - R;
+            for(int im=0; im<Potential__.get_Size(2); im++){
+                r = r - wannier_centers__[im];
                 Potential__(iR_local, in, im) = (bare__ ? V(r) : W(r));
             }
         }
@@ -102,17 +103,18 @@ void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>
     auto& y0 = (r__[1].get_Operator_R())[index_origin];
     auto& z0 = (r__[2].get_Operator_R())[index_origin];
 
-    std::vector<Coordinate> wannier_centers(ScreenedPotential_.get_Size(1));
-    for(int in=0; in<ScreenedPotential_.get_Size(1); in++) {
-        wannier_centers.push_back( Coordinate(x0(in,in).real(), y0(in,in).real(), z0(in,in).real()));
+    auto nbnd = r__[0].get_Operator_R().get_nrows();
+    std::vector<Coordinate> wannier_centers(nbnd);
+    for(int in=0; in<nbnd; in++) {
+        wannier_centers[in] = Coordinate(x0(in,in).real(), y0(in,in).real(), z0(in,in).real());
     }
 
     /* Define grid centered at 0 */
     Rgrid_ = std::make_shared<MeshGrid>(get_GammaCentered_grid(*MasterRGrid__));
 
     /* initialize screened and bare potentials matrix elements */
-    initialize_Potential( Rgrid_, r__[0].get_Operator(R).get_nrows(), BarePotential_    , wannier_centers, true );
-    initialize_Potential( Rgrid_, r__[0].get_Operator(R).get_nrows(), ScreenedPotential_, wannier_centers, false);
+    initialize_Potential( Rgrid_, nbnd, BarePotential_    , wannier_centers, true );
+    initialize_Potential( Rgrid_, nbnd, ScreenedPotential_, wannier_centers, false);
 }
 
 /// @brief Calculation of the screened interaction on a point r in real space
