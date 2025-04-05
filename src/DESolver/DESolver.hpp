@@ -19,27 +19,41 @@ void SumWithProduct(T& Output, const Scalar_T& FirstScalar, const T& FirstAddend
     }
 }
 
-
+/// @brief This class is a driver for the numerical solution of the differential equation. 
+/// Right now we can use Adams-Bashforth (4 and 5) and Runge-Kutta (4) but to add something
+/// else it is sufficient to write a proper Propagate method 
+/// @tparam T Object to propagate, can be a number or an iterable object
 template<typename T>
 class DESolver{
     protected:
-		T* Function;                  //It contains the function at a particular time y(n)
+        /// Function at time t in propagation. NB: the class does not own the object, needs to be destroyed somewhere else
+		T* Function;                  
+        /// Initial point of the differential equation
 		double InitialTime = 0.;
+        /// Resolution we use for the propagation 
         double ResolutionTime = 0.;
+        /// Time updated during propagation so it really gives the current step
         double CurrentTime = 0;
+        /// (not used right now) final time where we stop the propagation
         double FinalTime;
+        /// Standard function containing the definition of the Function at InitialTime (mandatory)
         std::function<void(T&)> EvaluateInitialCondition;
+        /// Standard function defining the derivative of Function, for the time propagation.
+        /// @f$ \frac{\partial F}{\partial t} = g(t)@f$, this function gives as output @f$ g(t) @f$ 
         std::function<void(T&, const double&, const T&)> EvaluateSourceFunction;
-
-        std::array<T,5> aux_Function;                        //temporary arrays to store quantities needed in DE numerical methods 
-
-        std::array<int, 5> index = {0, 1, 2, 3, 4};              // to rotate indices in AB method, if not we need to do many copies
-        std::array<double,5> beta; //coefficients in AB method
+        /// @brief temporary arrays to store quantities needed in DE numerical methods 
+        std::array<T,5> aux_Function;                       
+        /// Used to rotate indices in AB method, if not we need to do many copies
+        std::array<int, 5> index = {0, 1, 2, 3, 4};      
+        /// Coefficients in AB method
+        std::array<double,5> beta; 
+        /// Can be RK (Runge-Kutta) or AB (Adams-Bashforth)
+        SolverType type;
+        /// Order of the method used
+        int order;
 
         void Propagate_RK();
         void Propagate_AB();
-        SolverType type;
-        int order;
     public:
         DESolver(){};
 
@@ -66,6 +80,13 @@ class DESolver{
         SolverType get_type(){return type;}	
 };
 
+/// @brief Initialize all the class variables
+/// @tparam T Object to propagate, can be a number or an iterable object
+/// @param Function__ What will be propagated by DEsolver 
+/// @param EvaluateInitialCondition__ Standard function containing the definition of the Function at InitialTime
+/// @param EvaluateSourceFunction__  Standard function defining the derivative of Function, for the time propagation.
+/// @param type__ Can be RK (Runge-Kutta) or AB (Adams-Bashforth)
+/// @param order__ Order of the method used
 template<typename T>
 void DESolver<T>::initialize(T& Function__, const std::function<void(T&)>& EvaluateInitialCondition__, 
     const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction__, SolverType type__, int order__)
@@ -98,6 +119,13 @@ void DESolver<T>::initialize(T& Function__, const std::function<void(T&)>& Evalu
     }
 }
 
+/// @brief Triggers initialization of all the parameters
+/// @tparam T Object to propagate, can be a number or an iterable object
+/// @param Function__ What will be propagated by DEsolver 
+/// @param EvaluateInitialCondition__ Standard function containing the definition of the Function at InitialTime
+/// @param EvaluateSourceFunction__  Standard function defining the derivative of Function, for the time propagation.
+/// @param type__ Can be RK (Runge-Kutta) or AB (Adams-Bashforth)
+/// @param order__ Order of the method used
 template<typename T>
 DESolver<T>::DESolver(T& Function__, const std::function<void(T&)>& EvaluateInitialCondition__, 
                         const std::function<void(T&, const double&, const T&)>& EvaluateSourceFunction__, SolverType type__, int order__)
@@ -105,70 +133,69 @@ DESolver<T>::DESolver(T& Function__, const std::function<void(T&)>& EvaluateInit
     initialize(Function__, EvaluateInitialCondition__, EvaluateSourceFunction__, type__, order__);
 }
 
-
+/// @brief Propagator from the RungeKutta method. For now only order=4 is defined. 
+/// The equations we solve is: 
+/// @f[
+/// \frac{dy}{dt} = f(t,y) \quad \text{ with } y(t_0) = y_0  
+/// In RK4: 
+/// @f[ y(t_{n+1}) = y(t_n)+\frac{\Delta t}{6}\big(k_1+2k_2+2k_3+k_4\big) @f]
+/// @f[ k_1=f(t_n,y(t_n))  @f]
+/// @f[ k_2=f(t_n +\frac{\Delta t}{2},  y(t_n) +\frac{\Delta t}{2}k_1) @f]
+/// @f[ k_3=f(t_n + \frac{\Delta t}{2},  y(t_n) +\frac{\Delta t}{2}k_2) @f]
+/// @f[ k_4=f(t_n+\Delta t, y_n+\Delta t*k_3) @f]
+/// f represents the source term of the differential equation
+/// @tparam T 
 template<typename T>
 void DESolver<T>::Propagate_RK()
 {
     assert(order == 4);
-    /*
-        Equations implemented here: 
-        dy/dt= f(t,y) with y(t0) = y0  
-      In RK4:
-      y(n+1) = y(n)+h/6*(k1+2*k2+2*k3+k4)
-      k1=f(tn,yn)
-      k2=f(tn+h/2, yn+h/2*k1)
-      k3=f(tn+h/2, yn+h/2*k2)
-      k4=f(tn+h, yn+h*k3)
-      the calculation of k- is defined as EvaluateSourceTerm.
 
-      f-> source term    */
+    /* k1, k2, k3 in RK method */
+    auto& k = aux_Function[0];                  
+    /* temporary values of function, second argument of EvaluateSourceFunction */
+    auto& AuxiliaryFunction = aux_Function[1];  
+    /* sum up contributions from a step to next */
+    auto& ReducingFunction = aux_Function[2];   
 
-    auto& k = aux_Function[0];                  //k1, k2, k3 in RK method
-    auto& AuxiliaryFunction = aux_Function[1];  //temporary values of function, second argument of EvaluateSourceFunction
-    auto& ReducingFunction = aux_Function[2];   //sum up contributions from a step to next
-
-    //k1=f(tn,yn)
+    /* k1=f(tn,yn) */
     EvaluateSourceFunction(k, CurrentTime, *Function);
 
-    //k2=f(tn+h/2,yn+h/2*k1)
+    /* k2=f(tn+h/2,yn+h/2*k1) */
     SumWithProduct(AuxiliaryFunction, 1., *Function, ResolutionTime/2., k);     
     SumWithProduct(ReducingFunction, 1., *Function, ResolutionTime/6., k);     
     EvaluateSourceFunction(k, CurrentTime+ResolutionTime/2., AuxiliaryFunction);
 
-    //k3=f(tn+h/2, yn+h/2*k2)
+    /* k3=f(tn+h/2, yn+h/2*k2) */
     SumWithProduct(AuxiliaryFunction, 1., *Function, ResolutionTime/2., k);
     SumWithProduct(ReducingFunction, 1., ReducingFunction, ResolutionTime/3., k);   
     EvaluateSourceFunction(k,CurrentTime+ResolutionTime/2., AuxiliaryFunction); 
 
-    //k4=f(tn+h,yn+h*k3)
+    /* k4=f(tn+h,yn+h*k3) */
     SumWithProduct(AuxiliaryFunction, 1., *Function, ResolutionTime, k);
     SumWithProduct(ReducingFunction, 1., ReducingFunction, ResolutionTime/3., k);  
     EvaluateSourceFunction(k, CurrentTime+ResolutionTime, AuxiliaryFunction); 
 
-    //compute final function
+    /* Compute final function */
     SumWithProduct(*Function, 1., ReducingFunction, ResolutionTime/6., k);  
     CurrentTime += ResolutionTime;
 }
 
-
+/// @brief  Propagator from the Adams-Bashforth method. For now only order=4,5 is defined. 
+/// The equations we solve is: 
+/// @f[
+/// \frac{dy}{dt} = f(t,y) \quad \text{ with } y(t_0) = y_0  
+/// @f]
+/// In AB: 
+/// @f[
+/// y(t_n) = y(t_{n-1}) + \Delta_t \sum_{i=1}^{\text{order}-1} \beta_i f(t_{n-i}, y(t_{n-i})) 
+/// @f]
+/// We store @f$ f(t_{n-i}, y(t_{n-i}))@ f$ in aux_Function. The index of n=i changes to avoid copies
+/// of aux_function. 
+/// @tparam T 
 template<typename T>
 void DESolver<T>::Propagate_AB()
 {
-    /*
-        Equations implemented here: 
-        dy/dt= f(t,y) with y(t0) = y0  
-      In AB4: 
-
-      y(n)  = y(n-1) + h* 55./24.*f(t(n-1), y(n-1)) +
-                     - h* 59./24.*f(t(n-2), y(n-2)) +
-                     + h* 37./24.*f(t(n-3), y(n-3)) +
-                     - h*  9./24.*f(t(n-4), y(n-4))
-
-      f-> source term    
-      aux_Function is used to store the previous steps propagators    
-      index rotates in order to avoid copies                          */
-
-    //get f(t(n-1), y(n-1))
+    /* get f(t(n-1), y(n-1)) */
     EvaluateSourceFunction(aux_Function[index[0]], CurrentTime, *Function);
 
     for( int i = 0; i < order; ++i ) {
@@ -186,6 +213,8 @@ void DESolver<T>::Propagate_AB()
     CurrentTime += ResolutionTime;
 }
 
+/// @brief Driver for the propagation. Calls the correct propagator depending on how we set it.
+/// @tparam T 
 template<typename T>
 void DESolver<T>::Propagate(){
     if (type == RK){
@@ -196,6 +225,9 @@ void DESolver<T>::Propagate(){
     }
 }
 
+/// @brief Driver for the propagation of more steps
+/// @tparam T 
+/// @param nstep__ Number of steps we want to propagate
 template<typename T>
 void DESolver<T>::Propagate(const int& nstep__){
     for( int istep = 0; istep < nstep__; ++istep ) {
@@ -203,7 +235,9 @@ void DESolver<T>::Propagate(const int& nstep__){
     }
 }
 
-
+/// @brief Getter for the Function of the class
+/// @tparam T 
+/// @return Function we are propagating
 template<typename T>
 const T& DESolver<T>::get_Function() const 
 {

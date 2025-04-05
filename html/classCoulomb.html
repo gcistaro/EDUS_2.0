@@ -89,7 +89,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a63fdd4cd8573e2100057d8d9734a83ff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Triggers the initialization of the object.  <a href="classCoulomb.html#a63fdd4cd8573e2100057d8d9734a83ff">More...</a><br /></td></tr>
 <tr class="separator:a63fdd4cd8573e2100057d8d9734a83ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6511de42d8ca4b19e90c7ab2b5e943eb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCoulomb.html#a6511de42d8ca4b19e90c7ab2b5e943eb">initialize</a> (const int &amp;nbnd, const std::shared_ptr&lt; MeshGrid &gt; &amp;Rgrid__, const std::array&lt; Operator&lt; std::complex&lt; double &gt;&gt;, 3 &gt; &amp;r)</td></tr>
-<tr class="memdesc:a6511de42d8ca4b19e90c7ab2b5e943eb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialize the objects of the class, mainly <a class="el" href="classModelCoulomb.html" title="Class for modelling matrix elements of Coulomb interaction in Point-Like approximation....">ModelCoulomb</a>.  <a href="classCoulomb.html#a6511de42d8ca4b19e90c7ab2b5e943eb">More...</a><br /></td></tr>
+<tr class="memdesc:a6511de42d8ca4b19e90c7ab2b5e943eb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialize the objects of the class, mainly <a class="el" href="classModelCoulomb.html" title="Class for modelling matrix elements of Coulomb interaction in Point-Like approximation....">ModelCoulomb</a> and the Hartree potential, defined as:  <a href="classCoulomb.html#a6511de42d8ca4b19e90c7ab2b5e943eb">More...</a><br /></td></tr>
 <tr class="separator:a6511de42d8ca4b19e90c7ab2b5e943eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aeeba0d6a2254e5bb59ad7821227a25f9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCoulomb.html#aeeba0d6a2254e5bb59ad7821227a25f9">EffectiveHamiltonian</a> (Operator&lt; std::complex&lt; double &gt;&gt; &amp;H__, const Operator&lt; std::complex&lt; double &gt;&gt; &amp;DM__, const bool &amp;EraseH__)</td></tr>
 <tr class="memdesc:aeeba0d6a2254e5bb59ad7821227a25f9"><td class="mdescLeft">&#160;</td><td class="mdescRight">This function calculates the effective Hamiltonian from the <a class="el" href="classCoulomb.html" title="Class that takes care of the calculation of the effective Hamiltonian during time propagation,...">Coulomb</a> interaction. The <a class="el" href="classCoulomb.html" title="Class that takes care of the calculation of the effective Hamiltonian during time propagation,...">Coulomb</a> interaction has two different terms:  <a href="classCoulomb.html#aeeba0d6a2254e5bb59ad7821227a25f9">More...</a><br /></td></tr>
@@ -100,12 +100,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:af157967f02f8bd12bbdf135237f06e6e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCoulomb.html#af157967f02f8bd12bbdf135237f06e6e">set_DoCoulomb</a> (const bool &amp;DoCoulomb__)</td></tr>
 <tr class="memdesc:af157967f02f8bd12bbdf135237f06e6e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Setter for Docoulomb variable of the class.  <a href="classCoulomb.html#af157967f02f8bd12bbdf135237f06e6e">More...</a><br /></td></tr>
 <tr class="separator:af157967f02f8bd12bbdf135237f06e6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adfc0eb291a1254f0700ef77c4ea62ed4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCoulomb.html#adfc0eb291a1254f0700ef77c4ea62ed4">set_epsilon</a> (const bool &amp;Epsilon__)</td></tr>
-<tr class="memdesc:adfc0eb291a1254f0700ef77c4ea62ed4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set Epsilon (macroscopic dielectric constant)  <a href="classCoulomb.html#adfc0eb291a1254f0700ef77c4ea62ed4">More...</a><br /></td></tr>
-<tr class="separator:adfc0eb291a1254f0700ef77c4ea62ed4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3bcf2ae90ad5306801e333e64b071faf"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCoulomb.html#a3bcf2ae90ad5306801e333e64b071faf">set_r0</a> (const bool &amp;r0__)</td></tr>
-<tr class="memdesc:a3bcf2ae90ad5306801e333e64b071faf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set r0 in RytovaKeldysh model, not used otherwise.  <a href="classCoulomb.html#a3bcf2ae90ad5306801e333e64b071faf">More...</a><br /></td></tr>
-<tr class="separator:a3bcf2ae90ad5306801e333e64b071faf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7e66f9509dbf3ff7f11ae14234390438"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCoulomb.html#a7e66f9509dbf3ff7f11ae14234390438">set_epsilon</a> (const double &amp;Epsilon__)</td></tr>
+<tr class="memdesc:a7e66f9509dbf3ff7f11ae14234390438"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set Epsilon (macroscopic dielectric constant)  <a href="classCoulomb.html#a7e66f9509dbf3ff7f11ae14234390438">More...</a><br /></td></tr>
+<tr class="separator:a7e66f9509dbf3ff7f11ae14234390438"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a11d2cb95cf4dfa6f35f934a96ebe9128"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCoulomb.html#a11d2cb95cf4dfa6f35f934a96ebe9128">set_r0</a> (const double &amp;r0__)</td></tr>
+<tr class="memdesc:a11d2cb95cf4dfa6f35f934a96ebe9128"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set r0 in RytovaKeldysh model, not used otherwise.  <a href="classCoulomb.html#a11d2cb95cf4dfa6f35f934a96ebe9128">More...</a><br /></td></tr>
+<tr class="separator:a11d2cb95cf4dfa6f35f934a96ebe9128"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac23a1942bd24739f7b1e0c768deb81cd"><td class="memItemLeft" align="right" valign="top">const bool &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classCoulomb.html#ac23a1942bd24739f7b1e0c768deb81cd">get_DoCoulomb</a> () const</td></tr>
 <tr class="memdesc:ac23a1942bd24739f7b1e0c768deb81cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Getter for DoCoulomb variable.  <a href="classCoulomb.html#ac23a1942bd24739f7b1e0c768deb81cd">More...</a><br /></td></tr>
 <tr class="separator:ac23a1942bd24739f7b1e0c768deb81cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -220,13 +220,13 @@ Public Member Functions</h2></td></tr>
 <p>This function calculates the effective Hamiltonian from the <a class="el" href="classCoulomb.html" title="Class that takes care of the calculation of the effective Hamiltonian during time propagation,...">Coulomb</a> interaction. The <a class="el" href="classCoulomb.html" title="Class that takes care of the calculation of the effective Hamiltonian during time propagation,...">Coulomb</a> interaction has two different terms: </p>
 <ul>
 <li>The Hartree term <p class="formulaDsp">
-\[ H^{(\text{eff})}_{n&#39;n}(\textbf{R}) = \delta_{nn&#39;} \delta_{\bf R, 0} \sum_{m\bf R&#39;} V_{nm}[\textbf{R}&#39;]\rho_{mm}(\textbf{0}) \]
+\[ H^{(\text{eff})}_{n&#39;n}(\textbf{R}) = \delta_{nn&#39;} \delta_{\bf R, 0} \Big(\sum_{m\bf R&#39;} V_{nm}[\textbf{R}&#39;]\Big) \rho_{mm}(\textbf{0}) \]
 </p>
-</li>
+ where the sum over R' is pre-computed and saved in the variable Hartree.</li>
 <li>The Fock term <p class="formulaDsp">
 \[ H^{(\text{eff})}_{n&#39;n}(\textbf{R}) = -W_{n&#39;n}[\textbf{R}]\rho_{n&#39;n}(\textbf{R}) \]
 </p>
- <dl class="params"><dt>Parameters</dt><dd>
+ Notice that, as we always supposed that the model Hamiltonian at equilibrium \( H_0 \) already contains the contribution of the <a class="el" href="classCoulomb.html" title="Class that takes care of the calculation of the effective Hamiltonian during time propagation,...">Coulomb</a> interaction due to the ground state, to avoid double counting we need to define the effective Hamiltonian over \( \Delta \rho(t) = \rho(t)-\rho(t_0) \) <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">H__</td><td>Hamiltonian Operator, in which we want to add the effective Hamiltonian of the <a class="el" href="classCoulomb.html" title="Class that takes care of the calculation of the effective Hamiltonian during time propagation,...">Coulomb</a> interaction </td></tr>
     <tr><td class="paramname">DM__</td><td>Density matrix at current time, that we need to use to calculate the effective <a class="el" href="classCoulomb.html" title="Class that takes care of the calculation of the effective Hamiltonian during time propagation,...">Coulomb</a> interaction </td></tr>
@@ -308,8 +308,11 @@ Public Member Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Initialize the objects of the class, mainly <a class="el" href="classModelCoulomb.html" title="Class for modelling matrix elements of Coulomb interaction in Point-Like approximation....">ModelCoulomb</a>. </p>
-<dl class="params"><dt>Parameters</dt><dd>
+<p>Initialize the objects of the class, mainly <a class="el" href="classModelCoulomb.html" title="Class for modelling matrix elements of Coulomb interaction in Point-Like approximation....">ModelCoulomb</a> and the Hartree potential, defined as: </p>
+<p class="formulaDsp">
+\[ H_{nm} = \sum_\textbf{R} V_{nm}(\textbf{R}) = \sum_\textbf{R} \langle n\textbf{0}m\textbf{R}|V(r-r&#39;)| n\textbf{0}m\textbf{R} \rangle \]
+</p>
+ <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">nbnd__</td><td>Number of bands/wannier functions used in the simulation </td></tr>
     <tr><td class="paramname">Rgrid__</td><td>Grid in R space used in the simulation </td></tr>
@@ -372,8 +375,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="adfc0eb291a1254f0700ef77c4ea62ed4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#adfc0eb291a1254f0700ef77c4ea62ed4">&#9670;&nbsp;</a></span>set_epsilon()</h2>
+<a id="a7e66f9509dbf3ff7f11ae14234390438"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7e66f9509dbf3ff7f11ae14234390438">&#9670;&nbsp;</a></span>set_epsilon()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -381,7 +384,7 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="memname">void Coulomb::set_epsilon </td>
           <td>(</td>
-          <td class="paramtype">const bool &amp;&#160;</td>
+          <td class="paramtype">const double &amp;&#160;</td>
           <td class="paramname"><em>Epsilon__</em></td><td>)</td>
           <td></td>
         </tr>
@@ -398,8 +401,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a3bcf2ae90ad5306801e333e64b071faf"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3bcf2ae90ad5306801e333e64b071faf">&#9670;&nbsp;</a></span>set_r0()</h2>
+<a id="a11d2cb95cf4dfa6f35f934a96ebe9128"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a11d2cb95cf4dfa6f35f934a96ebe9128">&#9670;&nbsp;</a></span>set_r0()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -407,7 +410,7 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="memname">void Coulomb::set_r0 </td>
           <td>(</td>
-          <td class="paramtype">const bool &amp;&#160;</td>
+          <td class="paramtype">const double &amp;&#160;</td>
           <td class="paramname"><em>r0__</em></td><td>)</td>
           <td></td>
         </tr>

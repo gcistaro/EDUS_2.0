@@ -11,16 +11,25 @@
 #include "ReadWannier.hpp"
 #include "PrintWannier.hpp"
 
-
+/// @brief This class reads a wannier model from a _tb file and stores it in 
+/// matrices and bare objects. We will use them to build up the Model Material 
+/// later in another class, here we have only the bare elements read from wannier_tb.dat.
 class Wannier{
     private:
+        /// Degeneracy of each R vector, read from _tb.dat
         std::vector<int> Degeneracy;
+        /// @f$ \langle n\textbf{0}| H|m\textbf{R} \rangle@f$ read from _tb.dat
         mdarray<std::complex<double>, 3> H;
+        /// @f$ \langle n\textbf{0}| \textbf{r}|m\textbf{R} \rangle@f$ read from _tb.dat
         std::array<mdarray<std::complex<double>,3>, 3> r;
+        /// R vectors used to print both H and r operators inside the _tb.dat (crystal coordinates)
         mdarray<double,2> Rmesh;
+        /// Unit cell contained in Wannier _tb.dat file. Values are in angstrom and lattice vectors
+        /// are spanned over the rows
         mdarray<double,2> UnitCell;
-
+        /// Number of bands/wannier functions, read from _tb.dat
         int NumberOfBands;
+        /// Number of R points, read from _tb.dat
         int NumberOfRpoints;
     public: 
         Wannier(const std::string& FileName);
