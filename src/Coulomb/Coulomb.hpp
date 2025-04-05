@@ -21,6 +21,9 @@ class Coulomb
         bool HasOrigin_;
         /// Index of the origin R=0 inside the current rank
         int index_origin_local_ = -1;
+        /// The effective Hartree potential, defined as: @f[ H_{nm} = \sum_\textbf{R} V_{nm}(\textbf{R}) = 
+        /// \sum_\textbf{R} \langle n\textbf{0}m\textbf{R}|V(r-r')| n\textbf{0}m\textbf{R} \rangle @f]
+        mdarray<std::complex<double>, 2> Hartree;
     public:
         Coulomb(){};
         Coulomb(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid__, const std::array<Operator<std::complex<double>>,3>& r);
@@ -29,8 +32,8 @@ class Coulomb
                                   const bool& EraseH__);     
         void set_DM0( const Operator<std::complex<double>>& DM0__ );
         void set_DoCoulomb(const bool& DoCoulomb__);
-        void set_epsilon(const bool& Epsilon__);
-        void set_r0(const bool& r0__);
+        void set_epsilon(const double& Epsilon__);
+        void set_r0(const double& r0__);
         const bool& get_DoCoulomb() const;
         bool& get_DoCoulomb();
 

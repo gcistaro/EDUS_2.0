@@ -108,7 +108,6 @@ void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>
     for(int in=0; in<nbnd; in++) {
         wannier_centers[in] = Coordinate(x0(in,in).real(), y0(in,in).real(), z0(in,in).real());
     }
-
     /* Define grid centered at 0 */
     Rgrid_ = std::make_shared<MeshGrid>(get_GammaCentered_grid(*MasterRGrid__));
 
@@ -119,7 +118,7 @@ void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>
 
 /// @brief Calculation of the screened interaction on a point r in real space
 /// @param r The point on which we calculate the screened interaction
-/// @return The screened interaction on the point r: @f$ W(r) = \frac{\pi e^2}{4\pi \epsilon_0 \epsilon_r r_0} \Big[ H_0\Big(\frac{|r|}{r_0}\Big) -Y_0\Big(\frac{|r|}{r_0}\Big)\Big]
+/// @return The screened interaction on the point r: @f$ W(r) = \frac{\pi e^2}{2 \epsilon_r r_0} \Big[ H_0\Big(\frac{|r|}{r_0}\Big) -Y_0\Big(\frac{|r|}{r_0}\Big)\Big]
 std::complex<double> ModelCoulomb::W(const Coordinate& r__)
 {
     std::complex<double> Wr;
@@ -128,7 +127,7 @@ std::complex<double> ModelCoulomb::W(const Coordinate& r__)
     {
         case twoD:
         {
-            Wr = ( (r_norm < threshold) ? 0. : pi/(r0_*epsilon_)*(struve(r_norm/r0_,0)-y0(r_norm/r0_)));
+            Wr = ( (r_norm < threshold) ? 0. : pi/(2.*r0_*epsilon_)*(struve(r_norm/r0_,0)-y0(r_norm/r0_)));
             break;
         }
         case threeD:
@@ -144,27 +143,28 @@ std::complex<double> ModelCoulomb::W(const Coordinate& r__)
 
 /// @brief Calculation of the bare interaction on a point r in real space
 /// @param r The point on which we calculate the bare interaction
-/// @return The bare interaction on the point r: @f$ V(r) = 2./|r| @f$. The factor 2 is for spin degeneracy
+/// @return The bare interaction on the point r: @f$ V(r) = 2./|r| @f$. The factor 2 is for spin degeneracy. i
+/// To avoid the divergence, we regularize the Coulomb interaction putting a saturation value that is V(0.01) 
 std::complex<double> ModelCoulomb::V(const Coordinate& r)
 {
     std::complex<double> Vr;
     auto r_norm = r.norm();
     
-    Vr = ( (r_norm < threshold) ? 0. : 2./r_norm );
+    Vr = ( (r_norm < 0.01) ? V(Coordinate(0.0100001, 0.,0.)) : 2./r_norm );
     
     return Vr;
 }
 
 /// @brief Set Epsilon (macroscopic dielectric constant)
 /// @param Epsilon__ Value we want to use as epsilon
-void ModelCoulomb::set_epsilon(const bool& Epsilon__)
+void ModelCoulomb::set_epsilon(const double& Epsilon__)
 {
     epsilon_ =Epsilon__;
 }
 
 /// @brief Set r0 in RytovaKeldysh model, not used otherwise
 /// @param r0__ Value we want to use as r0 (in a.u.)
-void ModelCoulomb::set_r0(const bool& r0__)
+void ModelCoulomb::set_r0(const double& r0__)
 {
     r0_ = r0__;
 }

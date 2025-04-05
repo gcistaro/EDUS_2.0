@@ -34,8 +34,8 @@ class ModelCoulomb
                                const std::vector<Coordinate>& wannier_centers__, const bool& bare__ );
         std::complex<double> V(const Coordinate& r__);
         std::complex<double> W(const Coordinate& r__);
-        void set_epsilon(const bool& Epsilon__);
-        void set_r0(const bool& r0__);
+        void set_epsilon(const double& Epsilon__);
+        void set_r0(const double& r0__);
         /// The screened interaction: ScreenedPotential_(iR, i, j)  = @f$ \langle i \textbf{0}, j \textbf{R}[iR] | W | i \textbf{0}, j \textbf{R}[iR] \rangle @f$
         mdarray<std::complex<double>,3> ScreenedPotential_;
         /// The bare interaction: BarePotential_(iR, i, j)  = @f$ \langle i \textbf{0}, j \textbf{R}[iR] | W | i \textbf{0}, j \textbf{R}[iR] \rangle @f$ 
