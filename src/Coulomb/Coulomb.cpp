@@ -46,7 +46,7 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
         if (screencoulomb_file[iline].size() == 3)
         {
             for (int i = 0; i < 3; i++){
-              Rkcw[i] = stoi(barecoulomb_file[iline][i]);}
+              Rkcw[i] = stoi(screencoulomb_file[iline][i]);}
             Coordinate R(Rkcw[0], Rkcw[1], Rkcw[2], LatticeVectors(Space::R));
             RkcwGrid.push_back(R);
         }
@@ -86,6 +86,20 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
          }
      }
 
+     /* Get local part and add the minus sign */
+     #pragma omp parallel for
+     for( int iR_local = 0; iR_local < size_MG_local; ++iR_local )
+     {
+         for( int irow = 0; irow < nbnd; ++irow )
+         {
+             for( int icol = 0; icol < nbnd; ++icol )
+             {
+                 auto iR_global = int( Rgrid__->mpindex.loc1D_to_glob1D(iR_local) );
+                 HF( iR_local, irow, icol ) = ScreenCoulomb_TB( iR_global, irow, icol ); 
+             }
+         }
+     }
+
      std::vector<Coordinate> rwann(nbnd);
      for (auto& rwann_iwann : rwann) {
          rwann_iwann.initialize(0.,0.,0.);
@@ -119,26 +133,15 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
     // building the hamiltonian hartree matrix element from the potentials imported above
     auto index_origin_dft = r__[0].get_Operator(R).get_MeshGrid()->find(Coordinate(0,0,0));
     int index_origin_global = Rgrid__->find(Coordinate(0,0,0));
-    std::array<double, 3> bare_ratom;
     if( Rgrid__->mpindex.is_local(index_origin_global) ) {
         int index_origin_local = Rgrid__->mpindex.glob1D_to_loc1D(index_origin_global);
 
         for( int iR = 0; iR < size_MG_global; ++iR ) {
             auto& R = (*Rgrid__)[iR];
             for( int irow = 0; irow < nbnd; ++irow ){
-                for( auto& ix : {0,1,2}) {
-                    bare_ratom1[ix] = real(r__[ix].get_Operator(Space::R)(index_origin_dft,irow,irow));
-                }
                 for (int icol = 0; icol < nbnd; ++icol){
-                    for( auto& ix : {0,1,2}) {
-                        bare_ratom2[ix] = real(r__[ix].get_Operator(Space::R)(index_origin_dft,icol,icol));
-                    }
-                    auto ratom = Coordinate(bare_ratom1[0]-bare_ratom2[0], bare_ratom1[1]-bare_ratom2[1], bare_ratom1[2]-bare_ratom2[2]);
 
-                    HF( index_origin_local, irow, irow ) += ( ratom.norm() < 1.e-06 
-                                                                            ? 0. 
-                                                                            //: 1./((ratom + R).norm()) *2.); //2 for spin degeneracy
-                                                                            : BareCoulomb_TB(iR, irow, icol));
+                    HF( index_origin_local, irow, irow ) += BareCoulomb_TB(iR, irow, icol);
                 }
             }
         }
@@ -151,7 +154,7 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
      {
          for (int irow=0; irow<nbnd; irow++)
          {
-            bareR(iRCoulomb, irow, irow ) = HF(iRCoulomb, irow, irow)+RytovaKeldysh_TB(iRCoulomb, irow, irow );
+            bareR(iRCoulomb, irow, irow ) = HF(iRCoulomb, irow, irow)-ScreenCoulomb_TB(iRCoulomb, irow, irow );
          }
      }
  
