@@ -31,10 +31,13 @@ print("version      :    ", args.version)
 
 
 #read data
+print("Reading t, E(t), V(t)...", end=" ", flush=True)
 t_au, _, Et_au, Vt_au = read_observables(args.folder, args.version)
+print("done.")
 freq_eV, Absorbance = get_absorbance(t_au, Vt_au, Et_au, args.window, args.smearing)
 
 
+print("Plotting absorbance...", end=" ", flush=True)
 fig, ax = plt.subplots()
 ax.plot(freq_eV, 100*Absorbance,linestyle='dashed', color="black")
 ax.fill_between(freq_eV, 0*freq_eV, 100*Absorbance, facecolor = "green", alpha=0.6)
@@ -44,7 +47,7 @@ plt.show()
 np.savetxt("absorbance.txt", np.array(np.transpose([freq_eV, Absorbance])))
 plt.savefig("Absorbance.png", dpi=200)
 plt.close()
-
+print("done.")
 absorbance_fig = go.Figure()
 absorbance_fig.add_trace(go.Scatter(x=freq_eV, y=Absorbance, mode='lines'))
 pio.write_html(absorbance_fig, 'absorbance.html')

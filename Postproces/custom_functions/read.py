@@ -4,7 +4,6 @@ from scipy import constants
 
 
 def read_observables(folder, version):
-    print(folder, version)
     if version == "new":
         if os.path.exists(folder + "/Time.txt"):
             t_au = np.loadtxt(folder + "/Time.txt", unpack=True)
@@ -49,7 +48,6 @@ def read_observables(folder, version):
     Pt    = Pt[:,:dim]
     Vt_au = Vt_au[:,:dim]
 
-    print(t_au.shape, Pt.shape, Vt_au.shape, Et_au.shape)
     return t_au, Pt, Et_au, Vt_au
 
 
