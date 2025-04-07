@@ -17,7 +17,7 @@ import argparse, sys
 parser=argparse.ArgumentParser()
 
 parser.add_argument("--smearing", default=0.2, help="Smearing used in the current. The current will decay exponentially as e^{-t/smearing}", type=float)
-parser.add_argument("--window", default=[], help="Window of energy where we want to plot the absorbance, numbers given in a sequence", nargs='+', type=float)
+parser.add_argument("--window", help="Window of energy where we want to plot the absorbance, numbers given in a sequence", nargs=2, type=float)
 parser.add_argument("--folder", default="./Output/", help="Folder where the .txt files are contained")
 parser.add_argument("--version", default="new", help="Version of the EDUS code that you used")
 args=parser.parse_args()
