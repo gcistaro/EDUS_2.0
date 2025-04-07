@@ -115,7 +115,7 @@ set(_SOURCES src/initialize.cpp
              src/Coulomb/Coulomb.cpp
              src/Screened_potential/Screened_potential.cpp
              src/GreenFunction/GreenFunction.cpp
-             src/RytovaKeldysh/RytovaKeldysh.cpp
+             src/ModelCoulomb/ModelCoulomb.cpp
     )
 add_library(OBJECTS OBJECT ${_SOURCES} )
 	

@@ -60,6 +60,11 @@
             "default": 0.01,
             "title": "Time resolution used for propagating Density Matrix"
         },
+        "gradient_space": {
+            "type": "string",
+            "default": "R",
+            "title": "Space where the gradient with respect to k is evaluated"
+        },
         "dt_units": {
             "type": "string",
             "default": "autime",

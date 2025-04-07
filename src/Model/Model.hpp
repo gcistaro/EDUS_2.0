@@ -43,7 +43,7 @@ class Material
             Basis LatticeVectors_(UC);
             Coordinate::add_Basis(LatticeVectors_, LatticeVectors(R));
             
-            Basis ReciprocalLatticeVectors(2.*pi*Matrix<double>(wannier_.UnitCell).inverse());
+            Basis ReciprocalLatticeVectors(2.*pi*Matrix<double>(UC).inverse().transpose());
             Coordinate::add_Basis(ReciprocalLatticeVectors, LatticeVectors(k));
             
             r[0].get_Operator_R().initialize(R, wannier_.r[0]);

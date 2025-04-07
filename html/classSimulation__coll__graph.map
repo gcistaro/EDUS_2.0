@@ -1,0 +1,4 @@
+<map id="Simulation" name="Simulation">
+<area shape="rect" id="node1" title="This class contains all the variables that are used in the simulations." alt="" coords="5,95,97,121"/>
+<area shape="rect" id="node2" href="$classCoulomb.html" title="Class that takes care of the calculation of the effective Hamiltonian during time propagation,..." alt="" coords="11,5,91,32"/>
+</map>

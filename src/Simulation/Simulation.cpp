@@ -4,6 +4,9 @@
 #include <cstdlib>
 #include <filesystem>
 
+/// @brief Initialization of all the variables needed for the simulation, as well as allocation of memory
+/// and definition of the differential equations
+/// @param ctx__ Simulation parameters already set up and ready to initialize everything in the simulation class
 Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
 {
     PROFILE("Simulation::Initialize");
@@ -26,13 +29,16 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
         ctx_->cfg().printresolution_pulse(ctx_->cfg().printresolution());
     }
 
+    SpaceOfPropagation_Gradient_ = (ctx_->cfg().gradient_space() == "R" ? Space::R : Space::k);
+
     output::print("-> initializing material");
     material_ = Material(ctx_->cfg().tb_file());
 
     output::print("-> initializing grid and arrays");
     auto MasterRgrid = std::make_shared<MeshGrid>(R, ctx_->cfg().grid());
     coulomb_.set_DoCoulomb(ctx_->cfg().coulomb());
-
+    coulomb_.set_epsilon(ctx_->cfg().epsilon());
+    coulomb_.set_r0(Convert(ctx_->cfg().r0(), Angstrom, AuLength));
     /* getting rytova keldysh with python */
     // ==if (ctx_->cfg().coulomb()) {
     // ==    std::stringstream command;
@@ -53,13 +59,30 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
 
     output::print("-> Initializing fft and dft");
     DensityMatrix_.initialize_fft(*MasterRgrid, HR.get_nrows());
+    
+#ifdef __DEBUG_MODE
+    for(int ik=0; ik<DensityMatrix_.get_Operator(Space::k).get_MeshGrid()->get_TotalSize(); ++ik){
+        for(int iR=0; iR<DensityMatrix_.get_Operator(Space::R).get_MeshGrid()->get_TotalSize(); ++iR) {
+            auto& kp = (*(DensityMatrix_.get_Operator(Space::k).get_MeshGrid()))[ik];
+            auto& Rp = (*(DensityMatrix_.get_Operator(Space::R).get_MeshGrid()))[iR];
+            auto& kcrys = kp.get(LatticeVectors(k));
+            auto& Rcrys = Rp.get(LatticeVectors(R));
+            if( std::abs(kp.dot(Rp) - 2.*pi*(kcrys[0]*Rcrys[0]+kcrys[1]*Rcrys[1]+kcrys[2]*Rcrys[2])) > 1.e-14) {
+                std::cout << kp.get("Cartesian") << Rp.get("Cartesian");
+                std::cout << kcrys << Rcrys;
+                std::cout << ik << " " << iR <<" "  << kp.dot(Rp) << " " << 2.*pi*(kcrys[0]*Rcrys[0]+kcrys[1]*Rcrys[1]+kcrys[2]*Rcrys[2]) <<   std::endl;
+                std::cout << std::endl;
+            }
+        }
+    }
+#endif
+    
     material_.H.dft(DensityMatrix_.get_FT_meshgrid_k().get_mesh(), +1);
     for (auto ix : { 0, 1, 2 }) {
         material_.r[ix].dft(DensityMatrix_.get_FT_meshgrid_k().get_mesh(), +1);
         material_.r[ix].get_Operator(Space::k).make_hermitian();
     }
 
-    output::print("-> initialize fft");
     H_.initialize_fft(DensityMatrix_);
 
     output::print("-> initializing lasers");
@@ -84,7 +107,6 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
             currentdata.polarization()[2]);
         pol = pol / pol.norm();
         laser.set_Polarization(pol);
-        laser.print_info();
         setoflaser_.push_back(laser);
     }
 
@@ -164,6 +186,11 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     //---------------------------------------------------------------------------------------
 }
 
+/// @brief Defines whether or not at the current time step time__ we print the txt files and the matrices in hdf5
+/// @param time__ Current time in the simulation
+/// @param use_sparse If true, we never use the sparse printing, mainly needed for the printing of big matrices 
+/// when laser is off
+/// @return Boolean defining if we want to print the observables
 bool Simulation::PrintObservables(const double& time__, const bool& use_sparse)
 {
     /* check if we are within (any) pulse */
@@ -183,28 +210,23 @@ bool Simulation::PrintObservables(const double& time__, const bool& use_sparse)
     return (int(round(time__ / DEsolver_DM_.get_ResolutionTime())) % printresolution == 0);
 }
 
+/// @brief Driver for the diagonalization of the Hamiltonian. 
+/// Here we already know the k grid on which we want to propagate our system, defined in the density matrix.
+/// With that and H0(k) already set up in the material class (material_.H), we are able to diagonalize 
+/// and getting eigenvalues (Band_energies_) and eigenvectors (Uk) that will be used later. 
 void Simulation::SettingUp_EigenSystem()
 {
     PROFILE("Simulation::SetEigensystem");
 
-    //------------------------go to H(k)--------------------------------------------
     auto& MasterkGrid = DensityMatrix_.get_Operator_k().get_MeshGrid()->get_mesh();
-    // material.H.dft(MasterkGrid, +1);
-    //------------------------------------------------------------------------------
 
-    //--------------------solve eigen problem---------------------------------------
+    /* solve eigen problem */
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
     auto& UkDagger = Operator<std::complex<double>>::EigenVectors_dagger;
 
     material_.H.get_Operator_k().diagonalize(Band_energies_, Uk);
 
-    /* open the gap */
-    
-
-
-    //------------------------------------------------------------------------------
-
-    //-------------------get U dagger-----------------------------------------------
+    /* get U dagger */
     UkDagger.initialize(k, Uk.get_nblocks(), Uk.get_ncols(), Uk.get_nrows());
     for (int ik = 0; ik < UkDagger.get_nblocks(); ++ik) {
         for (int ir = 0; ir < UkDagger.get_nrows(); ++ir) {
@@ -213,9 +235,18 @@ void Simulation::SettingUp_EigenSystem()
             }
         }
     }
-    //------------------------------------------------------------------------------
+
+    /* TODO: open the gap */
 };
 
+/// @brief Function to calculate the time dependent Hamiltonian (one-body) as a sum of H0 and the
+/// interaction with the laser: 
+/// @f[
+/// H_{\text{1B}}(\textbf{k}) = H_0(\textbf{k})+ \boldsymbol{\varepsilon}(t)\cdot \Xi(\textbf{k}) 
+///@f]
+/// @param time__ Time on which we want to calculate the hamiltonian, used for the laser
+/// @param erase_H__ If true, we delete H_ before computing it. Needs to be false during 
+/// time propagation to sum up contributions
 void Simulation::Calculate_TDHamiltonian(const double& time__, const bool& erase_H__)
 {
 #ifdef EDUS_TIMERS
@@ -271,6 +302,7 @@ void Simulation::Calculate_TDHamiltonian(const double& time__, const bool& erase
     //---------------------------------------------------------------------------------
 }
 
+/// @brief Driver for the full time propagation. It prints every 100 steps in the standard output a message.
 void Simulation::Propagate()
 {
     PROFILE("Simulation::Propagate");
@@ -293,6 +325,10 @@ void Simulation::Propagate()
     output::print(std::string(output::linesize - 5, '*'));
 }
 
+/// @brief Driver for single time step propagation. 
+/// - checks if something needs to be printed using PrintObservables
+/// - prints .txt file and/or h5 
+/// - Triggers the one step propagation in DEsolver
 void Simulation::do_onestep()
 {
     auto CurrentTime = DEsolver_DM_.get_CurrentTime();
@@ -345,6 +381,11 @@ void Simulation::do_onestep()
     DEsolver_DM_.Propagate();
 }
 
+/// @brief Prints in Population.txt the Population for each band:
+/// @f[
+/// P_n(t) = \frac{1}{N}\sum_{\textbf{k}} \rho_{nn}(\textbf{k})
+/// @f]
+/// where @f$ \rho_{nn}(\textbf{k}) @f$ is the density matrix in the bloch gauge.
 void Simulation::Print_Population()
 {
     static Operator<std::complex<double>> aux_DM;
@@ -370,6 +411,57 @@ void Simulation::Print_Population()
     }
 }
 
+/// @brief Calculation of the jacobian of the real lattice vectors
+/// @param A__ Matrix containing the real lattice vectors spanned over the columns
+/// @return The jacobian of the matrix. Notice that A__ is always 3x3 while we calculate the jacobian
+/// using the submatrix when we have a slab material. In that case only the submatrix 2x2 is used.
+double Simulation::jacobian(const Matrix<double>& A__) const
+{
+    /* check if we are considering a slab or a 3D material, from the k grid */
+    double j = 0.0;
+    auto dim = 0;
+    for (auto& ix : {0,1,2}) {
+        dim += ( ctx_->cfg().grid()[ix] > 1 ? 1 : 0 ); 
+    }
+
+    if ( dim == 3 ) {
+        j = std::abs(A__.determinant());
+    }
+    else if ( dim == 2 ) {
+        /* check which lattice vectors is perpendicular to the slab */
+        int perpendicular = -1;
+        for (auto& ix : {0,1,2}) {
+            if( ctx_->cfg().grid()[ix] <= 1 ) {
+                perpendicular = ix; 
+                break;
+            }
+        }
+        if(perpendicular != 2) {
+            std::stringstream ss;
+            ss << "perpendicular = " << perpendicular << " !=2 -> implement me!\n";
+            throw std::runtime_error(ss.str());
+        }
+        j = std::abs(A__(0,0)*A__(1,1) - A__(1,0)*A__(0,1));
+    }
+    else if ( dim == 1 ) {
+        throw std::runtime_error("Implement me!\n");
+    }
+    return j;
+}
+
+/// @brief Calculation of the matrix elements of the velocity operator on the basis in k. 
+/// As the density matrix is propagated in wannier gauge, this is the gauge where we calculate it. 
+/// The equation implemented here is:
+/// @f[ \textbf{v}_{nm}(\textbf{k}) = -i[\textbf{\xi}(\textbf{k}), H_0(\textbf{k})] + \nabla_{\textbf{k}} H_0(\textbf{k}) @f]
+/// or, in R space:
+/// @f[ \textbf{v}_{nm}(\textbf{R}) = -i[\textbf{r}, H_0(\textbf{k})] + i \textbf{R} H_0(\textbf{k}) @f]
+/// It must be noticed that because we want to represent the infinite system, when we sum over k an additional constant 
+/// need to be added, to take into account the elementary volume in the integral: 
+/// @f[ 
+/// \delta k = \frac{\Omega_{\text{BZ}}}{N_k} = \frac{(2\pi)^d}{N_k \Omega_{\text{UC}}} 
+/// @f]
+/// where @f$\Omega_{\text{BZ}}@f$ and @f$\Omega_{\text{UC}}@f$ are, respectively, the volume(/area) of the Brillouin zone and of 
+/// the unit cell, while d is the dimension of the system. In this function we multiply by everything but @f$\frac{1}{N_k}@f$
 void Simulation::Calculate_Velocity()
 {
     Calculate_TDHamiltonian(-6000, true);
@@ -386,18 +478,35 @@ void Simulation::Calculate_Velocity()
 
         /* V = -i*[r,H0] */
         commutator(Velocity_[ix].get_Operator_k(), -im, material_.r[ix].get_Operator_k(), H_.get_Operator_k());
+
         if (SpaceOfPropagation_Gradient_ == R ) {
             Velocity_[ix].go_to_R();
         }
-        /* V += R*H0 */
+        /* V += i*R*H0 */
         kgradient_.Calculate(1., Velocity_[ix].get_Operator(SpaceOfPropagation_Gradient_), 
                                 H_.get_Operator(SpaceOfPropagation_Gradient_), direction[ix], false);
         if (SpaceOfPropagation_Gradient_ == R ) {
             Velocity_[ix].go_to_k();
         }
+
+        /* apply right constants for the normalization of wavefunctions */
+        auto det = jacobian(Coordinate::get_Basis(LatticeVectors(Space::R)).get_M());
+        #pragma omp parallel for 
+        for (int iblock = 0; iblock < Velocity_[ix].get_Operator(Space::k).get_nblocks(); ++iblock) {
+            for (int irow = 0; irow < Velocity_[ix].get_Operator(Space::k).get_nrows(); ++irow) {
+                for (int icol = 0; icol < Velocity_[ix].get_Operator(Space::k).get_ncols(); ++icol) {
+                    Velocity_[ix].get_Operator(Space::k)(iblock, irow, icol) /= det;
+                }
+            }
+        }   
     }
 }
 
+/// @brief Calculates the mean value of the velocity operator and prints it in Output/Velocity.txt.
+/// The equation implemented is:
+/// \textbf{v}(t) = \text{Tr}(\rho \textbf{v})
+/// where v are the matrix elements of the velocity operator in the basis.
+/// Everything is conveniently done in k space.
 void Simulation::Print_Velocity()
 {
     std::array<std::complex<double>, 3> v = { 0., 0., 0. };
@@ -428,6 +537,8 @@ void Simulation::Print_Velocity()
     }
 }
 
+/// @brief Recap of all the variables of the simulation, as read from the input json file or 
+/// got from default values.
 void Simulation::print_recap()
 {
     std::stringstream title;
@@ -437,6 +548,7 @@ void Simulation::print_recap()
     output::title("INPUT RECAP");
     //==    output::print("input file:         *", std::string(8, ' '), JsonFile_ );
     output::print("tb_model                 *", std::string(8, ' '), ctx_->cfg().tb_file());
+    output::print("Space for gradient       *", std::string(8, ' '), (SpaceOfPropagation_Gradient_ == R? "R" : "k"));
     output::print("grid                     *", std::string(8, ' '), "[",
         DensityMatrix_.get_Operator_R().get_MeshGrid()->get_Size()[0], ", ",
         DensityMatrix_.get_Operator_R().get_MeshGrid()->get_Size()[1], ", ",
@@ -463,11 +575,13 @@ void Simulation::print_recap()
     output::print("          :         *", A(0, 0), A(0, 1), A(0, 2));
     output::print("    A     :         *", A(1, 0), A(1, 1), A(1, 2));
     output::print("          :         *", A(2, 0), A(2, 1), A(2, 2));
-    output::print("");
     auto& B = Coordinate::get_Basis(LatticeVectors(k)).get_M();
     output::print("          :         *", B(0, 0), B(0, 1), B(0, 2));
     output::print("    B     :         *", B(1, 0), B(1, 1), B(1, 2));
     output::print("          :         *", B(2, 0), B(2, 1), B(2, 2));
+    output::print("");
+    output::print(" jacobian(A)        *", jacobian(A));
+    output::print("");
     output::stars();
 
     for (int ilaser = 0; ilaser < int(setoflaser_.size()); ++ilaser) {
@@ -475,11 +589,15 @@ void Simulation::print_recap()
     }
 }
 
-int Simulation::get_it(const double& time__) const
-{
-    return int(time__ / DEsolver_DM_.get_ResolutionTime());
-}
+// == int Simulation::get_it(const double& time__) const
+// == {
+// ==     return int(time__ / DEsolver_DM_.get_ResolutionTime());
+// == }
 
+/// @brief (WARNING: this function could be unsafe in the future). Get a (unique) index
+/// for the creation of a node in the h5 file for the current time step. 
+/// @param time__ Time at which we are printing the h5 files
+/// @return Index corresponding to time__ in h5 files
 int Simulation::get_it_sparse(const double& time__) const
 {
     static int counter = -1;
@@ -488,6 +606,7 @@ int Simulation::get_it_sparse(const double& time__) const
     // return int(round(time__/DEsolver_DM_.get_ResolutionTime()/ctx_->cfg().printresolution()));
 }
 
+/// @brief (For debugging and currently not used) print grids of the simulation.
 void Simulation::print_grids()
 {
     auto& MasterRgrid = DensityMatrix_.get_Operator_R().get_MeshGrid();
@@ -512,6 +631,10 @@ void Simulation::print_grids()
     os.close();
 }
 
+/// @brief Check what is defined in the json file: frequency or wavelength. What is not defined has 
+/// the value 0. 
+/// @param idx__ Index of the laser for which we are checking if is defined with frequency or with wavelength
+/// @return "wavelength" or "frequency", depending which one defines the laser.
 std::string Simulation::wavelength_or_frequency(const int& idx__)
 {
     bool is_frequency = (std::abs(ctx_->cfg().lasers(idx__).frequency()) > 1.e-07);

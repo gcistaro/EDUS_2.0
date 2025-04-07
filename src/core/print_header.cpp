@@ -20,10 +20,13 @@ void print_header()
     output::stars();
 
 
-    output::title("GIT RECAP");
     std::stringstream start;
     start << "Execution started: " << dt;
-    output::print(start.str());
+    auto start_str = start.str();
+    start_str.erase(std::remove(start_str.begin(), start_str.end(), '\n'), start_str.end());
+    output::print(start_str);
+
+    output::title("GIT RECAP");
 
     output::print("Git hash:           *    ", git_hash);
     output::print("Git branch:         *    ", git_branchname);
