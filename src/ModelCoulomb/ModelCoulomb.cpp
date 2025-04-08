@@ -1,4 +1,5 @@
 #include "ModelCoulomb.hpp"
+#include "StreamFile.hpp"
 
 /// @brief Calculates the struve special function using the algorithm from XATU
 /// @param X__ variable on which we calculate the struve function
@@ -112,8 +113,72 @@ void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>
     Rgrid_ = std::make_shared<MeshGrid>(get_GammaCentered_grid(*MasterRGrid__));
 
     /* initialize screened and bare potentials matrix elements */
-    initialize_Potential( Rgrid_, nbnd, BarePotential_    , wannier_centers, true );
-    initialize_Potential( Rgrid_, nbnd, ScreenedPotential_, wannier_centers, false);
+
+                                                        // SCREENED COULOMB //
+    //initialize_Potential( Rgrid_, nbnd, ScreenedPotential_, wannier_centers, false);
+    auto size_MG_global = Rgrid_->get_TotalSize();
+    auto ScreenPotential_ = mdarray<std::complex<double>,3> ( { int( size_MG_global ), nbnd, nbnd } );
+ 
+    // import screened coulomb interaction
+    std::filesystem::path screencoulomb_file_path = std::filesystem::current_path() / "screencoulomb.txt";
+    auto screencoulomb_file = ReadFile(screencoulomb_file_path.string());
+
+    // read from the kcw file the R vectors where the Hamiltonian is computed
+    std::vector<Coordinate> RkcwGrid;
+    std::array<double,3> Rkcw;
+    for (int iline = 0; iline < screencoulomb_file.size(); iline++)
+    {
+        if (screencoulomb_file[iline].size() == 3)
+        {
+            for (int i = 0; i < 3; i++){
+              Rkcw[i] = stoi(screencoulomb_file[iline][i]);}
+            Coordinate R(Rkcw[0], Rkcw[1], Rkcw[2], LatticeVectors(Space::R));
+            RkcwGrid.push_back(R);
+        }
+    }
+
+    // find in the systems grid the R vectors from the kcw file read above
+    MeshGrid RCoulomb;
+    RCoulomb.initialize(Space::R, RkcwGrid, 0.0);
+    auto Rgrid_shifted = get_GammaCentered_grid(*Rgrid_);
+    MeshGrid::Calculate_ConvolutionIndex(RCoulomb, Rgrid_shifted, *Operator<std::complex<double>>::MeshGrid_Null);
+    auto& ci = MeshGrid::ConvolutionIndex[{RCoulomb.get_id(), Rgrid_shifted.get_id(), Operator<std::complex<double>>::MeshGrid_Null->get_id()}];
+
+    // build the screened coulomb interaction matrix elements in the imported R vectors
+    ScreenPotential_.fill(0.0);
+    for (int iRCoulomb=0; iRCoulomb<RCoulomb.get_TotalSize(); iRCoulomb++)
+    {
+        for (int irow=0; irow<nbnd; irow++)
+        {
+            for (int icol=0; icol<nbnd; icol++)
+            {
+                int iline = nbnd*2*irow + 2*icol + (std::pow(nbnd,2)*2+1)*iRCoulomb + 1;
+                ScreenPotential_(ci(iRCoulomb,0), irow, icol) = std::atof(screencoulomb_file[iline][3].c_str()) + std::atof(screencoulomb_file[iline+1][3].c_str());
+            }
+        }
+    }
+
+                                                    // BARE COULOMB //
+    //initialize_Potential( Rgrid_, nbnd, BarePotential_    , wannier_centers, true );
+    auto BarePotential_ = mdarray<std::complex<double>,3> ( { int( size_MG_global ), nbnd, nbnd } );                                                
+ 
+    // locate and open bare coulomb file
+    std::filesystem::path barecoulomb_file_path = std::filesystem::current_path() / "barecoulomb.txt";
+    auto barecoulomb_file = ReadFile(barecoulomb_file_path.string());
+
+    // build the bare coulomb interaction matrix elements in the imported R vectors
+    BarePotential_.fill(0.0);
+    for (int iRCoulomb=0; iRCoulomb<RCoulomb.get_TotalSize(); iRCoulomb++)
+    {
+        for (int irow=0; irow<nbnd; irow++)
+        {
+            for (int icol=0; icol<nbnd; icol++)
+            {
+                int iline = nbnd*2*irow + 2*icol + (std::pow(nbnd,2)*2+1)*iRCoulomb + 1;
+                BarePotential_(ci(iRCoulomb,0), irow, icol) = std::atof(barecoulomb_file[iline][3].c_str()) + std::atof(barecoulomb_file[iline+1][3].c_str());
+            }
+        }
+    }
 }
 
 /// @brief Calculation of the screened interaction on a point r in real space
