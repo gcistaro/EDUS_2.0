@@ -27,4 +27,8 @@ void DESolver<Operator<std::complex<double>>>::initialize(Operator<std::complex<
         aux_f.initialize_fft(*(Function));
         aux_f.lock_space(Space::k);
     }
+
+    if( type == AB ) {
+        initialize_beta();
+    } 
 }

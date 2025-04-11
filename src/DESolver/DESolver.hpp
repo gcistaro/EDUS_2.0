@@ -77,6 +77,7 @@ class DESolver{
         void Propagate(const int& nstep__);
         void set_aux_Function(const T& a, const T& b, const T& c, const T& d, const T& e){aux_Function[0] = a, aux_Function[1] = b, aux_Function[2] = c, aux_Function[3] = d; aux_Function[4] = e;}
         void set_type(SolverType t){type = t;}
+        void initialize_beta();
         SolverType get_type(){return type;}	
 };
 
@@ -102,7 +103,12 @@ void DESolver<T>::initialize(T& Function__, const std::function<void(T&)>& Evalu
         aux_ = *Function;
         std::fill(aux_.begin(), aux_.end(), 0.);
     }
+    initialize_beta();
+}
 
+template<typename T>
+void DESolver<T>::initialize_beta()
+{
     if ( type == AB ) {
         if( order == 4) {
             beta = {55./24., -59./24., 37./24., -3./8., 0.};
