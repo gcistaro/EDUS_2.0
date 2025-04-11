@@ -175,19 +175,32 @@ message(STATUS "Imported oneMKL targets: ${MKL_IMPORTED_TARGETS}")
 
 #fftw3
 
-#find_package(fftw3 REQUIRED)
-find_package(PkgConfig REQUIRED)
-pkg_search_module(FFTW REQUIRED fftw3 IMPORTED_TARGET)
+#find_package(PkgConfig REQUIRED)
+#pkg_search_module(FFTW REQUIRED fftw3 IMPORTED_TARGET)
 #message(STATUS "PkgConfigFFTW -> ${FFTW_IMPORTED_TARGETS}")
-include_directories(PkgConfig::FFTW)
-link_libraries(PkgConfig::FFTW)
-link_libraries(fftw3)
-if(EDUS_FFTWTHREADS)
-  link_libraries(fftw3_omp)
-endif()
-if (EDUS_MPI)
-  link_libraries(fftw3_mpi)
-endif()
+#include_directories(PkgConfig::FFTW)
+#link_libraries(PkgConfig::FFTW)
+#if(EDUS_FFTWTHREADS)
+#  link_libraries(fftw3_omp)
+#endif()
+#if (EDUS_MPI)
+#  link_libraries(fftw3_mpi)
+#endif()
+
+
+
+find_package(FFTW REQUIRED)
+message(STATUS "FFTW_LIBRARIES: ${FFTW_LIBRARIES}")
+message(STATUS "FFTW_INCLUDE_DIRS: ${FFTW_INCLUDE_DIRS}")
+
+link_directories(${_FFTW_PATHS})
+link_libraries(${FFTW_LIBRARIES})
+link_libraries(fftw3_mpi)
+include_directories(${FFTW_INCLUDE_DIRS})
+
+
+
+
 
 
 # add the executable
