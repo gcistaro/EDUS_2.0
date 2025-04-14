@@ -2,6 +2,9 @@ from custom_functions.read import *
 from custom_functions.fouriertransform import *
 import matplotlib.pyplot as plt
 
+from scipy.signal import find_peaks
+
+
 
 def get_emission(datadir):
     '''Calculates emission spectra. 
@@ -82,3 +85,32 @@ def plotHHG(datadir, fund,start = 0, stop=10, axes=[]):
     ax.legend()
 
     return fig
+
+def findHarmPeaks(x,y, limit, cutoff=1.5e-1):
+    max_idx = find_peaks(np.abs(y)**2)[0] # Find all the maximas indexes of y
+
+    harm_idx = [] # initialise the harmonics idex list
+
+    for i in range(limit+1):
+        temp_list = []
+        for idx in max_idx:
+            if x[idx] < 1 or x[idx]> limit:
+                continue
+            test = False
+            if x[idx] % 1 < cutoff or 1 -(x[idx] %1) < cutoff:
+                test = True
+                for test_idx in harm_idx: 
+                    if np.abs(x[idx] -x[test_idx]) < 0.5:
+                        test = False
+                        break 
+            if test:
+                temp_list.append(idx)
+            
+        temp_list=np.array(temp_list)
+        # print(temp_list)
+        if len(temp_list)<1:
+            pass
+        else:
+            harm_idx.append(temp_list[np.argmax(np.abs(y[temp_list])**2)])
+
+    return harm_idx
