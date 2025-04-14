@@ -204,10 +204,10 @@ class Experience:
 
 
 
-    def gen_HHG_spectra(self, start = 0, stop=10, axes=[], cut_eV = 0.):
-        if f'{cut_eV}' not in self.velocity_FT_dict.keys():
+    def gen_HHG_spectra(self, start = 0, stop=10, axes=[], smearing = 0.):
+        if f'{smearing}' not in self.velocity_FT_dict.keys():
             print("Generating observables.")
-            self.gen_observables(smearing=cut_eV)
+            self.gen_observables(smearing=smearing)
         
         self.gen_HHG_data()
         # if f'Start_{start}-Stop_{stop}-Axes_{axes}-Cut_eV_{cut_eV}' in self.HHG_spectrum.keys():
@@ -215,7 +215,7 @@ class Experience:
         #     self.plot_HHG_spectra(start=start, stop=stop, axes=axes, cut_eV=cut_eV)
         # else:
             # self.HHG_spectrum[f'Start_{start}-Stop_{stop}-Axes_{axes}-Cut_eV_{cut_eV}'] = HHG_Spectra(self, start=start, stop= stop, axes=axes, cut_eV=cut_eV)
-        self.HHG_spectrum[f'Start_{start}-Stop_{stop}-Axes_{axes}-Cut_eV_{cut_eV}'] = HHG_Spectra(self, start=start, stop= stop, axes=axes, cut_eV=cut_eV)
+        self.HHG_spectrum[f'Start_{start}-Stop_{stop}-Axes_{axes}-smearing_{smearing}'] = HHG_Spectra(self, start=start, stop= stop, axes=axes, smearing=smearing)
 
     def gen_HHG_peaks_spectra(self, max_harmonic=20,normed = False, axes = []):
         if not hasattr(self, 'time_au'):
@@ -253,19 +253,19 @@ class Experience:
     def print_info(self):
         display(Markdown(self._info))
 
-    def plot_HHG_spectra(self, start = 0, stop=10, axes=[], cut_eV = 0.):
+    def plot_HHG_spectra(self, start = 0, stop=10, axes=[], smearing = 0.):
         """Plots the HHG spectra with the specified parameters
 
         Returns
         -------
         Spectra : HHG_Spectra
         """
-        if f'Start_{start}-Stop_{stop}-Axes_{axes}-Cut_eV_{cut_eV}' not in self.HHG_spectrum.keys():
-            self.gen_HHG_spectra(start = start, stop=stop, axes=axes, cut_eV = cut_eV)
-            return self.HHG_spectrum[f'Start_{start}-Stop_{stop}-Axes_{axes}-Cut_eV_{cut_eV}']
+        if f'Start_{start}-Stop_{stop}-Axes_{axes}-smearing_{smearing}' not in self.HHG_spectrum.keys():
+            self.gen_HHG_spectra(start = start, stop=stop, axes=axes, smearing = smearing)
+            return self.HHG_spectrum[f'Start_{start}-Stop_{stop}-Axes_{axes}-smearing_{smearing}']
         else:
-            self.HHG_spectrum[f'Start_{start}-Stop_{stop}-Axes_{axes}-Cut_eV_{cut_eV}'].show()
-            return self.HHG_spectrum[f'Start_{start}-Stop_{stop}-Axes_{axes}-Cut_eV_{cut_eV}']
+            self.HHG_spectrum[f'Start_{start}-Stop_{stop}-Axes_{axes}-smearing_{smearing}'].show()
+            return self.HHG_spectrum[f'Start_{start}-Stop_{stop}-Axes_{axes}-smearing_{smearing}']
 
     def plot_HHG_peaks_spectra(self, max_harmonic=20,normed = False, axes = []):
         if f'Max_harm_{max_harmonic}-Normed_{normed}-Axes_{axes}' not in self.HHG_peaks_spectrum.keys():
@@ -479,6 +479,8 @@ class HHG_Spectra:
         self.ax.set_xlim(self.start,self.stop)
         self.ax.set_xlabel(r"Harmonic order")
         self.ax.set_ylabel(r"Intensity (arb. units, log scale)")
+        self.ax.set_title(r"")
+        self.ax.grid(False)
         self.ax.legend()
 
 
@@ -538,11 +540,13 @@ class HHG_Peak_Spectra():
         return self.ax
     def resetAxes(self):
         self.ax.set_yscale('log')
-        self.ax.set_xticks(np.linspace(0,self.max_harmonic, self.max_harmonic +1, dtype = int)) # get all the orders
+        self.ax.set_xticks(np.linspace(0,self.max_harmonic, self.max_harmonic +1, dtype = int))
         self.ax.set_xlim(0,self.max_harmonic)
         self.ax.set_ylim(self.__base_ylims[0],self.__base_ylims[1])
         self.ax.set_xlabel(r"Harmonic order")
         self.ax.set_ylabel(r"Intensity (arb. units, log scale)")
+        self.ax.set_title(r"")
+        self.ax.grid(False)
         self.ax.legend()
 
 def read_info(datadir):
@@ -657,3 +661,90 @@ def plotFigures(fig):
                 axes[i][j].legend()
     plt.show()
     return figure
+
+def joinFigures(fig1, fig2, samefig = False):
+    """Joins two matplotlib.pyplot.Figure into a new one.
+
+    Parameters
+    ----------
+    fig1 : matplotlib.pyplot.Figure
+        First figure to join.
+    fig2 : matplotlib.pyplot.Figure
+        Second figure to join.
+
+    Returns
+    -------
+    mergedFigure : matplotlib.pyplot.Figure
+        A figure containing all the axes of the figures. 
+    """
+
+    fig1Axes = fig1.get_axes()
+    fig2Axes = fig2.get_axes()
+
+    try:
+        len(fig1Axes)
+    except TypeError:
+        fig1Axes = [fig1Axes]
+    try:
+        len(fig2Axes)
+    except TypeError:
+        fig2Axes = [fig2Axes]
+    
+
+    if samefig:
+        mergedFigure, axes = plt.subplots()
+        axes = [axes]
+    else:
+        mergedFigure, axes = plt.subplots(len(fig1Axes) + len(fig2Axes), 1)
+
+    i = 0 
+    for ax in fig1Axes:
+        for line in ax.get_lines():
+            axes[i].plot(line.get_xdata(), line.get_ydata(), label = line.get_label(), color= line.get_color(), linestyle = line.get_linestyle())
+        for collection in ax.collections:
+            offsets = collection.get_offsets()
+            axes[i].scatter(offsets[:,0], offsets[:,1])
+        for text in ax.texts:  # Handle text elements
+            axes[i].text(text.get_position()[0], text.get_position()[1], text.get_text(), fontsize=text.get_fontsize(), color=text.get_color())
+
+        axes[i].set_xlim(ax.get_xlim())
+        axes[i].set_ylim(ax.get_ylim())
+
+        axes[i].set_xscale(ax.get_xscale())
+        axes[i].set_yscale(ax.get_yscale())
+
+        axes[i].set_xticks(ax.get_xticks())
+        axes[i].set_yticks(ax.get_yticks())
+
+        axes[i].set_xlabel(ax.get_xlabel())
+        axes[i].set_ylabel(ax.get_ylabel())
+        axes[i].set_title(ax.get_title())
+        axes[i].legend()
+        if not samefig:
+            i+=1
+    for ax in fig2Axes:
+        for line in ax.get_lines():
+            axes[i].plot(line.get_xdata(), line.get_ydata(), label = line.get_label(), color= line.get_color(), linestyle = line.get_linestyle())
+        for collection in ax.collections:
+            offsets = collection.get_offsets()
+            axes[i].scatter(offsets[:,0], offsets[:,1])
+        for text in ax.texts:  # Handle text elements
+            axes[i].text(text.get_position()[0], text.get_position()[1], text.get_text(), fontsize=text.get_fontsize(), color=text.get_color())
+
+        axes[i].set_xlim(ax.get_xlim())
+        axes[i].set_ylim(ax.get_ylim())
+
+        axes[i].set_xscale(ax.get_xscale())
+        axes[i].set_yscale(ax.get_yscale())
+
+        axes[i].set_xticks(ax.get_xticks())
+        axes[i].set_yticks(ax.get_yticks())
+
+        axes[i].set_xlabel(ax.get_xlabel())
+        axes[i].set_ylabel(ax.get_ylabel())
+        axes[i].set_title(ax.get_title())
+        axes[i].legend()
+        if not samefig:
+            i+=1
+
+    return mergedFigure
