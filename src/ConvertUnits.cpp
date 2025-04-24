@@ -10,7 +10,7 @@ Unit Angstrom(LENGTH,1.e-10);
 Unit NanoMeters(LENGTH, 1.e-09);
 Unit ElectronVolt(ENERGY,ElectronVolt_value);
 Unit Joule(ENERGY,1.);
-Unit Hartree(ENERGY,Hartree_value);
+Unit Rydberg(ENERGY,Rydberg_value);
 Unit Wcm2(INTENSITY, 1.e+04);
 Unit FemtoSeconds(TIME, 1.e-15);
 
@@ -34,6 +34,6 @@ Unit unit( const std::string& to_unit)
     if( to_unit == "autime"      )    {return AuTime;  }
     if( to_unit == "aulength"    )    {return AuLength;  }
     if( to_unit == "auenergy"    )    {return AuEnergy;  }
-    if( to_unit == "hartree"     )    {return Hartree;     }
+    if( to_unit == "Rydberg"     )    {return Rydberg;     }
     return NullUnit;
 }

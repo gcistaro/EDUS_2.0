@@ -128,6 +128,7 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
         unit(ctx_->cfg().dt_units()),
         AuTime));
 
+
     kgradient_.initialize(*(DensityMatrix_.get_Operator(SpaceOfPropagation_Gradient_).get_MeshGrid()));
     coulomb_.initialize(material_.H.get_Operator_R().get_nrows(),
         DensityMatrix_.get_Operator(R).get_MeshGrid(),
@@ -147,6 +148,7 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     Calculate_Velocity();
     DensityMatrix_.go_to_k();
     assert(DensityMatrix_.get_Operator_k().is_hermitian());
+
 
     /* open files for small outputs */
     os_Pop_.open("Population.txt");

@@ -91,9 +91,9 @@ void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>
                              const std::shared_ptr<MeshGrid>& MasterRGrid__)
 {
     
-    if(dim__ != 2){
-        throw std::runtime_error("Warning ! Only 2d coulomb is implemented!");
-    }
+    //if(dim__ != 2){
+    //    throw std::runtime_error("Warning ! Only 2d coulomb is implemented!");
+    //}
     
     if( dim__ == 2 ) dim_ = twoD;
     if( dim__ == 3 ) dim_ = threeD;
@@ -117,7 +117,7 @@ void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>
                                                         // SCREENED COULOMB //
     //initialize_Potential( Rgrid_, nbnd, ScreenedPotential_, wannier_centers, false);
     auto size_MG_global = Rgrid_->get_TotalSize();
-    auto ScreenPotential_ = mdarray<std::complex<double>,3> ( { int( size_MG_global ), nbnd, nbnd } );
+    ScreenedPotential_ = mdarray<std::complex<double>,3> ( { int( size_MG_global ), nbnd, nbnd } );
  
     // import screened coulomb interaction
     std::filesystem::path screencoulomb_file_path = std::filesystem::current_path() / "screencoulomb.txt";
@@ -145,23 +145,26 @@ void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>
     auto& ci = MeshGrid::ConvolutionIndex[{RCoulomb.get_id(), Rgrid_shifted.get_id(), Operator<std::complex<double>>::MeshGrid_Null->get_id()}];
 
     // build the screened coulomb interaction matrix elements in the imported R vectors
-    ScreenPotential_.fill(0.0);
+    ScreenedPotential_.fill(0.0);
     for (int iRCoulomb=0; iRCoulomb<RCoulomb.get_TotalSize(); iRCoulomb++)
     {
         for (int irow=0; irow<nbnd; irow++)
         {
             for (int icol=0; icol<nbnd; icol++)
             {
+                
                 int iline = nbnd*2*irow + 2*icol + (std::pow(nbnd,2)*2+1)*iRCoulomb + 1;
-                ScreenPotential_(ci(iRCoulomb,0), irow, icol) = Convert(std::atof(screencoulomb_file[iline][3].c_str()) 
-                + std::atof(screencoulomb_file[iline+1][3].c_str()), Hartree, AuEnergy);
+                ScreenedPotential_(ci(iRCoulomb,0), irow, icol) = Convert(std::atof(screencoulomb_file[iline][3].c_str()) 
+                + std::atof(screencoulomb_file[iline+1][3].c_str()), Rydberg, AuEnergy);
+                //std::cout << ci(iRCoulomb,0) << " " << ScreenedPotential_(ci(iRCoulomb,0), irow, icol) << std::endl;
             }
         }
     }
+    //exit(0);
 
                                                     // BARE COULOMB //
     //initialize_Potential( Rgrid_, nbnd, BarePotential_    , wannier_centers, true );
-    auto BarePotential_ = mdarray<std::complex<double>,3> ( { int( size_MG_global ), nbnd, nbnd } );                                                
+    BarePotential_ = mdarray<std::complex<double>,3> ( { int( size_MG_global ), nbnd, nbnd } );                                              
  
     // locate and open bare coulomb file
     std::filesystem::path barecoulomb_file_path = std::filesystem::current_path() / "barecoulomb.txt";
@@ -176,10 +179,13 @@ void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>
             for (int icol=0; icol<nbnd; icol++)
             {
                 int iline = nbnd*2*irow + 2*icol + (std::pow(nbnd,2)*2+1)*iRCoulomb + 1;
-                BarePotential_(ci(iRCoulomb,0), irow, icol) = Convert(std::atof(barecoulomb_file[iline][3].c_str()) + std::atof(barecoulomb_file[iline+1][3].c_str()), Hartree, AuEnergy);
+                BarePotential_(ci(iRCoulomb,0), irow, icol) = Convert(std::atof(barecoulomb_file[iline][3].c_str()) + 
+                std::atof(barecoulomb_file[iline+1][3].c_str()), Rydberg, AuEnergy);
+                //std::cout << ci(iRCoulomb,0) << " " << BarePotential_(ci(iRCoulomb,0), irow, icol) << std::endl;
             }
         }
     }
+    //exit(0);
 }
 
 /// @brief Calculation of the screened interaction on a point r in real space

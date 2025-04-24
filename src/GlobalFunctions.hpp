@@ -68,7 +68,7 @@ void print(Args... args__)
         int num_spaces = output::linesize - int(ss.str().length()) -1;
         auto spaces =  ( num_spaces > 0 ) ? std::string(num_spaces, ' ') : std::string(""); 
         ss << spaces << '*' << '\n'; 
-        std::cout << ss.str();
+        std::cout << ss.str() << std::flush;
     }
 }
 

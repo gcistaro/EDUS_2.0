@@ -42,7 +42,7 @@ void initialize()
     fftw_init_threads();
 #endif
     print_header();
-    output::title("PARALLELIZATION RECAP");  
+    output::title("PARALLELIZATION RECAP");
     output::print("OpenMP  threads:   *", omp_get_max_threads());
     output::print("MKL  threads:      *", mkl_get_max_threads());
 #ifdef EDUS_FFTWTHREADS
@@ -95,8 +95,6 @@ void initialize()
 // ==     }
 #endif
 }
-
-
 
 void finalize()
 {  

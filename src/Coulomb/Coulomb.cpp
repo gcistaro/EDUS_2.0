@@ -29,7 +29,7 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
     // == std::filesystem::path cwd = std::filesystem::current_path() / "RytovaKeldysh.txt";
     // == read_rk_py( RytovaKeldysh_TB, cwd.str());
 
-    modelcoulomb_.initialize(r__, 2, Rgrid__);
+    modelcoulomb_.initialize(r__, 3, Rgrid__);
 
     /* define the index of Rgrid where (0,0,0) is */
     int index_origin_global = Rgrid__->find(Coordinate(0,0,0));
@@ -56,7 +56,7 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
             Hartree(icol, irow) = value;
         }
     }
-    std::cout << Hartree << std::endl;
+    //std::cout << Hartree << std::endl;
 }
 
 /// @brief Setter for DM0 (Density Matrix of the ground state at Wannier gauge in R)
@@ -141,6 +141,7 @@ void Coulomb::EffectiveHamiltonian(Operator<std::complex<double>>& H__, const Op
             for( int icol = 0; icol < HR__.get_ncols(); ++icol ) {
                 HR__(index_origin_local_, irow, irow) += 
                         Hartree(irow, icol)*(DMR__(index_origin_local_, icol, icol) - DM0R_(index_origin_local_, icol, icol)); 
+                        //std::cout << "Hartree = " << Hartree(irow, icol) << std::endl;
             }
         }
     }
@@ -153,9 +154,11 @@ void Coulomb::EffectiveHamiltonian(Operator<std::complex<double>>& H__, const Op
             for( int icol = 0; icol < HR__.get_ncols(); ++icol ) {
                 HR__( iblock, irow, icol ) -= 
                         W( iblock, irow, icol )*( DMR__( iblock, irow, icol ) - DM0R_( iblock, irow, icol ) );
+                        //std::cout << "W = " << W(iblock, irow, icol) << std::endl;
             }
         }
     } 
+    //exit(0);
 
     //for( int iblock = 0; iblock < H_.get_nblocks(); ++iblock ) {
     //    for( int irow = 0; irow < H_.get_nrows(); ++irow ) {
