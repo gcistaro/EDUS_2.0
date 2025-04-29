@@ -179,9 +179,12 @@ void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>
             for (int icol=0; icol<nbnd; icol++)
             {
                 int iline = nbnd*2*irow + 2*icol + (std::pow(nbnd,2)*2+1)*iRCoulomb + 1;
+                //std::cout << "iline = " << iline << std::endl;
                 BarePotential_(ci(iRCoulomb,0), irow, icol) = Convert(std::atof(barecoulomb_file[iline][3].c_str()) + 
                 std::atof(barecoulomb_file[iline+1][3].c_str()), Rydberg, AuEnergy);
                 //std::cout << ci(iRCoulomb,0) << " " << BarePotential_(ci(iRCoulomb,0), irow, icol) << std::endl;
+                //std::cout << iRCoulomb << " " << irow << " " << icol << std::endl;
+
             }
         }
     }
