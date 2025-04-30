@@ -46,9 +46,18 @@
             "title": "Dielectric constant for RK potential"
         },
         "r0": {
-            "type": "number",
-            "default": 10.0,
+            "type": "array",
+            "default": [10.0],
             "title": "r0 screening length for RK potential"
+        },
+        "r0_units": {
+            "type": "string",
+            "default": "angstrom",
+            "enum": [
+                "aulength",
+                "angstrom"
+            ],
+            "title": "Units for the Time resolution used for propagating Density Matrix"
         },
         "grid": {
             "type": "array",
