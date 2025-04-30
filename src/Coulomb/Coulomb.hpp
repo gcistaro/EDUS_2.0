@@ -33,10 +33,11 @@ class Coulomb
         void set_DM0( const Operator<std::complex<double>>& DM0__ );
         void set_DoCoulomb(const bool& DoCoulomb__);
         void set_epsilon(const double& Epsilon__);
-        void set_r0(const double& r0__);
+        void set_r0(const std::vector<double>& r0__);
         const bool& get_DoCoulomb() const;
         bool& get_DoCoulomb();
-
+        std::array<double, 3>& get_r0();
+        double get_r0_avg();
 };
 
 
