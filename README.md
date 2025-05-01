@@ -76,12 +76,12 @@ cd EDUS
 ```
 This will be the folder with your environment. Inside it, create a file called spack.yaml and inside copy this:
 ```bash
-\# This is a Spack Environment file.
-\#
-\# It describes a set of packages to be installed, along with
-\# configuration settings.
+# This is a Spack Environment file.
+#
+# It describes a set of packages to be installed, along with
+# configuration settings.
 spack:
-  \# add package specs to the `specs` list
+  # add package specs to the `specs` list
   specs:
   - EDUS@1.0%gcc@12.3.0 build_type=Debug
   view: true
