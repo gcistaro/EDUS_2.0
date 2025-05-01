@@ -24,6 +24,13 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     ctx_->cfg().initialtime_units("autime");
     ctx_->cfg().finaltime_units("autime");
     ctx_->cfg().dt_units("autime");
+    
+    /* set r0 in a.u. */
+    std::vector<double> r0_au(ctx_->cfg().r0().size());
+    for ( int i=0; i<ctx_->cfg().r0().size(); ++i ) {
+        r0_au[i] = Convert(ctx_->cfg().r0()[i], unit(ctx_->cfg().r0_units()), AuLength);
+    }
+    ctx_->cfg().r0(r0_au);    
 
     if ( ctx_->cfg().printresolution_pulse() == 0 ) {
         ctx_->cfg().printresolution_pulse(ctx_->cfg().printresolution());
@@ -42,7 +49,8 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     auto MasterRgrid = std::make_shared<MeshGrid>(R, ctx_->cfg().grid());
     coulomb_.set_DoCoulomb(ctx_->cfg().coulomb());
     coulomb_.set_epsilon(ctx_->cfg().epsilon());
-    coulomb_.set_r0(Convert(ctx_->cfg().r0(), Angstrom, AuLength));
+    coulomb_.set_r0(ctx_->cfg().r0());
+
     /* getting rytova keldysh with python */
     // ==if (ctx_->cfg().coulomb()) {
     // ==    std::stringstream command;
@@ -478,6 +486,14 @@ void Simulation::Calculate_Velocity()
 {
     Calculate_TDHamiltonian(-6000, true);
     H_.go_to_R();
+#ifdef __DEBUG
+    H_.print_Rdecay("H0__", material_.rwann_);
+    for (int ix : { 0, 1, 2 }) {
+        std::stringstream name; 
+        name << "r0__" << ix ;
+        material_.r[ix].print_Rdecay(name.str(), material_.rwann_);
+    }
+#endif
     std::vector<Coordinate> direction(3);
     direction[0].initialize(1, 0, 0);
     direction[1].initialize(0, 1, 0);
@@ -494,13 +510,22 @@ void Simulation::Calculate_Velocity()
         if (SpaceOfPropagation_Gradient_ == R ) {
             Velocity_[ix].go_to_R();
         }
+#ifdef __DEBUG
+        std::stringstream vel; 
+        vel << "velocity__" << ix;
+        Velocity_[ix].print_Rdecay(vel.str(), material_.rwann_);
+#endif
         /* V += i*R*H0 */
         kgradient_.Calculate(1., Velocity_[ix].get_Operator(SpaceOfPropagation_Gradient_), 
                                 H_.get_Operator(SpaceOfPropagation_Gradient_), direction[ix], false);
         if (SpaceOfPropagation_Gradient_ == R ) {
             Velocity_[ix].go_to_k();
         }
-
+#ifdef __DEBUG
+        vel.str("");
+        vel << "finalvelocity__" << ix;
+        Velocity_[ix].print_Rdecay(vel.str(), material_.rwann_);
+#endif
         /* apply right constants for the normalization of wavefunctions */
         auto det = jacobian(Coordinate::get_Basis(LatticeVectors(Space::R)).get_M());
         #pragma omp parallel for 
@@ -553,12 +578,7 @@ void Simulation::Print_Velocity()
 /// got from default values.
 void Simulation::print_recap()
 {
-    std::stringstream title;
-    title << std::string(5, ' ') << "INPUT RECAP" << std::string(5, ' ');
-    int num_stars = (output::linesize - title.str().length()) / 2 - 2;
-
     output::title("INPUT RECAP");
-    //==    output::print("input file:         *", std::string(8, ' '), JsonFile_ );
     output::print("tb_model                 *", std::string(8, ' '), ctx_->cfg().tb_file());
     output::print("Space for gradient       *", std::string(8, ' '), (SpaceOfPropagation_Gradient_ == R? "R" : "k"));
     output::print("grid                     *", std::string(8, ' '), "[",
@@ -571,8 +591,14 @@ void Simulation::print_recap()
     output::print("PrintResolution(pulse):  *", ctx_->cfg().printresolution_pulse());
     output::print("Coulomb                  *", std::string(8, ' '), (coulomb_.get_DoCoulomb() ? "True" : "False"));
     output::print("epsilon                  *", ctx_->cfg().epsilon());
-    output::print("r0                       *", Convert(ctx_->cfg().r0(), Angstrom, AuLength), " a.u.",
-        ctx_->cfg().r0(), " angstrom");
+    output::print("r0x                      *", coulomb_.get_r0()[0], " a.u.",
+                                                Convert( coulomb_.get_r0()[0], AuLength, Angstrom), " angstrom");
+    output::print("r0y                      *", coulomb_.get_r0()[1], " a.u.",
+                                                Convert( coulomb_.get_r0()[1], AuLength, Angstrom), " angstrom");
+    output::print("r0z                      *", coulomb_.get_r0()[2], " a.u.",
+                                                Convert( coulomb_.get_r0()[2], AuLength, Angstrom), " angstrom");
+    output::print("r0_avg                   *", coulomb_.get_r0_avg(), " a.u.",
+                                                Convert( coulomb_.get_r0_avg(), AuLength, Angstrom), " angstrom");
     output::print("toprint-> DMk_wannier    *        ", std::string(ctx_->cfg().dict()["toprint"]["DMk_wannier"]));
     output::print("toprint-> DMk_bloch      *        ", std::string(ctx_->cfg().dict()["toprint"]["DMk_bloch"]));
     output::print("toprint-> fullH          *        ", std::string(ctx_->cfg().dict()["toprint"]["fullH"]));
@@ -581,7 +607,6 @@ void Simulation::print_recap()
 
     output::stars();
     output::title("WANNIER");
-
     output::print("#R points :         *", material_.H.get_Operator_R().get_nblocks());
     auto& A = Coordinate::get_Basis(LatticeVectors(R)).get_M();
     output::print("          :         *", A(0, 0), A(0, 1), A(0, 2));
