@@ -155,7 +155,7 @@ void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>
                 
                 int iline = nbnd*2*irow + 2*icol + (std::pow(nbnd,2)*2+1)*iRCoulomb + 1;
                 ScreenedPotential_(ci(iRCoulomb,0), irow, icol) = Convert(std::atof(screencoulomb_file[iline][3].c_str()) 
-                + std::atof(screencoulomb_file[iline+1][3].c_str()), Rydberg, AuEnergy);
+                + std::atof(screencoulomb_file[iline+1][3].c_str()), Rydberg, AuEnergy)/2;
                 //std::cout << ci(iRCoulomb,0) << " " << ScreenedPotential_(ci(iRCoulomb,0), irow, icol) << std::endl;
             }
         }
