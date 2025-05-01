@@ -55,6 +55,7 @@ ctest
 To install EDUS with SPACK, first of all you need a version of spack in your computer
 ```bash
 git clone -c feature.manyFiles=true https://github.com/spack/spack.git ~/spack
+cd spack
 git checkout v0.23.1
 ```
 And need to source the setup file in spack: 
