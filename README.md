@@ -54,9 +54,8 @@ ctest
 #### Building with spack
 To install EDUS with SPACK, first of all you need a version of spack in your computer
 ```bash
-git clone -c feature.manyFiles=true https://github.com/spack/spack.git ~/spack
-cd spack
-git checkout v0.23.1
+git clone -c
+feature.manyFiles=true https://github.com/spack/spack.git ~/spack
 ```
 And need to source the setup file in spack: 
 ```bash
@@ -77,12 +76,12 @@ cd EDUS
 ```
 This will be the folder with your environment. Inside it, create a file called spack.yaml and inside copy this:
 ```bash
-# This is a Spack Environment file.
-#
-# It describes a set of packages to be installed, along with
-# configuration settings.
+\# This is a Spack Environment file.
+\#
+\# It describes a set of packages to be installed, along with
+\# configuration settings.
 spack:
-  # add package specs to the `specs` list
+  \# add package specs to the `specs` list
   specs:
   - EDUS@1.0%gcc@12.3.0 build_type=Debug
   view: true
@@ -117,27 +116,7 @@ Currently, the code only supports reading the coulomb interaction from a file. T
 
 [comment]: # (by calling it as `PostProces/RytovaKeldysh.py <nk1> <nk2> <nk3> file_tb.dat`, where `<nk1> <nk2> <nk3>` are the number of kpoints in each cartesian direction and `file_tb.dat` is the Wannier90 output that will be used in the computation. )
 
-## Add new variable to the json file
-First, modify src/InputVariables/input_schema.json. 
-You need to specify the name of the variable, the variable type under the section "type" (ex. "string", "number", "array").
-We also suggest to put a default value for it that the code will take if the input parameter is not specified in the input, and a description under the section "title".
-After this, you can modify the config.hpp class adding your new input variable. you need to add two more methods in this format:
-```///<title>
-    inline auto <parameter-name>() const
-    {
-        return dict_.at("/<parameter-name>"_json_pointer).get<<parameter-type>>();
-    }
-    inline void <parameter-name>(<parameter-type> <parameter-name>__)
-    {
-        if (dict_.contains("locked")) {
-            throw std::runtime_error(locked_msg);
-        }
-        dict_["/<parameter-name>"_json_pointer] = <parameter-name>__;
-    }
-```
-Now that you defined it, make sure the parameter is used in the Simulation class to do what it is supposed to do.
-(if not, it will just be read and ignored).
-It would be nice that you also print it in print_recap in Simulation.cpp to keep track of it.
+
 
 ---
 
@@ -146,23 +125,6 @@ It would be nice that you also print it in print_recap in Simulation.cpp to keep
 Upon building, the EDUS executable will be inside the build directory. For a generic `input.json.in` file, EDUS can be run from the root of the project as
 ```
 ./build/EDUS ./path/to/input.json.in 1> output.log 2> output.err
-```
-
----
-### Print band dispersion
-EDUS can be used to print band dispersions when a simulation is performed. To do that, you need to define an array of arrays 
-in the input json like this one: 
-```
-    "kpath": [ [0.000, 0.000, 0.000],
-               [0.500, 0.500, 0.000],
-               [0.333, 0.667, 0.000],
-               [0.000, 0.000, 0.000] ]
-
-```
-N.B.: only crystal coordinates are supported for now. This will create a file `BANDSTRUCTURE.txt` and a file to plot it
-`plotbands.gnu`. To get a visualization of the bandstructure, just type in the terminal:
-```
-gnuplot plotbands.gnu
 ```
 
 ---
@@ -178,4 +140,3 @@ gnuplot plotbands.gnu
 If you want to add a class from scratch, you need to add to the code two different files:
 1. A header file .hpp, that you will link to all the parts of the code that need your class using `#include <”file”.hpp>`. This class contains the declaration of your class together with the declaration of all the methods. “Declaration” means a line where you define return type, name, arguments but never their definition. This will be included in many parts of the code, so make sure it will be compiled only once with #ifdef.
 2. A source file .cpp, which contains the actual code to be used. You need to add this file in the list of __SOURCES in CMakeLists.txt so it will be compiled as an object file with the code. In this file you need to write the definition of everything you just declared in your .hpp file. 
-
