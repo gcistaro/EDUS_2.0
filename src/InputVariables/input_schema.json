@@ -238,6 +238,11 @@
                         "type": "number",
                         "default": 0.0,
                         "title": "Number of cycles the sin2 laser last."
+                    },
+                    "phase": {
+                        "type": "number",
+                        "default": 0.0,
+                        "title": "Phase of the laser"
                     }
                 }
             }, 
@@ -314,6 +319,11 @@
                         "type": "number",
                         "default": 0.0,
                         "title": "Number of cycles the sin2 laser last."
+                    },
+                    "phase": {
+                        "type": "number",
+                        "default": 0.0,
+                        "title": "Phase of the laser"
                     }
                 }
             }

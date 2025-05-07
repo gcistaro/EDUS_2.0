@@ -285,7 +285,12 @@ class config_t
         bool contains(std::string key__) const
         {
             return dict_.contains(key__);
+        }       
+        auto phase() const
+        {
+            return dict_.at("phase").get<double>();
         }
+
     };
     class lasers_list_t {
     private:
