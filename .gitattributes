@@ -5,3 +5,5 @@
 *.png linguist-vendored
 *.map linguist-vendored
 *.md5 linguist-vendored
+*.js linguist-vendored
+*.css linguist-vendored
