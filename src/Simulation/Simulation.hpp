@@ -12,6 +12,8 @@
 #include "Json/json.hpp"
 #include "InputVariables/simulation_parameters.hpp"
 
+void print_bandstructure(const std::vector<std::vector<double>>& bare_kpath, Operator<std::complex<double>> Hamiltonian);
+
 /// @brief This class contains all the variables that are used in the simulations
 class Simulation
 {

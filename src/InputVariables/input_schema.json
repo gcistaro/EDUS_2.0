@@ -139,26 +139,33 @@
             },
             "items" : {
                 "DMk_wannier" : {
-                    "type"    : "boolean",
+                    "type"    : "string",
                     "default" : "false",
                     "title"   : "true if you want to print DM in k, wannier gauge"
                 },
                 "DMk_bloch"   : {
-                    "type"    : "boolean",
+                    "type"    : "string",
                     "default" : "false",
                     "title"   : "true if you want to print DM in k, bloch gauge"
                 },
                 "fullH"       : {
-                    "type"    : "boolean",
+                    "type"    : "string",
                     "default" : "false",
                     "title"   : "true if you want to print H=H0+Er in k, wannier gauge"
                 },
                 "SelfEnergy"  : {
-                    "type"    : "boolean",
+                    "type"    : "string",
                     "default" : "false",
                     "title"   : "true if you want to print the self energy in k, wannier gauge"
                 }
             }
+        },
+        "kpath": {
+            "type":  "array",
+            "title": "Big quantities that we want to print",
+            "minItems": 0,
+            "maxItems": 100,
+            "default": []
         },
         "lasers": {
             "type": "array",

@@ -4,9 +4,10 @@ Matrix<T> BlockMatrix<T>::EmptyMatrix = Matrix<T>();
 template<typename T>
 void BlockMatrix<T>::initialize(const Space& space, mdarray<T,3>& Values_)//, MeshGrid& meshgrid_)
 {
-    Values = std::move(Values_);
+    this->initialize(space, Values_.get_Size()[0], Values_.get_Size()[1], Values_.get_Size()[2]);
+    std::copy(Values_.begin(), Values_.end(), Values.begin());
+    //Values = std::move(Values_);
     //meshgrid = std::make_shared<MeshGrid>(meshgrid_);
-    initialize_submatrix();
 }
 
 template<typename T>

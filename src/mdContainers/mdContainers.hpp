@@ -67,9 +67,11 @@ class mdarray
             friend bool operator== (const Iterator& a, const Iterator& b) { return a.m_ptr == b.m_ptr; };
             friend bool operator!= (const Iterator& a, const Iterator& b) { return a.m_ptr != b.m_ptr; };     
             //difference
-            int operator-(const Iterator& it2) {return this->m_ptr - it2.m_ptr;}        
+            int operator-(const Iterator& it2) const {return this->m_ptr - it2.m_ptr;}        
             Iterator operator+(const Iterator& it2) {return Iterator(this->m_ptr + it2.m_ptr);}        
-            Iterator operator+(const int& i) {return Iterator(this->m_ptr + i);}        
+            Iterator operator+(const int& i) {return Iterator(this->m_ptr + i);}    
+            bool operator<(const Iterator& it__) const {return *(*this) < *it__; }    
+            bool operator>(const Iterator& it__) const {return *(*this) > *it__; }    
         private:
             pointer m_ptr;
         };

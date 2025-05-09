@@ -225,12 +225,10 @@ class config_t
     {
         return dict_.at("/order"_json_pointer).get<int>();
     }
-    inline void order(int order__)
+    /// Kpath to print the band structure in crystal coordinates 
+    inline std::vector<std::vector<double>> kpath()
     {
-        if (dict_.contains("locked")) {
-            throw std::runtime_error(locked_msg);
-        }
-        dict_["/order"_json_pointer] = order__;
+        return dict_.at("/kpath"_json_pointer).get<std::vector<std::vector<double>>>();
     }
     /// description of all the lasers
     class lasers_t {
