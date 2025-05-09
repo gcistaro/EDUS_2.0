@@ -1,0 +1,30 @@
+{
+    "tb_file": "/home/sa_m/EDUS_2.0/tb_models/Hqpgw_thresh",
+    "fermienergy": 0, 
+    "fermienergy_units" : "electronvolt",
+    "coulomb": false,
+    "grid": [30,30,1],
+    "filledbands" : 7,
+    "dt": 0.01, 
+    "dt_units" : "femtoseconds",
+    "printresolution": 1,
+    "printresolution_pulse": 1,
+    "initialtime" : 0,
+    "initialtime_units" : "femtoseconds",
+    "finaltime": 100, 
+    "finaltime_units" : "femtoseconds",
+
+    "lasers":
+    [
+      {
+      "intensity": 1e05,
+      "intensity_units" : "wcm2",
+      "frequency": 3,
+      "frequency_units" : "electronvolt",
+      "polarization": [1,0,0],
+      "cycles" : 1,
+      "t0" : 0.0,
+      "t0_units" : "fs"
+      }
+    ]
+  }
