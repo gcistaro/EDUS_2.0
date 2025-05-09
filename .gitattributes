@@ -1,3 +1,7 @@
 *.py linguist-vendored
 *.ipynb linguist-vendored
 *.nb linguist-vendored
+*.html linguist-vendored
+*.png linguist-vendored
+*.map linguist-vendored
+*.md5 linguist-vendored
