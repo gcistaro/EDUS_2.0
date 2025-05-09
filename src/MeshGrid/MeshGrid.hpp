@@ -75,7 +75,7 @@ class MeshGrid
         Coordinate& operator[](const int& i);
         const Coordinate& operator[](const int& i) const;
 
-        int find(const Coordinate& v) const;
+        int find(const Coordinate& v, int start_index = 0) const;
         Coordinate reduce(const Coordinate& v) const;
         Coordinate reduce(const Coordinate& v, const double& low_limit, const double& up_limit) const;
         Coordinate reduce(const Coordinate& v, const std::array<double,3>& low_limit, const std::array<double,3>& up_limit) const;

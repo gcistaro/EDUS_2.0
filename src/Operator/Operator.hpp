@@ -124,7 +124,11 @@ class Operator
         Operator() : Operator_k(BlockMatrix<T>()), Operator_R(BlockMatrix<T>()){Operator_k.set_space(k); Operator_R.set_space(R);};
 
 
-        Operator(const Operator<T>& Op_) = default;
+        Operator(const Operator<T>& Op_)
+        {
+            (*this) = Op_;
+        };
+
         Operator<T>& operator=(const Operator<T>& Op_) 
         {
             this->Operator_k = Op_.get_Operator(k);

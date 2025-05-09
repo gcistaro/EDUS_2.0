@@ -35,6 +35,8 @@ class MultiIndex
 
         inline std::array<int,dim> nDindex(const int& index);
         inline std::array<int,dim> nDindex(const int& index) const;
+        inline int get_TotalSize() const {return TotalSize; };
+
 };
 
 #include "MultiIndex_definitions.hpp"

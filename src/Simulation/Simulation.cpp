@@ -34,6 +34,11 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     output::print("-> initializing material");
     material_ = Material(ctx_->cfg().tb_file());
 
+    if( ctx_->cfg().kpath().size() > 1 ) {
+        output::print("-> Printing band structure");
+        print_bandstructure(ctx_->cfg().kpath(), material_.H);
+    }        
+
     output::print("-> initializing grid and arrays");
     auto MasterRgrid = std::make_shared<MeshGrid>(R, ctx_->cfg().grid());
     coulomb_.set_DoCoulomb(ctx_->cfg().coulomb());
@@ -645,4 +650,81 @@ std::string Simulation::wavelength_or_frequency(const int& idx__)
         throw std::runtime_error("You must specify (nonzero) frequency *xor* wavelength!");
     }
     return "wavelength";
+}
+
+
+
+double min(const std::vector<mdarray<double,1>>& Vec__) 
+{
+    auto min = 1.e+07;
+    for( int i = 0; i < Vec__.size(); ++i ) {
+        for( int y = 0; y < Vec__[i].get_Size()[0]; ++y ) {
+            min = std::min( min, *std::min(Vec__[i].begin(), Vec__[i].end()));
+        }
+    }
+    return min;
+}
+
+
+double max(const std::vector<mdarray<double,1>>& Vec__) 
+{
+    auto max = 1.e-07;
+    for( int i = 0; i < Vec__.size(); ++i ) {
+        for( int y = 0; y < Vec__[i].get_Size()[0]; ++y ) {
+            std::vector<double> vec_i(Vec__[i].end()-Vec__[i].begin());
+            max = std::max( max, *std::max_element(Vec__[i].begin(), Vec__[i].end()));
+        }
+    }
+    return max;
+}
+
+/// @brief Print the bandstructure given a tb Hamiltonian and a kpath where we interpolate the hamiltonian
+/// @param bare_kpath List of k points in lattice coordinates
+/// @param Hamiltonian Hamiltonian that we diagonalize to get the band structure
+void print_bandstructure(const std::vector<std::vector<double>>& bare_kpath__, Operator<std::complex<double>> Hamiltonian__)
+{
+    /* create the path of kpoints where to print the band structure */
+    std::vector<Coordinate> path;
+    path.resize(bare_kpath__.size());
+    for( int ik = 0; ik < bare_kpath__.size(); ++ik ) {
+        auto& bare_k = bare_kpath__[ik];
+        path[ik] = Coordinate(bare_k[0], bare_k[1], bare_k[2], LatticeVectors(Space::k));
+    }    
+    
+    /* create kmesh */
+    MeshGrid MeshGridPath(Space::k, path, 0.01);
+
+    /* diagonalize the hamiltonian on the kmesh */
+    Hamiltonian__.dft(MeshGridPath.get_mesh(), +1, false);
+    std::vector<mdarray<double,1>> Eigenvalues;
+    BlockMatrix<std::complex<double>> Eigenvectors;
+    Hamiltonian__.get_Operator_k().diagonalize(Eigenvalues, Eigenvectors);
+
+    /* print eigenvalues */
+    std::ofstream Output;
+    Output.open("BANDSTRUCTURE.txt");
+    Output << "#k-number    energy(eV)\n";
+    for(int ik=0; ik<Eigenvalues.size(); ik++){
+        for(int iband=0; iband<Eigenvalues[ik].get_Size(0); ++iband){
+            Output << std::setw(6) << ik;
+            Output << std::setw(15) << std::setprecision(6) << Convert(Eigenvalues[ik](iband),AuEnergy,ElectronVolt) << std::endl;
+        }
+    }
+    Output.close();
+
+    std::ofstream Gnuplot;
+    Gnuplot.open("plotbands.gnu");
+    Gnuplot << "set xrange [ "<< -double(Eigenvalues.size())/10. << " : " << 11./10.*double(Eigenvalues.size()) << "]"<<std::endl;
+    auto min_eig = Convert(min(Eigenvalues), AuEnergy, ElectronVolt);
+    auto max_eig = Convert(max(Eigenvalues), AuEnergy, ElectronVolt);
+    auto eig_range = max_eig - min_eig;
+
+    Gnuplot << "set yrange [" << min_eig - eig_range/10. << ": " << max_eig + eig_range/10. << "]" << std::endl;
+    int kpt;
+    for( int ik = 0; ik < bare_kpath__.size(); ++ik ) {
+        kpt = MeshGridPath.find(path[ik], ik);
+        Gnuplot << "set arrow from  " << kpt << ", " << min_eig- eig_range/10. << " to " << kpt << ", " << max_eig+ eig_range/10. << " nohead" << std::endl;
+    }
+    Gnuplot << "plot \"BANDSTRUCTURE.txt\" w p" << std::endl;
+    Gnuplot << "pause -1" << std::endl;
 }

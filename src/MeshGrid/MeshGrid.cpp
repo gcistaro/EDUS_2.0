@@ -276,7 +276,7 @@ Coordinate& MeshGrid::operator[](const int& i)
     return const_cast<Coordinate&>(static_cast<const MeshGrid&>(*this)[i]);
 }
 
-int MeshGrid::find(const Coordinate& v) const
+int MeshGrid::find(const Coordinate& v, int start_index) const
 {
     int index = -1;
     switch(type)
@@ -307,18 +307,16 @@ int MeshGrid::find(const Coordinate& v) const
             index = v_iterator-mesh.begin();
             break;
         }
-        case read_:
+        default:
         {
 
-            auto v_iterator = std::find_if(mesh.begin(), mesh.end(), [&v](const auto& v_){ return (v_-v).norm() < 1.e-06;});
+            auto v_iterator = std::find_if(mesh.begin()+start_index, mesh.end(), [&v](const auto& v_){ return (v_-v).norm() < 1.e-06;});
             if(v_iterator == mesh.end()){
                 return -1;
             }
             index = v_iterator-mesh.begin();
             break;
         }
-        default:
-            break;
     }
     if(index >= TotalSize) index = -1;
     return index;
