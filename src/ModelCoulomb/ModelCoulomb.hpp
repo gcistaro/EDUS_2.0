@@ -24,6 +24,10 @@ class ModelCoulomb
         double epsilon_ = 2.;
         /// The MeshGrid of the simulation in R space
         std::shared_ptr<MeshGrid> Rgrid_;
+        /// minimum distance between two wannier centers, for saturations of bare and screened coulomb
+        Coordinate min_distance_;
+        /// Norm of the minimum distance
+        double min_distance_norm_;
     public:
         ModelCoulomb(){};
         ModelCoulomb(const std::array<Operator<std::complex<double>>,3>& r__, const int& dim__,
@@ -40,6 +44,8 @@ class ModelCoulomb
         mdarray<std::complex<double>,3> ScreenedPotential_;
         /// The bare interaction: BarePotential_(iR, i, j)  = @f$ \langle i \textbf{0}, j \textbf{R}[iR] | W | i \textbf{0}, j \textbf{R}[iR] \rangle @f$ 
         mdarray<std::complex<double>,3> BarePotential_;
+
+        mdarray<std::complex<double>,3>& get_ScreenedPotential();
 };
 
 #endif

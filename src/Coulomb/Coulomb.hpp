@@ -37,6 +37,7 @@ class Coulomb
         const bool& get_DoCoulomb() const;
         bool& get_DoCoulomb();
 
+        mdarray<std::complex<double>,3>& get_ScreenedPotential();
 };
 
 

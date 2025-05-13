@@ -108,6 +108,21 @@ void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>
     for(int in=0; in<nbnd; in++) {
         wannier_centers[in] = Coordinate(x0(in,in).real(), y0(in,in).real(), z0(in,in).real());
     }
+
+    /* find minimum (non-zero) distance between wannier centers */
+    min_distance_ = Coordinate(100,0,0,"Cartesian");
+    min_distance_norm_ = min_distance_.norm();
+    for(int in=0; in<nbnd; in++) {
+        for(int im=in+1; im<nbnd; ++im) {
+            auto distance = wannier_centers[in]-wannier_centers[im];
+            if( distance.norm() < min_distance_norm_ && distance.norm() > 1.e-05 ) {
+                std::cout << "wannier centers: " << wannier_centers[in].get("Cartesian") << " " <<  wannier_centers[im].get("Cartesian") << std::endl;  
+                min_distance_ = distance;
+                min_distance_norm_ = min_distance_.norm();
+            }
+        }
+    }
+
     /* Define grid centered at 0 */
     Rgrid_ = std::make_shared<MeshGrid>(get_GammaCentered_grid(*MasterRGrid__));
 
@@ -127,7 +142,7 @@ std::complex<double> ModelCoulomb::W(const Coordinate& r__)
     {
         case twoD:
         {
-            Wr = ( (r_norm < threshold) ? 0. : pi/(2.*r0_*epsilon_)*(struve(r_norm/r0_,0)-y0(r_norm/r0_)));
+            Wr = ( (r_norm < min_distance_norm_) ? W(min_distance_) : pi/(2.*r0_*epsilon_)*(struve(r_norm/r0_,0)-y0(r_norm/r0_)));
             break;
         }
         case threeD:
@@ -150,7 +165,7 @@ std::complex<double> ModelCoulomb::V(const Coordinate& r)
     std::complex<double> Vr;
     auto r_norm = r.norm();
     
-    Vr = ( (r_norm < 0.01) ? V(Coordinate(0.0100001, 0.,0.)) : 2./r_norm );
+    Vr = ( (r_norm < min_distance_norm_) ? V(min_distance_) : 2./r_norm );
     
     return Vr;
 }
@@ -168,3 +183,9 @@ void ModelCoulomb::set_r0(const double& r0__)
 {
     r0_ = r0__;
 }
+
+mdarray<std::complex<double>,3>& ModelCoulomb::get_ScreenedPotential()
+{
+    return ScreenedPotential_;
+}
+

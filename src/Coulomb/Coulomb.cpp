@@ -184,3 +184,8 @@ void read_rk_py(mdarray<std::complex<double>,3>& RytovaKeldysh_TB, const std::st
     }
     assert(index == int(file.size()));
 }
+
+mdarray<std::complex<double>,3>& Coulomb::get_ScreenedPotential()
+{
+    return modelcoulomb_.get_ScreenedPotential();
+}
