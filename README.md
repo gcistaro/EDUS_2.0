@@ -73,6 +73,23 @@ Upon building, the EDUS executable will be inside the build directory. For a gen
 ```
 
 ---
+### Print band dispersion
+EDUS can be used to print band dispersions when a simulation is performed. To do that, you need to define an array of arrays 
+in the input json like this one: 
+```
+    "kpath": [ [0.000, 0.000, 0.000],
+               [0.500, 0.500, 0.000],
+               [0.333, 0.667, 0.000],
+               [0.000, 0.000, 0.000] ]
+
+```
+N.B.: only crystal coordinates are supported for now. This will create a file `BANDSTRUCTURE.txt` and a file to plot it
+`plotbands.gnu`. To get a visualization of the bandstructure, just type in the terminal:
+```
+gnuplot plotbands.gnu
+```
+
+---
 
 ## Adding new code
 1. Before adding something new, make sure you are not repeating something is already there.

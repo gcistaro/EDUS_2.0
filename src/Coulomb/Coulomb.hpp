@@ -38,6 +38,8 @@ class Coulomb
         bool& get_DoCoulomb();
         std::array<double, 3>& get_r0();
         double get_r0_avg();
+
+        mdarray<std::complex<double>,3>& get_ScreenedPotential();
 };
 
 
