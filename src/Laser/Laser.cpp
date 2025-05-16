@@ -246,7 +246,7 @@ void Laser::print_info()
     output::print("Intensity:          *     ", Amplitude*Amplitude,    " a.u.", Convert(Amplitude*Amplitude, AuIntensity, Wcm2), " Wcm2");
     auto t0 = envelope.InitialTime;
     output::print("Initial Time:       *     ", t0,                     " a.u.", Convert(t0, AuTime, FemtoSeconds), " fs");
-    output::print("Phase               *     ", PlaneWave.get_Phase()/pi,    " pi");
+    output::print("Phase               *     ", PlaneWave.get_Phase()/pi,    " \u03C0");
     output::stars();
 }
 
