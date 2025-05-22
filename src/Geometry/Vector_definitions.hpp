@@ -143,6 +143,28 @@ inline int Vector<T>::get_NumberOfElements() const
 
 
 template<class T>
+T Vector<T>::dot(const Vector<T>& v__) const
+{
+    auto& x = *this;
+    T dotproduct = 0;
+    for ( int ix = 0; ix < this->Values.get_TotalSize(); ++ix ) {
+        dotproduct += x[ix]*v__[ix];
+    }
+    return dotproduct;
+}
+
+template<class T>
+template <class U>
+Vector<T> Vector<T>::operator/(const U& constant__) const
+{
+    Vector<T> v1(this->get_NumberOfElements());
+    for( int ix = 0; ix < this->get_NumberOfElements(); ++ix ) {
+        v1[ix] = (*this)[ix]/constant__;
+    }
+    return v1;
+}
+
+template<class T>
 double Vector<T>::norm() const
 {
     double norm = 0.;

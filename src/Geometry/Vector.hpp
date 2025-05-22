@@ -65,7 +65,10 @@ class Vector{
         Vector operator+(const Vector& v) const;
         Vector& operator+=(const Vector& v);
         Vector& operator-=(const Vector& v);
+        template<typename U>
+        Vector operator/(const U& constant__) const;
 
+        T dot(const Vector& v__) const;
         double norm() const;
 
         const T* data() const {return Values.data();};

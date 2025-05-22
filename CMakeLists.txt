@@ -37,11 +37,14 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /lib/x86_64-linux-gnu/)
 
-if (CMAKE_BUILD_TYPE="Debug")
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_compile_options(-O0 -g -Wall)
+    #add_link_options(-fsanitize=address)
+    #    add_compile_options(-fsanitize=address)
+    add_compile_options(-Wall -Wextra -Wuninitialized)
 endif()
 
-if (CMAKE_BUILD_TYPE="Release")
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_options(-O3)
 endif()
 
@@ -96,6 +99,7 @@ set(_SOURCES src/initialize.cpp
              src/ostream.cpp
              src/StreamFile.cpp
              src/InputVariables/simulation_parameters.cpp
+             src/Geometry/Vector.cpp
              src/Geometry/Matrix.cpp
              src/Geometry/Coordinate.cpp
              src/MeshGrid/MeshGrid.cpp
@@ -113,9 +117,10 @@ set(_SOURCES src/initialize.cpp
              src/core/rt_graph.cpp
              src/core/mpi/Communicator.cpp
              src/Coulomb/Coulomb.cpp
-             src/Screened_potential/Screened_potential.cpp
-             src/GreenFunction/GreenFunction.cpp
+             #src/Screened_potential/Screened_potential.cpp
+             #src/GreenFunction/GreenFunction.cpp
              src/ModelCoulomb/ModelCoulomb.cpp
+             src/BetheSalpeter/Hamiltonian.cpp
     )
 add_library(OBJECTS OBJECT ${_SOURCES} )
 	
@@ -192,6 +197,7 @@ endif()
 
 # add the executable
 add_executable(EDUS src/EDUS.cpp)
+add_executable(BSE src/BSE.cpp)
 
 #speed executables
 add_executable(Matrix_mult_speed speed-apps/Matrix_multiplication.cpp)
