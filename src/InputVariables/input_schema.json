@@ -162,7 +162,7 @@
         },
         "kpath": {
             "type":  "array",
-            "title": "Big quantities that we want to print",
+            "title": "vertex of a path in k space where we want to print the band structure",
             "minItems": 0,
             "maxItems": 100,
             "default": []
