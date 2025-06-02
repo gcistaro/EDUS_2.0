@@ -19,7 +19,9 @@ class ModelCoulomb
         /// dimensionality of the system -> twoD (2D) monolayer or threeD (3D) bulk material
         enum Dimensionality {twoD, threeD} dim_;
         /// The r0 of the RytovaKeldysh model
-        double r0_ = Convert(10.,Angstrom,AuLength);
+        std::array<double, 3> r0_;
+        /// The average of the r0 parameters over the 3 dimensions
+        double r0_avg_;
         /// The macroscopic dielectric constant
         double epsilon_ = 2.;
         /// The MeshGrid of the simulation in R space
@@ -39,7 +41,9 @@ class ModelCoulomb
         std::complex<double> V(const Coordinate& r__);
         std::complex<double> W(const Coordinate& r__);
         void set_epsilon(const double& Epsilon__);
-        void set_r0(const double& r0__);
+        void set_r0(const std::vector<double>& r0__);
+        std::array<double, 3>& get_r0();
+        double get_r0_avg();
         /// The screened interaction: ScreenedPotential_(iR, i, j)  = @f$ \langle i \textbf{0}, j \textbf{R}[iR] | W | i \textbf{0}, j \textbf{R}[iR] \rangle @f$
         mdarray<std::complex<double>,3> ScreenedPotential_;
         /// The bare interaction: BarePotential_(iR, i, j)  = @f$ \langle i \textbf{0}, j \textbf{R}[iR] | W | i \textbf{0}, j \textbf{R}[iR] \rangle @f$ 
