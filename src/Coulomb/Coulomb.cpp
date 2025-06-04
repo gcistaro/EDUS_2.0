@@ -118,6 +118,24 @@ void Coulomb::set_method(const std::string& method__)
     }
 }
 
+void Coulomb::set_read_interaction(const bool& read_interaction__)
+{
+    if (read_interaction__ == true)
+    {
+        read_interaction = true;
+    }
+    else if (read_interaction__ == false)
+    {
+        read_interaction = false;
+    }
+    else
+    {
+        std::stringstream ss;
+        ss << "Value for reading interaction parameter " << read_interaction__ << " is not valid." << std::endl;
+        throw std::runtime_error(ss.str());
+    }
+}
+
 /// @brief Getter for DoCoulomb variable 
 /// @return DoCoulomb variable
 const bool& Coulomb::get_DoCoulomb() const

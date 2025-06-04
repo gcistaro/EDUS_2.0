@@ -96,6 +96,18 @@ class config_t
         }
         dict_["/method"_json_pointer] = method__;
     }
+    /// If true, electron-electron interactions are read from barecoulomb.txt and screencoulomb.txt.
+    inline auto read_interaction() const
+    {
+        return dict_.at("/read_interaction"_json_pointer).get<bool>();
+    }
+    inline void read_interaction(std::string read_interaction__)
+    {
+        if (dict_.contains("locked")) {
+            throw std::runtime_error(locked_msg);
+        }
+        dict_["/read_interaction"_json_pointer] = read_interaction__;
+    }
     /// dielectric constant for RK potential
     inline auto epsilon() const
     {
