@@ -55,6 +55,7 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     coulomb_.set_epsilon(ctx_->cfg().epsilon());
     coulomb_.set_r0(Convert(ctx_->cfg().r0(), Angstrom, AuLength));
     coulomb_.set_method(ctx_->cfg().method());
+    coulomb_.set_read_interaction((*ctx_).cfg().read_interaction());
     /* getting rytova keldysh with python */
     // ==if (ctx_->cfg().coulomb()) {
     // ==    std::stringstream command;
@@ -600,6 +601,7 @@ void Simulation::print_recap()
     output::print("PrintResolution(pulse):  *", ctx_->cfg().printresolution_pulse());
     output::print("Coulomb                  *", std::string(8, ' '), (coulomb_.get_DoCoulomb() ? "True" : "False"));
     output::print("Method                   *        ", ctx_->cfg().method());
+    output::print("Read Interaction         *        ", ((*ctx_).cfg().read_interaction()) ? "True" : "False");
     output::print("epsilon                  *", ctx_->cfg().epsilon());
     output::print("r0x                      *", coulomb_.get_r0()[0], " a.u.",
                                                 Convert( coulomb_.get_r0()[0], AuLength, Angstrom), " angstrom");

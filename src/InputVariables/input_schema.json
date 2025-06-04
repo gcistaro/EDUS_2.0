@@ -45,6 +45,10 @@
                 "auenergy"
             ],
             "title": "Units used for the gap we want to open"
+        "read_interaction": {
+            "type": "boolean",
+            "default": false,
+            "title": "If true, electron-electron interactions are read from barecoulomb.txt and screencoulomb.txt."
         },
         "epsilon": {
             "type": "number",
