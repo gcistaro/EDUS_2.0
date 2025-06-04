@@ -56,7 +56,7 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
             Hartree(icol, irow) = value;
         }
     }
-    std::cout << Hartree << std::endl;
+    //std::cout << Hartree << std::endl;
 }
 
 /// @brief Setter for DM0 (Density Matrix of the ground state at Wannier gauge in R)
@@ -85,6 +85,24 @@ void Coulomb::set_epsilon(const double& Epsilon__)
 void Coulomb::set_r0(const double& r0__)
 {
     modelcoulomb_.set_r0( r0__ );
+}
+
+void Coulomb::set_method(const std::string& method__)
+{
+    if (method__ == "ipa"){
+        method = ipa;
+    }
+    else if (method__ == "rpa"){
+        method = rpa;
+    }
+    else if (method__ == "hsex"){
+        method = hsex;
+    }
+    else {
+        std::stringstream ss;
+        ss << "Method given in input " << method__ << "not recognized." << std::endl;
+        throw std::runtime_error(ss.str());
+    }
 }
 
 /// @brief Getter for DoCoulomb variable 
@@ -135,7 +153,7 @@ void Coulomb::EffectiveHamiltonian(Operator<std::complex<double>>& H__, const Op
     }
 
     /* Hartree term */
-    if( HasOrigin_ ) { // Only the rank with R=0 contributes to this term 
+    if( HasOrigin_  && (method == rpa || method == hsex)) { // Only the rank with R=0 contributes to this term 
         #pragma omp parallel for
         for( int irow = 0; irow < HR__.get_nrows(); ++irow ) {
             for( int icol = 0; icol < HR__.get_ncols(); ++icol ) {
@@ -146,16 +164,18 @@ void Coulomb::EffectiveHamiltonian(Operator<std::complex<double>>& H__, const Op
     }
 
     /* Fock term */
-    auto& W = modelcoulomb_.ScreenedPotential_;
-    #pragma omp parallel for
-    for( int iblock = 0; iblock < HR__.get_nblocks(); ++iblock ) {
-        for( int irow = 0; irow < HR__.get_nrows(); ++irow ) {
-            for( int icol = 0; icol < HR__.get_ncols(); ++icol ) {
-                HR__( iblock, irow, icol ) -= 
-                        W( iblock, irow, icol )*( DMR__( iblock, irow, icol ) - DM0R_( iblock, irow, icol ) );
+    if (method == hsex) {
+        auto& W = modelcoulomb_.ScreenedPotential_;
+        #pragma omp parallel for
+        for( int iblock = 0; iblock < HR__.get_nblocks(); ++iblock ) {
+            for( int irow = 0; irow < HR__.get_nrows(); ++irow ) {
+                for( int icol = 0; icol < HR__.get_ncols(); ++icol ) {
+                    HR__( iblock, irow, icol ) -= 
+                            W( iblock, irow, icol )*( DMR__( iblock, irow, icol ) - DM0R_( iblock, irow, icol ) );
+                }
             }
-        }
-    } 
+        } 
+    }
 
     //for( int iblock = 0; iblock < H_.get_nblocks(); ++iblock ) {
     //    for( int irow = 0; irow < H_.get_nrows(); ++irow ) {
