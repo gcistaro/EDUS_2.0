@@ -84,7 +84,6 @@ void MeshGrid::initialize(const Space& space__, const std::vector<Coordinate>& P
 
     mesh.push_back(PathPoint[0]);
     for(int iline=0; iline<NumberOfLines; ++iline){
-        int NumberOfPointsInLine = (PathPoint[iline+1]-PathPoint[iline]).norm()/resolution;
         int NumberOfPointsInLine;
         if (resolution != 0.0) NumberOfPointsInLine = (PathPoint[iline+1]-PathPoint[iline]).norm()/resolution;
         else NumberOfPointsInLine = 2;
