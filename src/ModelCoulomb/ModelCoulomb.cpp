@@ -49,9 +49,9 @@ double struve(const double& X__, const double& v__)
 /// @param dim_ Dimension of the system: 2->monolayer; 3->bulk
 /// @param MasterRGrid Grid in R space used in the code, (N.B: it is different than the one in r because that one is read from _tb file)
 ModelCoulomb::ModelCoulomb(const std::array<Operator<std::complex<double>>,3>& r, const int& dim_,            
-                             const std::shared_ptr<MeshGrid>& MasterRGrid)
+                             const std::shared_ptr<MeshGrid>& MasterRGrid, const bool& read_interaction__)
 {
-    initialize(r, dim_, MasterRGrid);
+    initialize(r, dim_, MasterRGrid, read_interaction__);
 }
 
 /// @brief Initialization of both bare and screened matrix elements calling back the right function
@@ -83,7 +83,7 @@ void ModelCoulomb::initialize_Potential( const std::shared_ptr<MeshGrid>& Rgrid_
     }
 }
 
-void initialize_Potential(const std::shared_ptr<MeshGrid>& Rgrid__, const int& nbnd__, mdarray<std::complex<double>,3>& Potential__,
+void ModelCoulomb::initialize_Potential(const std::shared_ptr<MeshGrid>& Rgrid__, const int& nbnd__, mdarray<std::complex<double>,3>& Potential__,
                                 const bool& bare)
 {
     auto size_MG_global = Rgrid__->get_TotalSize();
@@ -132,7 +132,7 @@ void initialize_Potential(const std::shared_ptr<MeshGrid>& Rgrid__, const int& n
                 int iline = nbnd__*2*irow + 2*icol + (std::pow(nbnd__,2)*2+1)*iRCoulomb + 1;
                 Potential__(ci(iRCoulomb,0), irow, icol) = Convert(std::atof(potential_file[iline][3].c_str()), Rydberg, AuEnergy);
                 //std::cout << ci(iRCoulomb,0) << " " << ScreenedPotential_(ci(iRCoulomb,0), irow, icol) << std::endl;
-                //std::cout << "iRCoulomb = " << iRCoulomb << " | irow = " << irow + 1 << " | icol = " << icol + 1 << " screencoulomb = " << screencoulomb_file[iline][3].c_str() << std::endl;
+                //std::cout << "iRCoulomb = " << iRCoulomb << " | irow = " << irow + 1 << " | icol = " << icol + 1 << " potential = " << potential_file[iline][3].c_str() << std::endl;
                 //std::cout << (*Rgrid_)[ci(iRCoulomb,0)] << std::endl;
             }
         }
