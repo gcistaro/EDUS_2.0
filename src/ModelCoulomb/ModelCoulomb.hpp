@@ -33,11 +33,13 @@ class ModelCoulomb
     public:
         ModelCoulomb(){};
         ModelCoulomb(const std::array<Operator<std::complex<double>>,3>& r__, const int& dim__,
-                     const std::shared_ptr<MeshGrid>& MasterRGrid__);
+                     const std::shared_ptr<MeshGrid>& MasterRGrid__, const bool& read_interaction__);
         void initialize(const std::array<Operator<std::complex<double>>,3>& r__, const int& dim__,
-                     const std::shared_ptr<MeshGrid>& MasterRGrid_, const bool& read_interaction);
+                     const std::shared_ptr<MeshGrid>& MasterRGrid_, const bool& read_interaction__);
         void initialize_Potential( const std::shared_ptr<MeshGrid>& Rgrid__, const int& nbnd__, mdarray<std::complex<double>,3>& Potential__, 
                                const std::vector<Coordinate>& wannier_centers__, const bool& bare__ );
+        void initialize_Potential(const std::shared_ptr<MeshGrid>& Rgrid__, const int& nbnd__, mdarray<std::complex<double>,3>& Potential__,
+                                const bool& bare);
         std::complex<double> V(const Coordinate& r__);
         std::complex<double> W(const Coordinate& r__);
         void set_epsilon(const double& Epsilon__);
