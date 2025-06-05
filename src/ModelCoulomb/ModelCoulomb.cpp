@@ -1,4 +1,5 @@
 #include "ModelCoulomb.hpp"
+#include "StreamFile.hpp"
 
 /// @brief Calculates the struve special function using the algorithm from XATU
 /// @param X__ variable on which we calculate the struve function
@@ -82,17 +83,77 @@ void ModelCoulomb::initialize_Potential( const std::shared_ptr<MeshGrid>& Rgrid_
     }
 }
 
+void initialize_Potential(const std::shared_ptr<MeshGrid>& Rgrid__, const int& nbnd__, mdarray<std::complex<double>,3>& Potential__,
+                                const bool& bare)
+{
+    auto size_MG_global = Rgrid__->get_TotalSize();
+    Potential__ = mdarray<std::complex<double>,3> ( { int( size_MG_global ), nbnd__, nbnd__ } );
+    std::filesystem::path potential_file_path;
+    if (bare)
+    {
+        potential_file_path = std::filesystem::current_path() / "barecoulomb.txt";
+    }
+    else if (!bare)
+    {
+        potential_file_path = std::filesystem::current_path() / "screencoulomb.txt";
+    }
+    auto potential_file = ReadFile(potential_file_path.string());
+
+    // read from the kcw file the R vectors where the Hamiltonian is computed
+    std::vector<Coordinate> RkcwGrid;
+    std::array<double,3> Rkcw;
+    for (int iline = 0; iline < potential_file.size(); iline++)
+    {
+        if (potential_file[iline].size() == 3)
+        {
+            for (int i = 0; i < 3; i++){
+              Rkcw[i] = stoi(potential_file[iline][i]);}
+            Coordinate R(Rkcw[0], Rkcw[1], Rkcw[2], LatticeVectors(Space::R));
+            RkcwGrid.push_back(R);
+        }
+    }
+
+    // find in the systems grid the R vectors from the kcw file read above
+    MeshGrid RCoulomb;
+    RCoulomb.initialize(Space::R, RkcwGrid, 0.0);
+    auto Rgrid_shifted = get_GammaCentered_grid(*Rgrid__);
+    MeshGrid::Calculate_ConvolutionIndex(RCoulomb, Rgrid_shifted, *Operator<std::complex<double>>::MeshGrid_Null);
+    auto& ci = MeshGrid::ConvolutionIndex[{RCoulomb.get_id(), Rgrid_shifted.get_id(), Operator<std::complex<double>>::MeshGrid_Null->get_id()}];
+
+    // build the screened coulomb interaction matrix elements in the imported R vectors
+    Potential__.fill(0.0);
+    for (int iRCoulomb=0; iRCoulomb<RCoulomb.get_TotalSize(); iRCoulomb++)
+    {
+        for (int irow=0; irow<nbnd__; irow++)
+        {
+            for (int icol=0; icol<nbnd__; icol++)
+            {
+                
+                int iline = nbnd__*2*irow + 2*icol + (std::pow(nbnd__,2)*2+1)*iRCoulomb + 1;
+                Potential__(ci(iRCoulomb,0), irow, icol) = Convert(std::atof(potential_file[iline][3].c_str()), Rydberg, AuEnergy);
+                //std::cout << ci(iRCoulomb,0) << " " << ScreenedPotential_(ci(iRCoulomb,0), irow, icol) << std::endl;
+                //std::cout << "iRCoulomb = " << iRCoulomb << " | irow = " << irow + 1 << " | icol = " << icol + 1 << " screencoulomb = " << screencoulomb_file[iline][3].c_str() << std::endl;
+                //std::cout << (*Rgrid_)[ci(iRCoulomb,0)] << std::endl;
+            }
+        }
+    }
+
+
+}
+
 /// @brief Initialization of the variables of the class
 /// @param r__ The position operator read from Wannier90, in a.u.
 /// @param dim__ The dimension of the system: 2->monolayer; 3->bulk
 /// @param MasterRGrid__ The grid in R space used in the code, (N.B: it is different than the one in r because that one is read from _tb file)
 void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>& r__, const int& dim__,            
-                             const std::shared_ptr<MeshGrid>& MasterRGrid__)
+                             const std::shared_ptr<MeshGrid>& MasterRGrid__, const bool& read_interaction__)
 {
     
+    /*
     if(dim__ != 2){
         throw std::runtime_error("Warning ! Only 2d coulomb is implemented!");
     }
+    */
     
     if( dim__ == 2 ) dim_ = twoD;
     if( dim__ == 3 ) dim_ = threeD;
@@ -125,12 +186,22 @@ void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>
         }
     }
 
+    
+
     /* Define grid centered at 0 */
     Rgrid_ = std::make_shared<MeshGrid>(get_GammaCentered_grid(*MasterRGrid__));
 
     /* initialize screened and bare potentials matrix elements */
-    initialize_Potential( Rgrid_, nbnd, BarePotential_    , wannier_centers, true );
-    initialize_Potential( Rgrid_, nbnd, ScreenedPotential_, wannier_centers, false);
+    if (read_interaction__)
+    {
+        initialize_Potential(Rgrid_, nbnd, BarePotential_, true);
+        initialize_Potential(Rgrid_, nbnd, ScreenedPotential_, false);
+    }
+    else if (!read_interaction__)
+    {
+        initialize_Potential( Rgrid_, nbnd, BarePotential_    , wannier_centers, true);
+        initialize_Potential( Rgrid_, nbnd, ScreenedPotential_, wannier_centers, false);
+    }
 }
 
 /// @brief Calculation of the screened interaction on a point r in real space

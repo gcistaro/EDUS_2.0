@@ -611,6 +611,7 @@ void Simulation::print_recap()
                                                 Convert( coulomb_.get_r0()[2], AuLength, Angstrom), " angstrom");
     output::print("r0_avg                   *", coulomb_.get_r0_avg(), " a.u.",
                                                 Convert( coulomb_.get_r0_avg(), AuLength, Angstrom), " angstrom");
+    output::print("filledbands              *", ctx_->cfg().filledbands());
     output::print("toprint-> DMk_wannier    *        ", std::string(ctx_->cfg().dict()["toprint"]["DMk_wannier"]));
     output::print("toprint-> DMk_bloch      *        ", std::string(ctx_->cfg().dict()["toprint"]["DMk_bloch"]));
     output::print("toprint-> fullH          *        ", std::string(ctx_->cfg().dict()["toprint"]["fullH"]));

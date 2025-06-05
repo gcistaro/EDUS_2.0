@@ -35,7 +35,7 @@ class ModelCoulomb
         ModelCoulomb(const std::array<Operator<std::complex<double>>,3>& r__, const int& dim__,
                      const std::shared_ptr<MeshGrid>& MasterRGrid__);
         void initialize(const std::array<Operator<std::complex<double>>,3>& r__, const int& dim__,
-                     const std::shared_ptr<MeshGrid>& MasterRGrid_);
+                     const std::shared_ptr<MeshGrid>& MasterRGrid_, const bool& read_interaction);
         void initialize_Potential( const std::shared_ptr<MeshGrid>& Rgrid__, const int& nbnd__, mdarray<std::complex<double>,3>& Potential__, 
                                const std::vector<Coordinate>& wannier_centers__, const bool& bare__ );
         std::complex<double> V(const Coordinate& r__);
