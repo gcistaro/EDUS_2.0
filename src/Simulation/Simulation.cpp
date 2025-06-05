@@ -575,6 +575,7 @@ void Simulation::print_recap()
     output::print("epsilon                  *", ctx_->cfg().epsilon());
     output::print("r0                       *", Convert(ctx_->cfg().r0(), Angstrom, AuLength), " a.u.",
         ctx_->cfg().r0(), " angstrom");
+    output::print("filledbands              *", ctx_->cfg().filledbands());
     output::print("toprint-> DMk_wannier    *        ", std::string(ctx_->cfg().dict()["toprint"]["DMk_wannier"]));
     output::print("toprint-> DMk_bloch      *        ", std::string(ctx_->cfg().dict()["toprint"]["DMk_bloch"]));
     output::print("toprint-> fullH          *        ", std::string(ctx_->cfg().dict()["toprint"]["fullH"]));

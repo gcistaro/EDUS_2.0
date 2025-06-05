@@ -29,7 +29,7 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
     // == std::filesystem::path cwd = std::filesystem::current_path() / "RytovaKeldysh.txt";
     // == read_rk_py( RytovaKeldysh_TB, cwd.str());
 
-    modelcoulomb_.initialize(r__, 2, Rgrid__);
+    modelcoulomb_.initialize(r__, 2, Rgrid__, read_interaction);
 
     /* define the index of Rgrid where (0,0,0) is */
     int index_origin_global = Rgrid__->find(Coordinate(0,0,0));
@@ -57,6 +57,24 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
         }
     }
     //std::cout << Hartree << std::endl;
+}
+
+void Coulomb::set_read_interaction(const bool& read_interaction__)
+{
+    if (read_interaction__ == true)
+    {
+        read_interaction = true;
+    }
+    else if (read_interaction__ == false)
+    {
+        read_interaction = false;
+    }
+    else
+    {
+        std::stringstream ss;
+        ss << "Value for reading interaction parameter " << read_interaction__ << " is not valid." << std::endl;
+        throw std::runtime_error(ss.str());
+    }
 }
 
 /// @brief Setter for DM0 (Density Matrix of the ground state at Wannier gauge in R)
@@ -98,27 +116,10 @@ void Coulomb::set_method(const std::string& method__)
     else if (method__ == "hsex"){
         method = hsex;
     }
-    else {
+    else 
+    {
         std::stringstream ss;
         ss << "Method given in input " << method__ << "not recognized." << std::endl;
-        throw std::runtime_error(ss.str());
-    }
-}
-
-void Coulomb::set_read_interaction(const bool& read_interaction__)
-{
-    if (read_interaction__ == true)
-    {
-        read_interaction = true;
-    }
-    else if (read_interaction__ == false)
-    {
-        read_interaction = false;
-    }
-    else
-    {
-        std::stringstream ss;
-        ss << "Value for reading interaction parameter " << read_interaction__ << " is not valid." << std::endl;
         throw std::runtime_error(ss.str());
     }
 }

@@ -25,6 +25,7 @@ class Coulomb
         /// \sum_\textbf{R} \langle n\textbf{0}m\textbf{R}|V(r-r')| n\textbf{0}m\textbf{R} \rangle @f]
         mdarray<std::complex<double>, 2> Hartree;
         enum Method{ipa, rpa, hsex} method;
+        /// True if interactions are read from file. False if not.
         bool read_interaction;
     public:
         Coulomb(){};
@@ -39,9 +40,10 @@ class Coulomb
         const bool& get_DoCoulomb() const;
         bool& get_DoCoulomb();
         void set_method(const std::string& method__);
-        void set_read_interaction(const bool& read_interaction__);
 
         mdarray<std::complex<double>,3>& get_ScreenedPotential();
+
+        void set_read_interaction(const bool& read_interaction__);
 };
 
 
