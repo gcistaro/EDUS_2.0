@@ -177,7 +177,7 @@ void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>
         for(int im=in+1; im<nbnd; ++im) {
             auto distance = wannier_centers[in]-wannier_centers[im];
             if( distance.norm() < min_distance_norm_ && distance.norm() > 1.e-05 ) {
-                std::cout << "wannier centers: " << wannier_centers[in].get("Cartesian") << " " <<  wannier_centers[im].get("Cartesian") << std::endl;  
+                //std::cout << "wannier centers: " << wannier_centers[in].get("Cartesian") << " " <<  wannier_centers[im].get("Cartesian") << std::endl;  
                 min_distance_ = distance;
                 min_distance_norm_ = min_distance_.norm();
             }
