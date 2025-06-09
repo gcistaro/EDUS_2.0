@@ -24,6 +24,9 @@ class Coulomb
         /// The effective Hartree potential, defined as: @f[ H_{nm} = \sum_\textbf{R} V_{nm}(\textbf{R}) = 
         /// \sum_\textbf{R} \langle n\textbf{0}m\textbf{R}|V(r-r')| n\textbf{0}m\textbf{R} \rangle @f]
         mdarray<std::complex<double>, 2> Hartree;
+        enum Method{ipa, rpa, hsex} method;
+        /// True if interactions are read from file. False if not.
+        bool read_interaction;
     public:
         Coulomb(){};
         Coulomb(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid__, const std::array<Operator<std::complex<double>>,3>& r);
@@ -36,8 +39,11 @@ class Coulomb
         void set_r0(const double& r0__);
         const bool& get_DoCoulomb() const;
         bool& get_DoCoulomb();
+        void set_method(const std::string& method__);
 
         mdarray<std::complex<double>,3>& get_ScreenedPotential();
+
+        void set_read_interaction(const bool& read_interaction__);
 };
 
 

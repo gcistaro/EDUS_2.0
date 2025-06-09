@@ -28,6 +28,10 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     if ( ctx_->cfg().printresolution_pulse() == 0 ) {
         ctx_->cfg().printresolution_pulse(ctx_->cfg().printresolution());
     }
+    if ( ctx_->cfg().coulomb() == false ) {
+        ctx_->cfg().method("ipa");
+        output::print("-> coulomb was set to false so method is ipa");
+    } 
 
     SpaceOfPropagation_Gradient_ = (ctx_->cfg().gradient_space() == "R" ? Space::R : Space::k);
 
@@ -44,6 +48,8 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     coulomb_.set_DoCoulomb(ctx_->cfg().coulomb());
     coulomb_.set_epsilon(ctx_->cfg().epsilon());
     coulomb_.set_r0(Convert(ctx_->cfg().r0(), Angstrom, AuLength));
+    coulomb_.set_method(ctx_->cfg().method());
+    coulomb_.set_read_interaction((*ctx_).cfg().read_interaction());
     /* getting rytova keldysh with python */
     // ==if (ctx_->cfg().coulomb()) {
     // ==    std::stringstream command;
@@ -564,9 +570,12 @@ void Simulation::print_recap()
     output::print("PrintResolution          *", ctx_->cfg().printresolution());
     output::print("PrintResolution(pulse):  *", ctx_->cfg().printresolution_pulse());
     output::print("Coulomb                  *", std::string(8, ' '), (coulomb_.get_DoCoulomb() ? "True" : "False"));
+    output::print("Method                   *        ", ctx_->cfg().method());
+    output::print("Read Interaction         *        ", ((*ctx_).cfg().read_interaction()) ? "True" : "False");
     output::print("epsilon                  *", ctx_->cfg().epsilon());
     output::print("r0                       *", Convert(ctx_->cfg().r0(), Angstrom, AuLength), " a.u.",
         ctx_->cfg().r0(), " angstrom");
+    output::print("filledbands              *", ctx_->cfg().filledbands());
     output::print("toprint-> DMk_wannier    *        ", std::string(ctx_->cfg().dict()["toprint"]["DMk_wannier"]));
     output::print("toprint-> DMk_bloch      *        ", std::string(ctx_->cfg().dict()["toprint"]["DMk_bloch"]));
     output::print("toprint-> fullH          *        ", std::string(ctx_->cfg().dict()["toprint"]["fullH"]));

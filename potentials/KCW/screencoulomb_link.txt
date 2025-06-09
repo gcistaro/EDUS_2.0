@@ -1,0 +1,1 @@
+../../../Desktop/new/Si_6x6x6/SiKCW/02-joint-wannierize/03-wannier90/screencoulomb.txt
