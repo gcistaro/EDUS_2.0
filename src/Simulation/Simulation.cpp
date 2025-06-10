@@ -35,7 +35,7 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     if ( ctx_->cfg().printresolution_pulse() == 0 ) {
         ctx_->cfg().printresolution_pulse(ctx_->cfg().printresolution());
     }
-    if ( ctx_->cfg().coulomb() == false ) {
+    if ( !ctx_->cfg().coulomb() ) {
         ctx_->cfg().method("ipa");
         output::print("-> coulomb was set to false so method is ipa");
     } 
@@ -603,8 +603,8 @@ void Simulation::print_recap()
     output::print("PrintResolution          *", ctx_->cfg().printresolution());
     output::print("PrintResolution(pulse):  *", ctx_->cfg().printresolution_pulse());
     output::print("Coulomb                  *", std::string(8, ' '), (coulomb_.get_DoCoulomb() ? "True" : "False"));
-    output::print("Method                   *        ", ctx_->cfg().method());
-    output::print("Read Interaction         *        ", ((*ctx_).cfg().read_interaction()) ? "True" : "False");
+    output::print("Method                   *        ",  coulomb_.get_method());
+    output::print("Read Interaction         *        ", ( coulomb_.get_read_interaction() ? "True" : "False"));
     output::print("epsilon                  *", ctx_->cfg().epsilon());
     output::print("r0x                      *", coulomb_.get_r0()[0], " a.u.",
                                                 Convert( coulomb_.get_r0()[0], AuLength, Angstrom), " angstrom");
