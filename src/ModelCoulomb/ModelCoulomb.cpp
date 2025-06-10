@@ -84,51 +84,39 @@ void ModelCoulomb::initialize_Potential( const std::shared_ptr<MeshGrid>& Rgrid_
 }
 
 void ModelCoulomb::initialize_Potential(const std::shared_ptr<MeshGrid>& Rgrid__, const int& nbnd__, mdarray<std::complex<double>,3>& Potential__,
-                                const bool& bare)
+                                const bool& bare__)
 {
     auto size_MG_global = Rgrid__->get_TotalSize();
     Potential__ = mdarray<std::complex<double>,3> ( { int( size_MG_global ), nbnd__, nbnd__ } );
-    std::filesystem::path potential_file_path;
-    if (bare)
-    {
-        potential_file_path = std::filesystem::current_path() / "barecoulomb.txt";
-    }
-    else if (!bare)
-    {
-        potential_file_path = std::filesystem::current_path() / "screencoulomb.txt";
-    }
+    auto potential_file_path = 
+                        ( bare__ ? std::filesystem::current_path() / "barecoulomb.txt"
+                                 : std::filesystem::current_path() / "screencoulomb.txt" );
     auto potential_file = ReadFile(potential_file_path.string());
 
-    // read from the kcw file the R vectors where the Hamiltonian is computed
-    std::vector<Coordinate> RkcwGrid;
-    std::array<double,3> Rkcw;
-    for (int iline = 0; iline < potential_file.size(); iline++)
-    {
-        if (potential_file[iline].size() == 3)
-        {
-            for (int i = 0; i < 3; i++){
-              Rkcw[i] = stoi(potential_file[iline][i]);}
-            Coordinate R(Rkcw[0], Rkcw[1], Rkcw[2], LatticeVectors(Space::R));
-            RkcwGrid.push_back(R);
+    // read from the kcw file the R vectors where the potential is computed
+    std::vector<Coordinate> bare_Rmesh;
+    std::array<double,3> Rpoint;
+    for (int iline = 0; iline < potential_file.size(); iline++) {
+        if (potential_file[iline].size() == 3) {
+            for (auto& ix : {0, 1, 2}) {
+                Rpoint[ix] = stoi(potential_file[iline][ix]);}
+                Coordinate R(Rpoint[0], Rpoint[1], Rpoint[2], LatticeVectors(Space::R));
+                bare_Rmesh.push_back(R);
         }
     }
 
     // find in the systems grid the R vectors from the kcw file read above
-    MeshGrid RCoulomb;
-    RCoulomb.initialize(Space::R, RkcwGrid, 0.0);
+    MeshGrid R_MeshGrid;
+    R_MeshGrid.initialize(Space::R, bare_Rmesh, 0.0);
     auto Rgrid_shifted = get_GammaCentered_grid(*Rgrid__);
-    MeshGrid::Calculate_ConvolutionIndex(RCoulomb, Rgrid_shifted, *Operator<std::complex<double>>::MeshGrid_Null);
-    auto& ci = MeshGrid::ConvolutionIndex[{RCoulomb.get_id(), Rgrid_shifted.get_id(), Operator<std::complex<double>>::MeshGrid_Null->get_id()}];
+    MeshGrid::Calculate_ConvolutionIndex(R_MeshGrid, Rgrid_shifted, *Operator<std::complex<double>>::MeshGrid_Null);
+    auto& ci = MeshGrid::ConvolutionIndex[{R_MeshGrid.get_id(), Rgrid_shifted.get_id(), Operator<std::complex<double>>::MeshGrid_Null->get_id()}];
 
     // build the screened coulomb interaction matrix elements in the imported R vectors
     Potential__.fill(0.0);
-    for (int iRCoulomb=0; iRCoulomb<RCoulomb.get_TotalSize(); iRCoulomb++)
-    {
-        for (int irow=0; irow<nbnd__; irow++)
-        {
-            for (int icol=0; icol<nbnd__; icol++)
-            {
-                
+    for (int iRCoulomb=0; iRCoulomb<R_MeshGrid.get_TotalSize(); iRCoulomb++) {
+        for (int irow=0; irow<nbnd__; irow++) {
+            for (int icol=0; icol<nbnd__; icol++) {
                 int iline = nbnd__*2*irow + 2*icol + (std::pow(nbnd__,2)*2+1)*iRCoulomb + 1;
                 Potential__(ci(iRCoulomb,0), irow, icol) = Convert(std::atof(potential_file[iline][3].c_str()), Rydberg, AuEnergy);
                 //std::cout << ci(iRCoulomb,0) << " " << ScreenedPotential_(ci(iRCoulomb,0), irow, icol) << std::endl;
@@ -137,8 +125,8 @@ void ModelCoulomb::initialize_Potential(const std::shared_ptr<MeshGrid>& Rgrid__
             }
         }
     }
-
-
+    output::print("Bare and screened coulomb read from file.");
+    output::print("#R vectors in the file: ", int(bare_Rmesh.size()));
 }
 
 /// @brief Initialization of the variables of the class
@@ -192,13 +180,11 @@ void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>
     Rgrid_ = std::make_shared<MeshGrid>(get_GammaCentered_grid(*MasterRGrid__));
 
     /* initialize screened and bare potentials matrix elements */
-    if (read_interaction__)
-    {
+    if (read_interaction__) {
         initialize_Potential(Rgrid_, nbnd, BarePotential_, true);
         initialize_Potential(Rgrid_, nbnd, ScreenedPotential_, false);
     }
-    else if (!read_interaction__)
-    {
+    else {
         initialize_Potential( Rgrid_, nbnd, BarePotential_    , wannier_centers, true);
         initialize_Potential( Rgrid_, nbnd, ScreenedPotential_, wannier_centers, false);
     }

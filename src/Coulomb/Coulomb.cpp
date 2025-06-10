@@ -29,7 +29,7 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
     // == std::filesystem::path cwd = std::filesystem::current_path() / "RytovaKeldysh.txt";
     // == read_rk_py( RytovaKeldysh_TB, cwd.str());
 
-    modelcoulomb_.initialize(r__, 2, Rgrid__, read_interaction);
+    modelcoulomb_.initialize(r__, 2, Rgrid__, read_interaction_);
 
     /* define the index of Rgrid where (0,0,0) is */
     int index_origin_global = Rgrid__->find(Coordinate(0,0,0));
@@ -60,20 +60,7 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
 
 void Coulomb::set_read_interaction(const bool& read_interaction__)
 {
-    if (read_interaction__ == true)
-    {
-        read_interaction = true;
-    }
-    else if (read_interaction__ == false)
-    {
-        read_interaction = false;
-    }
-    else
-    {
-        std::stringstream ss;
-        ss << "Value for reading interaction parameter " << read_interaction__ << " is not valid." << std::endl;
-        throw std::runtime_error(ss.str());
-    }
+    read_interaction_ = read_interaction__;
 }
 
 /// @brief Setter for DM0 (Density Matrix of the ground state at Wannier gauge in R)
@@ -121,13 +108,13 @@ double Coulomb::get_r0_avg()
 void Coulomb::set_method(const std::string& method__)
 {
     if (method__ == "ipa"){
-        method = ipa;
+        method_ = ipa;
     }
     else if (method__ == "rpa"){
-        method = rpa;
+        method_ = rpa;
     }
     else if (method__ == "hsex"){
-        method = hsex;
+        method_ = hsex;
     }
     else 
     {
@@ -185,7 +172,7 @@ void Coulomb::EffectiveHamiltonian(Operator<std::complex<double>>& H__, const Op
     }
 
     /* Hartree term */
-    if( HasOrigin_  && (method == rpa || method == hsex)) { // Only the rank with R=0 contributes to this term 
+    if( HasOrigin_  && (method_ == rpa || method_ == hsex)) { // Only the rank with R=0 contributes to this term 
         #pragma omp parallel for
         for( int irow = 0; irow < HR__.get_nrows(); ++irow ) {
             for( int icol = 0; icol < HR__.get_ncols(); ++icol ) {
@@ -196,7 +183,7 @@ void Coulomb::EffectiveHamiltonian(Operator<std::complex<double>>& H__, const Op
     }
 
     /* Fock term */
-    if (method == hsex) {
+    if (method_ == hsex) {
         auto& W = modelcoulomb_.ScreenedPotential_;
         #pragma omp parallel for
         for( int iblock = 0; iblock < HR__.get_nblocks(); ++iblock ) {
@@ -240,4 +227,22 @@ void read_rk_py(mdarray<std::complex<double>,3>& RytovaKeldysh_TB, const std::st
 mdarray<std::complex<double>,3>& Coulomb::get_ScreenedPotential()
 {
     return modelcoulomb_.get_ScreenedPotential();
+}
+
+std::string Coulomb::get_method()
+{
+    std::string method;
+    if ( method_ == ipa ) {
+        method = "ipa";
+    } else if ( method_ == rpa ) {
+        method = "rpa";
+    } else if ( method_ == hsex ) {
+        method = "hsex";
+    }
+    return method;
+}
+
+bool& Coulomb::get_read_interaction()
+{
+    return read_interaction_;
 }
