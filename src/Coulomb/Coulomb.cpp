@@ -31,6 +31,17 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
 
     modelcoulomb_.initialize(r__, 2, Rgrid__, read_interaction_);
 
+    output::print("Maximum and minimum (in norm) of bare and screened interaction:");
+    auto max = *std::max_element( modelcoulomb_.BarePotential_.begin(), modelcoulomb_.BarePotential_.end(),
+                          [] (std::complex<double> a, std::complex<double> b) { return std::real(a) < std::real(b); }); 
+    auto min = *std::min_element( modelcoulomb_.BarePotential_.begin(), modelcoulomb_.BarePotential_.end(),
+                          [] (std::complex<double> a, std::complex<double> b) { return std::real(a) > std::real(b); }); 
+    output::print( "bare:    ", std::real(min), std::real(max));
+    max = *std::max_element( modelcoulomb_.ScreenedPotential_.begin(), modelcoulomb_.ScreenedPotential_.end(),
+                          [] (std::complex<double> a, std::complex<double> b) { return std::real(a) < std::real(b); }); 
+    min = *std::min_element( modelcoulomb_.ScreenedPotential_.begin(), modelcoulomb_.ScreenedPotential_.end(),
+                          [] (std::complex<double> a, std::complex<double> b) { return std::real(a) > std::real(b); }); 
+    output::print( "screened: ", std::real(min), std::real(max));
     /* define the index of Rgrid where (0,0,0) is */
     int index_origin_global = Rgrid__->find(Coordinate(0,0,0));
     HasOrigin_ = Rgrid__->mpindex.is_local(index_origin_global);
