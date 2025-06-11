@@ -29,6 +29,10 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
         ctx_->cfg().printresolution_pulse(ctx_->cfg().printresolution());
     }
 
+    ctx_->cfg().gap(Convert(ctx_->cfg().gap(), unit(ctx_->cfg().gap_units()),
+        AuEnergy));
+    ctx_->cfg().gap_units("auenergy");
+
     SpaceOfPropagation_Gradient_ = (ctx_->cfg().gradient_space() == "R" ? Space::R : Space::k);
 
     output::print("-> initializing material");
@@ -118,6 +122,7 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
 
     output::print("-> solve eigensystem");
     SettingUp_EigenSystem();
+    if( ctx_->cfg().gap() ) OpenGap(); 
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
 
 /* setting up TD equations */
@@ -728,4 +733,68 @@ void print_bandstructure(const std::vector<std::vector<double>>& bare_kpath__, O
     }
     Gnuplot << "plot \"BANDSTRUCTURE.txt\" w p" << std::endl;
     Gnuplot << "pause -1" << std::endl;
+}
+
+template<typename Func>
+double findextreme(Func func, const std::vector<mdarray<double,1>>& array, int bandindex, mpi::Communicator& comm)
+{
+    std::vector<double> local_extreme(comm.size());
+    local_extreme[kpool_comm.rank()] = findextreme(func, array, bandindex);
+    MPI_Allgather(MPI_IN_PLACE, 1, MPI_DOUBLE, &local_extreme[0], 1, MPI_DOUBLE, comm.communicator());
+    return *func(local_extreme.begin(), local_extreme.end());
+}
+
+template<typename Func>
+double findextreme(Func func, const std::vector<mdarray<double,1>>& array, int bandindex)
+{
+    std::vector<double> array_k(array.size());
+    for( int ik=0; ik<array.size(); ++ik ) {
+        array_k[ik] = array[ik](bandindex);
+    }
+    return *func(array_k.begin(), array_k.end());
+}
+
+void Simulation::OpenGap()
+{
+    /* find maximum of valence (we know eigenvalues are sorted) and min of conduction */
+    output::print("find bangap...");
+    using fwdit = std::vector<double>::iterator;
+    auto max_valence = findextreme([](fwdit a, fwdit b){return std::max_element(a,b);}, 
+                                    Band_energies_, ctx_->cfg().filledbands()-1, kpool_comm);
+    auto min_conduction = findextreme([](fwdit a, fwdit b){return std::min_element(a,b);}, 
+                                    Band_energies_, ctx_->cfg().filledbands(), kpool_comm);
+    auto dft_bandgap = min_conduction - max_valence;
+    output::print("bandgap:", Convert(dft_bandgap, AuEnergy, ElectronVolt));
+    /* open the gap with the desired value */
+    if( ctx_->cfg().gap() < dft_bandgap && std::abs(ctx_->cfg().gap() - dft_bandgap) > 1.e-05 ) {
+        output::print("Warning: You want to open a gap but you are closing it!");
+        output::print("dft band gap: ", dft_bandgap, "eV;   gap: ", ctx_->cfg().gap(), "eV");
+    }
+    auto deltaE = ctx_->cfg().gap() - dft_bandgap; 
+    if ( deltaE < 0 ) deltaE = -deltaE;
+
+    Operator<std::complex<double>> Corrected_hamiltonian;
+    Corrected_hamiltonian.initialize_fft(DensityMatrix_);
+    Corrected_hamiltonian.lock_space(Space::k);
+    Corrected_hamiltonian.lock_gauge(bloch);
+
+    auto& Corrected_hamiltonian_k = Corrected_hamiltonian.get_Operator(Space::k);
+    auto& Corrected_hamiltonian_R = Corrected_hamiltonian.get_Operator(Space::R);
+    for( int ik = 0; ik < Corrected_hamiltonian_k.get_nblocks(); ++ik ) {
+        for ( int ival = 0; ival < ctx_->cfg().filledbands(); ++ival ) {
+            Corrected_hamiltonian_k(ik, ival, ival) = Band_energies_[ik](ival) - deltaE/2.;
+        }
+        for ( int icond = ctx_->cfg().filledbands(); icond < Corrected_hamiltonian_k.get_nrows(); ++icond ) {
+            Corrected_hamiltonian_k(ik, icond, icond) = Band_energies_[ik](icond) + deltaE/2.;
+        }
+    }
+
+    Corrected_hamiltonian.go_to_wannier();
+    Corrected_hamiltonian.go_to_R();
+
+    /* copy in the material hamiltonian the corrected one */
+    material_.H.initialize_fft(DensityMatrix_);
+    std::copy(Corrected_hamiltonian_k.begin(), Corrected_hamiltonian_k.end(), material_.H.get_Operator_k().begin());
+    std::copy(Corrected_hamiltonian_R.begin(), Corrected_hamiltonian_R.end(), material_.H.get_Operator_R().begin());
+    
 }
