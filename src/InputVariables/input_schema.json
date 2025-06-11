@@ -14,9 +14,9 @@
         },
         "fermienergy_units": {
             "type": "string",
-            "default": "eV",
+            "default": "electronvolt",
             "enum": [
-                "eV",
+                "electronvolt",
                 "auenergy"
             ],
             "title": "Units used for the Fermi energy of the system"
@@ -25,6 +25,20 @@
             "type": "boolean",
             "default": false,
             "title": "If true, we go beyond IPA using HSEX theory"
+        },
+        "gap": {
+            "type": "number",
+            "default": 0,
+            "title": "Gap value, if we want to open more gap"
+        },
+        "gap_units": {
+            "type": "string",
+            "default": "electronvolt",
+            "enum": [
+                "electronvolt",
+                "auenergy"
+            ],
+            "title": "Units used for the gap we want to open"
         },
         "epsilon": {
             "type": "number",
