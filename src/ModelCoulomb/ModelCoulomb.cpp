@@ -108,7 +108,10 @@ void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>
     for(int in=0; in<nbnd; in++) {
         wannier_centers[in] = Coordinate(x0(in,in).real(), y0(in,in).real(), z0(in,in).real());
     }
-
+    output::print("wannier centers");
+    for(int in=0; in<nbnd; in++) {
+       output::print(wannier_centers[in].get("Cartesian")[0], wannier_centers[in].get("Cartesian")[1], wannier_centers[in].get("Cartesian")[2]);
+    }
     /* find minimum (non-zero) distance between wannier centers */
     min_distance_ = Coordinate(100,0,0,"Cartesian");
     min_distance_norm_ = min_distance_.norm();
@@ -116,7 +119,6 @@ void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>
         for(int im=in+1; im<nbnd; ++im) {
             auto distance = wannier_centers[in]-wannier_centers[im];
             if( distance.norm() < min_distance_norm_ && distance.norm() > 1.e-05 ) {
-                std::cout << "wannier centers: " << wannier_centers[in].get("Cartesian") << " " <<  wannier_centers[im].get("Cartesian") << std::endl;  
                 min_distance_ = distance;
                 min_distance_norm_ = min_distance_.norm();
             }
