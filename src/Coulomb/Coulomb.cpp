@@ -56,7 +56,6 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
             Hartree(icol, irow) = value;
         }
     }
-    std::cout << Hartree << std::endl;
 }
 
 /// @brief Setter for DM0 (Density Matrix of the ground state at Wannier gauge in R)
