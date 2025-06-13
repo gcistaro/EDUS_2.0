@@ -38,11 +38,6 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     output::print("-> initializing material");
     material_ = Material(ctx_->cfg().tb_file());
 
-    if( ctx_->cfg().kpath().size() > 1 ) {
-        output::print("-> Printing band structure");
-        print_bandstructure(ctx_->cfg().kpath(), material_.H);
-    }        
-
     output::print("-> initializing grid and arrays");
     auto MasterRgrid = std::make_shared<MeshGrid>(R, ctx_->cfg().grid());
     coulomb_.set_DoCoulomb(ctx_->cfg().coulomb());
@@ -124,6 +119,12 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     SettingUp_EigenSystem();
     if( ctx_->cfg().gap() ) OpenGap(); 
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
+
+    if( ctx_->cfg().kpath().size() > 1 ) {
+        output::print("-> Printing band structure");
+        print_bandstructure(ctx_->cfg().kpath(), material_.H);
+    }        
+
 
 /* setting up TD equations */
 #include "Functional_InitialCondition.hpp"
@@ -794,6 +795,8 @@ void Simulation::OpenGap()
 
     /* copy in the material hamiltonian the corrected one */
     material_.H.initialize_fft(DensityMatrix_);
+    material_.H.get_Operator(Space::R).set_MeshGrid(*DensityMatrix_.get_Operator_R().get_MeshGrid());
+    material_.H.initialized_dft = false;
     std::copy(Corrected_hamiltonian_k.begin(), Corrected_hamiltonian_k.end(), material_.H.get_Operator_k().begin());
     std::copy(Corrected_hamiltonian_R.begin(), Corrected_hamiltonian_R.end(), material_.H.get_Operator_R().begin());
     
