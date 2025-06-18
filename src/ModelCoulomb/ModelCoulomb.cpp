@@ -84,13 +84,11 @@ void ModelCoulomb::initialize_Potential( const std::shared_ptr<MeshGrid>& Rgrid_
 }
 
 void ModelCoulomb::initialize_Potential(const std::shared_ptr<MeshGrid>& Rgrid__, const int& nbnd__, mdarray<std::complex<double>,3>& Potential__,
-                                const bool& bare__)
+                                const bool& bare__, const std::string& coulomb_file_path__)
 {
     auto size_MG_global = Rgrid__->get_TotalSize();
     Potential__ = mdarray<std::complex<double>,3> ( { int( size_MG_global ), nbnd__, nbnd__ } );
-    auto potential_file_path = 
-                        ( bare__ ? ctx_->cfg().bare_file()
-                                 : ctx_->cfg().screen_file() );
+    auto potential_file_path = coulomb_file_path__;
     auto potential_file = ReadFile(potential_file_path.string());
 
     // read from the kcw file the R vectors where the potential is computed
@@ -135,7 +133,8 @@ void ModelCoulomb::initialize_Potential(const std::shared_ptr<MeshGrid>& Rgrid__
 /// @param dim__ The dimension of the system: 2->monolayer; 3->bulk
 /// @param MasterRGrid__ The grid in R space used in the code, (N.B: it is different than the one in r because that one is read from _tb file)
 void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>& r__, const int& dim__,            
-                             const std::shared_ptr<MeshGrid>& MasterRGrid__, const bool& read_interaction__)
+                              const std::shared_ptr<MeshGrid>& MasterRGrid__, const bool& read_interaction__,
+                              const std::string& bare_file_path__, const std::string& screen_file_path__)
 {
     
     /*
@@ -182,8 +181,8 @@ void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>
 
     /* initialize screened and bare potentials matrix elements */
     if (read_interaction__) {
-        initialize_Potential(Rgrid_, nbnd, BarePotential_, true);
-        initialize_Potential(Rgrid_, nbnd, ScreenedPotential_, false);
+        initialize_Potential(Rgrid_, nbnd, BarePotential_, true, bare_file_path__);
+        initialize_Potential(Rgrid_, nbnd, ScreenedPotential_, false, screen_file_path__);
     }
     else {
         initialize_Potential( Rgrid_, nbnd, BarePotential_    , wannier_centers, true);

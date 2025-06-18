@@ -39,7 +39,7 @@ class ModelCoulomb
         void initialize_Potential( const std::shared_ptr<MeshGrid>& Rgrid__, const int& nbnd__, mdarray<std::complex<double>,3>& Potential__, 
                                const std::vector<Coordinate>& wannier_centers__, const bool& bare__ );
         void initialize_Potential(const std::shared_ptr<MeshGrid>& Rgrid__, const int& nbnd__, mdarray<std::complex<double>,3>& Potential__,
-                                const bool& bare);
+                                const bool& bare__, const std::string& coulomb_file_path__);
         std::complex<double> V(const Coordinate& r__);
         std::complex<double> W(const Coordinate& r__);
         void set_epsilon(const double& Epsilon__);
