@@ -112,13 +112,14 @@ void ModelCoulomb::initialize_Potential(const std::shared_ptr<MeshGrid>& Rgrid__
     MeshGrid::Calculate_ConvolutionIndex(R_MeshGrid, Rgrid_shifted, *Operator<std::complex<double>>::MeshGrid_Null);
     auto& ci = MeshGrid::ConvolutionIndex[{R_MeshGrid.get_id(), Rgrid_shifted.get_id(), Operator<std::complex<double>>::MeshGrid_Null->get_id()}];
 
-    // build the screened coulomb interaction matrix elements in the imported R vectors
+    // build the coulomb interaction matrix elements in the imported R vectors
+    auto spin_fator = (bare__ ? 2 : 1);
     Potential__.fill(0.0);
     for (int iRCoulomb=0; iRCoulomb<R_MeshGrid.get_TotalSize(); iRCoulomb++) {
         for (int irow=0; irow<nbnd__; irow++) {
             for (int icol=0; icol<nbnd__; icol++) {
                 int iline = nbnd__*2*irow + 2*icol + (std::pow(nbnd__,2)*2+1)*iRCoulomb + 1;
-                Potential__(ci(iRCoulomb,0), irow, icol) = Convert(std::atof(potential_file[iline][3].c_str()), Rydberg, AuEnergy);
+                Potential__(ci(iRCoulomb,0), irow, icol) = spin_fator*(std::atof(potential_file[iline][3].c_str()), Rydberg, AuEnergy);
                 //std::cout << ci(iRCoulomb,0) << " " << ScreenedPotential_(ci(iRCoulomb,0), irow, icol) << std::endl;
                 //std::cout << "iRCoulomb = " << iRCoulomb << " | irow = " << irow + 1 << " | icol = " << icol + 1 << " potential = " << potential_file[iline][3].c_str() << std::endl;
                 //std::cout << (*Rgrid_)[ci(iRCoulomb,0)] << std::endl;
