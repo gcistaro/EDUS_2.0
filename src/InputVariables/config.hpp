@@ -113,7 +113,7 @@ class config_t
     {
         return dict_.at("/bare_file"_json_pointer).get<std::string>();
     }
-    inline void tb_file(std::string bare_file__)
+    inline void bare_file(std::string bare_file__)
     {
         if (dict_.contains("locked")) {
             throw std::runtime_error(locked_msg);

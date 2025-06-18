@@ -29,7 +29,7 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
     // == std::filesystem::path cwd = std::filesystem::current_path() / "RytovaKeldysh.txt";
     // == read_rk_py( RytovaKeldysh_TB, cwd.str());
 
-    modelcoulomb_.initialize(r__, 2, Rgrid__, read_interaction_);
+    modelcoulomb_.initialize(r__, 2, Rgrid__, read_interaction_, bare_file_path_, screen_file_path_);
 
     output::print("Maximum and minimum (in norm) of bare and screened interaction:");
     auto max = *std::max_element( modelcoulomb_.BarePotential_.begin(), modelcoulomb_.BarePotential_.end(),
@@ -72,6 +72,16 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
 void Coulomb::set_read_interaction(const bool& read_interaction__)
 {
     read_interaction_ = read_interaction__;
+}
+
+void Coulomb::set_bare_file_path(const std::string& bare_file_path__)
+{
+    bare_file_path_ = bare_file_path__;
+}
+
+void Coulomb::set_screen_file_path(const std::string& screen_file_path__)
+{
+    screen_file_path_ = screen_file_path__;
 }
 
 /// @brief Setter for DM0 (Density Matrix of the ground state at Wannier gauge in R)
