@@ -50,6 +50,16 @@
             "default": false,
             "title": "If true, electron-electron interactions are read from barecoulomb.txt and screencoulomb.txt."
         },
+        "bare_file": {
+            "type": "string",
+            "default": "./barecoulomb.txt",
+            "title": "Path of the bare Coulomb interaction"
+        },
+        "screen_file": {
+            "type": "string",
+            "default": "./screencoulomb.txt",
+            "title": "Path of the screened Coulomb interaction"
+        },
         "epsilon": {
             "type": "number",
             "default": 1.0,
