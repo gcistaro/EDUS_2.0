@@ -89,8 +89,8 @@ void ModelCoulomb::initialize_Potential(const std::shared_ptr<MeshGrid>& Rgrid__
     auto size_MG_global = Rgrid__->get_TotalSize();
     Potential__ = mdarray<std::complex<double>,3> ( { int( size_MG_global ), nbnd__, nbnd__ } );
     auto potential_file_path = 
-                        ( bare__ ? std::filesystem::current_path() / "barecoulomb.txt"
-                                 : std::filesystem::current_path() / "screencoulomb.txt" );
+                        ( bare__ ? ctx_->cfg().bare_file()
+                                 : ctx_->cfg().screen_file() );
     auto potential_file = ReadFile(potential_file_path.string());
 
     // read from the kcw file the R vectors where the potential is computed
@@ -113,13 +113,13 @@ void ModelCoulomb::initialize_Potential(const std::shared_ptr<MeshGrid>& Rgrid__
     auto& ci = MeshGrid::ConvolutionIndex[{R_MeshGrid.get_id(), Rgrid_shifted.get_id(), Operator<std::complex<double>>::MeshGrid_Null->get_id()}];
 
     // build the coulomb interaction matrix elements in the imported R vectors
-    auto spin_fator = (bare__ ? 2 : 1);
+    auto spin_factor = (bare__ ? 2 : 1);
     Potential__.fill(0.0);
     for (int iRCoulomb=0; iRCoulomb<R_MeshGrid.get_TotalSize(); iRCoulomb++) {
         for (int irow=0; irow<nbnd__; irow++) {
             for (int icol=0; icol<nbnd__; icol++) {
                 int iline = nbnd__*2*irow + 2*icol + (std::pow(nbnd__,2)*2+1)*iRCoulomb + 1;
-                Potential__(ci(iRCoulomb,0), irow, icol) = spin_fator*(std::atof(potential_file[iline][3].c_str()), Rydberg, AuEnergy);
+                Potential__(ci(iRCoulomb,0), irow, icol) = spin_factor*(std::atof(potential_file[iline][3].c_str()), Rydberg, AuEnergy);
                 //std::cout << ci(iRCoulomb,0) << " " << ScreenedPotential_(ci(iRCoulomb,0), irow, icol) << std::endl;
                 //std::cout << "iRCoulomb = " << iRCoulomb << " | irow = " << irow + 1 << " | icol = " << icol + 1 << " potential = " << potential_file[iline][3].c_str() << std::endl;
                 //std::cout << (*Rgrid_)[ci(iRCoulomb,0)] << std::endl;

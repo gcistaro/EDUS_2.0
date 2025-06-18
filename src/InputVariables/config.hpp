@@ -108,6 +108,30 @@ class config_t
         }
         dict_["/read_interaction"_json_pointer] = read_interaction__;
     }
+    /// path of the barecoulomb.txt file
+    inline auto bare_file() const
+    {
+        return dict_.at("/bare_file"_json_pointer).get<std::string>();
+    }
+    inline void tb_file(std::string bare_file__)
+    {
+        if (dict_.contains("locked")) {
+            throw std::runtime_error(locked_msg);
+        }
+        dict_["/bare_file"_json_pointer] = bare_file__;
+    }
+    /// path of the screencoulomb.txt file
+    inline auto screen_file() const
+    {
+        return dict_.at("/screen_file"_json_pointer).get<std::string>();
+    }
+    inline void screen_file(std::string screen_file__)
+    {
+        if (dict_.contains("locked")) {
+            throw std::runtime_error(locked_msg);
+        }
+        dict_["/screen_file"_json_pointer] = screen_file__;
+    }
     /// dielectric constant for RK potential
     inline auto epsilon() const
     {
