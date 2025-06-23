@@ -49,9 +49,10 @@ double struve(const double& X__, const double& v__)
 /// @param dim_ Dimension of the system: 2->monolayer; 3->bulk
 /// @param MasterRGrid Grid in R space used in the code, (N.B: it is different than the one in r because that one is read from _tb file)
 ModelCoulomb::ModelCoulomb(const std::array<Operator<std::complex<double>>,3>& r, const int& dim_,            
-                             const std::shared_ptr<MeshGrid>& MasterRGrid, const bool& read_interaction__)
+                           const std::shared_ptr<MeshGrid>& MasterRGrid, const bool& read_interaction__,
+                           const std::string& bare_file_path__, const std::string& screen_file_path__)
 {
-    initialize(r, dim_, MasterRGrid, read_interaction__);
+    initialize(r, dim_, MasterRGrid, read_interaction__, bare_file_path__, screen_file_path__);
 }
 
 /// @brief Initialization of both bare and screened matrix elements calling back the right function
@@ -89,7 +90,7 @@ void ModelCoulomb::initialize_Potential(const std::shared_ptr<MeshGrid>& Rgrid__
     auto size_MG_global = Rgrid__->get_TotalSize();
     Potential__ = mdarray<std::complex<double>,3> ( { int( size_MG_global ), nbnd__, nbnd__ } );
     auto potential_file_path = coulomb_file_path__;
-    auto potential_file = ReadFile(potential_file_path.string());
+    auto potential_file = ReadFile(potential_file_path);
 
     // read from the kcw file the R vectors where the potential is computed
     std::vector<Coordinate> bare_Rmesh;
