@@ -47,8 +47,6 @@ class Simulation
         Space SpaceOfPropagation_ = k;
         /// Space where we calculate the gradient in k 
         Space SpaceOfPropagation_Gradient_ = R;
-        /// Type of Coulomb interaction taken
-        ModelCoulomb modelcoulomb_;
 
         /// Output text file to print the time values where we get the other text files printed
         std::ofstream os_Time_;
