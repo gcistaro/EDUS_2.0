@@ -38,13 +38,13 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     if (std::filesystem::exists(ctx_->cfg().screen_file())){
         ctx_->cfg().method("hsex");
         output::print("-> there is a screened Coulomb file so method is hsex");
-        ctx_->cfg().read_interaction("true");
+        ctx_->cfg().read_interaction(true);
         output::print("-> there is a screened Coulomb file so read_interaction is true");
     }
     else if (std::filesystem::exists(ctx_->cfg().bare_file())){
         ctx_->cfg().method("rpa");
         output::print("-> there is a bare Coulomb file so method is rpa");
-        ctx_->cfg().read_interaction("true");
+        ctx_->cfg().read_interaction(true);
         output::print("-> there is a bare Coulomb file so read_interaction is true");
     }
     if ( !ctx_->cfg().coulomb() ) {

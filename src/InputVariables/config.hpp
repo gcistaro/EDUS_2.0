@@ -101,7 +101,7 @@ class config_t
     {
         return dict_.at("/read_interaction"_json_pointer).get<bool>();
     }
-    inline void read_interaction(std::string read_interaction__)
+    inline void read_interaction(bool read_interaction__)
     {
         if (dict_.contains("locked")) {
             throw std::runtime_error(locked_msg);
