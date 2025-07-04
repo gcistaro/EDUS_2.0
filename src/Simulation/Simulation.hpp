@@ -11,6 +11,7 @@
 #include "initialize.hpp"
 #include "Json/json.hpp"
 #include "InputVariables/simulation_parameters.hpp"
+#include "Decay.hpp"
 
 void print_bandstructure(const std::vector<std::vector<double>>& bare_kpath, Operator<std::complex<double>> Hamiltonian);
 

@@ -273,6 +273,16 @@ class config_t
     {
         return dict_.at("/order"_json_pointer).get<int>();
     }
+    /// Decay parameter used in the Density Matrix equation of motion
+    inline auto decay() const{
+        return dict_.at("/decay"_json_pointer).get<double>();
+    }
+    inline void decay(double decay__){
+        if (dict_.contains("locked")){
+            throw std::runtime_error(locked_msg);
+        }
+        dict_["/solver"_json_pointer] = decay__;
+    }
     /// Kpath to print the band structure in crystal coordinates 
     inline std::vector<std::vector<double>> kpath()
     {

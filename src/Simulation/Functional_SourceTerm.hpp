@@ -21,6 +21,13 @@ SourceTerm =
                         Input__.get_Operator(SpaceOfPropagation_Gradient_), 
                         setoflaser_(time__), true);
 
+    /* Density matrix decay: Output -= decay * (Input - Input_eq) */
+    if (decay.get_Gamma() != 0.0){ // think how to generalize this later
+        decay.set_Gamma_DM_DM0(Input__);
+        // can also use this function to multiply constant in trivial case
+        SumWithProduct(Output__, 1.0, Input__, 1.0, decay.get_Gamma_DM_DM0().go_to_wannier());
+    }
+
     /* Coulomb interaction */
     H_.go_to_R(false);
     H_.get_Operator_R().fill(0);

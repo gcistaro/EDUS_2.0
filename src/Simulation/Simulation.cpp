@@ -3,6 +3,7 @@
 #include "core/projectdir.hpp"
 #include <cstdlib>
 #include <filesystem>
+#include "Decay.hpp"
 
 /// @brief Initialization of all the variables needed for the simulation, as well as allocation of memory
 /// and definition of the differential equations
@@ -136,9 +137,15 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
         setoflaser_.push_back(laser);
     }
 
+    output::print("-> Initializing decay");
+    Decay<double> decay;
+    decay.set_Gamma((*ctx_).cfg().decay());
+    decay.set_DM0(DensityMatrix_);
+
     output::print("-> solve eigensystem");
     SettingUp_EigenSystem();
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
+    
 
 /* setting up TD equations */
 #include "Functional_InitialCondition.hpp"
