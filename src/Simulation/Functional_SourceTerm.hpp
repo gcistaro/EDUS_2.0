@@ -25,7 +25,7 @@ SourceTerm =
     if (decay.get_Gamma() != 0.0){ // think how to generalize this later
         decay.set_Gamma_DM_DM0(Input__);
         // can also use this function to multiply constant in trivial case
-        SumWithProduct(Output__, 0.0, Input__, -1.0, decay.get_Gamma_DM_DM0().go_to_wannier());
+        SumWithProduct(Output__, 0.0, Input__, -1.0, decay.get_Gamma_DM_DM0());
     }
 
     /* Coulomb interaction */

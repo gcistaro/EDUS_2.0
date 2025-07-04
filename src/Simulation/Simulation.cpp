@@ -3,7 +3,6 @@
 #include "core/projectdir.hpp"
 #include <cstdlib>
 #include <filesystem>
-#include "Decay.hpp"
 
 /// @brief Initialization of all the variables needed for the simulation, as well as allocation of memory
 /// and definition of the differential equations
