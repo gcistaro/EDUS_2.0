@@ -32,6 +32,7 @@ SourceTerm =
     }
     H_.go_to_k(true);
 
+    DEsolver_DM_.DampingTerm_(Output__, Input__, time__);
 
     // Output += -i * [ H, Input ]
     Calculate_TDHamiltonian(time__, false);
@@ -40,5 +41,4 @@ SourceTerm =
     auto& H = H_.get_Operator(Space::k);
     commutator(Output, -im, H, Input, false);
 
-    DEsolver_DM_.DampingTerm_(Output, Input, time);
 };

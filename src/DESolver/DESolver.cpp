@@ -22,6 +22,7 @@ void DESolver<Operator<std::complex<double>>>::initialize(Operator<std::complex<
     EvaluateInitialCondition = EvaluateInitialCondition_;
     EvaluateSourceFunction = EvaluateSourceFunction_;
     EvaluateInitialCondition(*Function);
+    Function0_ = (*Function);
     //need to initialize fft!
     for(auto& aux_f : aux_Function) {
         aux_f.initialize_fft(*(Function));

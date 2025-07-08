@@ -27,9 +27,9 @@ template<typename T>
 class DESolver{
     protected:
         /// Function at time t in propagation. NB: the class does not own the object, needs to be destroyed somewhere else
-		T* Function;                  
+	T* Function;                  
         /// Initial point of the differential equation
-		double InitialTime = 0.;
+	double InitialTime = 0.;
         /// Resolution we use for the propagation 
         double ResolutionTime = 0.;
         /// Time updated during propagation so it really gives the current step
@@ -52,11 +52,9 @@ class DESolver{
         /// Order of the method used
         int order;
         /// Damping of Function
-        T Damping_;
+        double Damping_;
         /// Function at InitialTime
         T Function0_;
-        /// depending on the damping_ member, this function includes or not the damping term
-        std::function<void(const T&, const T&, const double&)> DampingTerm_;
 
         void Propagate_RK();
         void Propagate_AB();
@@ -86,8 +84,12 @@ class DESolver{
         void initialize_beta();
         SolverType get_type(){return type;}	
 
+        /// depending on the damping_ member, this function includes or not the damping term
+        std::function<void(T&, const T&, const double&)> DampingTerm_;
+
         void set_DampingTerm();
         void set_Damping(const double& Damping__);
+	double get_Damping();
 };
 
 /// @brief Initialize all the class variables
@@ -107,7 +109,7 @@ void DESolver<T>::initialize(T& Function__, const std::function<void(T&)>& Evalu
     EvaluateInitialCondition = EvaluateInitialCondition__;
     EvaluateSourceFunction = EvaluateSourceFunction__;
     EvaluateInitialCondition(*Function);
-    Function0_ = *Function;
+    Function0_ = (*Function);
 
     for( auto& aux_ : aux_Function) {
         aux_ = *Function;
@@ -269,12 +271,12 @@ T& DESolver<T>::get_Function()
 template <typename T>
 void DESolver<T>::set_DampingTerm(){
     if (Damping_ == 0.0){
-        DampingTerm_ = [] (const T& Output__, const T& Input__, const double& time__) {
+        DampingTerm_ = [] (T& Output__, const T& Input__, const double& time__) {
             (void)Output__; (void)Input__; (void)time__;
         };
     }
     else{
-        DampingTerm_ = [this] (const T& Output__, const T& Input__, const double& time__){
+        DampingTerm_ = [this] (T& Output__, const T& Input__, const double& time__){
             SumWithProduct(Output__, -Damping_, Input__, Damping_, Function0_);
         };
     }
@@ -283,6 +285,11 @@ void DESolver<T>::set_DampingTerm(){
 template <typename T>
 void DESolver<T>::set_Damping(const double& Damping__){
     Damping_ = Damping__;
+}
+
+template <typename T>
+double DESolver<T>::get_Damping(){
+	return Damping_;
 }
 
 
