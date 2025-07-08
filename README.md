@@ -109,6 +109,12 @@ N.B.: only crystal coordinates are supported for now. This will create a file `B
 gnuplot plotbands.gnu
 ```
 
+### Open gap using scissor operator
+You can open the gap using a simple scissor operator that does not change the eigenvectors, but only pushes the bands away from each others using the desired gap. The way to do it is to simply add a parameter in the json file: 
+```
+"gap" : 10.0,
+```
+this line pushes the bands until they are not at 10 eV of distance. 
 ---
 
 ## Adding new code
