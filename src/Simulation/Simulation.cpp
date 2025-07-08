@@ -120,6 +120,9 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     SettingUp_EigenSystem();
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
 
+    DEsolver_DM_.set_Damping((*ctx_).cfg().damping());
+    DEsolver_DM_.set_DampingTerm();
+
 /* setting up TD equations */
 #include "Functional_InitialCondition.hpp"
 #include "Functional_SourceTerm.hpp"

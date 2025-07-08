@@ -51,6 +51,12 @@ class DESolver{
         SolverType type;
         /// Order of the method used
         int order;
+        /// Damping of Function
+        T Damping_;
+        /// Function at InitialTime
+        T Function0_;
+        /// depending on the damping_ member, this function includes or not the damping term
+        std::function<void(const T&, const T&, const double&)> DampingTerm_;
 
         void Propagate_RK();
         void Propagate_AB();
@@ -79,6 +85,9 @@ class DESolver{
         void set_type(SolverType t){type = t;}
         void initialize_beta();
         SolverType get_type(){return type;}	
+
+        void set_DampingTerm();
+        void set_Damping(const double& Damping__);
 };
 
 /// @brief Initialize all the class variables
@@ -98,6 +107,7 @@ void DESolver<T>::initialize(T& Function__, const std::function<void(T&)>& Evalu
     EvaluateInitialCondition = EvaluateInitialCondition__;
     EvaluateSourceFunction = EvaluateSourceFunction__;
     EvaluateInitialCondition(*Function);
+    Function0_ = *Function;
 
     for( auto& aux_ : aux_Function) {
         aux_ = *Function;
@@ -256,6 +266,24 @@ T& DESolver<T>::get_Function()
     return *Function;
 }
 
+template <typename T>
+void DESolver<T>::set_DampingTerm(){
+    if (Damping_ == 0.0){
+        DampingTerm_ = [] (const T& Output__, const T& Input__, const double& time__) {
+            (void)Output__; (void)Input__; (void)time__;
+        };
+    }
+    else{
+        DampingTerm_ = [this] (const T& Output__, const T& Input__, const double& time__){
+            SumWithProduct(Output__, -Damping_, Input__, Damping_, Function0_);
+        };
+    }
+}
+
+template <typename T>
+void DESolver<T>::set_Damping(const double& Damping__){
+    Damping_ = Damping__;
+}
 
 
 template<>

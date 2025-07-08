@@ -40,4 +40,5 @@ SourceTerm =
     auto& H = H_.get_Operator(Space::k);
     commutator(Output, -im, H, Input, false);
 
+    DEsolver_DM_.DampingTerm_(Output, Input, time);
 };
