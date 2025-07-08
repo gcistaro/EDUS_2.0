@@ -766,13 +766,15 @@ void Simulation::OpenGap()
                                     Band_energies_, ctx_->cfg().filledbands(), kpool_comm);
     auto dft_bandgap = min_conduction - max_valence;
     output::print("bandgap:", Convert(dft_bandgap, AuEnergy, ElectronVolt));
+    output::print("dft band gap: ", Convert(dft_bandgap, AuEnergy, ElectronVolt), "eV;   gap: ",
+                  Convert(ctx_->cfg().gap(), AuEnergy, ElectronVolt), "eV");
+
     /* open the gap with the desired value */
     if( ctx_->cfg().gap() < dft_bandgap && std::abs(ctx_->cfg().gap() - dft_bandgap) > 1.e-05 ) {
         output::print("Warning: You want to open a gap but you are closing it!");
-        output::print("dft band gap: ", dft_bandgap, "eV;   gap: ", ctx_->cfg().gap(), "eV");
     }
-    auto deltaE = ctx_->cfg().gap() - dft_bandgap; 
-    if ( deltaE < 0 ) deltaE = -deltaE;
+    auto deltaE = std::abs( ctx_->cfg().gap() - dft_bandgap ); 
+    output::print("deltaE      : ", Convert(deltaE, AuEnergy, ElectronVolt), "eV" ) ;
 
     Operator<std::complex<double>> Corrected_hamiltonian;
     Corrected_hamiltonian.initialize_fft(DensityMatrix_);
@@ -781,6 +783,7 @@ void Simulation::OpenGap()
 
     auto& Corrected_hamiltonian_k = Corrected_hamiltonian.get_Operator(Space::k);
     auto& Corrected_hamiltonian_R = Corrected_hamiltonian.get_Operator(Space::R);
+    Corrected_hamiltonian_k.fill(0.);
     for( int ik = 0; ik < Corrected_hamiltonian_k.get_nblocks(); ++ik ) {
         for ( int ival = 0; ival < ctx_->cfg().filledbands(); ++ival ) {
             Corrected_hamiltonian_k(ik, ival, ival) = Band_energies_[ik](ival) - deltaE/2.;
@@ -790,14 +793,15 @@ void Simulation::OpenGap()
         }
     }
 
+    /* Copy the operator with open bandgap in material_.H */
     Corrected_hamiltonian.go_to_wannier();
     Corrected_hamiltonian.go_to_R();
 
+ 
     /* copy in the material hamiltonian the corrected one */
-    material_.H.initialize_fft(DensityMatrix_);
-    material_.H.get_Operator(Space::R).set_MeshGrid(*DensityMatrix_.get_Operator_R().get_MeshGrid());
     material_.H.initialized_dft = false;
+    material_.H.initialize_fft(DensityMatrix_, "hamiltonian");
+    material_.H.get_Operator(Space::R).set_MeshGrid(get_GammaCentered_grid(*DensityMatrix_.get_Operator_R().get_MeshGrid()));
     std::copy(Corrected_hamiltonian_k.begin(), Corrected_hamiltonian_k.end(), material_.H.get_Operator_k().begin());
     std::copy(Corrected_hamiltonian_R.begin(), Corrected_hamiltonian_R.end(), material_.H.get_Operator_R().begin());
-    
-}
+ }
