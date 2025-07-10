@@ -12,6 +12,8 @@ double struve(const double& x, const double& v);
 //computes Y_v(x)
 //this is contained in math.h
 
+class Coulomb;
+
 /// @brief Class for modelling matrix elements of Coulomb interaction in Point-Like approximation. We only store the non-zero elements
 class ModelCoulomb
 {
@@ -40,6 +42,8 @@ class ModelCoulomb
         mdarray<std::complex<double>,3> ScreenedPotential_;
         /// The bare interaction: BarePotential_(iR, i, j)  = @f$ \langle i \textbf{0}, j \textbf{R}[iR] | W | i \textbf{0}, j \textbf{R}[iR] \rangle @f$ 
         mdarray<std::complex<double>,3> BarePotential_;
+        
+        friend class Coulomb;
 };
 
 #endif
