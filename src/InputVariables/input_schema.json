@@ -131,6 +131,16 @@
             "default": 0.0,
             "title": "Damping in the density matrix equation of motion due to lifetime of a state in an open system."
         },
+        "damping_units":{
+            "type": "string",
+            "default": "autime",
+            "enum":[
+                "autime",
+                "ns",
+                "meV"
+            ],
+            "title": "Units for the damping coefficient in the density matrix equation of motion."
+        },
         "toprint": {
             "type":  "array",
             "title": "Big quantities that we want to print",

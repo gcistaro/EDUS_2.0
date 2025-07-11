@@ -21,6 +21,8 @@ extern Unit ElectronVolt;
 extern Unit Joule;
 extern Unit Wcm2;
 extern Unit FemtoSeconds;
+extern Unit NanoSeconds;
+extern Unit MilliElectronVolt;
 
 extern Unit AuIntensity;
 extern Unit AuTime;

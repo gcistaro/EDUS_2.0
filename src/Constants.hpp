@@ -16,6 +16,7 @@ constexpr double AtomicUnitOfTime      = 2.4188843265857*1.e-17; //s
 constexpr double Epsilon0              = 8.8541878188*1.e-12; //F m^-1
 constexpr double E0                    = 5.14220674763*1.e+11;//V m^-1 (Atomic units of electric field) 
 constexpr double FineStructure         = 7.2973525693*1.e-03;//pure units
+constexpr double PlanckConstant        = 6.62607015*1.e-34;// as in E = hf
 
 constexpr double SpeedOfLight_SI       = 299792458; // m s^-1 
 constexpr double SpeedOfLight          = 1./FineStructure; // a.u. 

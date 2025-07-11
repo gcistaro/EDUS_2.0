@@ -120,6 +120,29 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     SettingUp_EigenSystem();
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
 
+    /* damping  A IDEIA ESTA CERTA MAS ISTO ESTA MAL! O DAMPING TEM UNIDADES DE FREQUENCIA!! */
+    /*
+    if (ctx_->cfg().damping_units() == "meV"){
+        ctx_->cfg().damping(Convert(ctx_->cfg().damping(), unit(ctx_->cfg().damping_units()),
+        AuEnergy));
+    }
+    // in case lifetime is specified instead
+    else if (ctx_->cfg().damping_units() == "ns"){
+        ctx_->cfg().damping(PlanckConstant / (ctx_->cfg().damping() * 1.e-9 * ElectronVolt_value));
+    }
+    */
+    if (ctx_->cfg().damping_units() == "ns"){
+        auto lifetime = ctx_->cfg().damping();
+        ctx_->cfg().damping(1/Convert(lifetime, unit(ctx_->cfg().damping_units()), AuTime));
+    }
+    else if (ctx_->cfg().damping_units() == "meV"){
+        auto frequency = Convert(ctx_->cfg().damping(), MilliElectronVolt, ElectronVolt);
+        frequency = ctx_->cfg().damping() * PlanckConstant/ElectronVolt_value;
+        ctx_->cfg().damping(1/Convert(1/frequency, unit(ctx_->cfg().damping_units()), AuTime));
+
+    }
+    ctx_->cfg().damping(Convert(ctx_->cfg().damping(), unit(ctx_->cfg().damping_units()),
+        AuTime));
     DEsolver_DM_.set_Damping((*ctx_).cfg().damping());
     DEsolver_DM_.set_DampingTerm();
 

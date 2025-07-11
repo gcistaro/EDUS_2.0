@@ -12,6 +12,8 @@ Unit ElectronVolt(ENERGY,ElectronVolt_value);
 Unit Joule(ENERGY,1.);
 Unit Wcm2(INTENSITY, 1.e+04);
 Unit FemtoSeconds(TIME, 1.e-15);
+Unit NanoSeconds(TIME, 1.e-9);
+Unit MilliElectronVolt(ENERGY, ElectronVolt_value*1e3);
 
 Unit AuIntensity(INTENSITY, AtomicUnitOfIntensity);
 Unit AuTime(TIME, AtomicUnitOfTime);
@@ -21,17 +23,19 @@ Unit NullUnit(NullType, 0.);
 
 Unit unit( const std::string& to_unit)
 {
-    if( to_unit == "angstrom"    )    {return Angstrom; }
-    if( to_unit == "nanometers"  )    {return NanoMeters;  }
-    if( to_unit == "nm"          )    {return NanoMeters;  }
-    if( to_unit == "electronvolt")    {return ElectronVolt;  }
-    if( to_unit == "joule"       )    {return Joule;  }
-    if( to_unit == "wcm2"        )    {return Wcm2;  }
-    if( to_unit == "femtoseconds")    {return FemtoSeconds;  }
-    if( to_unit == "fs")              {return FemtoSeconds;  }
-    if( to_unit == "auintensity" )    {return AuIntensity; }
-    if( to_unit == "autime"      )    {return AuTime;  }
-    if( to_unit == "aulength"    )    {return AuLength;  }
-    if( to_unit == "auenergy"    )    {return AuEnergy;  }
+    if( to_unit == "angstrom"    )    {return Angstrom;           }
+    if( to_unit == "nanometers"  )    {return NanoMeters;         }
+    if( to_unit == "nm"          )    {return NanoMeters;         }
+    if( to_unit == "electronvolt")    {return ElectronVolt;       }
+    if( to_unit == "joule"       )    {return Joule;              }
+    if( to_unit == "wcm2"        )    {return Wcm2;               }
+    if( to_unit == "femtoseconds")    {return FemtoSeconds;       }
+    if( to_unit == "fs"          )    {return FemtoSeconds;       }
+    if( to_unit == "auintensity" )    {return AuIntensity;        }
+    if( to_unit == "autime"      )    {return AuTime;             }
+    if( to_unit == "aulength"    )    {return AuLength;           }
+    if( to_unit == "auenergy"    )    {return AuEnergy;           }
+    if( to_unit == "ns"          )    {return NanoSeconds;        }
+    if( to_unit == "meV"         )    {return MilliElectronVolt;  }    
     return NullUnit;
 }

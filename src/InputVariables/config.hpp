@@ -235,6 +235,16 @@ class config_t
         }
         dict_["/damping"_json_pointer] = damping__;
     }
+    ///Units for the damping coefficient in the density matrix equation of motion
+    inline auto damping_units() const{
+        return dict_.at("/damping_units"_json_pointer).get<std::string>();
+    }
+    inline void damping_units(std::string damping_units__){
+        if (dict_.contains("locked")){
+            throw std::runtime_error(locked_msg);
+        }
+        dict_["/solver"_json_pointer] = damping_units__;
+    }
     /// Kpath to print the band structure in crystal coordinates 
     inline std::vector<std::vector<double>> kpath()
     {
