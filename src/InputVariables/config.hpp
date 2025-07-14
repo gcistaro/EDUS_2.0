@@ -308,6 +308,10 @@ class config_t
         {
             return dict_.at("phase").get<double>();
         }
+        auto envelope() const
+        {
+            return dict_.at("envelope").get<std::string>();
+        }
 
     };
     class lasers_list_t {

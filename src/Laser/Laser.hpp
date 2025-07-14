@@ -71,15 +71,19 @@ class Envelope{
     private:
         double Duration = 0;
         double InitialTime = 0;
+
+        enum class type{ None, Sin2} EnvelopeType_;
     
     public:
         double operator()(const double& time);
         void set_Duration(const double& Duration_);
         void set_InitialTime(const double& InitialTime_);
+        void set_EnvelopeType(std::string EnvelopeType__);
 
         double get_Duration();
         double get_InitialTime();
         double get_FinalTime();
+        type get_EnvelopeType();
 
         friend class Laser;
 };
@@ -92,6 +96,7 @@ class Laser{
 
         Wave PlaneWave;
         Envelope envelope;
+        Envelope::type EnvelopeType_;
 
         double NumberOfCycles = 0;
         double Intensity = 0;
@@ -114,6 +119,7 @@ class Laser{
         void set_Intensity(const double& Intensity_, const Unit& InputUnit);
         void set_Polarization(const Coordinate& Polarization_);
         void set_TimeGrid(const TimeGrid& TimeGrid_);
+        void set_EnvelopeType(Envelope& envelope__);
         void print_info();
 
         double get_Duration();

@@ -100,7 +100,15 @@ double Envelope::operator()(const double& Time)
     if( t <= 1.e-07 || t > Duration){
         return 0.;
     }
-    return std::pow(std::sin(pi*t/Duration), 2.);
+    else{
+        if (Type_ == type::None){
+            return 1.;
+        }
+        else if (Type_ == type::Sin2){
+            return std::pow(std::sin(pi*t/Duration), 2.);       
+        }
+    }
+    return 0.0;
 }
 
 void Envelope::set_Duration(const double& Duration_)
@@ -126,6 +134,19 @@ double Envelope::get_FinalTime()
 void Envelope::set_InitialTime(const double& InitialTime_)
 {
     InitialTime = InitialTime_;
+}
+
+void Envelope::set_EnvelopeType(std::string EnvelopeType__){
+    if (EnvelopeType__ == "Sin2"){
+        EnvelopeType_ = type::Sin2;
+    }
+    else{
+        EnvelopeType_ = type::None;
+    }
+}
+
+Envelope::type Envelope::get_EnvelopeType(){
+    return EnvelopeType_;
 }
 
 Coordinate Laser::operator()(const double& Time)
@@ -182,7 +203,7 @@ void Laser::set_Phase(const double& Phase_)
 }
 void Laser::set_NumberOfCycles(const double& NumberOfCycles_)
 {
-    NumberOfCycles = NumberOfCycles_; 
+    NumberOfCycles = NumberOfCycles_;
     auto Duration = NumberOfCycles*PlaneWave.get_Period();
     envelope.set_Duration(Duration);
 }
@@ -231,6 +252,10 @@ double Laser::get_Omega()
 double Laser::get_Lambda() 
 {
     return PlaneWave.get_Lambda();
+}
+
+void Laser::set_EnvelopeType(Envelope& envelope__){
+    EnvelopeType_ = envelope__.get_EnvelopeType();
 }
 
 void Laser::print_info()

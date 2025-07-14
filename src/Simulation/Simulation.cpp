@@ -92,11 +92,15 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
 
     output::print("-> initializing lasers");
     for (int ilaser = 0; ilaser < int(ctx_->cfg().lasers().size()); ++ilaser) {
+        // current data e a informacao do laser ilaser
         auto currentdata = ctx_->cfg().lasers(ilaser);
+        // inicia se o objeto laser. o seu scope e so neste loop
         Laser laser;
         
+        // ve o input metido no currentdata e da ao laser o tempo inicial e a intensidade
         laser.set_InitialTime(currentdata.t0(), unit(currentdata.t0_units()));
         laser.set_Intensity(currentdata.intensity(), unit(currentdata.intensity_units()));
+        // dependendo do que foi definido no input, poe lhe a frequencia ou o comprimento de onda, e mediante disto, calcula o comprimento de onda ou a frequencia, respetivamente
         auto freq_wavelength = wavelength_or_frequency(ilaser);
         if (freq_wavelength == "frequency") {
             laser.set_Omega(currentdata.frequency(),
@@ -107,30 +111,39 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
                 unit(currentdata.wavelength_units()));
             ctx_->cfg().dict()["lasers"][ilaser]["frequency"] = laser.get_Omega();
         }
+        // poe o numero de ciclos
         laser.set_NumberOfCycles(currentdata.cycles());
+        // da lhe a fase
         laser.set_Phase(currentdata.phase());
+
+        // constructor que constroi inicializa o vetor pol
         Coordinate pol(currentdata.polarization()[0], currentdata.polarization()[1],
             currentdata.polarization()[2]);
+        // faz de pol um vetor unitario
         pol = pol / pol.norm();
+        // da ao objeto laser esta polarizacao
         laser.set_Polarization(pol);
+        Envelope envelope;
+        envelope.set_EnvelopeType(ctx_->cfg().dict()["lasers"][ilaser]["envelope"]);
+        laser.set_EnvelopeType(envelope);
+        // adiciona este laser aos outros
         setoflaser_.push_back(laser);
+
+        /* 
+        faz sentido por aqui o envelope? 
+        o envelope e passado a mao na funcao VectorPotential da classe Laser. como e que se ativa esta funcao?
+        e chamada na classe SetOfLaser. 
+        na verdade nao e bem assim. mais a baixo, em "auto las = setoflaser_(time__).get("Cartesian");", a funcao setoflaser no tempo time_
+        e chamada, que por sua vez chama laser(Time), que por sua vez chama envelope(Time). e aqui que tenho que mudar (e tambem no VectorPotential
+        embora nao acho que seja tao importante)
+        */
     }
 
     output::print("-> solve eigensystem");
     SettingUp_EigenSystem();
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
 
-    /* damping  A IDEIA ESTA CERTA MAS ISTO ESTA MAL! O DAMPING TEM UNIDADES DE FREQUENCIA!! */
-    /*
-    if (ctx_->cfg().damping_units() == "meV"){
-        ctx_->cfg().damping(Convert(ctx_->cfg().damping(), unit(ctx_->cfg().damping_units()),
-        AuEnergy));
-    }
-    // in case lifetime is specified instead
-    else if (ctx_->cfg().damping_units() == "ns"){
-        ctx_->cfg().damping(PlanckConstant / (ctx_->cfg().damping() * 1.e-9 * ElectronVolt_value));
-    }
-    */
+    /* damping */
     if (ctx_->cfg().damping_units() == "ns"){
         auto lifetime = ctx_->cfg().damping();
         ctx_->cfg().damping(1/Convert(lifetime, unit(ctx_->cfg().damping_units()), AuTime));
@@ -141,8 +154,6 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
         ctx_->cfg().damping(1/Convert(1/frequency, unit(ctx_->cfg().damping_units()), AuTime));
 
     }
-    ctx_->cfg().damping(Convert(ctx_->cfg().damping(), unit(ctx_->cfg().damping_units()),
-        AuTime));
     DEsolver_DM_.set_Damping((*ctx_).cfg().damping());
     DEsolver_DM_.set_DampingTerm();
 

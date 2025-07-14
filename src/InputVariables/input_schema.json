@@ -265,6 +265,13 @@
                         "type": "number",
                         "default": 0.0,
                         "title": "Phase of the laser"
+                    },
+                    "envelope": {
+                        "type": "string",
+                        "default": "Sin2",
+                        "enum":["None",
+                            "Sin2"],
+                        "title": "Envelope of laser pulse."
                     }
                 }
             }, 
