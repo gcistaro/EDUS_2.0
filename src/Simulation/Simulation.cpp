@@ -124,7 +124,9 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
         // da ao objeto laser esta polarizacao
         laser.set_Polarization(pol);
         Envelope envelope;
+	std::cout << ctx_->cfg().dict()["lasers"][ilaser]["envelope"] << std::endl;
         envelope.set_EnvelopeType(ctx_->cfg().dict()["lasers"][ilaser]["envelope"]);
+	std::cout << "gets here" << std::endl;
         laser.set_EnvelopeType(envelope);
         // adiciona este laser aos outros
         setoflaser_.push_back(laser);

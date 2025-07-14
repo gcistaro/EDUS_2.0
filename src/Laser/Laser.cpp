@@ -101,10 +101,10 @@ double Envelope::operator()(const double& Time)
         return 0.;
     }
     else{
-        if (Type_ == type::None){
+        if (EnvelopeType_ == type::None){
             return 1.;
         }
-        else if (Type_ == type::Sin2){
+        else if (EnvelopeType_ == type::Sin2){
             return std::pow(std::sin(pi*t/Duration), 2.);       
         }
     }
