@@ -360,8 +360,8 @@
                         "enum":["None",
                             "Sin2"],
                         "title": "Envelope of laser pulse."
-		    }
-		}
+		            }
+                }
             }
         }
     }
