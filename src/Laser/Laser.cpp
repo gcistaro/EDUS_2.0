@@ -149,6 +149,16 @@ Envelope::type Envelope::get_EnvelopeType(){
     return EnvelopeType_;
 }
 
+std::string Envelope::get_EnvelopeType_string(){
+	if (EnvelopeType_ == type::Sin2){
+		return "Sin2";
+	}
+	else if (EnvelopeType_ == type::None){
+		return "None";
+	}
+	return "Unknown";
+}
+
 Coordinate Laser::operator()(const double& Time)
 {
     return (Amplitude*envelope(Time)*PlaneWave(Time))*Polarization;
@@ -255,8 +265,13 @@ double Laser::get_Lambda()
 }
 
 void Laser::set_EnvelopeType(Envelope& envelope__){
-    EnvelopeType_ = envelope__.get_EnvelopeType();
+     envelope.set_EnvelopeType(envelope__.get_EnvelopeType_string());
 }
+
+std::string Laser::get_EnvelopeType_string(){
+	return envelope.get_EnvelopeType_string();
+}
+
 
 void Laser::print_info()
 {
@@ -272,6 +287,7 @@ void Laser::print_info()
     auto t0 = envelope.InitialTime;
     output::print("Initial Time:       *     ", t0,                     " a.u.", Convert(t0, AuTime, FemtoSeconds), " fs");
     output::print("Phase               *     ", PlaneWave.get_Phase()/pi,    " \u03C0");
+    output::print("Envelope            *     ", std::string(8, ' '),  envelope.get_EnvelopeType_string());
     output::stars();
 }
 

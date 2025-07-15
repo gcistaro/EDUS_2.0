@@ -84,6 +84,7 @@ class Envelope{
         double get_InitialTime();
         double get_FinalTime();
         type get_EnvelopeType();
+	std::string get_EnvelopeType_string();
 
         friend class Laser;
 };
@@ -96,7 +97,6 @@ class Laser{
 
         Wave PlaneWave;
         Envelope envelope;
-        Envelope::type EnvelopeType_;
 
         double NumberOfCycles = 0;
         double Intensity = 0;
@@ -128,6 +128,7 @@ class Laser{
         double get_NumberOfCycles();
         double get_Lambda();
         double get_Omega();
+	std::string get_EnvelopeType_string();
 };
 
 
