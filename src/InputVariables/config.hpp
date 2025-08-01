@@ -308,6 +308,10 @@ class config_t
         {
             return dict_.at("phase").get<double>();
         }
+        auto phase_units() const
+        {
+            return dict_.at("phase_units").get<std::string>();
+        }
         auto envelope() const
         {
             return dict_.at("envelope").get<std::string>();

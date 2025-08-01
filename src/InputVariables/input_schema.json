@@ -266,6 +266,15 @@
                         "default": 0.0,
                         "title": "Phase of the laser"
                     },
+                    "phase_units": {
+                        "type": "string",
+                        "default": "rads",
+                        "enum": [
+                            "rads",
+                            "degrees"
+                        ],
+                        "title": "Units of the phase of the laser."
+                    },
                     "envelope": {
                         "type": "string",
                         "default": "Sin2",
@@ -353,6 +362,15 @@
                         "type": "number",
                         "default": 0.0,
                         "title": "Phase of the laser"
+                    },
+                    "phase_units": {
+                        "type": "string",
+                        "default": "rads",
+                        "enum": [
+                            "rads",
+                            "degrees"
+                        ],
+                        "title": "Units of the phase of the laser."
                     },
                     "envelope": {
                         "type": "string",

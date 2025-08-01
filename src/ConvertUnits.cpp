@@ -14,11 +14,13 @@ Unit Wcm2(INTENSITY, 1.e+04);
 Unit FemtoSeconds(TIME, 1.e-15);
 Unit NanoSeconds(TIME, 1.e-9);
 Unit MilliElectronVolt(ENERGY, ElectronVolt_value*1.e-3);
+Unit Degrees(NullType, 180/pi);
 
 Unit AuIntensity(INTENSITY, AtomicUnitOfIntensity);
 Unit AuTime(TIME, AtomicUnitOfTime);
 Unit AuLength(LENGTH,Bohr_value);
 Unit AuEnergy(ENERGY,2.*Rydberg_value);
+Unit Rads(NullType, 1);
 Unit NullUnit(NullType, 0.);
 
 Unit unit( const std::string& to_unit)
@@ -36,6 +38,8 @@ Unit unit( const std::string& to_unit)
     if( to_unit == "aulength"    )    {return AuLength;           }
     if( to_unit == "auenergy"    )    {return AuEnergy;           }
     if( to_unit == "ns"          )    {return NanoSeconds;        }
-    if( to_unit == "meV"         )    {return MilliElectronVolt;  }    
+    if( to_unit == "meV"         )    {return MilliElectronVolt;  }
+    if( to_unit == "degrees"     )    {return Degrees;            }
+    if( to_unit == "rads"        )    {return Rads;               }
     return NullUnit;
 }

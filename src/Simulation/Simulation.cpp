@@ -108,7 +108,7 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
             ctx_->cfg().dict()["lasers"][ilaser]["frequency"] = laser.get_Omega();
         }
         laser.set_NumberOfCycles(currentdata.cycles());
-        laser.set_Phase(currentdata.phase());
+        laser.set_Phase(Convert(currentdata.phase(), unit(currentdata.phase_units()), Rads));
 
         Coordinate pol(currentdata.polarization()[0], currentdata.polarization()[1],
             currentdata.polarization()[2]);

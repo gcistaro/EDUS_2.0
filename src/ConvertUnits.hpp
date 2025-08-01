@@ -23,11 +23,13 @@ extern Unit Wcm2;
 extern Unit FemtoSeconds;
 extern Unit NanoSeconds;
 extern Unit MilliElectronVolt;
+extern Unit Degrees;
 
 extern Unit AuIntensity;
 extern Unit AuTime;
 extern Unit AuLength;
 extern Unit AuEnergy;
+extern Unit Rads;
 
 
 template<typename T>
