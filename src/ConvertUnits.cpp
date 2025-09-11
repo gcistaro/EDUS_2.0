@@ -14,7 +14,7 @@ Unit Wcm2(INTENSITY, 1.e+04);
 Unit FemtoSeconds(TIME, 1.e-15);
 Unit NanoSeconds(TIME, 1.e-9);
 Unit MilliElectronVolt(ENERGY, ElectronVolt_value*1.e-3);
-Unit Degrees(NullType, 180/pi);
+Unit Degrees(NullType, pi/180);
 
 Unit AuIntensity(INTENSITY, AtomicUnitOfIntensity);
 Unit AuTime(TIME, AtomicUnitOfTime);
