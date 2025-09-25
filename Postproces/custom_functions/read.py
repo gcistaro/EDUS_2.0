@@ -3,10 +3,26 @@ import os
 from scipy import constants
 
 
-def read_observables(folder, version):
+def read_observables(folder, version, print_info = False):
+    ''' Reads folder and extracts Time, Population, Laser and Velocity
+
+    Returns
+    -------
+    t_au
+        Time 
+    pt
+        Population 
+    et_au
+        Electric field
+    vt_au
+        Velocity 
+    '''
+    print(folder, version)
     if version == "new":
         if os.path.exists(folder + "/Time.txt"):
             t_au = np.loadtxt(folder + "/Time.txt", unpack=True)
+        else:
+            raise FileNotFoundError("Time file not found.")
         if os.path.exists(folder + "/Laser.txt"):
             Et_au = np.loadtxt(folder + "/Laser.txt", unpack=True)
         if os.path.exists(folder + "/Population.txt"):
@@ -47,7 +63,8 @@ def read_observables(folder, version):
     t_au  = t_au[:dim]
     Pt    = Pt[:,:dim]
     Vt_au = Vt_au[:,:dim]
-
+    if print_info:
+        print(t_au.shape, Pt.shape, Vt_au.shape, Et_au.shape)
     return t_au, Pt, Et_au, Vt_au
 
 
@@ -97,6 +114,6 @@ def read_recap(filename):
 
 
 def read_json(filename):
-    with open('data.json', 'r') as file:
+    with open(filename, 'r') as file:
         data = json.load(file)
     return data

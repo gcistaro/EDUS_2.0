@@ -1,12 +1,27 @@
 # from Info_making import read_info
-from IPython.display import display, Markdown
+
+try: 
+    from IPython.display import display, Markdown
+    from IPython import get_ipython
+    ip = get_ipython()
+    if ip is None:
+        isNotebook = False
+    else:
+        isNotebook = True
+except ModuleNotFoundError: 
+    print("Warning: IPython not found. Jupyter Notebook implementation not supported.")
+    isNotebook = False
+
 from custom_functions.read import read_json, read_observables
 import glob
 import scipy.constants as cst
 from custom_functions.fouriertransform import *
-from custom_functions.high_harmonics import findHarmPeaks
+from custom_functions.plotting import findHarmPeaks
+from custom_functions.plottingExp import *
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
+
+
 
 class Experience:
     '''A class for and EDUS experience.
@@ -14,14 +29,14 @@ class Experience:
     Parameters
     ----------
     path : str
-        Path to the results folder returned by EDUS. Folder must have the .txt files and the .json input file OR the .json input file and a subfolder /Outputs containing the .txt files.
+        Path to the results folder returned by EDUS. Folder must have the .txt files and the .json input file OR the .json input file and a subfolder named `/Outputs` containing the .txt files.
     laser_index : int, optional
         Index of the laser to consider as main. The HHG fundamental frequency will be the same as this laser.
     
     Attributes
     ----------
     path : str, private
-        Path to the results folder returned by EDUS. Folder must have the .txt files and the .json input file OR the .json input file and a subfolder /Outputs containing the .txt files.
+        Path to the results folder returned by EDUS. Folder must have the .txt files and the .json input file OR the .json input file and a subfolder named `/Outputs` containing the .txt files.    
     number : int, global
         ID of the instance.
 
@@ -69,6 +84,9 @@ class Experience:
 
     velocity_FT_dict : dict of arrays
         Stored arrays of the fourier transform (FT) of the velocity, using a defined smearing. Keys are :code:`f'{smearing}'`.
+    
+    # -------OBSOLETE----------
+
     HHG_spectrum : dict of HHG_Spectra
         Dictionary storing all the HHG spectras computed, using the parameters from :code:`gen_HHG_spectra(**kwargs)`method. Keys are in the form :code:`f"{key}_{value}" for key, value in **kwargs.items`.
     HHG_peaks_spectrum : dict of HHG_Peaks_Spectra
@@ -77,7 +95,7 @@ class Experience:
     Methods
     ---------
     `print_info()`
-        For jupyter notbooks usage, will pring a md recap of useful information of the experience.
+        For jupyter notbooks usage, will pring a markdown recap of useful information of the experience.
     
     `gen_observables(smearing=0.)`
         If not already done, generates the observables of the experience, as well as the FT of the field and the velocity using the provided smearing (only for velocity)
@@ -85,17 +103,21 @@ class Experience:
         If not already done, computes the FT of the acceleration from the FT of the velocity for the given smearing.
     `gen_HHG_peaks(max_harmonic=20, smearing=0.)`
         Finds the height of the emission at every harmonic order from 1 up to max_harmonics. The emission spectra is computed from :code:`gen_HHG_data(smearing)`.
-    `gen_HHG_spectra(start=0,stop=10,axes=[],cut_eV=0.)`
-        Generates an instance of :code:`HHG_Spectra(**kwargs)` and stores it in :code:`HHG_spectrum`.
-    `gen_HHG_peaks_spectra(max_harmonic=20,normed = False, axes = [])`
-        Generates an instance of :code:`HHG_Peak_Spectra(**kwargs)` and stores it in :code:`HHG_peaks_spectrum`.
 
+   
     `del_observables()`
         Deletes all stored observables previously generated with :code:`gen_observables`.
     `del_figures()`
         Deletes all stored figures.
     `del_HHG_peaks()`
         Deletes peaks data. 
+
+    # -------OBSOLETE---------- 
+
+    `gen_HHG_spectra(start=0,stop=10,axes=[],cut_eV=0.)`
+        Generates an instance of :code:`HHG_Spectra(**kwargs)` and stores it in :code:`HHG_spectrum`.
+    `gen_HHG_peaks_spectra(max_harmonic=20,normed = False, axes = [])`
+        Generates an instance of :code:`HHG_Peak_Spectra(**kwargs)` and stores it in :code:`HHG_peaks_spectrum`.
 
     `listFigures()`
         List all the figures stored.
@@ -113,7 +135,7 @@ class Experience:
         Experience.Exp_number += 1
         self.number = Experience.Exp_number
         self.__path = path 
-        self.__laser_index = laser_index
+        self.laser_index = laser_index
         info_dict = read_info(path)
 
         self.tb_file = info_dict['tb_file'].split('/')[-1] + '_tb.dat'
@@ -122,6 +144,7 @@ class Experience:
         self.dt = info_dict['dt']
         self.total_time = info_dict['finaltime']
         self.grid = info_dict['grid']
+        self.coulomb = info_dict['coulomb']
         self.lasers = []
         for laser in lasers_list:
             self.lasers.append(Laser(self,laser['intensity'], laser['frequency'], laser['frequency_units'],laser['polarization'], laser['cycles'], laser['t0']))
@@ -131,7 +154,7 @@ class Experience:
         self.HHG_spectrum = {}
         self.HHG_peaks_spectrum = {}
 
-        self.main_laser = self.lasers[self.__laser_index]
+        self.main_laser = self.lasers[self.laser_index]
 
         self.gen_observables()
 
@@ -140,7 +163,7 @@ class Experience:
 
         formatted_dt = f"${self.dt / 10**int(f'{self.dt:e}'.split('e')[1]):.2f} \\cdot" + r"10^{" + f"{{{int(f'{self.dt:e}'.split('e')[1])}}}" + r"}$"
 
-        self._info = self._info + f'### Simulation info:\n* Hamiltonian file : {self.tb_file} \n* Number of filled bands : {self.filled_bands}\n* Time step : {formatted_dt} fs\n* Total time : ${self.total_time}$ fs\n* Grid : ${self.grid[0]}\\times {self.grid[1]}$'
+        self._info = self._info + f'### Simulation info:\n* Hamiltonian file : {self.tb_file} \n* Number of filled bands : {self.filled_bands}\n* Coulomb Interactions: {self.coulomb}\n* Time step : {formatted_dt} fs\n* Total time : ${self.total_time}$ fs\n* Grid : ${self.grid[0]}\\times {self.grid[1]}$'
 
         for laser in self.lasers:
 
@@ -148,8 +171,10 @@ class Experience:
 
             formatted_freq = f"${laser.frequ_Hz / 10**int(f'{laser.frequ_Hz:e}'.split('e')[1]):.3f} \\cdot" + r"10^{" + f"{{{int(f'{laser.frequ_Hz:e}'.split('e')[1])}}}" + r"}$"
 
-            self._info = self._info + '\n ### Laser info:' f'\n* Frequency : ${laser.frequ_eV}$ eV *i.e.* {formatted_freq} Hz' + f'\n * Intensity : {formatted_i}'+  ' w.cm $^{-2}$' + f'\n * Cycles : ${laser.cycles}$' + f'\n * Total pulse duration : ${laser.total_pulse_time:.2f}$ fs'
+            formatted_axis = f"${laser.polarization[0]}" +  r"\vec{e}_x + "f"{laser.polarization[1]}" +  r"\vec{e}_y$"
 
+            self._info = self._info + '\n ### Laser info:' f'\n* Frequency : ${laser.frequ_eV}$ eV *i.e.* {formatted_freq} Hz' + f'\n * Intensity : {formatted_i}'+  ' w.cm $^{-2}$' +f"\n * Polarization : {formatted_axis}" +f'\n * Start Time : {laser.t0} fs'+ f'\n * Cycles : ${laser.cycles}$' + f'\n * Total pulse duration : ${laser.total_pulse_time:.2f}$ fs'
+        # Do a better formatting for laser info + delta T between pump and probe
         
         
 
@@ -177,7 +202,7 @@ class Experience:
         if f'{smearing}' not in self.velocity_FT_dict.keys():
             self.gen_observables(smearing=smearing)
 
-        self.HHG_fund_freq_eV = self.lasers[self.__laser_index].frequ_eV
+        self.HHG_fund_freq_eV = self.lasers[self.laser_index].frequ_eV
 
         Aw_au = self.velocity_FT_dict[f'{smearing}'] * 1j * self.frequ_axis_au
 
@@ -188,11 +213,11 @@ class Experience:
         self.HHG_acceleration_freq_au = np.linalg.norm(Aw_au, axis=0) #norm over all axis
 
 
-    def gen_HHG_peaks(self,max_harmonic=20, smearing = 0.): ##### OBSOLETE SINCE NEW PEAKS SEARCH ! 
+    def gen_HHG_peaks(self,max_harmonic=20, smearing = 0., cutoff = 1.5e-1): 
 
-        self.gen_HHG_data(smearing=smearing) #generating HHG data is fast, can just select the one needed.
+        self.gen_HHG_data(smearing=smearing) #generating HHG data is fast, can just recalculate the one needed each time.
 
-        self.HHG_harm_idx = findHarmPeaks(self.frequ_axis_eV/self.HHG_fund_freq_eV, self.HHG_acceleration_freq_au, limit=max_harmonic)
+        self.HHG_harm_idx = findHarmPeaks(self.frequ_axis_eV/self.HHG_fund_freq_eV, self.HHG_acceleration_freq_au, limit=max_harmonic, cutoff=cutoff)
         self.HHG_pics_height = self.HHG_acceleration_freq_au[self.HHG_harm_idx]**2
         self.HHG_normed_pics_height = self.HHG_pics_height**2/np.max(self.HHG_pics_height)**2
 
@@ -201,15 +226,41 @@ class Experience:
         # temp_dict['HHG_harm_idx_x'] = findHarmPeaks(self.frequ_axis_eV/self.HHG_fund_freq_eV, np.abs(self.HHG_acceleration_freq_au_x), limit=max_harmonic, cutoff=cutoff)
         # temp_dict['HHG_harm_idx_y'] = findHarmPeaks(self.frequ_axis_eV/self.HHG_fund_freq_eV, np.abs(self.HHG_acceleration_freq_au_y), limit=max_harmonic, cutoff=cutoff)
         # temp_dict['HHG_harm_idx_z'] = findHarmPeaks(self.frequ_axis_eV/self.HHG_fund_freq_eV, np.abs(self.HHG_acceleration_freq_au_z), limit=max_harmonic, cutoff=cutoff)
+    
+        
+    def del_figures(self):
+        self.HHG_spectrum = {}
+        self.HHG_peaks_spectrum = {}
 
+    def del_observables(self):
+        self.velocity_FT_dict = {}
+        self.time_au, self.population_time, self.field_time_au, self.velocity_time_au = None, None, None,None
+        self.frequ_axis_eV, self.field_freq_au = None, None
+        self.frequ_axis_au = None
 
+    def del_HHG_peaks(self):
+        self.HHG_harm_idx = None
+        self.HHG_pics_height = None
+
+    
+    def print_info(self):
+        if isNotebook:
+            display(Markdown(self._info))
+        else:
+            print(self._info)
+
+    ######################### OBSOLETE #########################
+    #                                                          #
+    #                Please refer to plotting.py               #
+    #                                                          #
+    ############################################################
 
     def gen_HHG_spectra(self, start = 0, stop=10, axes=[], smearing = 0.):
         if f'{smearing}' not in self.velocity_FT_dict.keys():
             print("Generating observables.")
             self.gen_observables(smearing=smearing)
         
-        self.gen_HHG_data()
+        self.gen_HHG_data(smearing=smearing)
         # if f'Start_{start}-Stop_{stop}-Axes_{axes}-Cut_eV_{cut_eV}' in self.HHG_spectrum.keys():
         #     print(f"Spectra already computed, plotting it now with Experience_{self.number}.plot_HHG_spectra(*args)\nYou can access it with Experience_{self.number}.HHG_spectrum['Start_{start}-Stop_{stop}-Axes_{axes}-Cut_eV_{cut_eV}']")
         #     self.plot_HHG_spectra(start=start, stop=stop, axes=axes, cut_eV=cut_eV)
@@ -228,30 +279,11 @@ class Experience:
             print("Generating peaks indexes.")
             self.gen_HHG_peaks(max_harmonic=max_harmonic)
         
-        if f'Max_harm_{max_harmonic}-Normed_{normed}-Axes_{axes}' in self.HHG_peaks_spectrum.keys():
-            print(f"Spectra already computed, plotting it now with Experience_{self.number}.plot_HHG_peaks_spectra(*args)\nYou can access it with Experience_{self.number}.HHG_peaks_spectrum['Max_harm_{max_harmonic}-Normed_{normed}-Axes_{axes}']")
-            self.plot_HHG_peaks_spectra(max_harmonic=max_harmonic, axes=axes, normed=normed)
-        else:
-            self.HHG_peaks_spectrum[f'Max_harm_{max_harmonic}-Normed_{normed}-Axes_{axes}'] = HHG_Peak_Spectra(self, max_harmonic=max_harmonic, axes=axes, normed=normed)
-        # self.HHG_peaks_spectrum[f'Cutoff_{cutoff}-Max_harm_{max_harmonic}-Normed_{normed}-Axes_{axes}'] = HHG_Peak_Spectra(self, max_harmonic=max_harmonic, axes=axes, cutoff=cutoff, normed=normed)
-        
-    def del_figures(self):
-        self.HHG_spectrum = {}
-        self.HHG_peaks_spectrum = {}
-
-    def del_observables(self):
-        self.velocity_FT_dict = {}
-        self.time_au, self.population_time, self.field_time_au, self.velocity_time_au = None, None, None,None
-        self.frequ_axis_eV, self.field_freq_au = None, None
-        self.frequ_axis_au = None
-
-    def del_HHG_peaks(self):
-        self.HHG_harm_idx = None
-        self.HHG_pics_height = None
-
-    
-    def print_info(self):
-        display(Markdown(self._info))
+        # if f'Max_harm_{max_harmonic}-Normed_{normed}-Axes_{axes}' in self.HHG_peaks_spectrum.keys():
+        #     print(f"Spectra already computed, plotting it now with Experience_{self.number}.plot_HHG_peaks_spectra(*args)\nYou can access it with Experience_{self.number}.HHG_peaks_spectrum['Max_harm_{max_harmonic}-Normed_{normed}-Axes_{axes}']")
+        #     self.plot_HHG_peaks_spectra(max_harmonic=max_harmonic, axes=axes, normed=normed)
+        # else:
+        self.HHG_peaks_spectrum[f'Max_harm_{max_harmonic}-Normed_{normed}-Axes_{axes}'] = HHG_Peak_Spectra(self, max_harmonic=max_harmonic, axes=axes, normed=normed)
 
     def plot_HHG_spectra(self, start = 0, stop=10, axes=[], smearing = 0.):
         """Plots the HHG spectra with the specified parameters
@@ -262,7 +294,11 @@ class Experience:
         """
         if f'Start_{start}-Stop_{stop}-Axes_{axes}-smearing_{smearing}' not in self.HHG_spectrum.keys():
             self.gen_HHG_spectra(start = start, stop=stop, axes=axes, smearing = smearing)
-            return self.HHG_spectrum[f'Start_{start}-Stop_{stop}-Axes_{axes}-smearing_{smearing}']
+            if isNotebook:
+                return self.HHG_spectrum[f'Start_{start}-Stop_{stop}-Axes_{axes}-smearing_{smearing}']
+            else:
+                plotFigures(self.HHG_spectrum[f'Start_{start}-Stop_{stop}-Axes_{axes}-smearing_{smearing}'])
+                return self.HHG_spectrum[f'Start_{start}-Stop_{stop}-Axes_{axes}-smearing_{smearing}']
         else:
             self.HHG_spectrum[f'Start_{start}-Stop_{stop}-Axes_{axes}-smearing_{smearing}'].show()
             return self.HHG_spectrum[f'Start_{start}-Stop_{stop}-Axes_{axes}-smearing_{smearing}']
@@ -337,6 +373,8 @@ class Laser:
     -------
     `plot(time_window = (0,0), axes=['x','y','z'])`
         Plots the laser pulses and returns the associated figure.
+    `plotSpectra(axes=[])`
+        Plots the laser spectra and returns the associated figure.
     
     """
     def __init__(self,experience, intensity, frequency, frequ_units, polarization, cycles, t0):
@@ -359,27 +397,25 @@ class Laser:
     def plot(self, time_window = (0,0), axes=['x','y','z']):
         """Plots the laser pulses.
 
-    Parameters
-    ----------
-    datadir : str
-        Path to data folder.
-    time_window : tuple of floats, optional
-        Time interval of the simulation to consider in au. If none provided, the whole laser is plotted.
-    axes : list of str, optional
-        Direction of polarisation of the laser to plot. If left empty, will plot the whole norm of the acceleration.
+        Parameters
+        ----------
+        time_window : tuple of floats, optional
+            Time interval of the simulation to consider in au. If none provided, the whole laser is plotted.
+        axes : list of str, optional
+            Direction of polarisation of the laser to plot. If left empty, will plot the whole norm of the laser.
 
-    Returns
-    -------
-    fig : matplotlib.pyplot.Figure
-        The absorption spectra.
+        Returns
+        -------
+        fig : matplotlib.pyplot.Figure
+            The laser shape in time.
 
-    Raises
-    -------
-    ValueError
-        If the time_window provided is not in proper order.
-    ValueError
-        If the axes are not provided properly, i.e. different than x, y and z or empty.
-    """
+        Raises
+        -------
+        ValueError
+            If the time_window provided is not in proper order.
+        ValueError
+            If the axes are not provided properly, i.e. different than x, y and z or empty.
+        """
         
         if time_window[0] > time_window[1]:
             raise ValueError(f"You cannot reverse time !")
@@ -406,11 +442,79 @@ class Laser:
         ###### Plotting ######
         fig, ax = plt.subplots()
         
+        if axes == []:
+            ax.plot(time_au, np.linalg.norm(laser_au, axis = 0))
         for axe in axes:
             ax.plot(time_au, locals()["laserA_au_" + axe], label = r"Along " + axe)
         
         ax.legend()
-        return fig
+        if isNotebook:
+            return fig
+        else:
+            fig.show()
+            return fig
+        
+    def plot3D(self,axes= ['x', 'y']):
+
+        exp = self.__experience
+        temp_dict = { 'x':0, 'y':1, 'z':2}
+
+        for axe in axes:
+            locals()['Laser_'+axe] = exp.field_time_au[temp_dict[axe], :]
+
+        Time = np.linspace(0, len(locals()['Laser_'+axe]), len(locals()['Laser_'+axe]))
+        ax = plt.figure().add_subplot(projection ='3d')
+
+        ax.plot(locals()['Laser_'+axes[0]], locals()['Laser_'+axes[1]], Time)
+    
+    def plotSpectra(self, axes=[]):
+        """Plots the laser pulse in frequency.
+
+        Parameters
+        ----------
+        axes : list of str, optional
+            Direction of polarisation of the laser to plot. If left empty, will plot the whole norm of the laser.
+
+        Returns
+        -------
+        fig : matplotlib.pyplot.Figure
+            The laser spectra.
+
+        Raises
+        -------
+        ValueError
+            If the axes are not provided properly, i.e. different than x, y and z or empty.
+        """
+
+        if not hasattr(self.__experience, 'time_au'):
+            self.__experience.gen_observables()
+        
+        frequ_eV = self.__experience.frequ_axis_eV
+        field_spect = self.__experience.field_freq_au
+
+        field_spect_x = field_spect[0, :]
+        field_spect_y = field_spect[1, :]
+        field_spect_z = field_spect[2, :]
+
+        ###### Plotting ######
+        fig, ax = plt.subplots()
+
+
+        if axes == []:
+            ax.plot(frequ_eV, np.linalg.norm(field_spect, axis = 0))
+        for axe in axes:
+            ax.plot(frequ_eV, locals()["field_spect_" + axe], label = r"Along " + axe)
+
+        ax.set_xlim(0,3* self.frequ_eV)
+        
+        ax.legend()
+        if isNotebook:
+            return fig
+        else:
+            plotFigures(fig)
+            return fig
+
+        
         
 
 
@@ -662,7 +766,7 @@ def plotFigures(fig):
     plt.show()
     return figure
 
-def joinFigures(fig1, fig2, samefig = False):
+def joinFigures(fig1, fig2, samefig = False, axbyax  = False):
     """Joins two matplotlib.pyplot.Figure into a new one.
 
     Parameters
@@ -692,59 +796,97 @@ def joinFigures(fig1, fig2, samefig = False):
     
 
     if samefig:
-        mergedFigure, axes = plt.subplots()
-        axes = [axes]
+        if axbyax:
+            mergedFigure, axes = plt.subplots(len(fig1Axes), 1)
+        else: 
+            mergedFigure, axes = plt.subplots()
+            axes = [axes]
     else:
         mergedFigure, axes = plt.subplots(len(fig1Axes) + len(fig2Axes), 1)
 
-    i = 0 
-    for ax in fig1Axes:
-        for line in ax.get_lines():
-            axes[i].plot(line.get_xdata(), line.get_ydata(), label = line.get_label(), color= line.get_color(), linestyle = line.get_linestyle())
-        for collection in ax.collections:
-            offsets = collection.get_offsets()
-            axes[i].scatter(offsets[:,0], offsets[:,1])
-        for text in ax.texts:  # Handle text elements
-            axes[i].text(text.get_position()[0], text.get_position()[1], text.get_text(), fontsize=text.get_fontsize(), color=text.get_color())
+    
+    if axbyax:
+        for i in range(len(axes)):
+            ax = fig1Axes[i]
+            for line in ax.get_lines():
+                axes[i].plot(line.get_xdata(), line.get_ydata(), label = line.get_label(), linestyle = line.get_linestyle())
+            for collection in ax.collections:
+                offsets = collection.get_offsets()
+                axes[i].scatter(offsets[:,0], offsets[:,1])
+            for text in ax.texts:  # Handle text elements
+                axes[i].text(text.get_position()[0], text.get_position()[1], text.get_text(), fontsize=text.get_fontsize(), color=text.get_color())
 
-        axes[i].set_xlim(ax.get_xlim())
-        axes[i].set_ylim(ax.get_ylim())
+            ax = fig2Axes[i]
+            for line in ax.get_lines():
+                axes[i].plot(line.get_xdata(), line.get_ydata(), label = line.get_label(), linestyle = line.get_linestyle())
+            for collection in ax.collections:
+                offsets = collection.get_offsets()
+                axes[i].scatter(offsets[:,0], offsets[:,1])
+            for text in ax.texts:  # Handle text elements
+                axes[i].text(text.get_position()[0], text.get_position()[1], text.get_text(), fontsize=text.get_fontsize(), color=text.get_color())
 
-        axes[i].set_xscale(ax.get_xscale())
-        axes[i].set_yscale(ax.get_yscale())
+            # axes[i].set_xlim(ax.get_xlim())
+            # axes[i].set_ylim(ax.get_ylim())
 
-        axes[i].set_xticks(ax.get_xticks())
-        axes[i].set_yticks(ax.get_yticks())
+            axes[i].set_xscale(ax.get_xscale())
+            axes[i].set_yscale(ax.get_yscale())
 
-        axes[i].set_xlabel(ax.get_xlabel())
-        axes[i].set_ylabel(ax.get_ylabel())
-        axes[i].set_title(ax.get_title())
-        axes[i].legend()
-        if not samefig:
-            i+=1
-    for ax in fig2Axes:
-        for line in ax.get_lines():
-            axes[i].plot(line.get_xdata(), line.get_ydata(), label = line.get_label(), color= line.get_color(), linestyle = line.get_linestyle())
-        for collection in ax.collections:
-            offsets = collection.get_offsets()
-            axes[i].scatter(offsets[:,0], offsets[:,1])
-        for text in ax.texts:  # Handle text elements
-            axes[i].text(text.get_position()[0], text.get_position()[1], text.get_text(), fontsize=text.get_fontsize(), color=text.get_color())
+            # axes[i].set_xticks(ax.get_xticks())
+            # axes[i].set_yticks(ax.get_yticks())
 
-        axes[i].set_xlim(ax.get_xlim())
-        axes[i].set_ylim(ax.get_ylim())
+            axes[i].set_xlabel(ax.get_xlabel())
+            axes[i].set_ylabel(ax.get_ylabel())
+            axes[i].set_title(ax.get_title())
+            axes[i].legend()
+    else:
+        i = 0 
+        for ax in fig1Axes:
+            for line in ax.get_lines():
+                axes[i].plot(line.get_xdata(), line.get_ydata(), label = line.get_label(), linestyle = line.get_linestyle())
+            for collection in ax.collections:
+                offsets = collection.get_offsets()
+                axes[i].scatter(offsets[:,0], offsets[:,1])
+            for text in ax.texts:  # Handle text elements
+                axes[i].text(text.get_position()[0], text.get_position()[1], text.get_text(), fontsize=text.get_fontsize(), color=text.get_color())
 
-        axes[i].set_xscale(ax.get_xscale())
-        axes[i].set_yscale(ax.get_yscale())
+            axes[i].set_xlim(ax.get_xlim())
+            axes[i].set_ylim(ax.get_ylim())
 
-        axes[i].set_xticks(ax.get_xticks())
-        axes[i].set_yticks(ax.get_yticks())
+            axes[i].set_xscale(ax.get_xscale())
+            axes[i].set_yscale(ax.get_yscale())
 
-        axes[i].set_xlabel(ax.get_xlabel())
-        axes[i].set_ylabel(ax.get_ylabel())
-        axes[i].set_title(ax.get_title())
-        axes[i].legend()
-        if not samefig:
-            i+=1
+            axes[i].set_xticks(ax.get_xticks())
+            axes[i].set_yticks(ax.get_yticks())
+
+            axes[i].set_xlabel(ax.get_xlabel())
+            axes[i].set_ylabel(ax.get_ylabel())
+            axes[i].set_title(ax.get_title())
+            axes[i].legend()
+            if not samefig:
+                i+=1
+        for ax in fig2Axes:
+            for line in ax.get_lines():
+                axes[i].plot(line.get_xdata(), line.get_ydata(), label = line.get_label(), linestyle = line.get_linestyle())
+            for collection in ax.collections:
+                offsets = collection.get_offsets()
+                axes[i].scatter(offsets[:,0], offsets[:,1])
+            for text in ax.texts:  # Handle text elements
+                axes[i].text(text.get_position()[0], text.get_position()[1], text.get_text(), fontsize=text.get_fontsize(), color=text.get_color())
+
+            axes[i].set_xlim(ax.get_xlim())
+            axes[i].set_ylim(ax.get_ylim())
+
+            axes[i].set_xscale(ax.get_xscale())
+            axes[i].set_yscale(ax.get_yscale())
+
+            axes[i].set_xticks(ax.get_xticks())
+            axes[i].set_yticks(ax.get_yticks())
+
+            axes[i].set_xlabel(ax.get_xlabel())
+            axes[i].set_ylabel(ax.get_ylabel())
+            axes[i].set_title(ax.get_title())
+            axes[i].legend()
+            if not samefig:
+                i+=1
 
     return mergedFigure
