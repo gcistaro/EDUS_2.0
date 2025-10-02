@@ -3,6 +3,8 @@
 int MeshGrid::counter_id = 0;
 std::map<std::array<int,3>, mdarray<int,2> > MeshGrid::ConvolutionIndex;
 
+MeshGrid MeshGrid::MasterRgrid;
+
 /*
 MeshGrid::MeshGrid(const MeshGrid& mg)
 {
@@ -353,7 +355,6 @@ Coordinate MeshGrid::reduce(const Coordinate& v, const std::array<double,3>& low
     std::array<int,3> grid_limit = (space==k) ? std::array<int,3>{1, 1, 1}
                                               : Size;
     auto notcart = v.get(LatticeVectors(space));
-
     for(int ix=0; ix<3; ix++){
         while( notcart[ix] < low_limit[ix] && std::abs( notcart[ix]-low_limit[ix] ) > threshold ){
             notcart[ix] += grid_limit[ix];
@@ -461,8 +462,8 @@ MeshGrid get_GammaCentered_grid(const MeshGrid& mesh__)
     std::array<double,3> low_limit;
     std::array<double,3> up_limit;
     for(auto& ix : {0,1,2}) {
-        low_limit[ix] = ( space == k ? -0.5 : -mesh__.get_Size()[ix]/2 );
-        up_limit[ix] = ( space == k ? 0.5 : (mesh__.get_Size()[ix])/2 );
+        low_limit[ix] = ( space == k ? -0.5 : -MeshGrid::MasterRgrid.get_Size()[ix]/2.);//-mesh__.get_Size()[ix]/2 );
+        up_limit[ix] = ( space == k ? 0.5 : MeshGrid::MasterRgrid.get_Size()[ix]/2.);//(mesh__.get_Size()[ix])/2 );
         if(up_limit[ix] == 0) {
             up_limit[ix] = 1;
         }

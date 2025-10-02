@@ -49,28 +49,28 @@ class config_t
         dict_["/fermienergy_units"_json_pointer] = fermienergy_units__;
     }
     /// Gap value, if we want to open more gap
-    inline auto gap() const
+    inline auto opengap() const
     {
-        return dict_.at("/gap"_json_pointer).get<double>();
+        return dict_.at("/opengap"_json_pointer).get<double>();
     }
-    inline void gap(double gap__)
+    inline void opengap(double gap__)
     {
         if (dict_.contains("locked")) {
             throw std::runtime_error(locked_msg);
         }
-        dict_["/gap"_json_pointer] = gap__;
+        dict_["/opengap"_json_pointer] = gap__;
     }
     /// Gap value, if we want to open more gap
-    inline auto gap_units() const
+    inline auto opengap_units() const
     {
-        return dict_.at("/gap_units"_json_pointer).get<std::string>();
+        return dict_.at("/opengap_units"_json_pointer).get<std::string>();
     }
-    inline void gap_units(std::string gap_units__)
+    inline void opengap_units(std::string gap_units__)
     {
         if (dict_.contains("locked")) {
             throw std::runtime_error(locked_msg);
         }
-        dict_["/gap_units"_json_pointer] = gap_units__;
+        dict_["/opengap_units"_json_pointer] = gap_units__;
     }
     /// If true, we go beyond IPA using HSEX theory
     inline auto coulomb() const

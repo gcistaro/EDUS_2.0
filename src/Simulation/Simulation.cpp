@@ -29,22 +29,17 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
         ctx_->cfg().printresolution_pulse(ctx_->cfg().printresolution());
     }
 
-    ctx_->cfg().gap(Convert(ctx_->cfg().gap(), unit(ctx_->cfg().gap_units()),
+    ctx_->cfg().opengap(Convert(ctx_->cfg().opengap(), unit(ctx_->cfg().opengap_units()),
         AuEnergy));
-    ctx_->cfg().gap_units("auenergy");
+    ctx_->cfg().opengap_units("auenergy");
 
     SpaceOfPropagation_Gradient_ = (ctx_->cfg().gradient_space() == "R" ? Space::R : Space::k);
 
     output::print("-> initializing material");
     material_ = Material(ctx_->cfg().tb_file());
 
-    if( ctx_->cfg().kpath().size() > 1 ) {
-        output::print("-> Printing band structure");
-        print_bandstructure(ctx_->cfg().kpath(), material_.H);
-    }        
-
     output::print("-> initializing grid and arrays");
-    auto MasterRgrid = std::make_shared<MeshGrid>(R, ctx_->cfg().grid());
+    MeshGrid::MasterRgrid = MeshGrid(R, ctx_->cfg().grid());
     coulomb_.set_DoCoulomb(ctx_->cfg().coulomb());
     coulomb_.set_epsilon(ctx_->cfg().epsilon());
     coulomb_.set_r0(Convert(ctx_->cfg().r0(), Angstrom, AuLength));
@@ -64,10 +59,10 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     // ==}
     Operator<std::complex<double>>::SpaceOfPropagation = SpaceOfPropagation_;
     auto& HR = material_.H.get_Operator_R();
-    Operator<std::complex<double>>::mpindex.initialize(MasterRgrid->get_Size(), HR.get_nrows() * HR.get_nrows());
+    Operator<std::complex<double>>::mpindex.initialize(MeshGrid::MasterRgrid.get_Size(), HR.get_nrows() * HR.get_nrows());
 
     output::print("-> Initializing fft and dft");
-    DensityMatrix_.initialize_fft(*MasterRgrid, HR.get_nrows());
+    DensityMatrix_.initialize_fft(MeshGrid::MasterRgrid, HR.get_nrows());
     
 #ifdef __DEBUG_MODE
     for(int ik=0; ik<DensityMatrix_.get_Operator(Space::k).get_MeshGrid()->get_TotalSize(); ++ik){
@@ -122,8 +117,13 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
 
     output::print("-> solve eigensystem");
     SettingUp_EigenSystem();
-    if( ctx_->cfg().gap() ) OpenGap(); 
+    if( ctx_->cfg().opengap() ) OpenGap(); 
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
+    if( ctx_->cfg().kpath().size() > 1 ) {
+        output::print("-> Printing band structure");
+        print_bandstructure(ctx_->cfg().kpath(), material_.H);
+    }        
+
 
 /* setting up TD equations */
 #include "Functional_InitialCondition.hpp"
@@ -757,21 +757,19 @@ double findextreme(Func func, const std::vector<mdarray<double,1>>& array, int b
 void Simulation::OpenGap()
 {
     /* find maximum of valence (we know eigenvalues are sorted) and min of conduction */
-    output::print("find bangap...");
-    using fwdit = std::vector<double>::iterator;
-    auto max_valence = findextreme([](fwdit a, fwdit b){return std::max_element(a,b);}, 
-                                    Band_energies_, ctx_->cfg().filledbands()-1, kpool_comm);
-    auto min_conduction = findextreme([](fwdit a, fwdit b){return std::min_element(a,b);}, 
-                                    Band_energies_, ctx_->cfg().filledbands(), kpool_comm);
-    auto dft_bandgap = min_conduction - max_valence;
-    output::print("bandgap:", Convert(dft_bandgap, AuEnergy, ElectronVolt));
+    //output::print("find bangap...");
+    //using fwdit = std::vector<double>::iterator;
+    //auto max_valence = findextreme([](fwdit a, fwdit b){return std::max_element(a,b);}, 
+    //                                Band_energies_, ctx_->cfg().filledbands()-1, kpool_comm);
+    //auto min_conduction = findextreme([](fwdit a, fwdit b){return std::min_element(a,b);}, 
+    //                                Band_energies_, ctx_->cfg().filledbands(), kpool_comm);
+    //auto dft_bandgap = min_conduction - max_valence;
+    //output::print("bandgap:", Convert(dft_bandgap, AuEnergy, ElectronVolt));
     /* open the gap with the desired value */
-    if( ctx_->cfg().gap() < dft_bandgap && std::abs(ctx_->cfg().gap() - dft_bandgap) > 1.e-05 ) {
-        output::print("Warning: You want to open a gap but you are closing it!");
-        output::print("dft band gap: ", dft_bandgap, "eV;   gap: ", ctx_->cfg().gap(), "eV");
-    }
-    auto deltaE = ctx_->cfg().gap() - dft_bandgap; 
-    if ( deltaE < 0 ) deltaE = -deltaE;
+    //if( ctx_->cfg().opengap() < dft_bandgap && std::abs(ctx_->cfg().opengap() - dft_bandgap) > 1.e-05 ) {
+    //    output::print("Warning: You want to open a gap but you are closing it!");
+    //    output::print("dft band gap: ", dft_bandgap, "eV;   gap: ", ctx_->cfg().opengap(), "eV");
+    //}
 
     Operator<std::complex<double>> Corrected_hamiltonian;
     Corrected_hamiltonian.initialize_fft(DensityMatrix_);
@@ -782,10 +780,10 @@ void Simulation::OpenGap()
     auto& Corrected_hamiltonian_R = Corrected_hamiltonian.get_Operator(Space::R);
     for( int ik = 0; ik < Corrected_hamiltonian_k.get_nblocks(); ++ik ) {
         for ( int ival = 0; ival < ctx_->cfg().filledbands(); ++ival ) {
-            Corrected_hamiltonian_k(ik, ival, ival) = Band_energies_[ik](ival) - deltaE/2.;
+            Corrected_hamiltonian_k(ik, ival, ival) = Band_energies_[ik](ival) - ctx_->cfg().opengap()/2.;
         }
         for ( int icond = ctx_->cfg().filledbands(); icond < Corrected_hamiltonian_k.get_nrows(); ++icond ) {
-            Corrected_hamiltonian_k(ik, icond, icond) = Band_energies_[ik](icond) + deltaE/2.;
+            Corrected_hamiltonian_k(ik, icond, icond) = Band_energies_[ik](icond) + ctx_->cfg().opengap()/2.;
         }
     }
 
@@ -793,6 +791,7 @@ void Simulation::OpenGap()
     Corrected_hamiltonian.go_to_R();
 
     /* copy in the material hamiltonian the corrected one */
+    material_.H.initialized_dft = false;
     material_.H.initialize_fft(DensityMatrix_);
     std::copy(Corrected_hamiltonian_k.begin(), Corrected_hamiltonian_k.end(), material_.H.get_Operator_k().begin());
     std::copy(Corrected_hamiltonian_R.begin(), Corrected_hamiltonian_R.end(), material_.H.get_Operator_R().begin());

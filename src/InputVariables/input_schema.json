@@ -26,12 +26,12 @@
             "default": false,
             "title": "If true, we go beyond IPA using HSEX theory"
         },
-        "gap": {
+        "opengap": {
             "type": "number",
             "default": 0,
             "title": "Gap value, if we want to open more gap"
         },
-        "gap_units": {
+        "opengap_units": {
             "type": "string",
             "default": "electronvolt",
             "enum": [
