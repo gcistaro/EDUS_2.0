@@ -108,7 +108,10 @@ void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>
     for(int in=0; in<nbnd; in++) {
         wannier_centers[in] = Coordinate(x0(in,in).real(), y0(in,in).real(), z0(in,in).real());
     }
-
+    output::print("wannier centers");
+    for(int in=0; in<nbnd; in++) {
+       output::print(wannier_centers[in].get("Cartesian")[0], wannier_centers[in].get("Cartesian")[1], wannier_centers[in].get("Cartesian")[2]);
+    }
     /* find minimum (non-zero) distance between wannier centers */
     min_distance_ = Coordinate(100,0,0,"Cartesian");
     min_distance_norm_ = min_distance_.norm();
@@ -116,7 +119,6 @@ void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>
         for(int im=in+1; im<nbnd; ++im) {
             auto distance = wannier_centers[in]-wannier_centers[im];
             if( distance.norm() < min_distance_norm_ && distance.norm() > 1.e-05 ) {
-                std::cout << "wannier centers: " << wannier_centers[in].get("Cartesian") << " " <<  wannier_centers[im].get("Cartesian") << std::endl;  
                 min_distance_ = distance;
                 min_distance_norm_ = min_distance_.norm();
             }
@@ -137,12 +139,15 @@ void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>
 std::complex<double> ModelCoulomb::W(const Coordinate& r__)
 {
     std::complex<double> Wr;
-    auto r_norm = r__.norm();
+    auto& rcart = r__.get("Cartesian");
+
+    auto r_reduced = Coordinate(rcart[0]/r0_[0], rcart[1]/r0_[1], rcart[2]/r0_[2]); 
+    auto r_norm = r_reduced.norm();
     switch(dim_)
     {
         case twoD:
         {
-            Wr = ( (r_norm < min_distance_norm_) ? W(min_distance_) : pi/(2.*r0_*epsilon_)*(struve(r_norm/r0_,0)-y0(r_norm/r0_)));
+            Wr = ( (r_norm < threshold) ? W(min_distance_) : pi/(2.*r0_avg_*epsilon_)*(struve(r_norm,0)-y0(r_norm)));
             break;
         }
         case threeD:
@@ -179,9 +184,48 @@ void ModelCoulomb::set_epsilon(const double& Epsilon__)
 
 /// @brief Set r0 in RytovaKeldysh model, not used otherwise
 /// @param r0__ Value we want to use as r0 (in a.u.)
-void ModelCoulomb::set_r0(const double& r0__)
+void ModelCoulomb::set_r0(const std::vector<double>& r0__)
 {
-    r0_ = r0__;
+    assert( r0__.size() > 0 && r0__.size() <= 3 );
+
+    r0_[0] = r0__[0];
+
+    switch( r0__.size() )
+    {
+        case 1:
+            /* if only one value is given in input, the thre components are the same*/
+            r0_[1] = r0__[0];
+            r0_[2] = r0__[0];
+            break;
+        case 2:
+            /* if two values are given in input, the third component is the avg of the first two */
+            r0_[1] = r0__[1];
+            r0_[2] = (r0__[0] + r0__[1] )/2.;
+            break;
+        case 3:
+            /* All three components are set from the input */
+            r0_[1] = r0__[1];
+            r0_[2] = r0__[2];
+            break;
+        default: 
+            break;
+    }
+    
+    r0_avg_ = ( r0_[0] + r0_[1] + r0_[2] )/ 3.;
+}
+
+/// @brief Getter for r0 of Rytova Keldysh
+///@return r0 in Rytova Keldysh, in a.u.
+std::array<double, 3>& ModelCoulomb::get_r0()
+{
+    return r0_;
+}
+
+/// @brief Getter for r0_avg of Rytova Keldysh
+///@return r0_avg in Rytova Keldysh, in a.u.
+double ModelCoulomb::get_r0_avg()
+{
+    return r0_avg_;
 }
 
 mdarray<std::complex<double>,3>& ModelCoulomb::get_ScreenedPotential()

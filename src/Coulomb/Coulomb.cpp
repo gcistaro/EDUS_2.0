@@ -56,7 +56,6 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
             Hartree(icol, irow) = value;
         }
     }
-    std::cout << Hartree << std::endl;
 }
 
 /// @brief Setter for DM0 (Density Matrix of the ground state at Wannier gauge in R)
@@ -82,9 +81,23 @@ void Coulomb::set_epsilon(const double& Epsilon__)
 
 /// @brief Set r0 in RytovaKeldysh model, not used otherwise
 /// @param r0__ Value we want to use as r0 (in a.u.)
-void Coulomb::set_r0(const double& r0__)
+void Coulomb::set_r0(const std::vector<double>& r0__)
 {
     modelcoulomb_.set_r0( r0__ );
+}
+
+/// @brief Getter for r0 of Rytova Keldysh
+///@return r0 in Rytova Keldysh, in a.u.
+std::array<double, 3>& Coulomb::get_r0()
+{
+    return modelcoulomb_.get_r0();
+}
+
+/// @brief Getter for r0_avg of Rytova Keldysh
+///@return r0_avg in Rytova Keldysh, in a.u.
+double Coulomb::get_r0_avg()
+{
+    return modelcoulomb_.get_r0_avg();
 }
 
 /// @brief Getter for DoCoulomb variable 

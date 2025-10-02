@@ -61,7 +61,27 @@ Currently, the code only supports reading the coulomb interaction from a file. T
 
 [comment]: # (by calling it as `PostProces/RytovaKeldysh.py <nk1> <nk2> <nk3> file_tb.dat`, where `<nk1> <nk2> <nk3>` are the number of kpoints in each cartesian direction and `file_tb.dat` is the Wannier90 output that will be used in the computation. )
 
-
+## Add new variable to the json file
+First, modify src/InputVariables/input_schema.json. 
+You need to specify the name of the variable, the variable type under the section "type" (ex. "string", "number", "array").
+We also suggest to put a default value for it that the code will take if the input parameter is not specified in the input, and a description under the section "title".
+After this, you can modify the config.hpp class adding your new input variable. you need to add two more methods in this format:
+```///<title>
+    inline auto <parameter-name>() const
+    {
+        return dict_.at("/<parameter-name>"_json_pointer).get<<parameter-type>>();
+    }
+    inline void <parameter-name>(<parameter-type> <parameter-name>__)
+    {
+        if (dict_.contains("locked")) {
+            throw std::runtime_error(locked_msg);
+        }
+        dict_["/<parameter-name>"_json_pointer] = <parameter-name>__;
+    }
+```
+Now that you defined it, make sure the parameter is used in the Simulation class to do what it is supposed to do.
+(if not, it will just be read and ignored).
+It would be nice that you also print it in print_recap in Simulation.cpp to keep track of it.
 
 ---
 
@@ -89,6 +109,12 @@ N.B.: only crystal coordinates are supported for now. This will create a file `B
 gnuplot plotbands.gnu
 ```
 
+### Open gap using scissor operator
+You can open the gap using a simple scissor operator that does not change the eigenvectors, but only pushes the bands away from each others using the desired gap. The way to do it is to simply add a parameter in the json file: 
+```
+"gap" : 10.0,
+```
+this line pushes the bands until they are not at 10 eV of distance. 
 ---
 
 ## Adding new code
@@ -102,3 +128,4 @@ gnuplot plotbands.gnu
 If you want to add a class from scratch, you need to add to the code two different files:
 1. A header file .hpp, that you will link to all the parts of the code that need your class using `#include <”file”.hpp>`. This class contains the declaration of your class together with the declaration of all the methods. “Declaration” means a line where you define return type, name, arguments but never their definition. This will be included in many parts of the code, so make sure it will be compiled only once with #ifdef.
 2. A source file .cpp, which contains the actual code to be used. You need to add this file in the list of __SOURCES in CMakeLists.txt so it will be compiled as an object file with the code. In this file you need to write the definition of everything you just declared in your .hpp file. 
+
