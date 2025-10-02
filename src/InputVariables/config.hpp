@@ -99,14 +99,26 @@ class config_t
     /// r0 screening length for RK potential
     inline auto r0() const
     {
-        return dict_.at("/r0"_json_pointer).get<double>();
+        return dict_.at("/r0"_json_pointer).get<std::vector<double>>();
     }
-    inline void r0(double r0__)
+    inline void r0(std::vector<double> r0__)
     {
         if (dict_.contains("locked")) {
             throw std::runtime_error(locked_msg);
         }
         dict_["/r0"_json_pointer] = r0__;
+    }
+    /// Units for r0
+    inline auto r0_units() const
+    {
+        return dict_.at("/r0_units"_json_pointer).get<std::string>();
+    }
+    inline void r0_units(std::string r0_units__)
+    {
+        if (dict_.contains("locked")) {
+            throw std::runtime_error(locked_msg);
+        }
+        dict_["/r0_units"_json_pointer] = r0_units__;
     }
     /// Dimension of the k grid (R as well) used for the simulation
     inline auto grid() const

@@ -255,7 +255,7 @@ class Operator
         {            
             auto nbnd = Op__.get_Operator_R().get_nrows();
             auto& MG = Op__.get_Operator_R().get_MeshGrid();
-            initialize_fft(*MG, nbnd, tagname);
+            initialize_fft(*MG, nbnd, tagname__);
         };
 
         void dft(const std::vector<Coordinate>& path, const int& sign, const bool& UseMPI=true)
