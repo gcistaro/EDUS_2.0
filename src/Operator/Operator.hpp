@@ -352,7 +352,9 @@ class Operator
                 }
             }
             std::vector< std::vector<double> > Mesh_FT;
-            auto& mesh_operator = Operator_R.get_MeshGrid()->get_mesh();
+            auto MeshR_GammaCentered =  get_GammaCentered_grid(
+                    *Operator_R.get_MeshGrid());
+            auto& mesh_operator = MeshR_GammaCentered.get_mesh();
 
             Mesh_FT.resize(mesh_operator.size());        
 

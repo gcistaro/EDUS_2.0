@@ -27,7 +27,7 @@ class MeshGrid
         
         //cube parameter
         std::array<int,3> Size;
-        
+
         //sphere parameter
         double maxRadius = 0;
         std::vector<ShellInfo> shellinfo;
@@ -44,7 +44,10 @@ class MeshGrid
 
         double shift_k = 0;
 
+
     public:
+        static MeshGrid MasterRgrid;
+
         MPIindex<3> mpindex;
         static std::map<std::array<int,3>, mdarray<int,2> > ConvolutionIndex;//to call it: [{id1,id2,id3}][{iR1,iR3}]
 
