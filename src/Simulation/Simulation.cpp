@@ -36,15 +36,9 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
         ctx_->cfg().printresolution_pulse(ctx_->cfg().printresolution());
     }
 
-<<<<<<< HEAD
     ctx_->cfg().opengap(Convert(ctx_->cfg().opengap(), unit(ctx_->cfg().opengap_units()),
         AuEnergy));
     ctx_->cfg().opengap_units("auenergy");
-=======
-    ctx_->cfg().gap(Convert(ctx_->cfg().gap(), unit(ctx_->cfg().gap_units()),
-        AuEnergy));
-    ctx_->cfg().gap_units("auenergy");
->>>>>>> 861e236aee84aee43ccc14a5000084df31a6c005
 
     SpaceOfPropagation_Gradient_ = (ctx_->cfg().gradient_space() == "R" ? Space::R : Space::k);
 
@@ -131,11 +125,7 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
 
     output::print("-> solve eigensystem");
     SettingUp_EigenSystem();
-<<<<<<< HEAD
     if( ctx_->cfg().opengap() ) OpenGap(); 
-=======
-    if( ctx_->cfg().gap() ) OpenGap(); 
->>>>>>> 861e236aee84aee43ccc14a5000084df31a6c005
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
     if( ctx_->cfg().kpath().size() > 1 ) {
         output::print("-> Printing band structure");
@@ -839,4 +829,3 @@ void Simulation::OpenGap()
     std::copy(Corrected_hamiltonian_R.begin(), Corrected_hamiltonian_R.end(), material_.H.get_Operator_R().begin());
     
 }
-
