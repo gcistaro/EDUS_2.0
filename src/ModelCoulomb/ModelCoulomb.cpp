@@ -87,8 +87,8 @@ void ModelCoulomb::initialize_Potential( const std::shared_ptr<MeshGrid>& Rgrid_
 void ModelCoulomb::initialize_Potential(const std::shared_ptr<MeshGrid>& Rgrid__, const int& nbnd__, mdarray<std::complex<double>,3>& Potential__,
                                 const bool& bare__, const std::string& coulomb_file_path__)
 {
-    auto size_MG_global = Rgrid__->get_TotalSize();
-    Potential__ = mdarray<std::complex<double>,3> ( { int( size_MG_global ), nbnd__, nbnd__ } );
+    auto size_MG_local = Rgrid__->get_LocalSize();
+    Potential__ = mdarray<std::complex<double>,3> ( { int( size_MG_local ), nbnd__, nbnd__ } );
     auto potential_file_path = coulomb_file_path__;
     auto potential_file = ReadFile(potential_file_path);
 
@@ -115,13 +115,16 @@ void ModelCoulomb::initialize_Potential(const std::shared_ptr<MeshGrid>& Rgrid__
     auto spin_factor = (bare__ ? 2 : 1);
     Potential__.fill(0.0);
     for (int iRCoulomb=0; iRCoulomb<R_MeshGrid.get_TotalSize(); iRCoulomb++) {
-        for (int irow=0; irow<nbnd__; irow++) {
-            for (int icol=0; icol<nbnd__; icol++) {
-                int iline = nbnd__*2*irow + 2*icol + (std::pow(nbnd__,2)*2+1)*iRCoulomb + 1;
-                Potential__(ci(iRCoulomb,0), irow, icol) = spin_factor*Convert(std::atof(potential_file[iline][3].c_str()), Rydberg, AuEnergy);
-                //std::cout << ci(iRCoulomb,0) << " " << ScreenedPotential_(ci(iRCoulomb,0), irow, icol) << std::endl;
-                //std::cout << "iRCoulomb = " << iRCoulomb << " | irow = " << irow + 1 << " | icol = " << icol + 1 << " potential = " << potential_file[iline][3].c_str() << std::endl;
-                //std::cout << (*Rgrid_)[ci(iRCoulomb,0)] << std::endl;
+        if ( Rgrid__->mpindex.is_local( ci(iRCoulomb,0) ) ) {
+            auto iR_local = Rgrid__->mpindex.glob1D_to_loc1D( ci(iRCoulomb,0) );
+            for (int irow=0; irow<nbnd__; irow++) {
+                for (int icol=0; icol<nbnd__; icol++) {
+                    int iline = nbnd__*2*irow + 2*icol + (std::pow(nbnd__,2)*2+1)*iRCoulomb + 1;
+                    Potential__(iR_local, irow, icol) = spin_factor*Convert(std::atof(potential_file[iline][3].c_str()), Rydberg, AuEnergy);
+                    //std::cout << ci(iRCoulomb,0) << " " << ScreenedPotential_(ci(iRCoulomb,0), irow, icol) << std::endl;
+                    //std::cout << "iRCoulomb = " << iRCoulomb << " | irow = " << irow + 1 << " | icol = " << icol + 1 << " potential = " << potential_file[iline][3].c_str() << std::endl;
+                    //std::cout << (*Rgrid_)[ci(iRCoulomb,0)] << std::endl;
+                }
             }
         }
     }
@@ -182,8 +185,8 @@ void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>
 
     /* initialize screened and bare potentials matrix elements */
     if (read_interaction__) {
-        initialize_Potential(Rgrid_, nbnd, BarePotential_, true, bare_file_path__);
-        initialize_Potential(Rgrid_, nbnd, ScreenedPotential_, false, screen_file_path__);
+        initialize_Potential(MasterRGrid__, nbnd, BarePotential_, true, bare_file_path__);
+        initialize_Potential(MasterRGrid__, nbnd, ScreenedPotential_, false, screen_file_path__);
     }
     else {
         initialize_Potential( Rgrid_, nbnd, BarePotential_    , wannier_centers, true);
