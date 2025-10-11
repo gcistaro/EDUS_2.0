@@ -49,6 +49,25 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
         index_origin_local_ = Rgrid__->mpindex.glob1D_to_loc1D(index_origin_global);  
     }  
 
+    /* get rank with origin in all the ranks */
+    int HasOrigin_int = HasOrigin_ ? 1 : 0;
+    output::print("has origin: ", (HasOrigin_ ? "true" : "false"));
+    std::vector<int> rank_has_origin(kpool_comm.size());
+
+    MPI_Allgather(&HasOrigin_int, 1, MPI_INT, rank_has_origin.data(), 1, MPI_INT, kpool_comm.communicator());    
+    output::print("rank_has_origin[0]: ", (rank_has_origin[0] ? "true" : "false"));
+    int root_origin = -1;
+    for ( int irank = 0; irank < kpool_comm.size(); irank++ ) {
+        if( rank_has_origin[irank] ) {
+            if( root_origin != -1 ) {
+                output::print("error in origin belonging.");
+            }
+            root_origin = irank;
+        }
+    }
+    output::print("rank with origin: ", root_origin);
+
+
     /* define matrix for Hartree potential */
     Hartree.initialize({nbnd, nbnd});
     Hartree.fill(0.);
@@ -59,6 +78,20 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
             }
         }
     }
+
+    /* reduce the elements of the Hartree potential */
+    if (kpool_comm.rank() == root_origin) {
+        // Root process: in-place reduction
+        MPI_Reduce(MPI_IN_PLACE, Hartree.data(),
+               nbnd * nbnd, MPI_CXX_DOUBLE_COMPLEX, MPI_SUM,
+               root_origin, kpool_comm.communicator());
+    } else {
+        // Non-root processes: send their local Hartree
+        MPI_Reduce(Hartree.data(), nullptr,
+               nbnd * nbnd, MPI_CXX_DOUBLE_COMPLEX, MPI_SUM,
+               root_origin, kpool_comm.communicator());
+    }
+
     /* make it hermitian (it must be mathematically) but is not numerically */
     for( int irow = 0; irow < nbnd; ++irow ) {
         for( int icol = irow+1; icol < nbnd; ++icol ) {
