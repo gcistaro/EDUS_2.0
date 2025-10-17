@@ -340,9 +340,12 @@ void Simulation::Propagate()
     output::print("Number of steps:    *", iFinalTime);
 
     /* do steps */
+    double start_time = omp_get_wtime();
+
     for (int it = 0; it < iFinalTime; ++it) {
         if (it % 100 == 0) {
-            output::print("it:                 *", it, " / ", iFinalTime, 100 * double(it) / iFinalTime, " %");
+            output::print("it:                 *", it, " / ", iFinalTime, 100 * double(it) / iFinalTime, " %",
+                          "               time: ", omp_get_wtime() - start_time, " sec");
         }
         do_onestep();
     }
