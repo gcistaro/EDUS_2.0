@@ -1,6 +1,7 @@
 
 import numpy as np
 from custom_functions.fouriertransform import FourierTransform
+from custom_functions.window import CutWindow
 from scipy import constants
 
 def get_absorbance(t_au, Vt_au, Et_au, limits=[], smearing=0.):
@@ -19,23 +20,7 @@ def get_absorbance(t_au, Vt_au, Et_au, limits=[], smearing=0.):
 
     #cut a window
     print("Defining window in energy (eV)...", end=" ", flush=True)
-    index = []
-    if limits == None:
-        #take only frequencies for which the EF is at least 5% of its maximum
-        #and frequency is positive
-        Ew_norm = np.linalg.norm(Ew_au[:,:], axis=0)
-        index = np.where( np.logical_and(
-                                            Ew_norm >= 0.05*np.max(Ew_norm),
-                                            freq_eV > 0.0 )
-                        )[0]
-    else:
-        #take only values in a window of frequency that you can define in the input
-        index = np.where(np.logical_and( freq_eV > limits[0], freq_eV < limits[1] ))[0]
-        #for freq in range(len(Ew_au[0])):
-        #    for i in range(3):
-        #        if np.abs(Ew_au[i,freq]) < 1e-14:       
-        #            Ew_au[i,freq] = 0 # set to true 0   
-    print("done.")
+    index = CutWindow(freq_eV, np.linalg.norm(Ew_au[:,:], axis=0), limits)
         
     #define everything only in the window
     Vw_au   = Vw_au[:,index]

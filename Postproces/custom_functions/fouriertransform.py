@@ -26,8 +26,10 @@ def FourierTransform(t_au, Jt_au, smearing_eV):
     smearing_au = smearing_eV*constants.physical_constants["electron volt-hartree relationship"][0]
 
     window = np.exp(-t_au*smearing_au)
-
-    Jw_au = -np.array([fft.fftshift(fft.ifft(window*Jt_au[ix], n=length_fft)) for ix in np.array([0,1,2])])
+    if (len(Jt_au.shape) == 1):
+        Jw_au = -np.array([fft.fftshift(fft.ifft(window*Jt_au, n=length_fft))])
+    else:
+        Jw_au = -np.array([fft.fftshift(fft.ifft(window*Jt_au[ix], n=length_fft)) for ix in np.array(range(Jt_au.shape[0]))])
     freq_Hz = fft.fftshift(fft.fftfreq(length_fft, d=(t_au[1]-t_au[0])*constants.physical_constants["atomic unit of time"][0]))
     freq_eV = freq_Hz/constants.physical_constants["electron volt-hertz relationship"][0]
     return freq_eV, Jw_au
