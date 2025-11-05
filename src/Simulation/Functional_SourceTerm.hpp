@@ -7,20 +7,20 @@
 /// @param Output__ We store here @f$ \frac{\partial \rho}{\partial t} @f$
 /// @param time__ Current time of the simulation, to calculate the time dependent hamiltonian and the laser
 /// @param Input__ Input density matrix, to be used as the density matrix on the RHS of the equation
-std::function<void(Operator<std::complex<double>>&, double const&, Operator<std::complex<double>> const&)> 
-SourceTerm = 
-[&](Operator<std::complex<double>>& Output__, const double& time__, const Operator<std::complex<double>>& Input__)
+SourceTerm = [this](Operator<std::complex<double>>& Output__,
+                    const double& time__,
+                    const Operator<std::complex<double>>& Input__)
 {
-    
-    /* Gradient term:    Output +=   (E.Nabla) * Input */
-    if ( SpaceOfPropagation_Gradient_ == R ) {
+    if (SpaceOfPropagation_Gradient_ == R) {
         Output__.go_to_R(false);
         const_cast<Operator<std::complex<double>>&>(Input__).go_to_R(true);
     }
-    kgradient_.Calculate(1.+0.*im, Output__.get_Operator(SpaceOfPropagation_Gradient_), 
-                        Input__.get_Operator(SpaceOfPropagation_Gradient_), 
-                        setoflaser_(time__), true);
 
+    kgradient_.Calculate(1. + 0.*im,
+                         Output__.get_Operator(SpaceOfPropagation_Gradient_),
+                         Input__.get_Operator(SpaceOfPropagation_Gradient_),
+                         setoflaser_(time__),
+                         true);
     /* Coulomb interaction */
     H_.go_to_R(false);
     H_.get_Operator_R().fill(0);
