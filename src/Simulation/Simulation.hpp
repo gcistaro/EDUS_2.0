@@ -58,6 +58,7 @@ class Simulation
         std::ofstream os_Pop_;
         /// Output text file to print the mean value of the velocity operator over the state where our system is at time t
         std::ofstream os_Velocity_;
+        std::function<void(Operator<std::complex<double>>&, double const&, Operator<std::complex<double>> const&)> SourceTerm;
         
         Simulation(){};
         Simulation(std::shared_ptr<Simulation_parameters>& ctx__);
