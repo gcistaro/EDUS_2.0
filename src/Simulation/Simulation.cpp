@@ -69,6 +69,7 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     coulomb_.set_read_interaction((*ctx_).cfg().read_interaction());
     coulomb_.set_bare_file_path((*ctx_).cfg().bare_file());
     coulomb_.set_screen_file_path((*ctx_).cfg().screen_file());
+    coulomb_.set_r0((*ctx_).cfg().r0());
     /* getting rytova keldysh with python */
     // ==if (ctx_->cfg().coulomb()) {
     // ==    std::stringstream command;
