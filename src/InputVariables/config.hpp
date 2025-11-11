@@ -84,6 +84,54 @@ class config_t
         }
         dict_["/coulomb"_json_pointer] = coulomb__;
     }
+    /// If ipa, non-interactiong particles are considered. If RPA, we consider only the Hartree term for the interaction. If hsex, both Hartree and screened Fock are taken into account.
+    inline auto method() const
+    {
+        return dict_.at("/method"_json_pointer).get<std::string>();
+    }
+    inline void method(std::string method__)
+    {
+        if (dict_.contains("locked")) {
+            throw std::runtime_error(locked_msg);
+        }
+        dict_["/method"_json_pointer] = method__;
+    }
+    /// If true, electron-electron interactions are read from barecoulomb.txt and screencoulomb.txt.
+    inline auto read_interaction() const
+    {
+        return dict_.at("/read_interaction"_json_pointer).get<bool>();
+    }
+    inline void read_interaction(bool read_interaction__)
+    {
+        if (dict_.contains("locked")) {
+            throw std::runtime_error(locked_msg);
+        }
+        dict_["/read_interaction"_json_pointer] = read_interaction__;
+    }
+    /// path of the barecoulomb.txt file
+    inline auto bare_file() const
+    {
+        return dict_.at("/bare_file"_json_pointer).get<std::string>();
+    }
+    inline void bare_file(std::string bare_file__)
+    {
+        if (dict_.contains("locked")) {
+            throw std::runtime_error(locked_msg);
+        }
+        dict_["/bare_file"_json_pointer] = bare_file__;
+    }
+    /// path of the screencoulomb.txt file
+    inline auto screen_file() const
+    {
+        return dict_.at("/screen_file"_json_pointer).get<std::string>();
+    }
+    inline void screen_file(std::string screen_file__)
+    {
+        if (dict_.contains("locked")) {
+            throw std::runtime_error(locked_msg);
+        }
+        dict_["/screen_file"_json_pointer] = screen_file__;
+    }
     /// dielectric constant for RK potential
     inline auto epsilon() const
     {
