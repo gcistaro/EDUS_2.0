@@ -4,6 +4,7 @@
 #include "Geometry/Coordinate.hpp"
 #include "Operator/Operator.hpp"
 #include "fftPair/fftPair.hpp"
+#include <string>
 
 #ifndef __MODELCOULOMB_HPP
 #define __MODELCOULOMB_HPP
@@ -18,11 +19,13 @@ class ModelCoulomb
     private:
         /// dimensionality of the system -> twoD (2D) monolayer or threeD (3D) bulk material
         enum Dimensionality {twoD, threeD} dim_;
+        /// Coulomb model type: RYTOVA_KELDYSH (2D screened) or VCOUL3D (3D bare/screened)
+        enum CoulombModel {RYTOVA_KELDYSH, VCOUL3D} coulomb_model_;
         /// The r0 of the RytovaKeldysh model
         std::array<double, 3> r0_;
         /// The average of the r0 parameters over the 3 dimensions
         double r0_avg_;
-        /// The macroscopic dielectric constant
+        /// The macroscopic dielectric constant (for both Rytova-Keldysh and 3D Coulomb screening)
         double epsilon_ = 2.;
         /// The MeshGrid of the simulation in R space
         std::shared_ptr<MeshGrid> Rgrid_;
@@ -44,8 +47,11 @@ class ModelCoulomb
                                 const bool& bare__, const std::string& coulomb_file_path__);
         std::complex<double> V(const Coordinate& r__);
         std::complex<double> W(const Coordinate& r__);
+        std::complex<double> V_VCOUL3D(const Coordinate& r__);
+        std::complex<double> W_VCOUL3D(const Coordinate& r__);
         void set_epsilon(const double& Epsilon__);
         void set_r0(const std::vector<double>& r0__);
+        void set_coulomb_model(const std::string& model_name__);
         std::array<double, 3>& get_r0();
         double get_r0_avg();
         /// The screened interaction: ScreenedPotential_(iR, i, j)  = @f$ \langle i \textbf{0}, j \textbf{R}[iR] | W | i \textbf{0}, j \textbf{R}[iR] \rangle @f$

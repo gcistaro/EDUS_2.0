@@ -168,6 +168,18 @@ class config_t
         }
         dict_["/r0_units"_json_pointer] = r0_units__;
     }
+    /// Coulomb model type
+    inline auto coulomb_model() const
+    {
+        return dict_.value("/coulomb_model"_json_pointer, "rytova_keldysh");
+    }
+    inline void coulomb_model(std::string coulomb_model__)
+    {
+        if (dict_.contains("locked")) {
+            throw std::runtime_error(locked_msg);
+        }
+        dict_["/coulomb_model"_json_pointer] = coulomb_model__;
+    }
     /// Dimension of the k grid (R as well) used for the simulation
     inline auto grid() const
     {

@@ -145,6 +145,13 @@ void Coulomb::set_r0(const std::vector<double>& r0__)
     modelcoulomb_.set_r0( r0__ );
 }
 
+/// @brief Set the coulomb model type
+/// @param model_name__ String name of the model: "vcoul3d" or "rytova_keldysh"
+void Coulomb::set_coulomb_model(const std::string& model_name__)
+{
+    modelcoulomb_.set_coulomb_model( model_name__ );
+}
+
 /// @brief Getter for r0 of Rytova Keldysh
 ///@return r0 in Rytova Keldysh, in a.u.
 std::array<double, 3>& Coulomb::get_r0()

@@ -80,6 +80,15 @@
             ],
             "title": "Units for the Time resolution used for propagating Density Matrix"
         },
+        "coulomb_model": {
+            "type": "string",
+            "default": "rytova_keldysh",
+            "enum": [
+                "rytova_keldysh",
+                "vcoul3d"
+            ],
+            "title": "Coulomb model type"
+        },
         "grid": {
             "type": "array",
             "items": {

@@ -40,6 +40,7 @@ class Coulomb
         void set_DoCoulomb(const bool& DoCoulomb__);
         void set_epsilon(const double& Epsilon__);
         void set_r0(const std::vector<double>& r0__);
+        void set_coulomb_model(const std::string& model_name__);
         const bool& get_DoCoulomb() const;
         bool& get_DoCoulomb();
         std::string get_method();
