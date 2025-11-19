@@ -1,5 +1,7 @@
 #include "ModelCoulomb.hpp"
 #include "StreamFile.hpp"
+#include <sstream>
+#include <cmath>
 
 /// @brief Calculates the struve special function using the algorithm from XATU
 /// @param X__ variable on which we calculate the struve function
@@ -149,6 +151,8 @@ void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>
     
     if( dim__ == 2 ) dim_ = twoD;
     if( dim__ == 3 ) dim_ = threeD;
+    
+    coulomb_model_ = RYTOVA_KELDYSH;
 
     /* define wannier centers */
     auto index_origin = r__[0].get_Operator_R().get_MeshGrid()->find(Coordinate(0,0,0));
@@ -195,45 +199,63 @@ void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>
 }
 
 /// @brief Calculation of the screened interaction on a point r in real space
+/// Dispatches to the appropriate model based on coulomb_model_ setting
 /// @param r The point on which we calculate the screened interaction
-/// @return The screened interaction on the point r: @f$ W(r) = \frac{\pi e^2}{2 \epsilon_r r_0} \Big[ H_0\Big(\frac{|r|}{r_0}\Big) -Y_0\Big(\frac{|r|}{r_0}\Big)\Big]
+/// @return The screened interaction on the point r
 std::complex<double> ModelCoulomb::W(const Coordinate& r__)
 {
-    std::complex<double> Wr;
-    auto& rcart = r__.get("Cartesian");
-
-    auto r_reduced = Coordinate(rcart[0]/r0_[0], rcart[1]/r0_[1], rcart[2]/r0_[2]); 
-    auto r_norm = r_reduced.norm();
-    switch(dim_)
+    switch(coulomb_model_)
     {
-        case twoD:
+        case VCOUL3D:
+            return W_VCOUL3D(r__);
+        case RYTOVA_KELDYSH:
         {
-            Wr = ( (r_norm < threshold) ? W(min_distance_) : pi/(2.*r0_avg_*epsilon_)*(struve(r_norm,0)-y0(r_norm)));
-            break;
-        }
-        case threeD:
-        {
-            throw std::runtime_error("Not implemented!");
-            break;
+            std::complex<double> Wr;
+            auto& rcart = r__.get("Cartesian");
+            auto r_reduced = Coordinate(rcart[0]/r0_[0], rcart[1]/r0_[1], rcart[2]/r0_[2]); 
+            auto r_norm = r_reduced.norm();
+            switch(dim_)
+            {
+                case twoD:
+                {
+                    Wr = ( (r_norm < threshold) ? W(min_distance_) : pi/(2.*r0_avg_*epsilon_)*(struve(r_norm,0)-y0(r_norm)));
+                    break;
+                }
+                case threeD:
+                {
+                    throw std::runtime_error("Rytova-Keldysh is not implemented for 3D!");
+                    break;
+                }
+                default:
+                    break;
+            }
+            return Wr;
         }
         default:
-            break;
+            throw std::runtime_error("Unknown coulomb model!");
     }
-    return Wr;
 }
 
 /// @brief Calculation of the bare interaction on a point r in real space
+/// Dispatches to the appropriate model based on coulomb_model_ setting
 /// @param r The point on which we calculate the bare interaction
-/// @return The bare interaction on the point r: @f$ V(r) = 2./|r| @f$. The factor 2 is for spin degeneracy. i
-/// To avoid the divergence, we regularize the Coulomb interaction putting a saturation value that is V(0.01) 
+/// @return The bare interaction on the point r: V = 2/r for all models
 std::complex<double> ModelCoulomb::V(const Coordinate& r)
 {
-    std::complex<double> Vr;
-    auto r_norm = r.norm();
-    
-    Vr = ( (r_norm < min_distance_norm_) ? V(min_distance_) : 2./r_norm );
-    
-    return Vr;
+    switch(coulomb_model_)
+    {
+        case VCOUL3D:
+            return V_VCOUL3D(r);
+        case RYTOVA_KELDYSH:
+        {
+            std::complex<double> Vr;
+            auto r_norm = r.norm();
+            Vr = ( (r_norm < min_distance_norm_) ? V(min_distance_) : 2./r_norm );
+            return Vr;
+        }
+        default:
+            throw std::runtime_error("Unknown coulomb model!");
+    }
 }
 
 /// @brief Set Epsilon (macroscopic dielectric constant)
@@ -292,5 +314,41 @@ double ModelCoulomb::get_r0_avg()
 mdarray<std::complex<double>,3>& ModelCoulomb::get_ScreenedPotential()
 {
     return ScreenedPotential_;
+}
+
+/// @brief Set the coulomb model type from a string name
+/// @param model_name__ String name of the model: "vcoul3d" or "rytova_keldysh"
+void ModelCoulomb::set_coulomb_model(const std::string& model_name__)
+{
+    if (model_name__ == "vcoul3d" || model_name__ == "vcoul3d_screened") {
+        coulomb_model_ = VCOUL3D;
+    } else if (model_name__ == "rytova_keldysh" || model_name__ == "rytova") {
+        coulomb_model_ = RYTOVA_KELDYSH;
+    } else {
+        std::stringstream ss;
+        ss << "Unknown coulomb model: '" << model_name__ << "'. Available models: vcoul3d, rytova_keldysh";
+        throw std::runtime_error(ss.str());
+    }
+}
+
+/// ===================== 3D COULOMB POTENTIAL (vcoul3d) =====================
+/// @brief 3D bare Coulomb potential: V(r) = 2/r
+std::complex<double> ModelCoulomb::V_VCOUL3D(const Coordinate& r__)
+{
+    std::complex<double> Vr;
+    auto r_norm = r__.norm();
+    
+    Vr = ( (r_norm < min_distance_norm_) ? V_VCOUL3D(min_distance_) : 2./r_norm );
+    return Vr;
+}
+
+/// @brief 3D screened potential with dielectric constant: W(r) = 2/(epsilon*r)
+std::complex<double> ModelCoulomb::W_VCOUL3D(const Coordinate& r__)
+{
+    std::complex<double> Wr;
+    auto r_norm = r__.norm();
+    
+    Wr = ( (r_norm < min_distance_norm_) ? W_VCOUL3D(min_distance_) : 2./(epsilon_*r_norm) );
+    return Wr;
 }
 
