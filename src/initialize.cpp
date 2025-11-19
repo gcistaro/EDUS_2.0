@@ -47,7 +47,7 @@ void initialize()
     output::print("MKL  threads:      *", mkl_get_max_threads());
 #ifdef EDUS_FFTWTHREADS
     fftw_plan_with_nthreads(omp_get_max_threads());
-    output::print("fftw  threads:     *", fftw_planner_nthreads());
+    // output::print("fftw  threads:     *", fftw_planner_nthreads());
     output::stars();
 #endif
  #ifdef EDUS_MPI

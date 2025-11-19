@@ -7,9 +7,9 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 
 option(EDUS_PROFILE     "Profiling function timings"                            ON)
 option(EDUS_MPI         "Enabling MPI"                                          ON)
-option(EDUS_BATCHGEMM   "Enabling Batch Gemm for k matrix multiplication"      OFF)
-option(EDUS_FFTWTHREADS "Enabling threads in fftw"                             OFF)                
-option(EDUS_MKL_THREAD  "Enabling threads in mkl"                              OFF)                  
+option(EDUS_BATCHGEMM   "Enabling Batch Gemm for k matrix multiplication"      ON)
+option(EDUS_FFTWTHREADS "Enabling threads in fftw"                             ON)                
+option(EDUS_MKL_THREAD  "Enabling threads in mkl"                              ON)                  
 option(EDUS_HDF5        "Link hdf5 library for fast writing of big matrices"    ON)
 
 #set(HDF5_PREFER_PARALLEL  true)
