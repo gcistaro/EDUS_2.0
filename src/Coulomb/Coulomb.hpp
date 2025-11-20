@@ -15,8 +15,10 @@ class Coulomb
         Operator<std::complex<double>> DM0_;
         /// Boolean that is set to true if in the simulation we want to include the coulomb interaction in the Hamiltonian
         bool DoCoulomb_ = false;
-        /// Model for the coulomb interaction, both bare and screened. We only store non-zero matrix elements
-        ModelCoulomb modelcoulomb_;
+        /// Wrapper for bare interaction
+        ModelCoulomb barecoulomb_;
+        /// Wrapper for screened interaction
+        ModelCoulomb screencoulomb_;
         /// True if the current rank propagates R=0 term
         bool HasOrigin_;
         /// Index of the origin R=0 inside the current rank

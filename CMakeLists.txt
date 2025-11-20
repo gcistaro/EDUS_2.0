@@ -116,6 +116,7 @@ set(_SOURCES src/initialize.cpp
              src/Screened_potential/Screened_potential.cpp
              src/GreenFunction/GreenFunction.cpp
              src/ModelCoulomb/ModelCoulomb.cpp
+             src/ModelCoulomb/Potentials.cpp
     )
 add_library(OBJECTS OBJECT ${_SOURCES} )
 	

@@ -28,18 +28,20 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
     // == HF = mdarray<std::complex<double>,3> ( { int( size_MG_local ), nbnd, nbnd } );
     // == std::filesystem::path cwd = std::filesystem::current_path() / "RytovaKeldysh.txt";
     // == read_rk_py( RytovaKeldysh_TB, cwd.str());
-
-    modelcoulomb_.initialize(r__, 2, Rgrid__, read_interaction_, bare_file_path_, screen_file_path_);
+    
+    barecoulomb_.set_epsilon(1.);
+    barecoulomb_.initialize(r__, Rgrid__, read_interaction_, "vcoul3d", bare_file_path_, 2);
+    screencoulomb_.initialize(r__, Rgrid__, read_interaction_, "rytova_keldysh", screen_file_path_, 1);
 
     output::print("Maximum and minimum (in norm) of bare and screened interaction:");
-    auto max = *std::max_element( modelcoulomb_.BarePotential_.begin(), modelcoulomb_.BarePotential_.end(),
+    auto max = *std::max_element( barecoulomb_.Potential_.begin(), barecoulomb_.Potential_.end(),
                           [] (std::complex<double> a, std::complex<double> b) { return std::real(a) < std::real(b); }); 
-    auto min = *std::max_element( modelcoulomb_.BarePotential_.begin(), modelcoulomb_.BarePotential_.end(),
+    auto min = *std::max_element( barecoulomb_.Potential_.begin(), barecoulomb_.Potential_.end(),
                           [] (std::complex<double> a, std::complex<double> b) { return std::real(a) > std::real(b); }); 
     output::print( "bare:    ", std::real(min), std::real(max));
-    max = *std::max_element( modelcoulomb_.ScreenedPotential_.begin(), modelcoulomb_.ScreenedPotential_.end(),
+    max = *std::max_element( screencoulomb_.Potential_.begin(), screencoulomb_.Potential_.end(),
                           [] (std::complex<double> a, std::complex<double> b) { return std::real(a) < std::real(b); }); 
-    min = *std::max_element( modelcoulomb_.ScreenedPotential_.begin(), modelcoulomb_.ScreenedPotential_.end(),
+    min = *std::max_element( screencoulomb_.Potential_.begin(), screencoulomb_.Potential_.end(),
                           [] (std::complex<double> a, std::complex<double> b) { return std::real(a) > std::real(b); }); 
     output::print( "screened: ", std::real(min), std::real(max));
     /* define the index of Rgrid where (0,0,0) is */
@@ -71,10 +73,10 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
     /* define matrix for Hartree potential */
     Hartree.initialize({nbnd, nbnd});
     Hartree.fill(0.);
-    for ( int iR = 0; iR < modelcoulomb_.BarePotential_.get_Size(0); ++iR ) {
+    for ( int iR = 0; iR < barecoulomb_.Potential_.get_Size(0); ++iR ) {
         for( int irow = 0; irow < nbnd; ++irow ) {
             for( int icol = 0; icol < nbnd; ++icol ) {
-                Hartree(irow, icol) += modelcoulomb_.BarePotential_(iR, irow, icol);
+                Hartree(irow, icol) += barecoulomb_.Potential_(iR, irow, icol);
             }
         }
     }
@@ -135,35 +137,35 @@ void Coulomb::set_DoCoulomb(const bool& DoCoulomb__)
 /// @param Epsilon__ Value we want to use as epsilon
 void Coulomb::set_epsilon(const double& Epsilon__)
 {
-    modelcoulomb_.set_epsilon( Epsilon__ );
+    screencoulomb_.set_epsilon( Epsilon__ );
 }
 
 /// @brief Set r0 in RytovaKeldysh model, not used otherwise
 /// @param r0__ Value we want to use as r0 (in a.u.)
 void Coulomb::set_r0(const std::vector<double>& r0__)
 {
-    modelcoulomb_.set_r0( r0__ );
+    screencoulomb_.set_r0( r0__ );
 }
 
 /// @brief Set the coulomb model type
 /// @param model_name__ String name of the model: "vcoul3d" or "rytova_keldysh"
 void Coulomb::set_coulomb_model(const std::string& model_name__)
 {
-    modelcoulomb_.set_coulomb_model( model_name__ );
+    screencoulomb_.set_coulomb_model( model_name__ );
 }
 
 /// @brief Getter for r0 of Rytova Keldysh
 ///@return r0 in Rytova Keldysh, in a.u.
 std::array<double, 3>& Coulomb::get_r0()
 {
-    return modelcoulomb_.get_r0();
+    return screencoulomb_.get_r0();
 }
 
 /// @brief Getter for r0_avg of Rytova Keldysh
 ///@return r0_avg in Rytova Keldysh, in a.u.
 double Coulomb::get_r0_avg()
 {
-    return modelcoulomb_.get_r0_avg();
+    return screencoulomb_.get_r0_avg();
 }
 
 void Coulomb::set_method(const std::string& method__)
@@ -245,7 +247,7 @@ void Coulomb::EffectiveHamiltonian(Operator<std::complex<double>>& H__, const Op
 
     /* Fock term */
     if (method_ == hsex) {
-        auto& W = modelcoulomb_.ScreenedPotential_;
+        auto& W = screencoulomb_.Potential_;
         #pragma omp parallel for
         for( int iblock = 0; iblock < HR__.get_nblocks(); ++iblock ) {
             for( int irow = 0; irow < HR__.get_nrows(); ++irow ) {
@@ -287,7 +289,7 @@ void read_rk_py(mdarray<std::complex<double>,3>& RytovaKeldysh_TB, const std::st
 
 mdarray<std::complex<double>,3>& Coulomb::get_ScreenedPotential()
 {
-    return modelcoulomb_.get_ScreenedPotential();
+    return screencoulomb_.Potential_;
 }
 
 std::string Coulomb::get_method()
