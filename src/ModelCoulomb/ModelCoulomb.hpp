@@ -42,13 +42,11 @@ class ModelCoulomb
         ModelCoulomb(const std::array<Operator<std::complex<double>>,3>& r__,
                      const std::shared_ptr<MeshGrid>& MasterRGrid__, 
                      const bool& read_interaction__,
-                     const std::string& model__,
                      const std::string& file_path__, 
                      const int spin_deg__);
         void initialize(const std::array<Operator<std::complex<double>>,3>& r__,
                         const std::shared_ptr<MeshGrid>& MasterRGrid__, 
                         const bool& read_interaction__,
-                        const std::string& model__,
                         const std::string& file_path__, 
                         const int spin_deg__);
         void initialize_Potential(const std::vector<Coordinate>& wannier_centers__);
