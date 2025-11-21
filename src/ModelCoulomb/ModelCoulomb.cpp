@@ -22,17 +22,15 @@ CoulombModel model(const std::string& model_name__)
 /// @param r Position operator read from Wannier90, in a.u.
 /// @param MasterRGrid Grid in R space used in the code, (N.B: it is different than the one in r because that one is read from _tb file)
 /// @param read_interaction__ true if interaction is read from a file
-/// @param model__ model to use, in case read_interaction__=false
 /// @param file_path__ where to find the file to read the interaction if read_interaction__=true
 /// @param spin_deg__ can be 1 or 2
 ModelCoulomb::ModelCoulomb(const std::array<Operator<std::complex<double>>,3>& r__,
                            const std::shared_ptr<MeshGrid>& MasterRGrid__, 
                            const bool& read_interaction__,
-                           const std::string& model__,
                            const std::string& file_path__, 
                            const int spin_deg__)
 {
-    initialize(r__, MasterRGrid__, read_interaction__, model__, file_path__, spin_deg__);
+    initialize(r__, MasterRGrid__, read_interaction__, file_path__, spin_deg__);
 }
 
 /// @brief Initialization of matrix elements calling back the right function
@@ -111,17 +109,14 @@ void ModelCoulomb::initialize_Potential(const std::string& file_path__, const in
 /// @param r Position operator read from Wannier90, in a.u.
 /// @param MasterRGrid Grid in R space used in the code, (N.B: it is different than the one in r because that one is read from _tb file)
 /// @param read_interaction__ true if interaction is read from a file
-/// @param model__ model to use, in case read_interaction__=false
 /// @param file_path__ where to find the file to read the interaction if read_interaction__=true
 /// @param spin_deg__ can be 1 or 2
 void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>& r__,
                            const std::shared_ptr<MeshGrid>& MasterRGrid__, 
                            const bool& read_interaction__,
-                           const std::string& model__,
                            const std::string& file_path__, 
                            const int spin_deg__)
 {    
-    coulomb_model_ = model(model__);
     spin_deg_ = spin_deg__;
 
     /* define wannier_centers from <n0|r|n0> */

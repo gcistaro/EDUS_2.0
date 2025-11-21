@@ -29,9 +29,10 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
     // == std::filesystem::path cwd = std::filesystem::current_path() / "RytovaKeldysh.txt";
     // == read_rk_py( RytovaKeldysh_TB, cwd.str());
     
+    barecoulomb_.set_coulomb_model("vcoul3d");
     barecoulomb_.set_epsilon(1.);
-    barecoulomb_.initialize(r__, Rgrid__, read_interaction_, "vcoul3d", bare_file_path_, 2);
-    screencoulomb_.initialize(r__, Rgrid__, read_interaction_, "rytova_keldysh", screen_file_path_, 1);
+    barecoulomb_.initialize(r__, Rgrid__, read_interaction_, bare_file_path_, 2);
+    screencoulomb_.initialize(r__, Rgrid__, read_interaction_, screen_file_path_, 1);
 
     output::print("Maximum and minimum (in norm) of bare and screened interaction:");
     auto max = *std::max_element( barecoulomb_.Potential_.begin(), barecoulomb_.Potential_.end(),
