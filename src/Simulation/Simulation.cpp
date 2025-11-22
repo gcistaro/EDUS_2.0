@@ -127,11 +127,8 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     SettingUp_EigenSystem();
     if( ctx_->cfg().opengap() ) OpenGap(); 
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
-    if( ctx_->cfg().kpath().size() > 1 ) {
-        output::print("-> Printing band structure");
-        print_bandstructure(ctx_->cfg().kpath(), material_.H);
-    }        
 
+    pdos();
 
     if( ctx_->cfg().kpath().size() > 1 ) {
         output::print("-> Printing band structure");
@@ -699,7 +696,7 @@ double min(const std::vector<mdarray<double,1>>& Vec__)
     auto min = 1.e+07;
     for( int i = 0; i < Vec__.size(); ++i ) {
         for( int y = 0; y < Vec__[i].get_Size()[0]; ++y ) {
-            min = std::min( min, *std::min(Vec__[i].begin(), Vec__[i].end()));
+            min = std::min( min, *std::min_element(Vec__[i].begin(), Vec__[i].end()));
         }
     }
     return min;
@@ -711,7 +708,6 @@ double max(const std::vector<mdarray<double,1>>& Vec__)
     auto max = 1.e-07;
     for( int i = 0; i < Vec__.size(); ++i ) {
         for( int y = 0; y < Vec__[i].get_Size()[0]; ++y ) {
-            std::vector<double> vec_i(Vec__[i].end()-Vec__[i].begin());
             max = std::max( max, *std::max_element(Vec__[i].begin(), Vec__[i].end()));
         }
     }
@@ -831,4 +827,40 @@ void Simulation::OpenGap()
     std::copy(Corrected_hamiltonian_k.begin(), Corrected_hamiltonian_k.end(), material_.H.get_Operator_k().begin());
     std::copy(Corrected_hamiltonian_R.begin(), Corrected_hamiltonian_R.end(), material_.H.get_Operator_R().begin());
     
+}
+
+
+void Simulation::pdos()
+{
+    auto& Uk = Operator<std::complex<double>>::EigenVectors;
+    auto nbnd = Uk.get_nrows();
+
+    /* sum over k points the projections */
+    std::vector< std::map<int, double> >  pdos(nbnd);
+    auto E_resolution = Convert(0.1, ElectronVolt, AuEnergy);
+    auto min_eig = min(Band_energies_);
+    auto max_eig = max(Band_energies_);
+    auto DeltaE = max_eig - min_eig;
+
+
+    /* since psi_{nk} = \sum_m U_{mn} \tilde{psi_{mk}} we have U_{mn} = <psi_{nk}|\tilde{psi_{mk}}>*/
+    for(int ik = 0; ik < Uk.get_nblocks(); ++ik) {
+        for( int irow = 0; irow < nbnd; ++irow ) {
+            for( int icol = 0; icol < nbnd; ++icol ) {
+                auto ibar = int( ( Band_energies_[ik](icol) - min_eig )/E_resolution );
+                pdos[irow][ibar] += std::pow( std::abs( Uk(ik, irow, icol) ), 2 );
+            }
+        }
+    }
+
+    std::ofstream os_pdos("pdos.txt");
+    for(int iE=0; iE<int((max_eig-min_eig)/E_resolution); iE++) {
+        os_pdos << min_eig + iE * E_resolution << " ";
+        for(int ialpha=0; ialpha<nbnd; ialpha++) {
+            os_pdos << pdos[ialpha][iE] << " ";
+        }
+        os_pdos << std::endl;
+    }
+    os_pdos.close();
+    exit(0);
 }

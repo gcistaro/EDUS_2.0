@@ -75,6 +75,7 @@ class Simulation
         int get_it_sparse(const double& time__) const;
         double jacobian(const Matrix<double>& A__) const;
         void OpenGap();
+        void pdos();
 
         std::string wavelength_or_frequency(const int&);
 
