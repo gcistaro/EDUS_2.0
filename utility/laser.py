@@ -160,6 +160,8 @@ def update_plot(frequency):
 
     ax.clear()
     ax.plot(t * 1e15, E)
+    ax.plot(t * 1e15, +envelope, ls = "--", color="cyan")
+    ax.plot(t * 1e15, -envelope, ls = "--", color="cyan")
     ax.set_xlabel("Time (fs)")
     ax.set_ylabel("Electric Field (arb. units)")
     ax.set_title(f"Laser pulse with sin² envelope, {N} cycles")
