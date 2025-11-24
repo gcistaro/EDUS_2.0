@@ -6,7 +6,7 @@
 Welcome to the EDUS documentation
 ==================
 
-This is the home of the documentation of EDUS, which is an open-source code for the propagation of the electron wavepacket in condensed matter when an external field is introduced.<br>
+This is the home of the documentation of EDUS, which is an open-source code for the propagation of the electron wavepacket in condensed matter when an external field is introduced.
 EDUS has a full interface with QuantumESPRESSO via Wannier90, and can be run right after a wannierization. 
 
 This documentation contains the following sections:
