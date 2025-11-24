@@ -1,0 +1,176 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hBN HSEX &mdash; EDUS 1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=f2a433a1"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=f281be69"></script>
+      <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Running a simulation" href="step3_runsimulation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            EDUS
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">User guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="step1_install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="step2_input.html">Input variables</a></li>
+<li class="toctree-l1"><a class="reference internal" href="step3_runsimulation.html">Running a simulation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorial</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">hBN HSEX</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#analysing-recap-file">Analysing recap file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#get-the-absorbance">Get the absorbance</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">EDUS</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">hBN HSEX</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/tutorials/hBN_IPA_AND_HSEX.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="hbn-hsex">
+<h1>hBN HSEX<a class="headerlink" href="#hbn-hsex" title="Link to this heading"></a></h1>
+<p>You can find the input file in <code class="docutils literal notranslate"><span class="pre">/path/to/EDUS_2.0/test/hBN_HSEX.json</span></code>. <br>
+In the input, notice that:</p>
+<ul class="simple">
+<li><p>we excite the system with a laser intensity that give access to linear regime (<span class="math notranslate nohighlight">\(10^8 W/cm^2\)</span>), the laser is short (there is only 1 cycle and the period is 0.69 fs, being the frequency 6 eV, meaning that the zero-to-zero energy span is around 12eV).</p></li>
+<li><p>we use <code class="docutils literal notranslate"><span class="pre">dt=0.01fs</span></code> so that in the cycles of the laser we resolve with enough points, around 70, that is enough in linear regime</p></li>
+<li><p>we use a small grid of <span class="math notranslate nohighlight">\(20^2\)</span> points as we are in linear regime</p></li>
+<li><p>the laser start when the simulation starts, being <code class="docutils literal notranslate"><span class="pre">t0</span> <span class="pre">=</span> <span class="pre">0</span> <span class="pre">fs</span></code> and <code class="docutils literal notranslate"><span class="pre">initialtime</span> <span class="pre">=</span> <span class="pre">0</span> <span class="pre">fs</span></code>.</p></li>
+<li><p>the tb_model is a 2D Tight-Binding model with an hexagonal lattice, with a gap of 7.25eV and a hopping parameter between neighbor atoms of -2.3eV, and only one orbital per atomic site (there are two atomic sites). This describes quite well the pz orbitals of hBN.</p></li>
+<li><p>for the Coulomb interaction, we use a Rytova-Keldysh potential with <span class="math notranslate nohighlight">\(\epsilon=1.0\)</span> and <span class="math notranslate nohighlight">\(r_0=10 ang\)</span>.
+<br>
+Send the simulation running:</p></li>
+</ul>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>/path/to/EDUS_2.0/build/EDUS<span class="w"> </span>hBN_HSEX.json
+</pre></div>
+</div>
+<section id="analysing-recap-file">
+<h2>Analysing recap file<a class="headerlink" href="#analysing-recap-file" title="Link to this heading"></a></h2>
+<p>Using the txt files generated, even during execution you can analyse your data using the python script that you can find in <code class="docutils literal notranslate"><span class="pre">/path/to/EDUS_2.0/PostProces/Recap.py</span></code> running it:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>/path/to/EDUS_2.0/PostProces/Recap.py<span class="w"> </span>--folder<span class="w"> </span>/path/to/Output/
+</pre></div>
+</div>
+<p>Here is how it should look like.</p>
+<a class="reference internal image-reference" href="../_images/recap.png"><img alt="../_images/recap.png" class="align-center" src="../_images/recap.png" style="width: 100%;" />
+</a>
+<p>Left and right columns are the same plot in time space and frequency space. <br>
+In the rows, from top to bottom, there is the population in time for each band, the electric field in time and the mean value of the velocity over the state. <br>
+What we can learn:</p>
+<ul class="simple">
+<li><p>The electric field acts in the beginning of the simulations and creates a non-equilibrium population, electrons jump from valence to conduction leaving holes. After the pulse finish, the coherent population that is created is not decaying</p></li>
+<li><p>From the velocity operator plot in time, you can see that there are oscillations with the frequency of the electric field, but also differenet frequencies contribute in the oscillations. This is reflected in the Fourier transform on the right, when you can clearly see some atomic-like excitations (bound excitons).
+<br></p></li>
+</ul>
+</section>
+<section id="get-the-absorbance">
+<h2>Get the absorbance<a class="headerlink" href="#get-the-absorbance" title="Link to this heading"></a></h2>
+<p>The absorbance can be directly calculated from the electric field and the velocity operator using the formula:</p>
+<div class="math notranslate nohighlight">
+\[
+    \tilde{\sigma}(\omega) = 2 \frac{\omega}{\epsilon_0 c} \text{Im} \Biggl\{ \frac{\tilde{\boldsymbol{\varepsilon}}(\omega) \cdot \tilde{\textbf{d}}(\omega)}{\left| \tilde{\boldsymbol{\varepsilon}}(\omega) \right|^2} \Biggl\},
+\]</div>
+<p>This is what the script <code class="docutils literal notranslate"><span class="pre">Absorbance.py</span></code>. You can launch it using:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>/path/to/EDUS_2.0/PostProces/Absorbance.py<span class="w"> </span>--smearing<span class="o">=</span><span class="m">0</span>.2<span class="w"> </span>--folder<span class="o">=</span>/path/to/Output/
+</pre></div>
+</div>
+<p>The smearing is essential to make the velocity operator decay in time, so that the fft is well defined and the ripples present in the Fourier Transform obtained during the previous step will disappear. The output will look like this:</p>
+<a class="reference internal image-reference" href="../_images/absorbance.png"><img alt="../_images/absorbance.png" class="align-center" src="../_images/absorbance.png" style="width: 100%;" />
+</a>
+<p>We can notice that:</p>
+<ul class="simple">
+<li><p>There is a strong bound exciton at energy 5.35 eV with a lot of oscillator strength (it is the dominant peak).</p></li>
+<li><p>There are other bound excitons that are not well resolved (to resolve them, we should send the simulation further in time and then decrease the smearing)</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="step3_runsimulation.html" class="btn btn-neutral float-left" title="Running a simulation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
