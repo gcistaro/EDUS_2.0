@@ -4,7 +4,7 @@ EDUS (Electron Dynamics for Ultrafast Spectroscopy) is a C++ code that can propa
 It solves the time-dependent equations for the density matrix (Von Neumann Equation):
 
 $$
-i{{\partial \rho(\textbf{k})}\over{\partial t}} = \Big[ H_0(k) +E(t)\cdot \xi(k) + H_{ee}(k), \rho(k)\Big] + i E(t)\cdot \nabla_k \rho(k)
+i{\partial \rho(\textbf{k})}\over{\partial t} = \Big[ H_0(k) +E(t)\cdot \xi(k) + H_{ee}(k), \rho(k)\Big] + i E(t)\cdot \nabla_k \rho(k)
 $$ 
 
 where: 
