@@ -5,6 +5,9 @@ import numpy as np
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 
+from Postproces.custom_functions.fouriertransform import FourierTransform
+from Postproces.custom_functions.window import CutWindow
+
 # =========================================================
 # Physical constants
 # =========================================================
@@ -130,6 +133,34 @@ def cb_cycles(event=None):
 def cb_phase(event=None):
     update_plot(last_frequency)
 
+def cb_total_duration(event=None):
+    global active_field
+    active_field = "total_duration"
+
+    x = safe_float(total_duration.get())
+    if x is None:
+        active_field = None
+        return
+
+    # x is in fs → convert to seconds
+    T_total = x * 1e-15
+
+    # read number of cycles
+    try:
+        N = float(cycles.get())
+    except:
+        N = 5
+
+    # infer period
+    T = T_total / N
+
+    # infer frequency
+    f = 1 / T
+
+    update_all_from_frequency(f)
+
+    active_field = None
+
 # =========================================================
 # Plotting function with sin² envelope and CEP
 # =========================================================
@@ -150,15 +181,20 @@ def update_plot(frequency):
         phi = 0.0
 
     T = 1 / frequency
-    total_duration = N * T
-    t = np.linspace(0, total_duration, 2000)
+
+    #duration 
+    total_time = N * T
+    total_duration.set(f"{total_time * 1e15:.5g}")   # fs
+
+    t = np.linspace(0, total_time, 2000)
+
 
     envelope = np.sin(np.pi * t / (N * T)) ** 2
-    envelope[(t <= 0) | (t >= total_duration)] = 0.0
+    envelope[(t <= 0) | (t >= N*T)] = 0.0
 
     E = np.sin(2 * np.pi * frequency * t + phi) * envelope
-
     ax.clear()
+    ax2.clear()
     ax.plot(t * 1e15, E)
     ax.plot(t * 1e15, +envelope, ls = "--", color="cyan")
     ax.plot(t * 1e15, -envelope, ls = "--", color="cyan")
@@ -166,6 +202,38 @@ def update_plot(frequency):
     ax.set_ylabel("Electric Field (arb. units)")
     ax.set_title(f"Laser pulse with sin² envelope, {N} cycles")
     ax.grid(True)
+
+
+    #omega_eV, Ew = FourierTransform(t/AU_TIME, E, 0.)
+    def sinc(x):
+        # unnormalized sinc: sin(x)/x with safe handling at x=0
+        return np.where(x==0.0, 1.0, np.sin(x)/x)
+
+    def W_omega(omega, N, T):
+        L = N * T
+        Delta = 1.0 / (N * T)        # in Hz
+        two_pi_D = 2.0 * np.pi * Delta  # angular frequency of cos term
+
+        term_rect = (L/2.0) * np.exp(-1j * omega * L / 2.0) * sinc(omega * L / 2.0)
+        term_cos1 = (L/4.0) * np.exp(-1j * (omega - two_pi_D) * L / 2.0) * sinc((omega - two_pi_D) * L / 2.0)
+        term_cos2 = (L/4.0) * np.exp(-1j * (omega + two_pi_D) * L / 2.0) * sinc((omega + two_pi_D) * L / 2.0)
+
+        return term_rect - (term_cos1 + term_cos2)
+
+    def X_omega(omega, f, phi, N, T):
+        omega0 = 2.0 * np.pi * f
+        W_minus = W_omega(omega - omega0, N, T)
+        W_plus  = W_omega(omega + omega0, N, T)
+        return (1.0/(2j)) * (np.exp(1j*phi) * W_minus - np.exp(-1j*phi) * W_plus)    #Ew = np.abs(Ew[0])
+
+    omega_eV = np.arange(0, 300, 0.01)
+    hbar = h/(2*np.pi)
+    omega_rads = omega_eV*J_per_eV/hbar
+    Ew = np.abs(X_omega(omega_rads, frequency, phi, N, T))
+    index = CutWindow(omega_eV, Ew)
+    ax2.plot(omega_eV[index], Ew[index]/np.max(Ew[index]))
+    ax2.set_xlabel("$\omega (eV)$")
+    ax2.set_title("Spectrum of the laser pulse")
     fig.subplots_adjust(bottom=0.22)
     canvas.draw()
 
@@ -175,6 +243,8 @@ def update_plot(frequency):
 root = tk.Tk()
 root.title("Laser Calculator with sin² Envelope and Phase")
 root.geometry("1000x850")
+# Make the window fixed size
+root.resizable(False, False)
 root.configure(bg="white")
 
 # =========================================================
@@ -193,6 +263,7 @@ energy_au = tk.StringVar()
 energy_eV = tk.StringVar()
 cycles = tk.StringVar(value="5")
 phase_pi = tk.StringVar(value="0")  # CEP in units of π
+total_duration = tk.StringVar()
 
 
 frame = tk.Frame(root, bg="white")
@@ -266,18 +337,75 @@ e_phase.pack(side="left")
 tk.Label(f_phase, text="π", bg="white").pack(side="left", padx=(2,0))
 e_phase.bind("<KeyRelease>", cb_phase)
 
+#duration row 
+tk.Label(frame, text="Total duration", bg="white").grid(row=8, column=0, sticky="w", pady=3)
+f_td = tk.Frame(frame, bg="white")
+f_td.grid(row=8, column=1, sticky="w")
+e_td = ttk.Entry(f_td, textvariable=total_duration, width=12)
+e_td.pack(side="left")
+e_td.bind("<KeyRelease>", cb_total_duration)
+tk.Label(f_td, text="fs", bg="white").pack(side="left", padx=(2,0))
+
+
+#EXport button
+def export_field():
+    # Build the same time axis used in the plot
+    import numpy as np
+
+    # Read values from GUI
+    try:
+        f = float(energy_eV.get())            # eV
+        N = float(cycles.get())             # number of cycles
+        phi = float(phase_pi.get()) * np.pi    # convert units of π to radians
+        #E0 = float(peakSI.get())            # amplitude in SI units
+    except:
+        print("Invalid parameters, cannot export.")
+        return
+
+    try:
+        filename = "electric_field.txt"
+        with open(filename, "w") as f_out:
+            f_out.write("\"laser:\"\n")
+            f_out.write("{\n")
+            f_out.write("   [\n")
+            f_out.write("      \"frequency\": " + str(f) + ",\n")
+            f_out.write("      \"frequency_units\": \"electronvolt\",\n")
+            f_out.write("      \"cycles\": " + str(N) + ",\n")          
+            f_out.write("      \"phase\": " + str(phi) + "\n")          
+            f_out.write("   ]\n")
+            f_out.write("}\n")
+        print(f"Exported to {filename}")
+    except Exception as e:
+        print("Error exporting:", e)
+
+
+
+style = ttk.Style()
+style.configure("Fancy.TButton",
+                font=("Arial", 25, "bold"),  # bigger font
+                foreground="white",
+                background="#007acc",        # blue background
+                padding=10)                  # bigger padding
+style.map("Fancy.TButton",
+          foreground=[('active', 'white')],
+          background=[('active', '#005f99')])  # darker blue on hover
+
+# --- Create the Export button ---
+export_button = ttk.Button(root, text="Export", style="Fancy.TButton", command=export_field)
+export_button.pack(pady=15)
 # =========================================================
 # Matplotlib plot
 # =========================================================
-fig = Figure(figsize=(8, 3.5), dpi=100)
-ax = fig.add_subplot(111)
+fig = Figure(figsize=(10, 4), dpi=100)
+ax = fig.add_subplot(121)
+ax2 = fig.add_subplot(122)
 
 canvas = FigureCanvasTkAgg(fig, master=frame)
 canvas_widget = canvas.get_tk_widget()
-canvas_widget.grid(row=8, column=0, columnspan=7, pady=10)
+canvas_widget.grid(row=9, column=0, columnspan=7, pady=10)
 
 toolbar_frame = tk.Frame(frame, bg="white")
-toolbar_frame.grid(row=9, column=0, columnspan=7)
+toolbar_frame.grid(row=10, column=0, columnspan=7)
 toolbar = NavigationToolbar2Tk(canvas, toolbar_frame)
 toolbar.update()
 
