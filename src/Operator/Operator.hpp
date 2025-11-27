@@ -238,15 +238,12 @@ class Operator
             FTfriendly_Operator_k = mdarray<std::complex<double>, 2>({nbnd*nbnd, mpindex.get_RecommendedAllocate_fftw()});
             FTfriendly_Operator_R = mdarray<std::complex<double>, 2>({nbnd*nbnd, mpindex.get_RecommendedAllocate_fftw()});
 #endif
-oss << count << "\n"; count++;            
             //use convolution index for shuffle index.
             std::vector<int> Dimensions(3);
             for(int ix=0; ix<3; ix++){
                 Dimensions[ix] = FT_meshgrid_k->get_Size()[ix];
             }
-oss << count << "\n"; count++;            
             ft_.initialize(FTfriendly_Operator_k, FTfriendly_Operator_R, Dimensions, tagname);
-oss << count << "\n"; count++;            
             //shuffle_to_fft();
             this->space = R;
             locked_space = true;
