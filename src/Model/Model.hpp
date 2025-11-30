@@ -37,6 +37,8 @@ class Material
             model = wannierTB;
    
             Wannier wannier_(Filename);
+            wannier_.Print("output_tb.dat");
+            exit(0);
             //we move the resources from wannier.r and wannier.H, anyway we throw wannier right after.   
             auto UC = Matrix<double>(wannier_.UnitCell).transpose();
             Convert_iterable(UC, Angstrom, AuLength);   
