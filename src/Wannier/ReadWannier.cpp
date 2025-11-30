@@ -73,7 +73,8 @@ int ParseWannier_Matrix(const std::vector<std::vector<std::string>>::iterator Li
     
     LineIterator_aux++;
     while(( (LineIterator_aux != LineIterator_end) &&
-            (*(LineIterator_aux+1)).size() == 8)  ) {//the things in while goes to another block and '+1' skips the Rvector
+            (*(LineIterator_aux)).size() == 8)  ) {//the things in while goes to another block and '+1' skips the Rvector
+        
         int SizeOfMatrixElement = ParseWannier_MatrixElement(LineIterator_aux, Matrix0, Matrix1, Matrix2, NumberOfBands);
         LineIterator_aux+=SizeOfMatrixElement;
     }
@@ -101,7 +102,7 @@ int ParseWannier_PositionOperator(const std::vector<std::vector<std::string>>::i
 {
     auto LineIterator_aux = LineIterator_begin;
     int index = 0;
-    while(( (LineIterator_aux != LineIterator_end) &&
+    while(( (LineIterator_aux+1 < LineIterator_end) && 
             (*(LineIterator_aux+1)).size() == 8)  ) {//the things in while goes to another block and '+1' skips the Rvector
         int SizeOfMatrix = ParseWannier_Matrix(LineIterator_aux, LineIterator_end, &Rmesh(index,0), &(r[0](index,0,0)),
                                                &(r[1](index,0,0)), &(r[2](index,0,0)), NumberOfBands);
