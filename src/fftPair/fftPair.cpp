@@ -20,6 +20,7 @@ FourierTransform::initialize
     IsFFT = true;
     Array_x = &Array_x__;
     Array_k = &Array_k__;
+
 #ifdef EDUS_MPI
     howmany = Array_x->get_Size(1);
 #else
@@ -97,7 +98,7 @@ void FourierTransform::fft(const int& sign)
 
     if( sign == -1 ) {
         #pragma omp parallel for schedule(static)
-        for(int index = 0; index < output.end()-output.begin(); ++index) {
+        for(int index = 0; index < output.get_TotalSize(); ++index) {
             auto& output_el = output[index];
         //for(auto& output_el : output){
             output_el /= TotalSize;
