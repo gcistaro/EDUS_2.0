@@ -135,18 +135,19 @@ Coordinate Laser::operator()(const double& Time)
 
 Coordinate Laser::VectorPotential(const double& Time)
 {
-    //integral of the electric field with a - sign 
-    if(Time < get_InitialTime() || Time > get_Duration()) {
-        return Coordinate(0,0,0);
-    }
-    auto a = pi/envelope.Duration;
-    auto b = PlaneWave.Omega;
-    auto one_ = 2.*a-b;
-    auto two_ = 2*a+b;
-    auto three_ = b;
-    auto& t0 = envelope.InitialTime;
-    return -(.25*Amplitude*(-std::cos(one_*Time)/(one_)+std::cos(two_*Time)/(two_)-2.*std::cos(three_*Time)/(three_))
-            -.25*Amplitude*(-std::cos(one_*t0)/(one_)+std::cos(two_*t0)/(two_)-2.*std::cos(three_*t0)/(three_)))*Polarization;
+    static Coordinate A(0.,0.,0.); 
+    static double previous_Time = 0.;
+
+    /* go from previous_Time to Time in n=2 steps */
+    double deltaT = Time - previous_Time; 
+    if(deltaT < 1.e-07) return A; 
+    auto E1 = this->operator()(previous_Time);
+    auto E2 = this->operator()(previous_Time + deltaT/2.);
+    auto E3 = this->operator()(Time);
+    
+    A += deltaT/6.*(E1 + 4.*E2 + E3);
+    previous_Time = Time; 
+    return A;
 }
 
 //only one of the following three calculates the others
