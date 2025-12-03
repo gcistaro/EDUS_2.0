@@ -261,6 +261,17 @@ class config_t
     {
         return dict_.at("/order"_json_pointer).get<int>();
     }
+    inline auto peierls() const
+    {
+        return dict_.at("/peierls"_json_pointer).get<bool>();
+    }
+    inline void peierls(bool peierls__)
+    {
+        if (dict_.contains("locked")) {
+            throw std::runtime_error(locked_msg);
+        }
+        dict_["/peierls"_json_pointer] = peierls__;
+    }
     /// Kpath to print the band structure in crystal coordinates 
     inline std::vector<std::vector<double>> kpath()
     {
