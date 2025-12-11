@@ -297,10 +297,10 @@ void Simulation::Calculate_TDHamiltonian(const double& time__, const bool& erase
 #endif
     //--------------------get aliases for nested variables--------------------------------
     auto& H = H_.get_Operator(SpaceOfCalculateTDHamiltonian_);
-    auto& H0 = H0_.get_Operator(SpaceOfCalculateTDHamiltonian_);
-    auto& x = r_[0].get_Operator(SpaceOfCalculateTDHamiltonian_);
-    auto& y = r_[1].get_Operator(SpaceOfCalculateTDHamiltonian_);
-    auto& z = r_[2].get_Operator(SpaceOfCalculateTDHamiltonian_);
+    auto& H0 = material_.H.get_Operator(SpaceOfCalculateTDHamiltonian_);
+    auto& x = material_.r[0].get_Operator(SpaceOfCalculateTDHamiltonian_);
+    auto& y = material_.r[1].get_Operator(SpaceOfCalculateTDHamiltonian_);
+    auto& z = material_.r[2].get_Operator(SpaceOfCalculateTDHamiltonian_);
 
     auto las  = setoflaser_(time__).get("Cartesian");
     auto lasA = setoflaser_.VectorPotential(time__);
@@ -344,25 +344,25 @@ void Simulation::Calculate_TDHamiltonian(const double& time__, const bool& erase
         }
     }
 
-    static mdarray<std::complex<double>,1> Peierls_phase({H.get_nblocks()});
-    if ( ctx_->cfg().peierls() ) {
-        auto& Rgrid = *(H_.get_Operator(Space::R).get_MeshGrid());
-
-#pragma omp parallel for schedule(static)
-        for (int iR_loc = 0; iR_loc < H0.get_nblocks(); ++iR_loc) {
-            int iR_glob = Rgrid.mpindex.loc1D_to_glob1D(iR_loc);
-            Peierls_phase(iR_loc) = std::exp(+im*lasA.dot(Rgrid[iR_glob]));
-        }
-
-#pragma omp parallel for schedule(static) collapse(3)
-        for (int iblock = 0; iblock < H0.get_nblocks(); ++iblock) {
-            for (int irow = 0; irow < H0.get_nrows(); ++irow) {
-                for (int icol = 0; icol < H0.get_ncols(); ++icol) {
-                    H(iblock, irow, icol) *= Peierls_phase(iblock);
-                }
-            }
-        }
-    }
+// ===     static mdarray<std::complex<double>,1> Peierls_phase({H.get_nblocks()});
+// ===     if ( ctx_->cfg().peierls() ) {
+// ===         auto& Rgrid = *(H_.get_Operator(Space::R).get_MeshGrid());
+// === 
+// === #pragma omp parallel for schedule(static)
+// ===         for (int iR_loc = 0; iR_loc < H0.get_nblocks(); ++iR_loc) {
+// ===             int iR_glob = Rgrid.mpindex.loc1D_to_glob1D(iR_loc);
+// ===             Peierls_phase(iR_loc) = std::exp(+im*lasA.dot(Rgrid[iR_glob]));
+// ===         }
+// === 
+// === #pragma omp parallel for schedule(static) collapse(3)
+// ===         for (int iblock = 0; iblock < H0.get_nblocks(); ++iblock) {
+// ===             for (int irow = 0; irow < H0.get_nrows(); ++irow) {
+// ===                 for (int icol = 0; icol < H0.get_ncols(); ++icol) {
+// ===                     H(iblock, irow, icol) *= Peierls_phase(iblock);
+// ===                 }
+// ===             }
+// ===         }
+// ===     }
 
     //---------------------------------------------------------------------------------
 }
@@ -532,6 +532,7 @@ double Simulation::jacobian(const Matrix<double>& A__) const
 /// the unit cell, while d is the dimension of the system. In this function we multiply by everything but @f$\frac{1}{N_k}@f$
 void Simulation::Calculate_Velocity()
 {
+    H_.go_to_k();
     Calculate_TDHamiltonian(-6000, true);
     H_.go_to_R();
 #ifdef __DEBUG
@@ -585,6 +586,11 @@ void Simulation::Calculate_Velocity()
             }
         }
     }
+        std::ofstream vel("velocity.txt");
+        for (int ix : { 0, 1, 2 }) {
+            vel << Velocity_[ix].get_Operator_k() << std::endl;
+        }
+
 }
 
 /// @brief Calculates the mean value of the velocity operator and prints it in Output/Velocity.txt.
