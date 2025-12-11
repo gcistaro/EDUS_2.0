@@ -24,13 +24,13 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     ctx_->cfg().initialtime_units("autime");
     ctx_->cfg().finaltime_units("autime");
     ctx_->cfg().dt_units("autime");
-    
+
     /* set r0 in a.u. */
     std::vector<double> r0_au(ctx_->cfg().r0().size());
     for ( int i=0; i<ctx_->cfg().r0().size(); ++i ) {
         r0_au[i] = Convert(ctx_->cfg().r0()[i], unit(ctx_->cfg().r0_units()), AuLength);
     }
-    ctx_->cfg().r0(r0_au);    
+    ctx_->cfg().r0(r0_au);
 
     if ( ctx_->cfg().printresolution_pulse() == 0 ) {
         ctx_->cfg().printresolution_pulse(ctx_->cfg().printresolution());
@@ -71,7 +71,7 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
 
     output::print("-> Initializing fft and dft");
     DensityMatrix_.initialize_fft(MeshGrid::MasterRgrid, HR.get_nrows());
-    
+
 #ifdef __DEBUG_MODE
     for(int ik=0; ik<DensityMatrix_.get_Operator(Space::k).get_MeshGrid()->get_TotalSize(); ++ik){
         for(int iR=0; iR<DensityMatrix_.get_Operator(Space::R).get_MeshGrid()->get_TotalSize(); ++iR) {
@@ -88,7 +88,7 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
         }
     }
 #endif
-    
+
     material_.H.dft(DensityMatrix_.get_FT_meshgrid_k().get_mesh(), +1);
     for (auto ix : { 0, 1, 2 }) {
         material_.r[ix].dft(DensityMatrix_.get_FT_meshgrid_k().get_mesh(), +1);
@@ -96,12 +96,30 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     }
 
     H_.initialize_fft(DensityMatrix_);
+    H0_.initialize_fft(DensityMatrix_);
+    r_[0].initialize_fft(DensityMatrix_);
+    r_[1].initialize_fft(DensityMatrix_);
+    r_[2].initialize_fft(DensityMatrix_);
+
+    auto& materialH0k = material_.H.get_Operator(Space::k);
+    auto& materialr0k  = material_.r[0].get_Operator(Space::k);
+    auto& materialr1k  = material_.r[1].get_Operator(Space::k);
+    auto& materialr2k  = material_.r[2].get_Operator(Space::k);
+    std::copy(materialH0k.begin(), materialH0k.end(), H0_.get_Operator(Space::k).begin());
+    std::copy(materialr0k.begin(), materialr0k.end(), r_[0].get_Operator(Space::k).begin());
+    std::copy(materialr1k.begin(), materialr1k.end(), r_[1].get_Operator(Space::k).begin());
+    std::copy(materialr2k.begin(), materialr2k.end(), r_[2].get_Operator(Space::k).begin());
+
+    H0_.lock_space(Space::k);           H0_.go_to_R();
+    r_[0].lock_space(Space::k);         r_[0].go_to_R();
+    r_[1].lock_space(Space::k);         r_[1].go_to_R();
+    r_[2].lock_space(Space::k);         r_[2].go_to_R();
 
     output::print("-> initializing lasers");
     for (int ilaser = 0; ilaser < int(ctx_->cfg().lasers().size()); ++ilaser) {
         auto currentdata = ctx_->cfg().lasers(ilaser);
         Laser laser;
-        
+
         laser.set_InitialTime(currentdata.t0(), unit(currentdata.t0_units()));
         laser.set_Intensity(currentdata.intensity(), unit(currentdata.intensity_units()));
         auto freq_wavelength = wavelength_or_frequency(ilaser);
@@ -125,18 +143,18 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
 
     output::print("-> solve eigensystem");
     SettingUp_EigenSystem();
-    if( ctx_->cfg().opengap() ) OpenGap(); 
+    if( ctx_->cfg().opengap() ) OpenGap();
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
     if( ctx_->cfg().kpath().size() > 1 ) {
         output::print("-> Printing band structure");
         print_bandstructure(ctx_->cfg().kpath(), material_.H);
-    }        
+    }
 
 
     if( ctx_->cfg().kpath().size() > 1 ) {
         output::print("-> Printing band structure");
         print_bandstructure(ctx_->cfg().kpath(), material_.H);
-    }        
+    }
 
 
 /* setting up TD equations */
@@ -213,7 +231,7 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
 
 /// @brief Defines whether or not at the current time step time__ we print the txt files and the matrices in hdf5
 /// @param time__ Current time in the simulation
-/// @param use_sparse If true, we never use the sparse printing, mainly needed for the printing of big matrices 
+/// @param use_sparse If true, we never use the sparse printing, mainly needed for the printing of big matrices
 /// when laser is off
 /// @return Boolean defining if we want to print the observables
 bool Simulation::PrintObservables(const double& time__, const bool& use_sparse)
@@ -235,10 +253,10 @@ bool Simulation::PrintObservables(const double& time__, const bool& use_sparse)
     return (int(round(time__ / DEsolver_DM_.get_ResolutionTime())) % printresolution == 0);
 }
 
-/// @brief Driver for the diagonalization of the Hamiltonian. 
+/// @brief Driver for the diagonalization of the Hamiltonian.
 /// Here we already know the k grid on which we want to propagate our system, defined in the density matrix.
-/// With that and H0(k) already set up in the material class (material_.H), we are able to diagonalize 
-/// and getting eigenvalues (Band_energies_) and eigenvectors (Uk) that will be used later. 
+/// With that and H0(k) already set up in the material class (material_.H), we are able to diagonalize
+/// and getting eigenvalues (Band_energies_) and eigenvectors (Uk) that will be used later.
 void Simulation::SettingUp_EigenSystem()
 {
     PROFILE("Simulation::SetEigensystem");
@@ -265,26 +283,27 @@ void Simulation::SettingUp_EigenSystem()
 };
 
 /// @brief Function to calculate the time dependent Hamiltonian (one-body) as a sum of H0 and the
-/// interaction with the laser: 
+/// interaction with the laser:
 /// @f[
-/// H_{\text{1B}}(\textbf{k}) = H_0(\textbf{k})+ \boldsymbol{\varepsilon}(t)\cdot \Xi(\textbf{k}) 
+/// H_{\text{1B}}(\textbf{k}) = H_0(\textbf{k})+ \boldsymbol{\varepsilon}(t)\cdot \Xi(\textbf{k})
 ///@f]
 /// @param time__ Time on which we want to calculate the hamiltonian, used for the laser
-/// @param erase_H__ If true, we delete H_ before computing it. Needs to be false during 
+/// @param erase_H__ If true, we delete H_ before computing it. Needs to be false during
 /// time propagation to sum up contributions
 void Simulation::Calculate_TDHamiltonian(const double& time__, const bool& erase_H__)
 {
 #ifdef EDUS_TIMERS
     PROFILE("SourceTerm::Calculate_TDHamiltonian");
 #endif
-    H_.go_to_k();
     //--------------------get aliases for nested variables--------------------------------
-    auto& H = H_.get_Operator(SpaceOfPropagation_);
-    auto& H0 = material_.H.get_Operator(SpaceOfPropagation_);
-    auto& x = material_.r[0].get_Operator(SpaceOfPropagation_);
-    auto& y = material_.r[1].get_Operator(SpaceOfPropagation_);
-    auto& z = material_.r[2].get_Operator(SpaceOfPropagation_);
-    auto las = setoflaser_(time__).get("Cartesian");
+    auto& H = H_.get_Operator(SpaceOfCalculateTDHamiltonian_);
+    auto& H0 = H0_.get_Operator(SpaceOfCalculateTDHamiltonian_);
+    auto& x = r_[0].get_Operator(SpaceOfCalculateTDHamiltonian_);
+    auto& y = r_[1].get_Operator(SpaceOfCalculateTDHamiltonian_);
+    auto& z = r_[2].get_Operator(SpaceOfCalculateTDHamiltonian_);
+
+    auto las  = setoflaser_(time__).get("Cartesian");
+    auto lasA = setoflaser_.VectorPotential(time__);
 
     // auto& ci = MeshGrid::ConvolutionIndex[{H0_.get_MeshGrid()->get_id(),
     //                                           H_.get_MeshGrid()->get_id(),
@@ -324,6 +343,27 @@ void Simulation::Calculate_TDHamiltonian(const double& time__, const bool& erase
             }
         }
     }
+
+    static mdarray<std::complex<double>,1> Peierls_phase({H.get_nblocks()});
+    if ( ctx_->cfg().peierls() ) {
+        auto& Rgrid = *(H_.get_Operator(Space::R).get_MeshGrid());
+
+#pragma omp parallel for schedule(static)
+        for (int iR_loc = 0; iR_loc < H0.get_nblocks(); ++iR_loc) {
+            int iR_glob = Rgrid.mpindex.loc1D_to_glob1D(iR_loc);
+            Peierls_phase(iR_loc) = std::exp(+im*lasA.dot(Rgrid[iR_glob]));
+        }
+
+#pragma omp parallel for schedule(static) collapse(3)
+        for (int iblock = 0; iblock < H0.get_nblocks(); ++iblock) {
+            for (int irow = 0; irow < H0.get_nrows(); ++irow) {
+                for (int icol = 0; icol < H0.get_ncols(); ++icol) {
+                    H(iblock, irow, icol) *= Peierls_phase(iblock);
+                }
+            }
+        }
+    }
+
     //---------------------------------------------------------------------------------
 }
 
@@ -353,9 +393,9 @@ void Simulation::Propagate()
     output::print(std::string(output::linesize - 5, '*'));
 }
 
-/// @brief Driver for single time step propagation. 
+/// @brief Driver for single time step propagation.
 /// - checks if something needs to be printed using PrintObservables
-/// - prints .txt file and/or h5 
+/// - prints .txt file and/or h5
 /// - Triggers the one step propagation in DEsolver
 void Simulation::do_onestep()
 {
@@ -379,7 +419,7 @@ void Simulation::do_onestep()
             DensityMatrix_.go_to_bloch();
             DensityMatrix_.get_Operator_k().write_h5(name, nodename::DMk_bloch, node.str());
             DensityMatrix_.go_to_wannier();
-        } 
+        }
         if(ctx_->cfg().dict()["toprint"]["SelfEnergy"] == "true") {
             DensityMatrix_.go_to_R(true);
             H_.go_to_R(false);
@@ -403,7 +443,7 @@ void Simulation::do_onestep()
         os_Laser_ << setoflaser_(DEsolver_DM_.get_CurrentTime()).get("Cartesian");
         os_VectorPot_ << setoflaser_.VectorPotential(DEsolver_DM_.get_CurrentTime()).get("Cartesian");
         Print_Population();
-        Print_Velocity();
+        Print_Velocity(DensityMatrix_);
     }
     //------------------------------------------------------------------------------
     DEsolver_DM_.Propagate();
@@ -449,7 +489,7 @@ double Simulation::jacobian(const Matrix<double>& A__) const
     double j = 0.0;
     auto dim = 0;
     for (auto& ix : {0,1,2}) {
-        dim += ( ctx_->cfg().grid()[ix] > 1 ? 1 : 0 ); 
+        dim += ( ctx_->cfg().grid()[ix] > 1 ? 1 : 0 );
     }
 
     if ( dim == 3 ) {
@@ -460,7 +500,7 @@ double Simulation::jacobian(const Matrix<double>& A__) const
         int perpendicular = -1;
         for (auto& ix : {0,1,2}) {
             if( ctx_->cfg().grid()[ix] <= 1 ) {
-                perpendicular = ix; 
+                perpendicular = ix;
                 break;
             }
         }
@@ -477,18 +517,18 @@ double Simulation::jacobian(const Matrix<double>& A__) const
     return j;
 }
 
-/// @brief Calculation of the matrix elements of the velocity operator on the basis in k. 
-/// As the density matrix is propagated in wannier gauge, this is the gauge where we calculate it. 
+/// @brief Calculation of the matrix elements of the velocity operator on the basis in k.
+/// As the density matrix is propagated in wannier gauge, this is the gauge where we calculate it.
 /// The equation implemented here is:
 /// @f[ \textbf{v}_{nm}(\textbf{k}) = -i[\textbf{\xi}(\textbf{k}), H_0(\textbf{k})] + \nabla_{\textbf{k}} H_0(\textbf{k}) @f]
 /// or, in R space:
 /// @f[ \textbf{v}_{nm}(\textbf{R}) = -i[\textbf{r}, H_0(\textbf{k})] + i \textbf{R} H_0(\textbf{k}) @f]
-/// It must be noticed that because we want to represent the infinite system, when we sum over k an additional constant 
-/// need to be added, to take into account the elementary volume in the integral: 
-/// @f[ 
-/// \delta k = \frac{\Omega_{\text{BZ}}}{N_k} = \frac{(2\pi)^d}{N_k \Omega_{\text{UC}}} 
+/// It must be noticed that because we want to represent the infinite system, when we sum over k an additional constant
+/// need to be added, to take into account the elementary volume in the integral:
+/// @f[
+/// \delta k = \frac{\Omega_{\text{BZ}}}{N_k} = \frac{(2\pi)^d}{N_k \Omega_{\text{UC}}}
 /// @f]
-/// where @f$\Omega_{\text{BZ}}@f$ and @f$\Omega_{\text{UC}}@f$ are, respectively, the volume(/area) of the Brillouin zone and of 
+/// where @f$\Omega_{\text{BZ}}@f$ and @f$\Omega_{\text{UC}}@f$ are, respectively, the volume(/area) of the Brillouin zone and of
 /// the unit cell, while d is the dimension of the system. In this function we multiply by everything but @f$\frac{1}{N_k}@f$
 void Simulation::Calculate_Velocity()
 {
@@ -497,7 +537,7 @@ void Simulation::Calculate_Velocity()
 #ifdef __DEBUG
     H_.print_Rdecay("H0__", material_.rwann_);
     for (int ix : { 0, 1, 2 }) {
-        std::stringstream name; 
+        std::stringstream name;
         name << "r0__" << ix ;
         material_.r[ix].print_Rdecay(name.str(), material_.rwann_);
     }
@@ -513,18 +553,18 @@ void Simulation::Calculate_Velocity()
         Velocity_[ix].get_Operator_k().fill(0.);
 
         /* V = -i*[r,H0] */
-        commutator(Velocity_[ix].get_Operator_k(), -im, material_.r[ix].get_Operator_k(), H_.get_Operator_k());
+        commutator(Velocity_[ix].get_Operator_k(), -im, r_[ix].get_Operator_k(), H_.get_Operator_k());
 
         if (SpaceOfPropagation_Gradient_ == R ) {
             Velocity_[ix].go_to_R();
         }
 #ifdef __DEBUG
-        std::stringstream vel; 
+        std::stringstream vel;
         vel << "velocity__" << ix;
         Velocity_[ix].print_Rdecay(vel.str(), material_.rwann_);
 #endif
         /* V += i*R*H0 */
-        kgradient_.Calculate(1., Velocity_[ix].get_Operator(SpaceOfPropagation_Gradient_), 
+        kgradient_.Calculate(1., Velocity_[ix].get_Operator(SpaceOfPropagation_Gradient_),
                                 H_.get_Operator(SpaceOfPropagation_Gradient_), direction[ix], false);
         if (SpaceOfPropagation_Gradient_ == R ) {
             Velocity_[ix].go_to_k();
@@ -536,14 +576,14 @@ void Simulation::Calculate_Velocity()
 #endif
         /* apply right constants for the normalization of wavefunctions */
         auto det = jacobian(Coordinate::get_Basis(LatticeVectors(Space::R)).get_M());
-        #pragma omp parallel for 
+        #pragma omp parallel for
         for (int iblock = 0; iblock < Velocity_[ix].get_Operator(Space::k).get_nblocks(); ++iblock) {
             for (int irow = 0; irow < Velocity_[ix].get_Operator(Space::k).get_nrows(); ++irow) {
                 for (int icol = 0; icol < Velocity_[ix].get_Operator(Space::k).get_ncols(); ++icol) {
                     Velocity_[ix].get_Operator(Space::k)(iblock, irow, icol) /= det;
                 }
             }
-        }   
+        }
     }
 }
 
@@ -552,11 +592,34 @@ void Simulation::Calculate_Velocity()
 /// \textbf{v}(t) = \text{Tr}(\rho \textbf{v})
 /// where v are the matrix elements of the velocity operator in the basis.
 /// Everything is conveniently done in k space.
-void Simulation::Print_Velocity()
+void Simulation::Print_Velocity(Operator<std::complex<double>>& aux_DM)
 {
     std::array<std::complex<double>, 3> v = { 0., 0., 0. };
 
-    auto& DMK = DensityMatrix_.get_Operator_k();
+    auto& DMR = aux_DM.get_Operator(Space::R);
+    static mdarray<std::complex<double>,1> Peierls_phase({DMR.get_nblocks()});
+// ==     if ( ctx_->cfg().peierls() ) {
+// ==         aux_DM.go_to_R();
+// ==         auto& Rgrid = *(DMR.get_MeshGrid());
+// ==         auto lasA = setoflaser_.VectorPotential(DEsolver_DM_.get_CurrentTime());
+// == #pragma omp parallel for schedule(static)
+// ==         for (int iR_loc = 0; iR_loc < DMR.get_nblocks(); ++iR_loc) {
+// ==             int iR_glob = Rgrid.mpindex.loc1D_to_glob1D(iR_loc);
+// ==             Peierls_phase(iR_loc) = std::exp(-im*lasA.dot(Rgrid[iR_glob]));
+// ==         }
+// == 
+// == #pragma omp parallel for schedule(static) collapse(3)
+// ==         for (int iblock = 0; iblock < DMR.get_nblocks(); ++iblock) {
+// ==             for (int irow = 0; irow < DMR.get_nrows(); ++irow) {
+// ==                 for (int icol = 0; icol < DMR.get_ncols(); ++icol) {
+// ==                     DMR(iblock, irow, icol) *= Peierls_phase(iblock);
+// ==                 }
+// ==             }
+// ==         }
+// ==         aux_DM.go_to_k();
+// ==     }
+    auto& DMK =  aux_DM.get_Operator(Space::k);
+
     static BlockMatrix<std::complex<double>> temp(k, DMK.get_nblocks(), DMK.get_nrows(), DMK.get_ncols());
 
     for (auto ix : { 0, 1, 2 }) {
@@ -580,9 +643,32 @@ void Simulation::Print_Velocity()
         os_Velocity_ << std::setw(20) << std::setprecision(8) << v[2].imag();
         os_Velocity_ << std::endl;
     }
+//==     if ( ctx_->cfg().peierls() ) {
+//==         aux_DM.go_to_R();
+//==         auto& Rgrid = *(DMR.get_MeshGrid());
+//==         auto lasA = setoflaser_.VectorPotential(DEsolver_DM_.get_CurrentTime());
+//== #pragma omp parallel for schedule(static)
+//==         for (int iR_loc = 0; iR_loc < DMR.get_nblocks(); ++iR_loc) {
+//==             int iR_glob = Rgrid.mpindex.loc1D_to_glob1D(iR_loc);
+//==             Peierls_phase(iR_loc) = std::exp(+im*lasA.dot(Rgrid[iR_glob]));
+//==         }
+//== 
+//== #pragma omp parallel for schedule(static) collapse(3)
+//==         for (int iblock = 0; iblock < DMR.get_nblocks(); ++iblock) {
+//==             for (int irow = 0; irow < DMR.get_nrows(); ++irow) {
+//==                 for (int icol = 0; icol < DMR.get_ncols(); ++icol) {
+//==                     DMR(iblock, irow, icol) *= Peierls_phase(iblock);
+//==                 }
+//==             }
+//==         }
+//==        aux_DM.go_to_k();
+//==    }
+    
+
+
 }
 
-/// @brief Recap of all the variables of the simulation, as read from the input json file or 
+/// @brief Recap of all the variables of the simulation, as read from the input json file or
 /// got from default values.
 void Simulation::print_recap()
 {
@@ -640,7 +726,7 @@ void Simulation::print_recap()
 // == }
 
 /// @brief (WARNING: this function could be unsafe in the future). Get a (unique) index
-/// for the creation of a node in the h5 file for the current time step. 
+/// for the creation of a node in the h5 file for the current time step.
 /// @param time__ Time at which we are printing the h5 files
 /// @return Index corresponding to time__ in h5 files
 int Simulation::get_it_sparse(const double& time__) const
@@ -676,8 +762,8 @@ void Simulation::print_grids()
     os.close();
 }
 
-/// @brief Check what is defined in the json file: frequency or wavelength. What is not defined has 
-/// the value 0. 
+/// @brief Check what is defined in the json file: frequency or wavelength. What is not defined has
+/// the value 0.
 /// @param idx__ Index of the laser for which we are checking if is defined with frequency or with wavelength
 /// @return "wavelength" or "frequency", depending which one defines the laser.
 std::string Simulation::wavelength_or_frequency(const int& idx__)
@@ -694,7 +780,7 @@ std::string Simulation::wavelength_or_frequency(const int& idx__)
 
 
 
-double min(const std::vector<mdarray<double,1>>& Vec__) 
+double min(const std::vector<mdarray<double,1>>& Vec__)
 {
     auto min = 1.e+07;
     for( int i = 0; i < Vec__.size(); ++i ) {
@@ -706,7 +792,7 @@ double min(const std::vector<mdarray<double,1>>& Vec__)
 }
 
 
-double max(const std::vector<mdarray<double,1>>& Vec__) 
+double max(const std::vector<mdarray<double,1>>& Vec__)
 {
     auto max = 1.e-07;
     for( int i = 0; i < Vec__.size(); ++i ) {
@@ -729,8 +815,8 @@ void print_bandstructure(const std::vector<std::vector<double>>& bare_kpath__, O
     for( int ik = 0; ik < bare_kpath__.size(); ++ik ) {
         auto& bare_k = bare_kpath__[ik];
         path[ik] = Coordinate(bare_k[0], bare_k[1], bare_k[2], LatticeVectors(Space::k));
-    }    
-    
+    }
+
     /* create kmesh */
     MeshGrid MeshGridPath(Space::k, path, 0.01);
 
@@ -793,9 +879,9 @@ void Simulation::OpenGap()
     /* find maximum of valence (we know eigenvalues are sorted) and min of conduction */
     //output::print("find bangap...");
     //using fwdit = std::vector<double>::iterator;
-    //auto max_valence = findextreme([](fwdit a, fwdit b){return std::max_element(a,b);}, 
+    //auto max_valence = findextreme([](fwdit a, fwdit b){return std::max_element(a,b);},
     //                                Band_energies_, ctx_->cfg().filledbands()-1, kpool_comm);
-    //auto min_conduction = findextreme([](fwdit a, fwdit b){return std::min_element(a,b);}, 
+    //auto min_conduction = findextreme([](fwdit a, fwdit b){return std::min_element(a,b);},
     //                                Band_energies_, ctx_->cfg().filledbands(), kpool_comm);
     //auto dft_bandgap = min_conduction - max_valence;
     //output::print("bandgap:", Convert(dft_bandgap, AuEnergy, ElectronVolt));
@@ -830,5 +916,5 @@ void Simulation::OpenGap()
     material_.H.initialize_fft(DensityMatrix_);
     std::copy(Corrected_hamiltonian_k.begin(), Corrected_hamiltonian_k.end(), material_.H.get_Operator_k().begin());
     std::copy(Corrected_hamiltonian_R.begin(), Corrected_hamiltonian_R.end(), material_.H.get_Operator_R().begin());
-    
+
 }

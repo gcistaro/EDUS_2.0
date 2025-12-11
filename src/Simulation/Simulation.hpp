@@ -21,6 +21,10 @@ class Simulation
     public:
         /// Object containing the main operators for the simulation (H0 and r)
         Material material_;
+        /// KS Hamiltonian with EDUS grids
+        Operator<std::complex<double>> H0_;
+        /// Wannier r operator with EDUS grid
+        std::array<Operator<std::complex<double>>, 3> r_;
         /// Object containing all the parameters that needs to be set; they get read or 
         /// simply they get some default values
         std::shared_ptr<Simulation_parameters> ctx_;
@@ -43,7 +47,9 @@ class Simulation
         kGradient kgradient_;
         /// Object to calculate the Coulomb effective Hamiltonian. More details in the class
         Coulomb coulomb_;
-        /// Space where we calculate the commutator @f$ [H, \rho] @f$
+        /// Space where we evaluate H=H0+E \cdot r
+        Space SpaceOfCalculateTDHamiltonian_ = R;
+        /// Space where we calculate the commutator @f$ [H, \rho] @f$        
         Space SpaceOfPropagation_ = k;
         /// Space where we calculate the gradient in k 
         Space SpaceOfPropagation_Gradient_ = R;
@@ -70,7 +76,7 @@ class Simulation
         void print_recap();
         bool PrintObservables(const double& time__, const bool& use_sparse = true);
         void Print_Population();
-        void Print_Velocity();
+        void Print_Velocity(Operator<std::complex<double>>& aux_DM);
         int get_it(const double& time__) const;
         int get_it_sparse(const double& time__) const;
         double jacobian(const Matrix<double>& A__) const;

@@ -12,14 +12,19 @@ SourceTerm =
 [&](Operator<std::complex<double>>& Output__, const double& time__, const Operator<std::complex<double>>& Input__)
 {
     
-    /* Gradient term:    Output +=   (E.Nabla) * Input */
     if ( SpaceOfPropagation_Gradient_ == R ) {
         Output__.go_to_R(false);
         const_cast<Operator<std::complex<double>>&>(Input__).go_to_R(true);
     }
-    kgradient_.Calculate(1.+0.*im, Output__.get_Operator(SpaceOfPropagation_Gradient_), 
+
+    /* Gradient term:    Output +=   (E.Nabla) * Input 
+    it acts only if we don't do Peierls transformation */   
+    if (!ctx_->cfg().peierls()) {
+        kgradient_.Calculate(1.+0.*im, Output__.get_Operator(SpaceOfPropagation_Gradient_), 
                         Input__.get_Operator(SpaceOfPropagation_Gradient_), 
                         setoflaser_(time__), true);
+
+    }
 
     /* Coulomb interaction */
     H_.go_to_R(false);
@@ -30,14 +35,16 @@ SourceTerm =
         Output__.go_to_k(true);
         const_cast<Operator<std::complex<double>>&>(Input__).go_to_k(false);
     }
-    H_.go_to_k(true);
 
 
     // Output += -i * [ H, Input ]
+    if( SpaceOfCalculateTDHamiltonian_ == k ) H_.go_to_k(true);
     Calculate_TDHamiltonian(time__, false);
-    auto& Output = Output__.get_Operator(Space::k);
-    auto& Input = Input__.get_Operator(Space::k);
-    auto& H = H_.get_Operator(Space::k);
+    if( SpaceOfCalculateTDHamiltonian_ == R ) H_.go_to_k(true);
+
+    auto& Output = Output__.get_Operator(SpaceOfPropagation_);
+    auto& Input = Input__.get_Operator(SpaceOfPropagation_);
+    auto& H = H_.get_Operator(SpaceOfPropagation_);
     commutator(Output, -im, H, Input, false);
 
 };
