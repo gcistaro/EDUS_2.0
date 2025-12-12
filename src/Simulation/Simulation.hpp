@@ -48,7 +48,7 @@ class Simulation
         /// Object to calculate the Coulomb effective Hamiltonian. More details in the class
         Coulomb coulomb_;
         /// Space where we evaluate H=H0+E \cdot r
-        Space SpaceOfCalculateTDHamiltonian_ = k;
+        Space SpaceOfCalculateTDHamiltonian_ = R;
         /// Space where we calculate the commutator @f$ [H, \rho] @f$        
         Space SpaceOfPropagation_ = k;
         /// Space where we calculate the gradient in k 
