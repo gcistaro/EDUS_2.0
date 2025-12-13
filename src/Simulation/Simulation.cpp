@@ -303,7 +303,6 @@ void Simulation::Calculate_TDHamiltonian(const double& time__, const bool& erase
     auto& z = r_[2].get_Operator(SpaceOfCalculateTDHamiltonian_);
 
     auto las  = setoflaser_(time__).get("Cartesian");
-    auto lasA = setoflaser_.VectorPotential(time__);
 
     // auto& ci = MeshGrid::ConvolutionIndex[{H0_.get_MeshGrid()->get_id(),
     //                                           H_.get_MeshGrid()->get_id(),
@@ -324,11 +323,11 @@ void Simulation::Calculate_TDHamiltonian(const double& time__, const bool& erase
 
     //------------------------H(R) = H0(R) + E.r(R)-------------------------------------
     // == /* H_ = H0_ + las_x \cdot x */
-    // == SumWithProduct(H_, 1., H0_, las[0], x_);
+    // == SumWithProduct(H, 1., H0, las[0], x);
     // == /* H_ = H_ + las_y \cdot y */
-    // == SumWithProduct(H_, 1., H_, las[1], y_);
+    // == SumWithProduct(H, 1., H, las[1], y);
     // == /* H_ = H_ + las_z \cdot z */
-    // == SumWithProduct(H_, 1., H0_, las[1], y_);
+    // == SumWithProduct(H, 1., H, las[2], z);
 
 #pragma omp parallel for schedule(static) collapse(3)
     for (int iblock = 0; iblock < H0.get_nblocks(); ++iblock) {
@@ -343,28 +342,7 @@ void Simulation::Calculate_TDHamiltonian(const double& time__, const bool& erase
             }
         }
     }
-
-// ===     static mdarray<std::complex<double>,1> Peierls_phase({H.get_nblocks()});
-// ===     if ( ctx_->cfg().peierls() ) {
-// ===         auto& Rgrid = *(H_.get_Operator(Space::R).get_MeshGrid());
-// === 
-// === #pragma omp parallel for schedule(static)
-// ===         for (int iR_loc = 0; iR_loc < H0.get_nblocks(); ++iR_loc) {
-// ===             int iR_glob = Rgrid.mpindex.loc1D_to_glob1D(iR_loc);
-// ===             Peierls_phase(iR_loc) = std::exp(+im*lasA.dot(Rgrid[iR_glob]));
-// ===         }
-// === 
-// === #pragma omp parallel for schedule(static) collapse(3)
-// ===         for (int iblock = 0; iblock < H0.get_nblocks(); ++iblock) {
-// ===             for (int irow = 0; irow < H0.get_nrows(); ++irow) {
-// ===                 for (int icol = 0; icol < H0.get_ncols(); ++icol) {
-// ===                     H(iblock, irow, icol) *= Peierls_phase(iblock);
-// ===                 }
-// ===             }
-// ===         }
-// ===     }
-
-    //---------------------------------------------------------------------------------
+    H_.lock_space(SpaceOfCalculateTDHamiltonian_);
 }
 
 /// @brief Driver for the full time propagation. It prints every 100 steps in the standard output a message.
@@ -915,4 +893,31 @@ void Simulation::OpenGap()
     std::copy(Corrected_hamiltonian_k.begin(), Corrected_hamiltonian_k.end(), material_.H.get_Operator_k().begin());
     std::copy(Corrected_hamiltonian_R.begin(), Corrected_hamiltonian_R.end(), material_.H.get_Operator_R().begin());
 
+}
+
+
+void Simulation::Apply_Peierls_phase(Operator<std::complex<double>>& O__, const double& time__, const int sign = +1)
+{
+    O__.go_to_R();
+    static mdarray<std::complex<double>,1> Peierls_phase({O__.get_Operator(Space::R).get_nblocks()});
+
+    /* Calculate Peierls phase on the grid */
+    auto At     = setoflaser_.VectorPotential(time__);
+    auto& Rgrid = *(O__.get_Operator(Space::R).get_MeshGrid());
+
+#pragma omp parallel for schedule(static)
+    for (int iR_loc = 0; iR_loc < O__.get_Operator(Space::R).get_nblocks(); ++iR_loc) {
+        int iR_glob = Rgrid.mpindex.loc1D_to_glob1D(iR_loc);
+        Peierls_phase(iR_loc) = std::exp(im*double(sign)*At.dot(Rgrid[iR_glob]));
+    }
+
+#pragma omp parallel for schedule(static) collapse(3)
+    for (int iblock = 0; iblock < O__.get_Operator(Space::R).get_nblocks(); ++iblock) {
+        for (int irow = 0; irow < O__.get_Operator(Space::R).get_nrows(); ++irow) {
+            for (int icol = 0; icol < O__.get_Operator(Space::R).get_ncols(); ++icol) {
+                O__.get_Operator(Space::R)(iblock, irow, icol) = 
+                                        O__.get_Operator(Space::R)(iblock, irow, icol)*Peierls_phase(iblock);
+            }
+        }
+    }
 }

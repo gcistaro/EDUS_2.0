@@ -72,6 +72,7 @@ class Simulation
         void Calculate_TDHamiltonian(const double& time__, const bool& erase_H__);
         void Calculate_Velocity();
         void Propagate();
+        void Apply_Peierls_phase(Operator<std::complex<double>>& O__, const double& time__, const int sign);
         void do_onestep();
         void print_recap();
         bool PrintObservables(const double& time__, const bool& use_sparse = true);
