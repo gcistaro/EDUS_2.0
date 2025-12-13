@@ -28,7 +28,7 @@ SourceTerm =
     
     /* Peierls transformation H_(R) = H_(R)*exp(+i*A(t) \cdot R) */
     if(ctx_->cfg().peierls()) {
-        apply_peierls_phase(H_, time__, +1);
+        Apply_Peierls_phase(H_, time__, +1);
     }
 
     /* Coulomb interaction H_ += \Sigma^H + \Sigma^{SEX} */
