@@ -47,6 +47,7 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
 
     output::print("-> initializing grid and arrays");
     MeshGrid::MasterRgrid = MeshGrid(R, ctx_->cfg().grid());
+    MeshGrid::MasterRgrid_GammaCentered = get_GammaCentered_grid(MeshGrid::MasterRgrid);
     coulomb_.set_DoCoulomb(ctx_->cfg().coulomb());
     coulomb_.set_epsilon(ctx_->cfg().epsilon());
     coulomb_.set_r0(ctx_->cfg().r0());
@@ -903,7 +904,7 @@ void Simulation::Apply_Peierls_phase(Operator<std::complex<double>>& O__, const 
 
     /* Calculate Peierls phase on the grid */
     auto At     = setoflaser_.VectorPotential(time__);
-    auto& Rgrid = *(O__.get_Operator(Space::R).get_MeshGrid());
+    auto& Rgrid = MeshGrid::MasterRgrid_GammaCentered; //WARNING! Here we are supposing O__ R grid is the MasterRgrid! A check would be ideal
 
 #pragma omp parallel for schedule(static)
     for (int iR_loc = 0; iR_loc < O__.get_Operator(Space::R).get_nblocks(); ++iR_loc) {
@@ -915,8 +916,7 @@ void Simulation::Apply_Peierls_phase(Operator<std::complex<double>>& O__, const 
     for (int iblock = 0; iblock < O__.get_Operator(Space::R).get_nblocks(); ++iblock) {
         for (int irow = 0; irow < O__.get_Operator(Space::R).get_nrows(); ++irow) {
             for (int icol = 0; icol < O__.get_Operator(Space::R).get_ncols(); ++icol) {
-                O__.get_Operator(Space::R)(iblock, irow, icol) = 
-                                        O__.get_Operator(Space::R)(iblock, irow, icol)*Peierls_phase(iblock);
+                O__.get_Operator(Space::R)(iblock, irow, icol) *= Peierls_phase(iblock);
             }
         }
     }
