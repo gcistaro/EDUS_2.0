@@ -145,7 +145,7 @@ Coordinate Laser::VectorPotential(const double& Time)
     auto E2 = this->operator()(previous_Time + deltaT/2.);
     auto E3 = this->operator()(Time);
     
-    A += deltaT/6.*(E1 + 4.*E2 + E3);
+    A -= deltaT/6.*(E1 + 4.*E2 + E3);
     previous_Time = Time; 
     return A;
 }
