@@ -47,6 +47,7 @@ class MeshGrid
 
     public:
         static MeshGrid MasterRgrid;
+        static MeshGrid MasterRgrid_GammaCentered;
 
         MPIindex<3> mpindex;
         static std::map<std::array<int,3>, mdarray<int,2> > ConvolutionIndex;//to call it: [{id1,id2,id3}][{iR1,iR3}]
