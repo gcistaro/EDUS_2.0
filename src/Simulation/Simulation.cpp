@@ -125,14 +125,72 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
 
     output::print("-> solve eigensystem");
     SettingUp_EigenSystem();
+    
     if( ctx_->cfg().opengap() ) OpenGap(); 
+     OpenGap();
+     
+     //write tb file
+     std::string FileName = "Corrected_tb.dat";
+     int NumberOfBands = material_.H.get_Operator_R().get_nrows();
+     int NumberOfRpoints = H_.get_Operator_R().get_nblocks();
+     mdarray<double,2> UnitCell({3,3});
+     for(int i=0; i<3; i++) {
+         for(int j=0; j<3; j++) {
+             UnitCell(i,j) = Convert(Coordinate::get_Basis(LatticeVectors(R)).get_M()(i,j), AuLength, Angstrom);
+         }
+     }
+     std::vector<int> Degeneracy(NumberOfRpoints, 1);
+     mdarray<double,2> Rmesh({NumberOfRpoints, 3});
+     auto R_gammacenter = get_GammaCentered_grid(*(material_.H.get_Operator_R().get_MeshGrid()));
+     for(int i=0; i<NumberOfRpoints; i++) {
+         for(int j=0; j<3; j++) {
+             Rmesh(i,j) = R_gammacenter[i].get(LatticeVectors(R))(j);
+         }
+     }
+ 
+     Calculate_TDHamiltonian(-6000, true);
+     H_.go_to_R();
+     
+     mdarray<std::complex<double>,3> HH({NumberOfRpoints, NumberOfBands, NumberOfBands});
+ 
+ #pragma omp parallel for
+     for(int i=0; i<NumberOfRpoints; i++) {
+         for(int j=0; j<NumberOfBands; j++) {
+             for(int k=0; k<NumberOfBands; k++) {
+                 HH(i,j,k) = Convert(H_.get_Operator_R()(i,j,k), AuEnergy, ElectronVolt);
+             }
+         }
+     }
+ 
+     std::array<mdarray<std::complex<double>,3>, 3> rr;
+     rr[0].initialize({NumberOfRpoints, NumberOfBands, NumberOfBands});
+     rr[0].fill(0.);
+     rr[1].initialize({NumberOfRpoints, NumberOfBands, NumberOfBands});
+     rr[1].fill(0.);
+     rr[2].initialize({NumberOfRpoints, NumberOfBands, NumberOfBands});
+     rr[2].fill(0.);
+ 
+ #pragma omp parallel for
+     for(int i=0; i<NumberOfRpoints; i++) {
+         auto index = material_.r[0].get_Operator_R().get_MeshGrid()->find(MeshGrid::MasterRgrid[i]);
+         if( index != -1) {
+             for(int j=0; j<NumberOfBands; j++) {
+                 for(int k=0; k<NumberOfBands; k++) {
+                     rr[0](i,j,k) = Convert(material_.r[0].get_Operator_R()(index,j,k), AuLength, Angstrom);
+                     rr[1](i,j,k) = Convert(material_.r[1].get_Operator_R()(index,j,k), AuLength, Angstrom);
+                     rr[2](i,j,k) = Convert(material_.r[2].get_Operator_R()(index,j,k), AuLength, Angstrom);
+                 }
+             }
+         }
+     }
+ 
+ 
+     PrintWannier( FileName,  NumberOfBands,  NumberOfRpoints, 
+                   UnitCell,  Degeneracy, Rmesh, 
+                   HH, rr);
+// ==     exit(0);
+    
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
-    if( ctx_->cfg().kpath().size() > 1 ) {
-        output::print("-> Printing band structure");
-        print_bandstructure(ctx_->cfg().kpath(), material_.H);
-    }        
-
-
     if( ctx_->cfg().kpath().size() > 1 ) {
         output::print("-> Printing band structure");
         print_bandstructure(ctx_->cfg().kpath(), material_.H);
@@ -814,12 +872,16 @@ void Simulation::OpenGap()
     auto& Corrected_hamiltonian_R = Corrected_hamiltonian.get_Operator(Space::R);
     Corrected_hamiltonian_k.fill(0.);
     for( int ik = 0; ik < Corrected_hamiltonian_k.get_nblocks(); ++ik ) {
-        for ( int ival = 0; ival < ctx_->cfg().filledbands(); ++ival ) {
-            Corrected_hamiltonian_k(ik, ival, ival) = Band_energies_[ik](ival) - ctx_->cfg().opengap()/2.;
+        for ( int iband = 2; iband < 4; iband++ ) {
+            Corrected_hamiltonian_k(ik, iband, iband) = Band_energies_[ik](iband) - Convert(20., ElectronVolt, AuEnergy);
         }
-        for ( int icond = ctx_->cfg().filledbands(); icond < Corrected_hamiltonian_k.get_nrows(); ++icond ) {
-            Corrected_hamiltonian_k(ik, icond, icond) = Band_energies_[ik](icond) + ctx_->cfg().opengap()/2.;
-        }
+
+    //    for ( int ival = 0; ival < ctx_->cfg().filledbands(); ++ival ) {
+    //        Corrected_hamiltonian_k(ik, ival, ival) = Band_energies_[ik](ival) - ctx_->cfg().opengap()/2.;
+    //    }
+    //    for ( int icond = ctx_->cfg().filledbands(); icond < Corrected_hamiltonian_k.get_nrows(); ++icond ) {
+    //        Corrected_hamiltonian_k(ik, icond, icond) = Band_energies_[ik](icond) + ctx_->cfg().opengap()/2.;
+    //    }
     }
 
     Corrected_hamiltonian.go_to_wannier();
