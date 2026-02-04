@@ -35,6 +35,22 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     if ( ctx_->cfg().printresolution_pulse() == 0 ) {
         ctx_->cfg().printresolution_pulse(ctx_->cfg().printresolution());
     }
+    if (std::filesystem::exists(ctx_->cfg().screen_file())){
+        ctx_->cfg().method("hsex");
+        output::print("-> there is a screened Coulomb file so method is hsex");
+        ctx_->cfg().read_interaction(true);
+        output::print("-> there is a screened Coulomb file so read_interaction is true");
+    }
+    else if (std::filesystem::exists(ctx_->cfg().bare_file())){
+        ctx_->cfg().method("rpa");
+        output::print("-> there is a bare Coulomb file so method is rpa");
+        ctx_->cfg().read_interaction(true);
+        output::print("-> there is a bare Coulomb file so read_interaction is true");
+    }
+    if ( !ctx_->cfg().coulomb() ) {
+        ctx_->cfg().method("ipa");
+        output::print("-> coulomb was set to false so method is ipa");
+    } 
 
     ctx_->cfg().opengap(Convert(ctx_->cfg().opengap(), unit(ctx_->cfg().opengap_units()),
         AuEnergy));
@@ -50,8 +66,11 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     MeshGrid::MasterRgrid_GammaCentered = get_GammaCentered_grid(MeshGrid::MasterRgrid);
     coulomb_.set_DoCoulomb(ctx_->cfg().coulomb());
     coulomb_.set_epsilon(ctx_->cfg().epsilon());
-    coulomb_.set_r0(ctx_->cfg().r0());
-
+    coulomb_.set_method(ctx_->cfg().method());
+    coulomb_.set_read_interaction((*ctx_).cfg().read_interaction());
+    coulomb_.set_bare_file_path((*ctx_).cfg().bare_file());
+    coulomb_.set_screen_file_path((*ctx_).cfg().screen_file());
+    coulomb_.set_r0((*ctx_).cfg().r0());
     /* getting rytova keldysh with python */
     // ==if (ctx_->cfg().coulomb()) {
     // ==    std::stringstream command;
@@ -637,6 +656,10 @@ void Simulation::print_recap()
     output::print("PrintResolution          *", ctx_->cfg().printresolution());
     output::print("PrintResolution(pulse):  *", ctx_->cfg().printresolution_pulse());
     output::print("Coulomb                  *", std::string(8, ' '), (coulomb_.get_DoCoulomb() ? "True" : "False"));
+    output::print("barecoulomb              *", std::string(8, ' '), ctx_->cfg().bare_file());
+    output::print("screencoulomb            *", std::string(8, ' '), ctx_->cfg().screen_file());
+    output::print("Method                   *        ",  coulomb_.get_method());
+    output::print("Read Interaction         *        ", ( coulomb_.get_read_interaction() ? "True" : "False"));
     output::print("epsilon                  *", ctx_->cfg().epsilon());
     output::print("r0x                      *", coulomb_.get_r0()[0], " a.u.",
                                                 Convert( coulomb_.get_r0()[0], AuLength, Angstrom), " angstrom");
@@ -646,6 +669,7 @@ void Simulation::print_recap()
                                                 Convert( coulomb_.get_r0()[2], AuLength, Angstrom), " angstrom");
     output::print("r0_avg                   *", coulomb_.get_r0_avg(), " a.u.",
                                                 Convert( coulomb_.get_r0_avg(), AuLength, Angstrom), " angstrom");
+    output::print("filledbands              *", ctx_->cfg().filledbands());
     output::print("toprint-> DMk_wannier    *        ", std::string(ctx_->cfg().dict()["toprint"]["DMk_wannier"]));
     output::print("toprint-> DMk_bloch      *        ", std::string(ctx_->cfg().dict()["toprint"]["DMk_bloch"]));
     output::print("toprint-> fullH          *        ", std::string(ctx_->cfg().dict()["toprint"]["fullH"]));
