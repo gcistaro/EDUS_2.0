@@ -101,6 +101,7 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     r_[0].initialize_fft(DensityMatrix_);
     r_[1].initialize_fft(DensityMatrix_);
     r_[2].initialize_fft(DensityMatrix_);
+    aux_DM_.initialize_fft(DensityMatrix_);
 
     auto& materialH0k = material_.H.get_Operator(Space::k);
     auto& materialr0k  = material_.r[0].get_Operator(Space::k);
@@ -194,6 +195,7 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
 
     /* open files for small outputs */
     os_Pop_.open("Population.txt");
+    os_Pop_wannier_.open("Population_wannier.txt");
     os_Laser_.open("Laser.txt");
     os_VectorPot_.open("Laser_A.txt");
     os_Time_.open("Time.txt");
@@ -421,7 +423,8 @@ void Simulation::do_onestep()
         // print laser
         os_Laser_ << setoflaser_(DEsolver_DM_.get_CurrentTime()).get("Cartesian");
         os_VectorPot_ << setoflaser_.VectorPotential(DEsolver_DM_.get_CurrentTime()).get("Cartesian");
-        Print_Population();
+        Print_Population(BandGauge::bloch);
+        Print_Population(BandGauge::wannier);
         Print_Velocity(DensityMatrix_);
     }
     //------------------------------------------------------------------------------
@@ -433,28 +436,36 @@ void Simulation::do_onestep()
 /// P_n(t) = \frac{1}{N}\sum_{\textbf{k}} \rho_{nn}(\textbf{k})
 /// @f]
 /// where @f$ \rho_{nn}(\textbf{k}) @f$ is the density matrix in the bloch gauge.
-void Simulation::Print_Population()
+void Simulation::Print_Population(const BandGauge& bandgauge__)
 {
-    static Operator<std::complex<double>> aux_DM;
-    aux_DM = DensityMatrix_;
+    std::copy(DensityMatrix_.get_Operator(DensityMatrix_.space).begin(),
+              DensityMatrix_.get_Operator(DensityMatrix_.space).end(),
+              aux_DM_.get_Operator(DensityMatrix_.space).begin());
+    aux_DM_.lock_space(DensityMatrix_.space);
+    aux_DM_.lock_gauge(DensityMatrix_.bandgauge);
 
-    aux_DM.go_to_bloch();
+    if( ctx_->cfg().peierls() ) {
+        Apply_Peierls_phase(aux_DM_, DEsolver_DM_.get_CurrentTime(), -1);
+    }
+    aux_DM_.go_to(bandgauge__);
+    aux_DM_.go_to_R();
 
-    auto Population = TraceK(aux_DM.get_Operator(Space::k));
-#ifdef EDUS_MPI
-    if (kpool_comm.rank() == 0)
-#endif
-    {
-        for (int ibnd = 0; ibnd < int(Population.size()); ibnd++) {
-            Population[ibnd] /= double(aux_DM.get_Operator_k().get_MeshGrid()->get_TotalSize());
+    static auto index = MeshGrid::MasterRgrid.find(Coordinate(0.,0.,0.));
+
+    /* Print population of every orbital */
+    auto& os = (bandgauge__ == wannier) ? os_Pop_wannier_ : os_Pop_; 
+
+    if( index != -1 ) {
+        for (int ibnd = 0; ibnd < DensityMatrix_.get_Operator_k().get_nrows(); ibnd++) {
+            if( bandgauge__ == bloch && ibnd < ctx_->cfg().filledbands() ) {
+                os << std::setw(30) << std::setprecision(14) << 1. - aux_DM_.get_Operator_R()(index,ibnd,ibnd).real();
+            }
+            else {
+                os << std::setw(30) << std::setprecision(14) << aux_DM_.get_Operator_R()(index,ibnd,ibnd).real();
+            }
+            os << " ";
         }
-        for (int ibnd = 0; ibnd < int(Population.size()); ibnd++) {
-            if (ibnd < ctx_->cfg().filledbands())
-                Population[ibnd] = 1. - Population[ibnd];
-            os_Pop_ << std::setw(20) << std::setprecision(6) << Population[ibnd].real();
-            os_Pop_ << " ";
-        }
-        os_Pop_ << std::endl;
+        os << std::endl;
     }
 }
 
@@ -573,29 +584,17 @@ void Simulation::Print_Velocity(Operator<std::complex<double>>& aux_DM)
 {
     std::array<std::complex<double>, 3> v = { 0., 0., 0. };
 
-    auto& DMR = aux_DM.get_Operator(Space::R);
-    static mdarray<std::complex<double>,1> Peierls_phase({DMR.get_nblocks()});
-// ==     if ( ctx_->cfg().peierls() ) {
-// ==         aux_DM.go_to_R();
-// ==         auto& Rgrid = *(DMR.get_MeshGrid());
-// ==         auto lasA = setoflaser_.VectorPotential(DEsolver_DM_.get_CurrentTime());
-// == #pragma omp parallel for schedule(static)
-// ==         for (int iR_loc = 0; iR_loc < DMR.get_nblocks(); ++iR_loc) {
-// ==             int iR_glob = Rgrid.mpindex.loc1D_to_glob1D(iR_loc);
-// ==             Peierls_phase(iR_loc) = std::exp(-im*lasA.dot(Rgrid[iR_glob]));
-// ==         }
-// == 
-// == #pragma omp parallel for schedule(static) collapse(3)
-// ==         for (int iblock = 0; iblock < DMR.get_nblocks(); ++iblock) {
-// ==             for (int irow = 0; irow < DMR.get_nrows(); ++irow) {
-// ==                 for (int icol = 0; icol < DMR.get_ncols(); ++icol) {
-// ==                     DMR(iblock, irow, icol) *= Peierls_phase(iblock);
-// ==                 }
-// ==             }
-// ==         }
-// ==         aux_DM.go_to_k();
-// ==     }
-    auto& DMK =  aux_DM.get_Operator(Space::k);
+    std::copy(DensityMatrix_.get_Operator(DensityMatrix_.space).begin(),
+              DensityMatrix_.get_Operator(DensityMatrix_.space).end(),
+              aux_DM_.get_Operator(DensityMatrix_.space).begin());
+    aux_DM_.lock_space(DensityMatrix_.space);
+    aux_DM_.lock_gauge(DensityMatrix_.bandgauge);
+
+    if (ctx_->cfg().peierls()) {
+        Apply_Peierls_phase(aux_DM_, DEsolver_DM_.get_CurrentTime(), -1);
+    }
+    aux_DM_.go_to(Space::k);
+    auto& DMK =  aux_DM_.get_Operator(Space::k);
 
     static BlockMatrix<std::complex<double>> temp(k, DMK.get_nblocks(), DMK.get_nrows(), DMK.get_ncols());
 
@@ -619,30 +618,7 @@ void Simulation::Print_Velocity(Operator<std::complex<double>>& aux_DM)
         os_Velocity_ << std::setw(20) << std::setprecision(8) << v[2].real();
         os_Velocity_ << std::setw(20) << std::setprecision(8) << v[2].imag();
         os_Velocity_ << std::endl;
-    }
-//==     if ( ctx_->cfg().peierls() ) {
-//==         aux_DM.go_to_R();
-//==         auto& Rgrid = *(DMR.get_MeshGrid());
-//==         auto lasA = setoflaser_.VectorPotential(DEsolver_DM_.get_CurrentTime());
-//== #pragma omp parallel for schedule(static)
-//==         for (int iR_loc = 0; iR_loc < DMR.get_nblocks(); ++iR_loc) {
-//==             int iR_glob = Rgrid.mpindex.loc1D_to_glob1D(iR_loc);
-//==             Peierls_phase(iR_loc) = std::exp(+im*lasA.dot(Rgrid[iR_glob]));
-//==         }
-//== 
-//== #pragma omp parallel for schedule(static) collapse(3)
-//==         for (int iblock = 0; iblock < DMR.get_nblocks(); ++iblock) {
-//==             for (int irow = 0; irow < DMR.get_nrows(); ++irow) {
-//==                 for (int icol = 0; icol < DMR.get_ncols(); ++icol) {
-//==                     DMR(iblock, irow, icol) *= Peierls_phase(iblock);
-//==                 }
-//==             }
-//==         }
-//==        aux_DM.go_to_k();
-//==    }
-    
-
-
+    }    
 }
 
 /// @brief Recap of all the variables of the simulation, as read from the input json file or

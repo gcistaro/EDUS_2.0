@@ -25,15 +25,24 @@ SourceTerm =
 
     /* IPA Hamiltonian H_ = H0_ + E \cdot r*/
     Calculate_TDHamiltonian(time__, true);
+
+    /* Coulomb interaction H_ += \Sigma^H + \Sigma^{SEX} */
+    H_.go_to_R();
+    if(ctx_->cfg().peierls()) {
+        std::copy(Input__.get_Operator(R).begin(),
+                  Input__.get_Operator(R).end(),
+                  aux_DM_.get_Operator(R).begin());   
+        aux_DM_.lock_space(R);    
+        Apply_Peierls_phase(aux_DM_, time__, -1);
+    }
+    auto& DM = ctx_->cfg().peierls() ? aux_DM_ : Input__;
+    coulomb_.EffectiveHamiltonian( H_, DM, false); 
     
     /* Peierls transformation H_(R) = H_(R)*exp(+i*A(t) \cdot R) */
     if(ctx_->cfg().peierls()) {
         Apply_Peierls_phase(H_, time__, +1);
     }
 
-    /* Coulomb interaction H_ += \Sigma^H + \Sigma^{SEX} */
-    H_.go_to_R();
-    coulomb_.EffectiveHamiltonian( H_, Input__, false); 
 
 
     // Output__ += -i * [ H_, Input__ ]
