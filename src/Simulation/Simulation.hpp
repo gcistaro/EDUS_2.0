@@ -21,6 +21,10 @@ class Simulation
     public:
         /// Object containing the main operators for the simulation (H0 and r)
         Material material_;
+        /// KS Hamiltonian with EDUS grids
+        Operator<std::complex<double>> H0_;
+        /// Wannier r operator with EDUS grid
+        std::array<Operator<std::complex<double>>, 3> r_;
         /// Object containing all the parameters that needs to be set; they get read or 
         /// simply they get some default values
         std::shared_ptr<Simulation_parameters> ctx_;
@@ -36,6 +40,8 @@ class Simulation
         SetOfLaser setoflaser_;
         /// What we are propagating in time
         Operator<std::complex<double>> DensityMatrix_;
+        /// For printing stuff without touching the DensityMatrix we propagate
+        Operator<std::complex<double>> aux_DM_;
         /// Driver for the time propagation, it defines how we solve the differential equations
         /// and it is fed with our equation
         DESolver<Operator<std::complex<double>>> DEsolver_DM_;
@@ -43,7 +49,9 @@ class Simulation
         kGradient kgradient_;
         /// Object to calculate the Coulomb effective Hamiltonian. More details in the class
         Coulomb coulomb_;
-        /// Space where we calculate the commutator @f$ [H, \rho] @f$
+        /// Space where we evaluate H=H0+E \cdot r
+        Space SpaceOfCalculateTDHamiltonian_ = R;
+        /// Space where we calculate the commutator @f$ [H, \rho] @f$        
         Space SpaceOfPropagation_ = k;
         /// Space where we calculate the gradient in k 
         Space SpaceOfPropagation_Gradient_ = R;
@@ -54,7 +62,9 @@ class Simulation
         std::ofstream os_Laser_;
         /// Output text file to print the laser in time, vector potential
         std::ofstream os_VectorPot_;
-        /// Output text file to print the population in time (in bloch gauge) as a sum over all the k points
+        /// Output text file to print the population in time (in wannier gauge) 
+        std::ofstream os_Pop_wannier_;
+        /// Output text file to print the population in time (in bloch gauge)
         std::ofstream os_Pop_;
         /// Output text file to print the mean value of the velocity operator over the state where our system is at time t
         std::ofstream os_Velocity_;
@@ -66,11 +76,12 @@ class Simulation
         void Calculate_TDHamiltonian(const double& time__, const bool& erase_H__);
         void Calculate_Velocity();
         void Propagate();
+        void Apply_Peierls_phase(Operator<std::complex<double>>& O__, const double& time__, const int sign);
         void do_onestep();
         void print_recap();
         bool PrintObservables(const double& time__, const bool& use_sparse = true);
-        void Print_Population();
-        void Print_Velocity();
+        void Print_Population(const BandGauge& bandgauge__);
+        void Print_Velocity(Operator<std::complex<double>>& aux_DM);
         int get_it(const double& time__) const;
         int get_it_sparse(const double& time__) const;
         double jacobian(const Matrix<double>& A__) const;

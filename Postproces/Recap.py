@@ -18,17 +18,18 @@ args=parser.parse_args()
 #print in output some infos
 print("folder       :    ", args.folder)
 print("version      :    ", args.version)
-t_au, Pt, Et_au, Vt_au = read_observables(args.folder, args.version)
+t_au, Pt, Et_au, At_au, Vt_au = read_observables(args.folder, args.version)
 t_fs = t_au*constants.physical_constants["atomic unit of time"][0]*1.e15
 
 fig = plt.figure()
-gs = fig.add_gridspec(3, 2, hspace=0)
+gs = fig.add_gridspec(4, 2, hspace=0)
 ax = gs.subplots(sharex="col")
 
 fig.suptitle('Plots of output variables')
 
 for ip,p in enumerate(Pt):
-    ax[0][0].plot(t_fs, p, label=str(ip))
+    if ip==0:
+        ax[0][0].plot(t_fs, p, label=str(ip))
 ax[0][0].legend()
 ax[0][0].set_ylabel("Population")
 
@@ -38,12 +39,18 @@ ax[1][0].plot(t_fs, Et_au[2], label="$E_z$")
 ax[1][0].legend()
 ax[1][0].set_ylabel("Electric field")
 
-ax[2][0].plot(t_fs, np.real(Vt_au[0]), label="$V_x$")
-ax[2][0].plot(t_fs, np.real(Vt_au[1]), label="$V_y$")
-ax[2][0].plot(t_fs, np.real(Vt_au[2]), label="$V_z$")
-ax[2][0].set_xlabel("Time (fs)")
+ax[2][0].plot(t_fs, At_au[0], label="$A_x$")
+ax[2][0].plot(t_fs, At_au[1], label="$A_y$")
+ax[2][0].plot(t_fs, At_au[2], label="$A_z$")
 ax[2][0].legend()
-ax[2][0].set_ylabel("Velocity")
+ax[2][0].set_ylabel("Vector Potential")
+
+ax[3][0].plot(t_fs, np.real(Vt_au[0]), label="$V_x$")
+ax[3][0].plot(t_fs, np.real(Vt_au[1]), label="$V_y$")
+ax[3][0].plot(t_fs, np.real(Vt_au[2]), label="$V_z$")
+ax[3][0].set_xlabel("Time (fs)")
+ax[3][0].legend()
+ax[3][0].set_ylabel("Velocity")
 
 
 #Fourier transform everything

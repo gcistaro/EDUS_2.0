@@ -97,6 +97,12 @@ Coordinate& Coordinate::operator+=(const Coordinate& v)
     return (*this);
 }
 
+Coordinate& Coordinate::operator-=(const Coordinate& v)
+{
+    (*this) = (*this)-v;
+    return (*this);
+}
+
 Coordinate Coordinate::operator*(const double& alpha) const
 {
     Coordinate v1;
