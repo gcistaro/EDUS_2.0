@@ -9,6 +9,8 @@ def read_observables(folder, version):
             t_au = np.loadtxt(folder + "/Time.txt", unpack=True)
         if os.path.exists(folder + "/Laser.txt"):
             Et_au = np.loadtxt(folder + "/Laser.txt", unpack=True)
+        if os.path.exists(folder + "/Laser.txt"):
+            At_au = np.loadtxt(folder + "/Laser_A.txt", unpack=True)
         if os.path.exists(folder + "/Population.txt"):
             Pt = np.loadtxt(folder + "/Population.txt", unpack=True)
         if os.path.exists(folder + "/Velocity.txt"):
@@ -42,13 +44,14 @@ def read_observables(folder, version):
         Vt_au = (J1+J2)
 
     #be sure everything has same dimensions -mainly if you analyse data while running a simulation
-    dim   = np.min((Pt.shape[1], t_au.shape[0], Et_au.shape[1], Vt_au.shape[1]))
+    dim   = np.min((Pt.shape[1], t_au.shape[0], Et_au.shape[1], Vt_au.shape[1], At_au.shape[1]))
     Et_au = Et_au[:,:dim]
+    At_au = At_au[:,:dim]
     t_au  = t_au[:dim]
     Pt    = Pt[:,:dim]
     Vt_au = Vt_au[:,:dim]
 
-    return t_au, Pt, Et_au, Vt_au
+    return t_au, Pt, Et_au, At_au, Vt_au
 
 
 import h5py
