@@ -32,7 +32,7 @@ print("version      :    ", args.version)
 
 #read data
 print("Reading t, E(t), V(t)...", end=" ", flush=True)
-t_au, _, Et_au, Vt_au = read_observables(args.folder, args.version)
+t_au, _, Et_au, _, Vt_au = read_observables(args.folder, args.version)
 print("done.")
 freq_eV, Absorbance = get_absorbance(t_au, Vt_au, Et_au, args.window, args.smearing)
 
