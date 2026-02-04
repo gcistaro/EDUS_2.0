@@ -13,20 +13,20 @@ SourceTerm =
 {
     /* next line aligns k and R components of input (DM_{i-1}) */
     const_cast<Operator<std::complex<double>>&>(Input__).go_to_R(true);
+    Output__.get_Operator(SpaceOfPropagation_Gradient_).fill(0.);
     
     /* Gradient term:    Output +=   (E.Nabla) * Input */ 
     Output__.lock_space(SpaceOfPropagation_Gradient_);
     if (!ctx_->cfg().peierls()) {
         kgradient_.Calculate(1.+0.*im, Output__.get_Operator(SpaceOfPropagation_Gradient_), 
                         Input__.get_Operator(SpaceOfPropagation_Gradient_), 
-                        setoflaser_(time__), true);
-
+                        setoflaser_(time__), false);
     }
 
     /* IPA Hamiltonian H_ = H0_ + E \cdot r*/
     Calculate_TDHamiltonian(time__, true);
 
-    /* Coulomb interaction H_ += \Sigma^H + \Sigma^{SEX} */
+    /* Coulomb interaction H_ += \Sigma^H[\rho] + \Sigma^{SEX}[\rho] */
     H_.go_to_R();
     if(ctx_->cfg().peierls()) {
         std::copy(Input__.get_Operator(R).begin(),
