@@ -486,6 +486,43 @@ class Operator
 #endif            
         }
 
+        void go_to(const Space& space__) 
+        {
+            switch (space__) 
+            {
+                case ( k ) :
+                {
+                    go_to_k();
+                    break;
+                }
+                case ( R ) :
+                {
+                    go_to_R();
+                    break;
+                }
+                default :
+                    break;
+            }
+        }
+
+        void go_to(const BandGauge& bandgauge__) 
+        {
+            switch (bandgauge__) 
+            {
+                case ( wannier ) :
+                {
+                    go_to_wannier();
+                    break;
+                }
+                case ( bloch ) :
+                {
+                    go_to_bloch();
+                    break;
+                }
+                default :
+                    break;
+            }
+        }
 
         void go_to_wannier()
         {
@@ -493,10 +530,10 @@ class Operator
             PROFILE("Operator::go_to_wannier");
 #endif
             assert(locked_bandgauge);
-            assert(space == k);
             if (bandgauge == wannier){
                 return;
             }
+            go_to_k();
             auto temp_k = Operator_k;
             temp_k.fill(0); 
 
@@ -513,10 +550,10 @@ class Operator
             PROFILE("Operator::go_to_bloch");
 #endif
             assert(locked_bandgauge);
-            assert(space == k);
             if(bandgauge == bloch){
                 return;
             }
+            go_to_k();
             auto temp_k = Operator_k;
             temp_k.fill(0); 
             multiply(temp_k, std::complex<double>(1.), EigenVectors_dagger, Operator_k);

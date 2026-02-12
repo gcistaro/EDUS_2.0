@@ -170,6 +170,11 @@
             "default": 4,
             "title": "Order of the Solver used for time propagation of the Density Matrix"
         },
+        "peierls": {
+            "type": "boolean",
+            "default": false,
+            "title": "If true, we propagate the EOM in the Peierls gauge"
+        },
         "toprint": {
             "type":  "array",
             "title": "Big quantities that we want to print",

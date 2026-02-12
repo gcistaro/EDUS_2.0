@@ -70,6 +70,7 @@ class Coordinate{
         Coordinate operator-(const Coordinate& v) const;
         Coordinate operator+(const Coordinate& v) const;
         Coordinate& operator+=(const Coordinate& v);
+        Coordinate& operator-=(const Coordinate& v);
 
         Coordinate operator*(const double& alpha) const;
         Coordinate operator/(const double& alpha) const;

@@ -5,6 +5,7 @@ int MeshGrid::counter_id = 0;
 std::map<std::array<int,3>, mdarray<int,2> > MeshGrid::ConvolutionIndex;
 
 MeshGrid MeshGrid::MasterRgrid;
+MeshGrid MeshGrid::MasterRgrid_GammaCentered;
 
 /*
 MeshGrid::MeshGrid(const MeshGrid& mg)
