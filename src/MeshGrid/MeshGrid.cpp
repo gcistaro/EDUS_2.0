@@ -1,4 +1,5 @@
 #include "MeshGrid.hpp"
+#include "initialize.hpp"
 
 int MeshGrid::counter_id = 0;
 std::map<std::array<int,3>, mdarray<int,2> > MeshGrid::ConvolutionIndex;
@@ -79,6 +80,7 @@ MeshGrid::MeshGrid(const Space& space__, const std::vector<Coordinate>& PathPoin
 
 void MeshGrid::initialize(const Space& space__, const std::vector<Coordinate>& PathPoint, const double& resolution)
 {
+    id = ++counter_id;
     space = space__;
     int NumberOfLines = PathPoint.size()-1;
     type = path;

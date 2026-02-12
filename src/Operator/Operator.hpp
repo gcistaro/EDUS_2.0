@@ -231,9 +231,10 @@ class Operator
 
             //bandindex FTfriendly_Operator_k = mdarray<std::complex<double>, 2>({nbnd*(nbnd+1)/2, mpindex.get_RecommendedAllocate_fftw()});
             //bandindex FTfriendly_Operator_R = mdarray<std::complex<double>, 2>({nbnd*(nbnd+1)/2, mpindex.get_RecommendedAllocate_fftw()});
+            auto dim_k = mpindex.get_nlocal() > 0 ? mpindex.get_nlocal() : 1;//to avoid that we get a 0 allocated pointer
 #ifdef EDUS_MPI
-            FTfriendly_Operator_k = mdarray<std::complex<double>, 2>( Operator_k.data(), {mpindex.get_nlocal(),nbnd*nbnd}, mpindex.get_RecommendedAllocate_fftw());
-            FTfriendly_Operator_R = mdarray<std::complex<double>, 2>( Operator_R.data(), {mpindex.get_nlocal(),nbnd*nbnd}, mpindex.get_RecommendedAllocate_fftw());
+            FTfriendly_Operator_k = mdarray<std::complex<double>, 2>( Operator_k.data(), {dim_k,nbnd*nbnd} );
+            FTfriendly_Operator_R = mdarray<std::complex<double>, 2>( Operator_R.data(), {dim_k,nbnd*nbnd} );
 #else
             FTfriendly_Operator_k = mdarray<std::complex<double>, 2>({nbnd*nbnd, mpindex.get_nlocal()});
             FTfriendly_Operator_R = mdarray<std::complex<double>, 2>({nbnd*nbnd, mpindex.get_nlocal()});
