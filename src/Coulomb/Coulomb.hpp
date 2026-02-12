@@ -24,6 +24,12 @@ class Coulomb
         /// The effective Hartree potential, defined as: @f[ H_{nm} = \sum_\textbf{R} V_{nm}(\textbf{R}) = 
         /// \sum_\textbf{R} \langle n\textbf{0}m\textbf{R}|V(r-r')| n\textbf{0}m\textbf{R} \rangle @f]
         mdarray<std::complex<double>, 2> Hartree;
+        enum Method{ipa, rpa, hsex} method_;
+        /// True if interactions are read from file. False if not.
+        bool read_interaction_;
+        /// Paths of the read interactions
+        std::string bare_file_path_;
+        std::string screen_file_path_;
     public:
         Coulomb(){};
         Coulomb(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid__, const std::array<Operator<std::complex<double>>,3>& r);
@@ -36,10 +42,16 @@ class Coulomb
         void set_r0(const std::vector<double>& r0__);
         const bool& get_DoCoulomb() const;
         bool& get_DoCoulomb();
+        std::string get_method();
+        bool& get_read_interaction();
+        void set_method(const std::string& method__);
 
         mdarray<std::complex<double>,3>& get_ScreenedPotential();
         std::array<double, 3>& get_r0();
         double get_r0_avg();
+        void set_read_interaction(const bool& read_interaction__);
+        void set_bare_file_path(const std::string& bare_file_path__);
+        void set_screen_file_path(const std::string& screen_file_path__);
 };
 
 

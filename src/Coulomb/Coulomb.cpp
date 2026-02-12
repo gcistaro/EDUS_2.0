@@ -29,14 +29,44 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
     // == std::filesystem::path cwd = std::filesystem::current_path() / "RytovaKeldysh.txt";
     // == read_rk_py( RytovaKeldysh_TB, cwd.str());
 
-    modelcoulomb_.initialize(r__, 2, Rgrid__);
+    modelcoulomb_.initialize(r__, 2, Rgrid__, read_interaction_, bare_file_path_, screen_file_path_);
 
+    output::print("Maximum and minimum (in norm) of bare and screened interaction:");
+    auto max = *std::max_element( modelcoulomb_.BarePotential_.begin(), modelcoulomb_.BarePotential_.end(),
+                          [] (std::complex<double> a, std::complex<double> b) { return std::real(a) < std::real(b); }); 
+    auto min = *std::max_element( modelcoulomb_.BarePotential_.begin(), modelcoulomb_.BarePotential_.end(),
+                          [] (std::complex<double> a, std::complex<double> b) { return std::real(a) > std::real(b); }); 
+    output::print( "bare:    ", std::real(min), std::real(max));
+    max = *std::max_element( modelcoulomb_.ScreenedPotential_.begin(), modelcoulomb_.ScreenedPotential_.end(),
+                          [] (std::complex<double> a, std::complex<double> b) { return std::real(a) < std::real(b); }); 
+    min = *std::max_element( modelcoulomb_.ScreenedPotential_.begin(), modelcoulomb_.ScreenedPotential_.end(),
+                          [] (std::complex<double> a, std::complex<double> b) { return std::real(a) > std::real(b); }); 
+    output::print( "screened: ", std::real(min), std::real(max));
     /* define the index of Rgrid where (0,0,0) is */
     int index_origin_global = Rgrid__->find(Coordinate(0,0,0));
     HasOrigin_ = Rgrid__->mpindex.is_local(index_origin_global);
     if( HasOrigin_ ) {
         index_origin_local_ = Rgrid__->mpindex.glob1D_to_loc1D(index_origin_global);  
     }  
+
+    /* get rank with origin in all the ranks */
+    int HasOrigin_int = HasOrigin_ ? 1 : 0;
+    output::print("has origin: ", (HasOrigin_ ? "true" : "false"));
+    std::vector<int> rank_has_origin(kpool_comm.size());
+
+    MPI_Allgather(&HasOrigin_int, 1, MPI_INT, rank_has_origin.data(), 1, MPI_INT, kpool_comm.communicator());    
+    output::print("rank_has_origin[0]: ", (rank_has_origin[0] ? "true" : "false"));
+    int root_origin = -1;
+    for ( int irank = 0; irank < kpool_comm.size(); irank++ ) {
+        if( rank_has_origin[irank] ) {
+            if( root_origin != -1 ) {
+                output::print("error in origin belonging.");
+            }
+            root_origin = irank;
+        }
+    }
+    output::print("rank with origin: ", root_origin);
+
 
     /* define matrix for Hartree potential */
     Hartree.initialize({nbnd, nbnd});
@@ -48,6 +78,20 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
             }
         }
     }
+
+    /* reduce the elements of the Hartree potential */
+    if (kpool_comm.rank() == root_origin) {
+        // Root process: in-place reduction
+        MPI_Reduce(MPI_IN_PLACE, Hartree.data(),
+               nbnd * nbnd, MPI_CXX_DOUBLE_COMPLEX, MPI_SUM,
+               root_origin, kpool_comm.communicator());
+    } else {
+        // Non-root processes: send their local Hartree
+        MPI_Reduce(Hartree.data(), nullptr,
+               nbnd * nbnd, MPI_CXX_DOUBLE_COMPLEX, MPI_SUM,
+               root_origin, kpool_comm.communicator());
+    }
+
     /* make it hermitian (it must be mathematically) but is not numerically */
     for( int irow = 0; irow < nbnd; ++irow ) {
         for( int icol = irow+1; icol < nbnd; ++icol ) {
@@ -56,6 +100,21 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
             Hartree(icol, irow) = value;
         }
     }
+}
+
+void Coulomb::set_read_interaction(const bool& read_interaction__)
+{
+    read_interaction_ = read_interaction__;
+}
+
+void Coulomb::set_bare_file_path(const std::string& bare_file_path__)
+{
+    bare_file_path_ = bare_file_path__;
+}
+
+void Coulomb::set_screen_file_path(const std::string& screen_file_path__)
+{
+    screen_file_path_ = screen_file_path__;
 }
 
 /// @brief Setter for DM0 (Density Matrix of the ground state at Wannier gauge in R)
@@ -98,6 +157,25 @@ std::array<double, 3>& Coulomb::get_r0()
 double Coulomb::get_r0_avg()
 {
     return modelcoulomb_.get_r0_avg();
+}
+
+void Coulomb::set_method(const std::string& method__)
+{
+    if (method__ == "ipa"){
+        method_ = ipa;
+    }
+    else if (method__ == "rpa"){
+        method_ = rpa;
+    }
+    else if (method__ == "hsex"){
+        method_ = hsex;
+    }
+    else 
+    {
+        std::stringstream ss;
+        ss << "Method given in input " << method__ << "not recognized." << std::endl;
+        throw std::runtime_error(ss.str());
+    }
 }
 
 /// @brief Getter for DoCoulomb variable 
@@ -148,7 +226,7 @@ void Coulomb::EffectiveHamiltonian(Operator<std::complex<double>>& H__, const Op
     }
 
     /* Hartree term */
-    if( HasOrigin_ ) { // Only the rank with R=0 contributes to this term 
+    if( HasOrigin_  && (method_ == rpa || method_ == hsex)) { // Only the rank with R=0 contributes to this term 
         #pragma omp parallel for
         for( int irow = 0; irow < HR__.get_nrows(); ++irow ) {
             for( int icol = 0; icol < HR__.get_ncols(); ++icol ) {
@@ -159,16 +237,18 @@ void Coulomb::EffectiveHamiltonian(Operator<std::complex<double>>& H__, const Op
     }
 
     /* Fock term */
-    auto& W = modelcoulomb_.ScreenedPotential_;
-    #pragma omp parallel for
-    for( int iblock = 0; iblock < HR__.get_nblocks(); ++iblock ) {
-        for( int irow = 0; irow < HR__.get_nrows(); ++irow ) {
-            for( int icol = 0; icol < HR__.get_ncols(); ++icol ) {
-                HR__( iblock, irow, icol ) -= 
-                        W( iblock, irow, icol )*( DMR__( iblock, irow, icol ) - DM0R_( iblock, irow, icol ) );
+    if (method_ == hsex) {
+        auto& W = modelcoulomb_.ScreenedPotential_;
+        #pragma omp parallel for
+        for( int iblock = 0; iblock < HR__.get_nblocks(); ++iblock ) {
+            for( int irow = 0; irow < HR__.get_nrows(); ++irow ) {
+                for( int icol = 0; icol < HR__.get_ncols(); ++icol ) {
+                    HR__( iblock, irow, icol ) -= 
+                            W( iblock, irow, icol )*( DMR__( iblock, irow, icol ) - DM0R_( iblock, irow, icol ) );
+                }
             }
-        }
-    } 
+        } 
+    }
 
     //for( int iblock = 0; iblock < H_.get_nblocks(); ++iblock ) {
     //    for( int irow = 0; irow < H_.get_nrows(); ++irow ) {
@@ -201,4 +281,22 @@ void read_rk_py(mdarray<std::complex<double>,3>& RytovaKeldysh_TB, const std::st
 mdarray<std::complex<double>,3>& Coulomb::get_ScreenedPotential()
 {
     return modelcoulomb_.get_ScreenedPotential();
+}
+
+std::string Coulomb::get_method()
+{
+    std::string method;
+    if ( method_ == ipa ) {
+        method = "ipa";
+    } else if ( method_ == rpa ) {
+        method = "rpa";
+    } else if ( method_ == hsex ) {
+        method = "hsex";
+    }
+    return method;
+}
+
+bool& Coulomb::get_read_interaction()
+{
+    return read_interaction_;
 }

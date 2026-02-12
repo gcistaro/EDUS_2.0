@@ -198,7 +198,6 @@ class Operator
                 return;
             }
             initialized_fft = true;
-            
 #ifdef EDUS_MPI
             Operator_R = BlockMatrix<std::complex<double>>(R,mpindex.get_nlocal(), nbnd, nbnd, 
                                                             mpindex.get_RecommendedAllocate_fftw());
@@ -223,7 +222,6 @@ class Operator
                     throw std::runtime_error("Initialize fft from k Not yet implemented!\n");
                 }
             }
-
             Operator_k = BlockMatrix<std::complex<double>>(k,mpindex.get_nlocal(), nbnd, nbnd, 
                                                            mpindex.get_RecommendedAllocate_fftw());
             auto& kgrid = Operator_k.get_MeshGrid();
@@ -234,11 +232,11 @@ class Operator
             //bandindex FTfriendly_Operator_k = mdarray<std::complex<double>, 2>({nbnd*(nbnd+1)/2, mpindex.get_RecommendedAllocate_fftw()});
             //bandindex FTfriendly_Operator_R = mdarray<std::complex<double>, 2>({nbnd*(nbnd+1)/2, mpindex.get_RecommendedAllocate_fftw()});
 #ifdef EDUS_MPI
-            FTfriendly_Operator_k = mdarray<std::complex<double>, 2>( Operator_k.data(), {mpindex.get_nlocal(),nbnd*nbnd} );
-            FTfriendly_Operator_R = mdarray<std::complex<double>, 2>( Operator_R.data(), {mpindex.get_nlocal(),nbnd*nbnd} );
+            FTfriendly_Operator_k = mdarray<std::complex<double>, 2>( Operator_k.data(), {mpindex.get_nlocal(),nbnd*nbnd}, mpindex.get_RecommendedAllocate_fftw());
+            FTfriendly_Operator_R = mdarray<std::complex<double>, 2>( Operator_R.data(), {mpindex.get_nlocal(),nbnd*nbnd}, mpindex.get_RecommendedAllocate_fftw());
 #else
-            FTfriendly_Operator_k = mdarray<std::complex<double>, 2>({nbnd*nbnd, mpindex.get_RecommendedAllocate_fftw()});
-            FTfriendly_Operator_R = mdarray<std::complex<double>, 2>({nbnd*nbnd, mpindex.get_RecommendedAllocate_fftw()});
+            FTfriendly_Operator_k = mdarray<std::complex<double>, 2>({nbnd*nbnd, mpindex.get_nlocal()});
+            FTfriendly_Operator_R = mdarray<std::complex<double>, 2>({nbnd*nbnd, mpindex.get_nlocal()});
 #endif
             //use convolution index for shuffle index.
             std::vector<int> Dimensions(3);

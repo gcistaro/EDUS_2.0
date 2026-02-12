@@ -38,8 +38,8 @@ class mdarray
         mdarray(const std::array<int,dim>& Size_, const int& real_dims__=0);
         void initialize(const std::array<int,dim>& Size_, const int& real_dims__=0);
 
-        mdarray(T* Ptr_, const std::array<int,dim>& Size_);
-        void initialize(T* Ptr_, const std::array<int,dim>& Size_);
+        mdarray(T* Ptr_, const std::array<int,dim>& Size_, const int& real_dims__=0);
+        void initialize(T* Ptr_, const std::array<int,dim>& Size_, const int& real_dims__=0);
         
         void fill(const T& FillingValue);
 
@@ -78,6 +78,7 @@ class mdarray
 
         Iterator begin() const{ return Iterator(Ptr); }
         Iterator end() const{ return Iterator(Ptr+TotalSize); } // TotalSize is out of bounds        
+        size_t size() const { return TotalSize; }
         const auto& data() const {return Ptr;};
         auto& data() {return Ptr;};
         

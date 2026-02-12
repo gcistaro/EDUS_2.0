@@ -97,12 +97,10 @@ void FourierTransform::fft(const int& sign)
 
     if( sign == -1 ) {
         #pragma omp parallel for schedule(static)
-        for(int index = 0; index < output.end()-output.begin(); ++index) {
+        for(int index = 0; index < output.size(); ++index) {
             auto& output_el = output[index];
-        //for(auto& output_el : output){
             output_el /= TotalSize;
-    }
-
+        }
     }
 }
 
