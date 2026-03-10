@@ -128,14 +128,14 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     if( ctx_->cfg().opengap() ) OpenGap(); 
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
 
-    pdos();
+   // pdos();
 
     if( ctx_->cfg().kpath().size() > 1 ) {
         output::print("-> Printing band structure");
         print_bandstructure(ctx_->cfg().kpath(), material_.H);
     }        
 
-
+exit(0);
 /* setting up TD equations */
 #include "Functional_InitialCondition.hpp"
 #include "Functional_SourceTerm.hpp"
@@ -743,7 +743,14 @@ void print_bandstructure(const std::vector<std::vector<double>>& bare_kpath__, O
     for(int ik=0; ik<Eigenvalues.size(); ik++){
         for(int iband=0; iband<Eigenvalues[ik].get_Size(0); ++iband){
             Output << std::setw(6) << ik;
-            Output << std::setw(15) << std::setprecision(6) << Convert(Eigenvalues[ik](iband),AuEnergy,ElectronVolt) << std::endl;
+            Output << std::setw(15) << std::setprecision(6) << Convert(Eigenvalues[ik](iband),AuEnergy,ElectronVolt);
+            auto sum = 0.;
+            for(int iwann=0; iwann<Eigenvalues[ik].get_Size(0); ++iwann) {
+                Output << std::setw(15) << std::setprecision(6) << std::pow(std::abs(Eigenvectors[ik](iwann,iband)),2);
+                sum += std::pow(std::abs(Eigenvectors[ik](iwann,iband)),2);
+            }
+            Output << std::setw(15) << std::setprecision(6)<< sum; 
+            Output << std::endl;
         }
     }
     Output.close();
@@ -862,5 +869,4 @@ void Simulation::pdos()
         os_pdos << std::endl;
     }
     os_pdos.close();
-    exit(0);
 }
