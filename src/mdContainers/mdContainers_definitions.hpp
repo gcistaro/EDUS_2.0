@@ -58,9 +58,9 @@ mdarray<T,dim>::mdarray(const std::array<int,dim>& Size_, const int& real_dims__
 }
 
 template<typename T, size_t dim> 
-mdarray<T,dim>::mdarray(T* Ptr_, const std::array<int,dim>& Size_)
+mdarray<T,dim>::mdarray(T* Ptr_, const std::array<int,dim>& Size_, const int& real_dims__)
 {
-    this->initialize(Ptr_, Size_);
+    this->initialize(Ptr_, Size_, real_dims__);
 }
 
 template<typename T, size_t dim> 
@@ -92,13 +92,17 @@ void mdarray<T,dim>::initialize(const std::array<int,dim>& Size_, const int& rea
 }
 
 template<typename T, size_t dim> 
-void mdarray<T,dim>::initialize(T* Ptr_, const std::array<int,dim>& Size_)
+void mdarray<T,dim>::initialize(T* Ptr_, const std::array<int,dim>& Size_, const int& real_dims__)
 {
     Ptr = Ptr_; 
     Size = Size_; 
     NotDestruct=true;    //The Ptr_ must be destructed by the other owners. care!
     this->multindex.initialize(Size_); 
     TotalSizeAndOffset();
+    real_dims = (real_dims__ == 0 ? TotalSize : real_dims__);
+    if( real_dims < TotalSize ) {
+        std::runtime_error("ERROR in mdarray::initialize. You are trying to initialize dimensions that are lower than the totalsize\n");
+    }
 }
 
 template <typename T, size_t dim>

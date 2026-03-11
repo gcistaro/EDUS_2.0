@@ -1,4 +1,5 @@
 #include "MeshGrid.hpp"
+#include "initialize.hpp"
 
 int MeshGrid::counter_id = 0;
 std::map<std::array<int,3>, mdarray<int,2> > MeshGrid::ConvolutionIndex;
@@ -79,13 +80,16 @@ MeshGrid::MeshGrid(const Space& space__, const std::vector<Coordinate>& PathPoin
 
 void MeshGrid::initialize(const Space& space__, const std::vector<Coordinate>& PathPoint, const double& resolution)
 {
+    id = ++counter_id;
     space = space__;
     int NumberOfLines = PathPoint.size()-1;
     type = path;
 
     mesh.push_back(PathPoint[0]);
     for(int iline=0; iline<NumberOfLines; ++iline){
-        int NumberOfPointsInLine = (PathPoint[iline+1]-PathPoint[iline]).norm()/resolution;
+        int NumberOfPointsInLine;
+        if (resolution != 0.0) NumberOfPointsInLine = (PathPoint[iline+1]-PathPoint[iline]).norm()/resolution;
+        else NumberOfPointsInLine = 2;
         for(int it=1; it<NumberOfPointsInLine; ++it){
             double t = double(it)/(NumberOfPointsInLine-1);
             mesh.push_back( (1-t)*PathPoint[iline] + t*PathPoint[iline+1] );
