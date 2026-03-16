@@ -474,13 +474,19 @@ void Simulation::Print_Population(const BandGauge& bandgauge__)
     /* Print population of every orbital */
     auto& os = (bandgauge__ == wannier) ? os_Pop_wannier_ : os_Pop_; 
 
-    if( index != -1 ) {
+    static int index_origin_global = MeshGrid::MasterRgrid.find(Coordinate(0,0,0));
+    static auto HasOrigin = MeshGrid::MasterRgrid.mpindex.is_local(index_origin_global);
+    static int index_origin_local;
+    if( HasOrigin ) {
+        index_origin_local = MeshGrid::MasterRgrid.mpindex.glob1D_to_loc1D(index_origin_global);  
+    }  
+    if( HasOrigin ) {
         for (int ibnd = 0; ibnd < DensityMatrix_.get_Operator_k().get_nrows(); ibnd++) {
             if( bandgauge__ == bloch && ibnd < ctx_->cfg().filledbands() ) {
-                os << std::setw(30) << std::setprecision(14) << 1. - aux_DM_.get_Operator_R()(index,ibnd,ibnd).real();
+                os << std::setw(30) << std::setprecision(14) << 1. - aux_DM_.get_Operator_R()(index_origin_local,ibnd,ibnd).real();
             }
             else {
-                os << std::setw(30) << std::setprecision(14) << aux_DM_.get_Operator_R()(index,ibnd,ibnd).real();
+                os << std::setw(30) << std::setprecision(14) << aux_DM_.get_Operator_R()(index_origin_local,ibnd,ibnd).real();
             }
             os << " ";
         }
