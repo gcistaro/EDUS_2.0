@@ -115,6 +115,11 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
         material_.r[ix].get_Operator(Space::k).make_hermitian();
     }
 
+    output::print("-> solve eigensystem");
+    SettingUp_EigenSystem();
+    if( ctx_->cfg().opengap() ) OpenGap();
+    auto& Uk = Operator<std::complex<double>>::EigenVectors;
+
     H_.initialize_fft(DensityMatrix_);
     H0_.initialize_fft(DensityMatrix_);
     r_[0].initialize_fft(DensityMatrix_);
@@ -162,25 +167,15 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
         setoflaser_.push_back(laser);
     }
 
-    output::print("-> solve eigensystem");
-    SettingUp_EigenSystem();
-    if( ctx_->cfg().opengap() ) OpenGap();
-    auto& Uk = Operator<std::complex<double>>::EigenVectors;
     if( ctx_->cfg().kpath().size() > 1 ) {
         output::print("-> Printing band structure");
-        print_bandstructure(ctx_->cfg().kpath(), material_.H);
+        print_bandstructure(ctx_->cfg().kpath(), H0_);
     }
 
-
-    if( ctx_->cfg().kpath().size() > 1 ) {
-        output::print("-> Printing band structure");
-        print_bandstructure(ctx_->cfg().kpath(), material_.H);
-    }
-
-
-/* setting up TD equations */
-#include "Functional_InitialCondition.hpp"
-#include "Functional_SourceTerm.hpp"
+    /* setting up TD equations */
+    #include "Functional_InitialCondition.hpp"
+    #include "Functional_SourceTerm.hpp"
+    
     DEsolver_DM_.initialize(DensityMatrix_,
         InitialCondition, SourceTerm,
         solver.at(ctx_->cfg().solver()),
@@ -473,13 +468,17 @@ void Simulation::Print_Population(const BandGauge& bandgauge__)
 
     /* Print population of every orbital */
     auto& os = (bandgauge__ == wannier) ? os_Pop_wannier_ : os_Pop_; 
-
-    static int index_origin_global = MeshGrid::MasterRgrid.find(Coordinate(0,0,0));
-    static auto HasOrigin = MeshGrid::MasterRgrid.mpindex.is_local(index_origin_global);
-    static int index_origin_local;
+    
+    /* define the index of Rgrid where (0,0,0) is */
+    /* till next comment should be put in Operator.hpp */
+    auto Rgrid = DensityMatrix_.get_Operator(Space::R).get_MeshGrid();
+    int index_origin_global, index_origin_local;
+    index_origin_global = Rgrid->find(Coordinate(0,0,0));
+    bool HasOrigin = Rgrid->mpindex.is_local(index_origin_global);
     if( HasOrigin ) {
-        index_origin_local = MeshGrid::MasterRgrid.mpindex.glob1D_to_loc1D(index_origin_global);  
+        index_origin_local = Rgrid->mpindex.glob1D_to_loc1D(index_origin_global);  
     }  
+    /* this is next comment */
     if( HasOrigin ) {
         for (int ibnd = 0; ibnd < DensityMatrix_.get_Operator_k().get_nrows(); ibnd++) {
             if( bandgauge__ == bloch && ibnd < ctx_->cfg().filledbands() ) {
