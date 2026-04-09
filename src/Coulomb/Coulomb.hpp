@@ -37,6 +37,7 @@ class Coulomb
         void EffectiveHamiltonian(Operator<std::complex<double>>& H__, const Operator<std::complex<double>>& DM__,
                                   const bool& EraseH__);     
         void set_DM0( const Operator<std::complex<double>>& DM0__ );
+        Operator<std::complex<double>>& get_DM0();
         void set_DoCoulomb(const bool& DoCoulomb__);
         void set_epsilon(const double& Epsilon__);
         void set_r0(const std::vector<double>& r0__);

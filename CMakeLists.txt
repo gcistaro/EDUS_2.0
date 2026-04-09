@@ -13,6 +13,7 @@ option(EDUS_MKL_THREAD  "Enabling threads in mkl"                              O
 option(EDUS_HDF5        "Link hdf5 library for fast writing of big matrices"    ON)
 
 #set(HDF5_PREFER_PARALLEL  true)
+#add_definitions(-D__DEBUG)
 if(EDUS_PROFILE)
   add_definitions(-DEDUS_PROFILE)
 endif()
@@ -202,9 +203,15 @@ include_directories(${FFTW_INCLUDE_DIRS})
 
 
 
-
 # add the executable
 add_executable(EDUS src/EDUS.cpp)
+
+
+#add armadillo
+#find_package(Armadillo REQUIRED)
+#target_compile_definitions(EDUS PRIVATE ARMA_DONT_USE_WRAPPER)
+#target_link_libraries(EDUS armadillo mkl_rt pthread m dl)
+
 
 #speed executables
 add_executable(Matrix_mult_speed speed-apps/Matrix_multiplication.cpp)

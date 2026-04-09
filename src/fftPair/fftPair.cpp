@@ -109,10 +109,9 @@ void FourierTransform::fft(const int& sign)
 std::complex<double> FourierTransform::dft(const std::vector<double>& Point, const int& h, const int& sign) 
 {
     assert(int(Point.size()) == dim);
-    //mdarray<std::complex<double>, 1> FT({Array_x->get_Size()[0]});
-    std::complex<double> FT = 0.;//.fill(std::complex<double>(0.));
 
-    //std::complex<double> FourierTransform = 0;
+    std::complex<double> FT = 0.;
+    
     static std::complex<double> im2pi = im*2.*pi;
     double DotProduct;
 

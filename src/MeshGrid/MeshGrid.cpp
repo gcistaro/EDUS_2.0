@@ -461,6 +461,8 @@ std::ostream& operator<<(std::ostream& os, const MeshGrid& MG_)
 
 MeshGrid get_GammaCentered_grid(const MeshGrid& mesh__)
 {
+    if (mesh__.type == read_) return mesh__;
+    
     auto space = mesh__.get_space();
     auto size_mg = mesh__.get_mesh().size();
     MeshGrid mg;
@@ -474,6 +476,8 @@ MeshGrid get_GammaCentered_grid(const MeshGrid& mesh__)
         }
     } 
     mdarray<double, 2> bare_mg( { int(size_mg), 3 } );
+
+    #pragma omp parallel for
     for( int ik=0; ik<int(size_mg); ++ik ) {
         auto k_ = mesh__[ik];
         k_ = mesh__.reduce(k_, low_limit, up_limit);

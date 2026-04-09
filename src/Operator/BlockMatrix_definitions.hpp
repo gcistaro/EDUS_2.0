@@ -424,4 +424,16 @@ std::ostream& operator<<(std::ostream& os, const BlockMatrix<T>& m)
     return os;
 }
 
-
+template<class T>
+template<typename U>
+void BlockMatrix<T>::Divide(const U& Divisors__)
+{
+    #pragma omp parallel for
+    for( int iblock=0; iblock<this->get_nblocks(); iblock++ ) {
+        for( int irow = 0; irow < this->get_nrows(); irow++ ) {
+            for( int icol = 0; icol < this->get_ncols(); icol++ ) {
+                (*this)(iblock,irow,icol) /= Divisors__[iblock];
+            }
+        }
+    }
+}

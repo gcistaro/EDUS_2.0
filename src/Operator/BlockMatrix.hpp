@@ -134,6 +134,9 @@ class BlockMatrix{
                 }
             }
         }
+
+        template<typename U>
+        void Divide(const U& Divisors__);
 };
 
 

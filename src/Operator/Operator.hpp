@@ -632,6 +632,32 @@ class Operator
             SpaceOfPropagation = Allocated_Op.SpaceOfPropagation;            
         }
 
+        bool is_hermitian()
+        {
+            bool is_hermitian = true; 
+            //#pragma omp parallel for
+            for( int ik=0; ik<Operator_k.get_nblocks(); ik++ ) {
+                for(int irow=0; irow < Operator_k.get_nrows(); irow++) {
+                    for (int icol=irow; icol< Operator_k.get_ncols(); icol++) {
+                        //std::cout << ik << " " << irow << " " << icol << " " << std::abs( Operator_k( ik, irow, icol ) - std::conj( Operator_k( ik, icol, irow ) ) ) << std::endl;
+                        if( std::abs( Operator_k( ik, irow, icol ) - std::conj( Operator_k( ik, icol, irow ) ) ) > 1.e-13 ) {
+                            std::stringstream ss; 
+                            ss << "Error while checking hermiticity of operator with tagname " << tagname << "\n."; 
+                            ss << "ik = " << ik << " irow = " << irow << " icol = " << icol << " have Operator_k( ik, irow, icol ) = ";
+                            ss << std::setw(25) << std::setprecision(15) << Operator_k( ik, irow, icol ).real();
+                            ss << std::setw(25) << std::setprecision(15) << Operator_k( ik, irow, icol ).imag();
+                            ss << " but std::conj( Operator_k( ik, icol, irow ) ) = ";
+                            ss << std::setw(25) << std::setprecision(15) << std::conj( Operator_k( ik, icol, irow ) ).real();
+                            ss << std::setw(25) << std::setprecision(15) << std::conj( Operator_k( ik, icol, irow ) ).imag();
+                            ss << std::endl;
+                            throw std::runtime_error(ss.str());
+                            is_hermitian = false;
+                        }
+                    }
+                }
+            }
+            return is_hermitian;
+        }
 };
 
 

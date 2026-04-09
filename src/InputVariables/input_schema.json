@@ -7,6 +7,20 @@
             "default": "",
             "title": "name of the file _tb.dat"
         },
+        "decay": {
+            "type": "number",
+            "default": 0.0,
+            "title": "decay rate of the density matrix"
+        },
+        "decay_units": {
+            "type": "string",
+            "default": "femtoseconds",
+            "enum": [
+                "femtoseconds",
+                "autime"
+            ],
+            "title": "Units used for the decay rate of the density matrix"
+        },
         "fermienergy": {
             "type": "number",
             "default": 0.0,

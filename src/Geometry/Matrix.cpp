@@ -5,12 +5,68 @@
 
 #include "mkl.h"
 #include "Geometry/Matrix.hpp"
+//#include <armadillo>
+
+template<>
+void Matrix<std::complex<double>>::orthogonalize()
+{
+// ==     for(int icol=0; icol<this->get_ncols(); icol++) {
+// ==         /* normalize */
+// ==         double norm = 0.;
+// ==         for(int irow=0; irow<this->get_nrows(); irow++) {
+// ==             norm += std::abs((*this)(irow, icol))*std::abs((*this)(irow, icol));
+// ==         }
+// ==         /* normalize the new vector */
+// ==         norm = std::sqrt(norm);
+// ==         if(norm > 1.e-14) {
+// ==             for(int irow=0; irow<this->get_nrows(); irow++) {
+// ==                 (*this)(irow, icol) /= norm;
+// ==             }
+// ==         }
+// ==         // orthogonalize remaining vectors
+// ==         for(int icol_=icol+1; icol_<this->get_ncols(); icol_++) {
+// == 
+// ==             std::complex<double> proj = 0.;
+// ==             for(int irow=0; irow<this->get_nrows(); irow++)
+// ==                 proj += std::conj((*this)(irow, icol)) * (*this)(irow, icol_);
+// == 
+// ==             for(int irow=0; irow<this->get_nrows(); irow++)
+// ==                 (*this)(irow, icol_) -= proj * (*this)(irow, icol);
+// ==         }
+// ==     }
+}
+
+template<>
+bool Matrix<std::complex<double>>::is_hermitian() const
+{
+    bool is_hermitian = true;
+    double max = 0.0;
+    for(int irow=0; irow < (*this).get_nrows(); irow++) {
+        for (int icol=irow; icol< (*this).get_ncols(); icol++) {
+            max = std::max(max, std::abs( (*this)( irow, icol ) - std::conj( (*this)( icol, irow ) ) ) );
+            if( std::abs( (*this)( irow, icol ) - std::conj( (*this)( icol, irow ) ) ) > 1.e-15 ) {
+                is_hermitian = false;
+            }
+        }
+    }
+    if(!is_hermitian) {
+        std::stringstream ss; 
+        ss << "Error while checking hermiticity of Matrix. \n";
+        ss << "max of non-hermitian part is : "<< max << "\n";
+        throw std::runtime_error(ss.str());
+
+    }
+    return is_hermitian;
+}
 
 template<>
 void Matrix<std::complex<double>>::diagonalize(Matrix<std::complex<double>>& EigenVectors, mdarray<double,1>& EigenValues) const
 {
     //note: we need to copy the matrix or we lose the info because it is overwritten with eigenvectors
     assert(this->get_nrows() == this->get_ncols());
+// ==    for(int i=0; i<this->get_nrows(); i++) 
+// ==        (const_cast<Matrix<std::complex<double>>&>(*this))(i, i) = std::complex<double>((*this)(i, i).real(), 0.);
+    assert(this->is_hermitian());
     if( (EigenVectors.get_nrows() != this->get_nrows()) || (EigenVectors.get_ncols() != this->get_ncols()) ){
         EigenVectors.initialize(this->get_nrows(), this->get_ncols());
     }
@@ -20,7 +76,28 @@ void Matrix<std::complex<double>>::diagonalize(Matrix<std::complex<double>>& Eig
     EigenValues.initialize({this->get_nrows()});
     //LAPACKE_dsyev( LAPACK_ROW_MAJOR, 'V', 'U', n, &EigenVectors(0,0), lda, &EigenValues(0) );
     LAPACKE_zheevd( LAPACK_ROW_MAJOR, 'V', 'U', n, &EigenVectors(0,0), lda, &EigenValues(0) );
+
+// ==    //quick check
+// ==    Matrix<std::complex<double>> D(n,n);
+// ==    D.fill(0.);
+// ==    for (int i=0; i<n; i++) {
+// ==        for (int j=0; j<n; j++) {
+// ==            for(int k=0; k<n; k++) {
+// ==                for(int l=0; l<n; l++) {
+// ==                    D(i,j) += std::conj(EigenVectors(k,i))*(*this)(k,l)*EigenVectors(l,j);
+// ==                }
+// ==            }
+// ==        }
+// ==    }
+// ==    for (int i=0; i<n; i++) {
+// ==        for (int j=0; j<n; j++) {
+// ==            if(i==j && std::abs(std::imag(D(i,j)))>1.e-12) std::cout << "diagonal " <<i  <<"  " << std::imag(D(i,j)) << std::endl;
+// ==            else if( i!=j && std::abs(D(i,j)) > 1.e-12 ) std::cout << "off diagonal " << i << " " << j << " " << D(i,j) << std::endl;
+// ==        }
+// ==    }
+
 }
+
 
 template<>
 void Matrix<double>::LUdecompose(Matrix<double>& LU, lapack_int** pointer_to_ipiv) const

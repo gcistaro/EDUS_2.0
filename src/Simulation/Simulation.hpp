@@ -82,6 +82,7 @@ class Simulation
         bool PrintObservables(const double& time__, const bool& use_sparse = true);
         void Print_Population(const BandGauge& bandgauge__);
         void Print_Velocity(Operator<std::complex<double>>& aux_DM);
+        void PrintWannier();
         int get_it(const double& time__) const;
         int get_it_sparse(const double& time__) const;
         double jacobian(const Matrix<double>& A__) const;

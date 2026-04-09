@@ -25,6 +25,30 @@ class config_t
         dict_["/tb_file"_json_pointer] = tb_file__;
     }
     /// Fermi energy of the system
+    inline auto decay() const
+    {
+        return dict_.at("/decay"_json_pointer).get<double>();
+    }
+    inline void decay(double fermienergy__)
+    {
+        if (dict_.contains("locked")) {
+            throw std::runtime_error(locked_msg);
+        }
+        dict_["/decay"_json_pointer] = fermienergy__;
+    }
+    /// Units used for the Fermi energy of the system
+    inline auto decay_units() const
+    {
+        return dict_.at("/decay_units"_json_pointer).get<std::string>();
+    }
+    inline void decay_units(std::string fermienergy_units__)
+    {
+        if (dict_.contains("locked")) {
+            throw std::runtime_error(locked_msg);
+        }
+        dict_["/decay_units"_json_pointer] = fermienergy_units__;
+    }
+    /// Fermi energy of the system
     inline auto fermienergy() const
     {
         return dict_.at("/fermienergy"_json_pointer).get<double>();

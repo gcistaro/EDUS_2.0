@@ -124,6 +124,14 @@ void Coulomb::set_DM0( const Operator<std::complex<double>>& DM0__ )
     DM0_ = DM0__;
 }
 
+/// @brief Getter for DM0
+/// @return DM0 
+Operator<std::complex<double>>& Coulomb::get_DM0()
+{
+    return DM0_;
+}
+
+
 /// @brief Setter for Docoulomb variable of the class 
 /// @param DoCoulomb__ Value to use in the setter
 void Coulomb::set_DoCoulomb(const bool& DoCoulomb__)
