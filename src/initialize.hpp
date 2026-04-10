@@ -8,6 +8,7 @@
 
 #include <sstream>
 #include <fstream>
+#include <memory>
 
 #include "omp.h"
 #include "core/print_header.hpp"
