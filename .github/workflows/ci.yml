@@ -1,0 +1,41 @@
+name: EDUS CI (Spack + Separate Tests)
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Clone Spack
+        run: git clone --depth=1 https://github.com/spack/spack.git $HOME/spack
+
+      - name: Build EDUS with Spack
+        run: |
+          . $HOME/spack/share/spack/setup-env.sh
+          spack repo add $GITHUB_WORKSPACE/spack
+          spack install edus
+          spack load edus
+
+#####      - name: Run test - hBN Coulomb
+#####        run: |
+#####          . $HOME/spack/share/spack/setup-env.sh
+#####          spack load edus
+#####          ctest --test-dir build -R hBN_Coulomb --output-on-failure
+#####
+#####      - name: Run test - Test 2
+#####        run: |
+#####          . $HOME/spack/share/spack/setup-env.sh
+#####          spack load edus
+#####          ctest --test-dir build -R Test2 --output-on-failure
+#####
+#####      - name: Run test - Test 3
+#####        run: |
+#####          . $HOME/spack/share/spack/setup-env.sh
+#####          spack load edus
+#####          ctest --test-dir build -R Test3 --output-on-failure
