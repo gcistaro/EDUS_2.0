@@ -80,6 +80,8 @@ class Matrix{
         int get_nrows() const;
         int get_ncols() const;
         int get_TotalSize() const;
+        void orthogonalize();
+        bool is_hermitian() const; 
         
         friend class Vector<T>;
 };
@@ -99,6 +101,10 @@ std::ostream& operator<<(std::ostream& os, const Matrix<T>& m);
 
 template<class T>
 auto max(const Matrix<T>& M);
+
+template<typename T, typename U> 
+Matrix<T> diag(const U& diag_entries__);
+
 #include "Matrix_definitions.hpp"
 
 

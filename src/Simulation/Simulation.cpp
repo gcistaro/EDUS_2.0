@@ -1,6 +1,7 @@
 #include "Simulation/Simulation.hpp"
 #include "core/mpi/Communicator.hpp"
 #include "core/projectdir.hpp"
+#include "Wannier/PrintWannier.hpp"
 #include <cstdlib>
 #include <filesystem>
 
@@ -21,9 +22,12 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
         AuTime));
     ctx_->cfg().dt(Convert(ctx_->cfg().dt(), unit(ctx_->cfg().dt_units()),
         AuTime));
+    ctx_->cfg().decay(Convert(ctx_->cfg().decay(), unit(ctx_->cfg().decay_units()),
+        AuTime));
     ctx_->cfg().initialtime_units("autime");
     ctx_->cfg().finaltime_units("autime");
     ctx_->cfg().dt_units("autime");
+    ctx_->cfg().decay_units("autime");
 
     /* set r0 in a.u. */
     std::vector<double> r0_au(ctx_->cfg().r0().size());
@@ -35,6 +39,22 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     if ( ctx_->cfg().printresolution_pulse() == 0 ) {
         ctx_->cfg().printresolution_pulse(ctx_->cfg().printresolution());
     }
+    if (std::filesystem::exists(ctx_->cfg().screen_file())){
+        ctx_->cfg().method("hsex");
+        output::print("-> there is a screened Coulomb file so method is hsex");
+        ctx_->cfg().read_interaction(true);
+        output::print("-> there is a screened Coulomb file so read_interaction is true");
+    }
+    else if (std::filesystem::exists(ctx_->cfg().bare_file())){
+        ctx_->cfg().method("rpa");
+        output::print("-> there is a bare Coulomb file so method is rpa");
+        ctx_->cfg().read_interaction(true);
+        output::print("-> there is a bare Coulomb file so read_interaction is true");
+    }
+    if ( !ctx_->cfg().coulomb() ) {
+        ctx_->cfg().method("ipa");
+        output::print("-> coulomb was set to false so method is ipa");
+    } 
 
     ctx_->cfg().opengap(Convert(ctx_->cfg().opengap(), unit(ctx_->cfg().opengap_units()),
         AuEnergy));
@@ -50,8 +70,11 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     MeshGrid::MasterRgrid_GammaCentered = get_GammaCentered_grid(MeshGrid::MasterRgrid);
     coulomb_.set_DoCoulomb(ctx_->cfg().coulomb());
     coulomb_.set_epsilon(ctx_->cfg().epsilon());
-    coulomb_.set_r0(ctx_->cfg().r0());
-
+    coulomb_.set_method(ctx_->cfg().method());
+    coulomb_.set_read_interaction((*ctx_).cfg().read_interaction());
+    coulomb_.set_bare_file_path((*ctx_).cfg().bare_file());
+    coulomb_.set_screen_file_path((*ctx_).cfg().screen_file());
+    coulomb_.set_r0((*ctx_).cfg().r0());
     /* getting rytova keldysh with python */
     // ==if (ctx_->cfg().coulomb()) {
     // ==    std::stringstream command;
@@ -96,12 +119,27 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
         material_.r[ix].get_Operator(Space::k).make_hermitian();
     }
 
+    output::print("-> solve eigensystem");
+    SettingUp_EigenSystem();
+
+    if( ctx_->cfg().kpath().size() > 1 ) {
+        output::print("-> Printing band structure");
+        print_bandstructure(ctx_->cfg().kpath(), material_.H);
+    }
+
+    auto& Uk = Operator<std::complex<double>>::EigenVectors;
+
     H_.initialize_fft(DensityMatrix_);
     H0_.initialize_fft(DensityMatrix_);
     r_[0].initialize_fft(DensityMatrix_);
     r_[1].initialize_fft(DensityMatrix_);
     r_[2].initialize_fft(DensityMatrix_);
     aux_DM_.initialize_fft(DensityMatrix_);
+
+    if( ctx_->cfg().opengap() ) {
+        output::print("-> open gap");
+        OpenGap();
+    }
 
     auto& materialH0k = material_.H.get_Operator(Space::k);
     auto& materialr0k  = material_.r[0].get_Operator(Space::k);
@@ -117,6 +155,36 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     r_[1].lock_space(Space::k);         r_[1].go_to_R();
     r_[2].lock_space(Space::k);         r_[2].go_to_R();
 
+
+// ==     /*force hermiticity in R */
+// ==     output::print("Force hermiticity in R");
+// ==     for(int iR=0; iR <  H_.get_Operator_R().get_nblocks(); iR++ ) {
+// ==         auto mR = MeshGrid::MasterRgrid_GammaCentered.find(-MeshGrid::MasterRgrid_GammaCentered[iR]);
+// ==         for(int irow=0; irow <H_.get_Operator_R().get_nrows(); irow++ ) {
+// ==             for(int icol=0; icol < H_.get_Operator_R().get_ncols(); icol++ ) {
+// ==                 H0_.get_Operator_R()(iR, irow, icol) = (H0_.get_Operator_R()(iR, irow, icol) + std::conj(H0_.get_Operator_R()(mR, icol, irow)))/2.;
+// ==                 H0_.get_Operator_R()(mR, icol, irow) = std::conj(H0_.get_Operator_R()(iR, irow, icol));
+// ==                 /*if ( std::abs(H0_.get_Operator_R()(iR, irow, icol) - std::conj(H0_.get_Operator_R()(mR, icol, irow))) > 1.e-15 ) {
+// ==                     std::cout << irow << " " << icol << " " << H0_.get_Operator_R()(iR, irow, icol) << " " << H0_.get_Operator_R()(mR, icol, irow) << " ";
+// ==                     std::cout << std::abs(H0_.get_Operator_R()(iR, irow, icol) - std::conj(H0_.get_Operator_R()(mR, icol, irow))) << std::endl;
+// ==                 }*/
+// ==             }
+// ==         }
+// ==     }
+// ==     std::cout << "done" << std::endl;
+
+
+
+    if( ctx_->cfg().opengap() ) {
+        output::print("It is recommended to restart the simulation with the file wannier_tb.dat that I will print");
+        this->PrintWannier();
+    }
+
+
+output::print("-> Check hermiticity of H0...");
+    if( !H0_.is_hermitian() ) {
+        throw std::runtime_error("Operator H0 is not hermitian.\n");
+    }
     output::print("-> initializing lasers");
     for (int ilaser = 0; ilaser < int(ctx_->cfg().lasers().size()); ++ilaser) {
         auto currentdata = ctx_->cfg().lasers(ilaser);
@@ -143,25 +211,11 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
         setoflaser_.push_back(laser);
     }
 
-    output::print("-> solve eigensystem");
-    SettingUp_EigenSystem();
-    if( ctx_->cfg().opengap() ) OpenGap();
-    auto& Uk = Operator<std::complex<double>>::EigenVectors;
-    if( ctx_->cfg().kpath().size() > 1 ) {
-        output::print("-> Printing band structure");
-        print_bandstructure(ctx_->cfg().kpath(), material_.H);
-    }
 
-
-    if( ctx_->cfg().kpath().size() > 1 ) {
-        output::print("-> Printing band structure");
-        print_bandstructure(ctx_->cfg().kpath(), material_.H);
-    }
-
-
-/* setting up TD equations */
-#include "Functional_InitialCondition.hpp"
-#include "Functional_SourceTerm.hpp"
+    /* setting up TD equations */
+    #include "Functional_InitialCondition.hpp"
+    #include "Functional_SourceTerm.hpp"
+    
     DEsolver_DM_.initialize(DensityMatrix_,
         InitialCondition, SourceTerm,
         solver.at(ctx_->cfg().solver()),
@@ -282,7 +336,28 @@ void Simulation::SettingUp_EigenSystem()
         }
     }
 
-    /* TODO: open the gap */
+    /* check that U^\dagger U = 1 */
+    BlockMatrix<std::complex<double>> identity;
+    identity.initialize(k, Uk.get_nblocks(), Uk.get_nrows(), Uk.get_ncols()); 
+    multiply(identity, 1.+im*0., Uk, UkDagger);
+
+    for (int ik = 0; ik < UkDagger.get_nblocks(); ++ik) {
+        for (int ir = 0; ir < UkDagger.get_nrows(); ++ir) {
+            for (int ic = 0; ic < UkDagger.get_ncols(); ++ic) {
+                if( ir != ic && std::abs(identity(ik,ir,ic) - 1.*(ir==ic) ) > 1.e-12 ) {
+                    std::stringstream ss; 
+                    ss << "ik = " << ik << " ir = " << ir << " ic = " << ic; 
+                    ss << "         U*U\\dagger = ";
+                    ss << std::setw(25) << std::setprecision(15) << identity(ik,ir,ic).real();
+                    ss << std::setw(25) << std::setprecision(15) << identity(ik,ir,ic).imag();
+                    ss << std::endl;
+                    throw std::runtime_error(ss.str());
+                }
+            }
+        }
+    }
+
+
 };
 
 /// @brief Function to calculate the time dependent Hamiltonian (one-body) as a sum of H0 and the
@@ -454,14 +529,24 @@ void Simulation::Print_Population(const BandGauge& bandgauge__)
 
     /* Print population of every orbital */
     auto& os = (bandgauge__ == wannier) ? os_Pop_wannier_ : os_Pop_; 
-
-    if( index != -1 ) {
+    
+    /* define the index of Rgrid where (0,0,0) is */
+    /* till next comment should be put in Operator.hpp */
+    auto Rgrid = DensityMatrix_.get_Operator(Space::R).get_MeshGrid();
+    int index_origin_global, index_origin_local;
+    index_origin_global = Rgrid->find(Coordinate(0,0,0));
+    bool HasOrigin = Rgrid->mpindex.is_local(index_origin_global);
+    if( HasOrigin ) {
+        index_origin_local = Rgrid->mpindex.glob1D_to_loc1D(index_origin_global);  
+    }  
+    /* this is next comment */
+    if( HasOrigin ) {
         for (int ibnd = 0; ibnd < DensityMatrix_.get_Operator_k().get_nrows(); ibnd++) {
             if( bandgauge__ == bloch && ibnd < ctx_->cfg().filledbands() ) {
-                os << std::setw(30) << std::setprecision(14) << 1. - aux_DM_.get_Operator_R()(index,ibnd,ibnd).real();
+                os << std::setw(30) << std::setprecision(14) << 1. - aux_DM_.get_Operator_R()(index_origin_local,ibnd,ibnd).real();
             }
             else {
-                os << std::setw(30) << std::setprecision(14) << aux_DM_.get_Operator_R()(index,ibnd,ibnd).real();
+                os << std::setw(30) << std::setprecision(14) << aux_DM_.get_Operator_R()(index_origin_local,ibnd,ibnd).real();
             }
             os << " ";
         }
@@ -523,11 +608,11 @@ double Simulation::jacobian(const Matrix<double>& A__) const
 void Simulation::Calculate_Velocity()
 {
 #ifdef __DEBUG
-    H_.print_Rdecay("H0__", material_.rwann_);
+    H0_.print_Rdecay("H0__", material_.rwann_);
     for (int ix : { 0, 1, 2 }) {
         std::stringstream name;
         name << "r0__" << ix ;
-        material_.r[ix].print_Rdecay(name.str(), material_.rwann_);
+        r_[ix].print_Rdecay(name.str(), material_.rwann_);
     }
 #endif
     std::vector<Coordinate> direction(3);
@@ -636,7 +721,13 @@ void Simulation::print_recap()
         Convert(DEsolver_DM_.get_ResolutionTime(), AuTime, FemtoSeconds), " fs");
     output::print("PrintResolution          *", ctx_->cfg().printresolution());
     output::print("PrintResolution(pulse):  *", ctx_->cfg().printresolution_pulse());
+    output::print("Decay                    *", ctx_->cfg().decay(), " a.u.",
+        Convert(ctx_->cfg().decay(), AuTime, FemtoSeconds), " fs");
     output::print("Coulomb                  *", std::string(8, ' '), (coulomb_.get_DoCoulomb() ? "True" : "False"));
+    output::print("barecoulomb              *", std::string(8, ' '), ctx_->cfg().bare_file());
+    output::print("screencoulomb            *", std::string(8, ' '), ctx_->cfg().screen_file());
+    output::print("Method                   *        ",  coulomb_.get_method());
+    output::print("Read Interaction         *        ", ( coulomb_.get_read_interaction() ? "True" : "False"));
     output::print("epsilon                  *", ctx_->cfg().epsilon());
     output::print("r0x                      *", coulomb_.get_r0()[0], " a.u.",
                                                 Convert( coulomb_.get_r0()[0], AuLength, Angstrom), " angstrom");
@@ -646,6 +737,7 @@ void Simulation::print_recap()
                                                 Convert( coulomb_.get_r0()[2], AuLength, Angstrom), " angstrom");
     output::print("r0_avg                   *", coulomb_.get_r0_avg(), " a.u.",
                                                 Convert( coulomb_.get_r0_avg(), AuLength, Angstrom), " angstrom");
+    output::print("filledbands              *", ctx_->cfg().filledbands());
     output::print("toprint-> DMk_wannier    *        ", std::string(ctx_->cfg().dict()["toprint"]["DMk_wannier"]));
     output::print("toprint-> DMk_bloch      *        ", std::string(ctx_->cfg().dict()["toprint"]["DMk_bloch"]));
     output::print("toprint-> fullH          *        ", std::string(ctx_->cfg().dict()["toprint"]["fullH"]));
@@ -869,7 +961,6 @@ void Simulation::OpenGap()
     material_.H.initialize_fft(DensityMatrix_);
     std::copy(Corrected_hamiltonian_k.begin(), Corrected_hamiltonian_k.end(), material_.H.get_Operator_k().begin());
     std::copy(Corrected_hamiltonian_R.begin(), Corrected_hamiltonian_R.end(), material_.H.get_Operator_R().begin());
-
 }
 
 
@@ -896,4 +987,40 @@ void Simulation::Apply_Peierls_phase(Operator<std::complex<double>>& O__, const 
             }
         }
     }
+}
+
+void Simulation::PrintWannier()
+{
+    auto nbnd = H_.get_Operator_R().get_nrows();
+    mdarray<double,2> A({3,3}); 
+    for(auto& ix : {0,1,2}) {
+        for(auto& jx :{0,1,2}) {
+            A(ix,jx) = Coordinate::get_Basis(LatticeVectors(R)).get_M()(jx,ix);
+            A(ix,jx) = Convert(A(ix,jx), AuLength, Angstrom);
+        }
+    }    
+    std::vector<int> Degeneracy(H_.get_Operator_R().get_MeshGrid()->get_TotalSize(),1);
+    mdarray<double,2> Rmesh_gamma({H_.get_Operator_R().get_MeshGrid()->get_TotalSize(),3});
+    for(int iR=0; iR<Rmesh_gamma.get_Size()[0]; iR++) {
+        for(auto& ix : {0,1,2} ){
+            Rmesh_gamma(iR,ix) = MeshGrid::MasterRgrid_GammaCentered[iR].get(LatticeVectors(R))[ix];
+        }
+    }
+    mdarray<std::complex<double>,3> H__;
+    H__.initialize({Rmesh_gamma.get_Size()[0], nbnd, nbnd});
+    std::array<mdarray<std::complex<double>,3>, 3> r__;
+    std::copy(H0_.get_Operator(R).begin(), H0_.get_Operator(R).end(), H__.begin());
+    Convert_iterable(H__, AuEnergy, ElectronVolt);
+    for(auto& ix : {0,1,2}) {
+        r__[ix].initialize({Rmesh_gamma.get_Size()[0], nbnd, nbnd});
+        std::copy(r_[ix].get_Operator(R).begin(), r_[ix].get_Operator(R).end(), r__[ix].begin());
+        Convert_iterable(r__[ix], AuLength, Angstrom);
+    }
+    for(int iR=0; iR<Rmesh_gamma.get_Size()[0]; iR++) {
+        for(auto& ix : {0,1,2} ){
+            Rmesh_gamma(iR,ix) = MeshGrid::MasterRgrid_GammaCentered[iR].get(LatticeVectors(R))[ix];
+        }
+    }    
+    wann::print("wannier_tb.dat", nbnd, H_.get_Operator_R().get_MeshGrid()->get_TotalSize(),
+                 A, Degeneracy, Rmesh_gamma, H__, r__);
 }

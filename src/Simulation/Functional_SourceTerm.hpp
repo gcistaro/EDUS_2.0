@@ -54,4 +54,18 @@ SourceTerm =
     auto& Input = Input__.get_Operator(SpaceOfPropagation_);
     auto& H = H_.get_Operator(SpaceOfPropagation_);
     commutator(Output, -im, H, Input, false);
+
+    /* apply decay in time */
+    auto& DM0k = coulomb_.get_DM0().get_Operator(Space::k);
+
+    if( ctx_->cfg().decay() > 1.e-07 ) {
+        #pragma omp parallel for
+        for(int ik=0; ik<Input.get_nblocks(); ik++) {
+            for(int irow=0; irow < Input.get_nrows(); irow++ ) {
+                for(int icol=0; icol < Input.get_ncols(); icol++) {
+                    Output(ik,irow,icol) -= ( Input(ik,irow,icol)-DM0k(ik,irow,icol) )/ctx_->cfg().decay();
+                }
+            }
+        }
+    }
 };

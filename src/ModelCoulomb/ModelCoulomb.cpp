@@ -1,4 +1,5 @@
 #include "ModelCoulomb.hpp"
+#include "StreamFile.hpp"
 
 /// @brief Calculates the struve special function using the algorithm from XATU
 /// @param X__ variable on which we calculate the struve function
@@ -48,9 +49,10 @@ double struve(const double& X__, const double& v__)
 /// @param dim_ Dimension of the system: 2->monolayer; 3->bulk
 /// @param MasterRGrid Grid in R space used in the code, (N.B: it is different than the one in r because that one is read from _tb file)
 ModelCoulomb::ModelCoulomb(const std::array<Operator<std::complex<double>>,3>& r, const int& dim_,            
-                             const std::shared_ptr<MeshGrid>& MasterRGrid)
+                           const std::shared_ptr<MeshGrid>& MasterRGrid, const bool& read_interaction__,
+                           const std::string& bare_file_path__, const std::string& screen_file_path__)
 {
-    initialize(r, dim_, MasterRGrid);
+    initialize(r, dim_, MasterRGrid, read_interaction__, bare_file_path__, screen_file_path__);
 }
 
 /// @brief Initialization of both bare and screened matrix elements calling back the right function
@@ -82,17 +84,68 @@ void ModelCoulomb::initialize_Potential( const std::shared_ptr<MeshGrid>& Rgrid_
     }
 }
 
+void ModelCoulomb::initialize_Potential(const std::shared_ptr<MeshGrid>& Rgrid__, const int& nbnd__, mdarray<std::complex<double>,3>& Potential__,
+                                const bool& bare__, const std::string& coulomb_file_path__)
+{
+    auto size_MG_local = Rgrid__->get_LocalSize();
+    Potential__ = mdarray<std::complex<double>,3> ( { int( size_MG_local ), nbnd__, nbnd__ } );
+    auto potential_file_path = coulomb_file_path__;
+    auto potential_file = ReadFile(potential_file_path);
+
+    // read from the kcw file the R vectors where the potential is computed
+    std::vector<Coordinate> bare_Rmesh;
+    std::array<double,3> Rpoint;
+    for (int iline = 0; iline < potential_file.size(); iline++) {
+        if (potential_file[iline].size() == 3) {
+            for (auto& ix : {0, 1, 2}) {
+                Rpoint[ix] = stoi(potential_file[iline][ix]);}
+                Coordinate R(Rpoint[0], Rpoint[1], Rpoint[2], LatticeVectors(Space::R));
+                bare_Rmesh.push_back(R);
+        }
+    }
+
+    // find in the systems grid the R vectors from the kcw file read above
+    MeshGrid R_MeshGrid;
+    R_MeshGrid.initialize(Space::R, bare_Rmesh, 0.0);
+    auto Rgrid_shifted = get_GammaCentered_grid(*Rgrid__);
+    MeshGrid::Calculate_ConvolutionIndex(R_MeshGrid, Rgrid_shifted, *Operator<std::complex<double>>::MeshGrid_Null);
+    auto& ci = MeshGrid::ConvolutionIndex[{R_MeshGrid.get_id(), Rgrid_shifted.get_id(), Operator<std::complex<double>>::MeshGrid_Null->get_id()}];
+
+    // build the coulomb interaction matrix elements in the imported R vectors
+    auto spin_factor = (bare__ ? 2 : 1);
+    Potential__.fill(0.0);
+    for (int iRCoulomb=0; iRCoulomb<R_MeshGrid.get_TotalSize(); iRCoulomb++) {
+        if ( Rgrid__->mpindex.is_local( ci(iRCoulomb,0) ) ) {
+            int iR_local = Rgrid__->mpindex.glob1D_to_loc1D( ci(iRCoulomb,0) );
+            for (int irow=0; irow<nbnd__; irow++) {
+                for (int icol=0; icol<nbnd__; icol++) {
+                    int iline = nbnd__*2*irow + 2*icol + (std::pow(nbnd__,2)*2+1)*iRCoulomb + 1;
+                    Potential__(iR_local, irow, icol) = spin_factor*Convert(std::atof(potential_file[iline][3].c_str()), Rydberg, AuEnergy);
+                    //std::cout << ci(iRCoulomb,0) << " " << ScreenedPotential_(ci(iRCoulomb,0), irow, icol) << std::endl;
+                    //std::cout << "iRCoulomb = " << iRCoulomb << " | irow = " << irow + 1 << " | icol = " << icol + 1 << " potential = " << potential_file[iline][3].c_str() << std::endl;
+                    //std::cout << (*Rgrid_)[ci(iRCoulomb,0)] << std::endl;
+                }
+            }
+        }
+    }
+    output::print("Bare and screened coulomb read from file.");
+    output::print("#R vectors in the file: ", int(bare_Rmesh.size()));
+}
+
 /// @brief Initialization of the variables of the class
 /// @param r__ The position operator read from Wannier90, in a.u.
 /// @param dim__ The dimension of the system: 2->monolayer; 3->bulk
 /// @param MasterRGrid__ The grid in R space used in the code, (N.B: it is different than the one in r because that one is read from _tb file)
 void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>& r__, const int& dim__,            
-                             const std::shared_ptr<MeshGrid>& MasterRGrid__)
+                              const std::shared_ptr<MeshGrid>& MasterRGrid__, const bool& read_interaction__,
+                              const std::string& bare_file_path__, const std::string& screen_file_path__)
 {
     
+    /*
     if(dim__ != 2){
         throw std::runtime_error("Warning ! Only 2d coulomb is implemented!");
     }
+    */
     
     if( dim__ == 2 ) dim_ = twoD;
     if( dim__ == 3 ) dim_ = threeD;
@@ -125,12 +178,20 @@ void ModelCoulomb::initialize(const std::array<Operator<std::complex<double>>,3>
         }
     }
 
+    
+
     /* Define grid centered at 0 */
     Rgrid_ = std::make_shared<MeshGrid>(get_GammaCentered_grid(*MasterRGrid__));
 
     /* initialize screened and bare potentials matrix elements */
-    initialize_Potential( Rgrid_, nbnd, BarePotential_    , wannier_centers, true );
-    initialize_Potential( Rgrid_, nbnd, ScreenedPotential_, wannier_centers, false);
+    if (read_interaction__) {
+        initialize_Potential(MasterRGrid__, nbnd, BarePotential_, true, bare_file_path__);
+        initialize_Potential(MasterRGrid__, nbnd, ScreenedPotential_, false, screen_file_path__);
+    }
+    else {
+        initialize_Potential( Rgrid_, nbnd, BarePotential_    , wannier_centers, true);
+        initialize_Potential( Rgrid_, nbnd, ScreenedPotential_, wannier_centers, false);
+    }
 }
 
 /// @brief Calculation of the screened interaction on a point r in real space

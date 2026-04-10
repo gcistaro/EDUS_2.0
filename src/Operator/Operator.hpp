@@ -198,7 +198,6 @@ class Operator
                 return;
             }
             initialized_fft = true;
-            
 #ifdef EDUS_MPI
             Operator_R = BlockMatrix<std::complex<double>>(R,mpindex.get_nlocal(), nbnd, nbnd, 
                                                             mpindex.get_RecommendedAllocate_fftw());
@@ -223,7 +222,6 @@ class Operator
                     throw std::runtime_error("Initialize fft from k Not yet implemented!\n");
                 }
             }
-
             Operator_k = BlockMatrix<std::complex<double>>(k,mpindex.get_nlocal(), nbnd, nbnd, 
                                                            mpindex.get_RecommendedAllocate_fftw());
             auto& kgrid = Operator_k.get_MeshGrid();
@@ -233,12 +231,13 @@ class Operator
 
             //bandindex FTfriendly_Operator_k = mdarray<std::complex<double>, 2>({nbnd*(nbnd+1)/2, mpindex.get_RecommendedAllocate_fftw()});
             //bandindex FTfriendly_Operator_R = mdarray<std::complex<double>, 2>({nbnd*(nbnd+1)/2, mpindex.get_RecommendedAllocate_fftw()});
+            auto dim_k = mpindex.get_nlocal() > 0 ? mpindex.get_nlocal() : 1;//to avoid that we get a 0 allocated pointer
 #ifdef EDUS_MPI
-            FTfriendly_Operator_k = mdarray<std::complex<double>, 2>( Operator_k.data(), {mpindex.get_nlocal(),nbnd*nbnd} );
-            FTfriendly_Operator_R = mdarray<std::complex<double>, 2>( Operator_R.data(), {mpindex.get_nlocal(),nbnd*nbnd} );
+            FTfriendly_Operator_k = mdarray<std::complex<double>, 2>( Operator_k.data(), {dim_k,nbnd*nbnd} );
+            FTfriendly_Operator_R = mdarray<std::complex<double>, 2>( Operator_R.data(), {dim_k,nbnd*nbnd} );
 #else
-            FTfriendly_Operator_k = mdarray<std::complex<double>, 2>({nbnd*nbnd, mpindex.get_RecommendedAllocate_fftw()});
-            FTfriendly_Operator_R = mdarray<std::complex<double>, 2>({nbnd*nbnd, mpindex.get_RecommendedAllocate_fftw()});
+            FTfriendly_Operator_k = mdarray<std::complex<double>, 2>({nbnd*nbnd, mpindex.get_nlocal()});
+            FTfriendly_Operator_R = mdarray<std::complex<double>, 2>({nbnd*nbnd, mpindex.get_nlocal()});
 #endif
             //use convolution index for shuffle index.
             std::vector<int> Dimensions(3);
@@ -633,6 +632,32 @@ class Operator
             SpaceOfPropagation = Allocated_Op.SpaceOfPropagation;            
         }
 
+        bool is_hermitian()
+        {
+            bool is_hermitian = true; 
+            //#pragma omp parallel for
+            for( int ik=0; ik<Operator_k.get_nblocks(); ik++ ) {
+                for(int irow=0; irow < Operator_k.get_nrows(); irow++) {
+                    for (int icol=irow; icol< Operator_k.get_ncols(); icol++) {
+                        //std::cout << ik << " " << irow << " " << icol << " " << std::abs( Operator_k( ik, irow, icol ) - std::conj( Operator_k( ik, icol, irow ) ) ) << std::endl;
+                        if( std::abs( Operator_k( ik, irow, icol ) - std::conj( Operator_k( ik, icol, irow ) ) ) > 1.e-13 ) {
+                            std::stringstream ss; 
+                            ss << "Error while checking hermiticity of operator with tagname " << tagname << "\n."; 
+                            ss << "ik = " << ik << " irow = " << irow << " icol = " << icol << " have Operator_k( ik, irow, icol ) = ";
+                            ss << std::setw(25) << std::setprecision(15) << Operator_k( ik, irow, icol ).real();
+                            ss << std::setw(25) << std::setprecision(15) << Operator_k( ik, irow, icol ).imag();
+                            ss << " but std::conj( Operator_k( ik, icol, irow ) ) = ";
+                            ss << std::setw(25) << std::setprecision(15) << std::conj( Operator_k( ik, icol, irow ) ).real();
+                            ss << std::setw(25) << std::setprecision(15) << std::conj( Operator_k( ik, icol, irow ) ).imag();
+                            ss << std::endl;
+                            throw std::runtime_error(ss.str());
+                            is_hermitian = false;
+                        }
+                    }
+                }
+            }
+            return is_hermitian;
+        }
 };
 
 
