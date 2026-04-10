@@ -23,22 +23,25 @@ jobs:
           echo "=== PYTHON ==="
           python3 --version || true
 
-      # 3. Install ONLY minimal build tools
+      # 3. Install all needed packages
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            build-essential \
-            cmake \
-            libopenmpi-dev \
-            openmpi-bin \
-            libhdf5-dev \
-            libfftw3-dev \
-            libfftw3-mpi-dev \
-            libopenblas-dev \
-            liblapack-dev \
-            liblapacke-dev            
+                      build-essential \
+                      cmake \
+                      libopenmpi-dev \
+                      openmpi-bin \
+                      libhdf5-dev \
+                      libfftw3-dev \
+                      libfftw3-mpi-dev \
+                      libopenblas-dev \
+                      liblapack-dev \
+                      liblapacke-dev            
 
+      - name: Install Python deps
+        run: |
+          python3 -m pip install -r ci-test/python-requirements.txt
 
       # 4. Clone Spack (but DO NOT install heavy deps yet)
       - name: Clone Spack
