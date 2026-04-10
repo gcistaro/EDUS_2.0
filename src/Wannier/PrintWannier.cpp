@@ -1,7 +1,7 @@
 #include "PrintWannier.hpp"
 
-
-void PrintWannier(const std::string& FileName, const int& NumberOfBands, const int& NumberOfRpoints, 
+namespace wann {
+void print(const std::string& FileName, const int& NumberOfBands, const int& NumberOfRpoints, 
                    const mdarray<double,2>& UnitCell, const std::vector<int>& Degeneracy, const mdarray<double,2>& Rmesh, 
                    const mdarray<std::complex<double>,3>& H, const std::array<mdarray<std::complex<double>,3>, 3>& r)
 {
@@ -85,4 +85,4 @@ void PrintWannier(const std::string& FileName, const int& NumberOfBands, const i
 
 
 }
-
+}//end namespace wann

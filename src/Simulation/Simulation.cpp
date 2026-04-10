@@ -1,6 +1,7 @@
 #include "Simulation/Simulation.hpp"
 #include "core/mpi/Communicator.hpp"
 #include "core/projectdir.hpp"
+#include "Wannier/PrintWannier.hpp"
 #include <cstdlib>
 #include <filesystem>
 
@@ -121,11 +122,9 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     output::print("-> solve eigensystem");
     SettingUp_EigenSystem();
 
-    if( ctx_->cfg().opengap() ) {
-        output::print("-> open gap");
-        OpenGap();
-        output::print("It is recommended to restart the simulation with the file wannier_tb.dat that I will print");
-        this->PrintWannier();
+    if( ctx_->cfg().kpath().size() > 1 ) {
+        output::print("-> Printing band structure");
+        print_bandstructure(ctx_->cfg().kpath(), material_.H);
     }
 
     auto& Uk = Operator<std::complex<double>>::EigenVectors;
@@ -136,6 +135,11 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     r_[1].initialize_fft(DensityMatrix_);
     r_[2].initialize_fft(DensityMatrix_);
     aux_DM_.initialize_fft(DensityMatrix_);
+
+    if( ctx_->cfg().opengap() ) {
+        output::print("-> open gap");
+        OpenGap();
+    }
 
     auto& materialH0k = material_.H.get_Operator(Space::k);
     auto& materialr0k  = material_.r[0].get_Operator(Space::k);
@@ -151,24 +155,31 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     r_[1].lock_space(Space::k);         r_[1].go_to_R();
     r_[2].lock_space(Space::k);         r_[2].go_to_R();
 
-// == /*force hermiticity in R */
-// == output::print("Force hermiticity in R");
-// == for(int iR=0; iR <  H_.get_Operator_R().get_nblocks(); iR++ ) {
-// ==     auto mR = MeshGrid::MasterRgrid_GammaCentered.find(-MeshGrid::MasterRgrid_GammaCentered[iR]);
-// ==     std::cout << MeshGrid::MasterRgrid_GammaCentered[iR].get(LatticeVectors(R)) << std::endl;
-// ==     std::cout << MeshGrid::MasterRgrid_GammaCentered[mR].get(LatticeVectors(R))<<std::endl;
-// ==     for(int irow=0; irow <H_.get_Operator_R().get_nrows(); irow++ ) {
-// ==         for(int icol=0; icol < H_.get_Operator_R().get_ncols(); icol++ ) {
-// ==             H0_.get_Operator_R()(iR, irow, icol) = (H0_.get_Operator_R()(iR, irow, icol) + std::conj(H0_.get_Operator_R()(mR, icol, irow)))/2.;
-// ==             H0_.get_Operator_R()(mR, icol, irow) = std::conj(H0_.get_Operator_R()(iR, irow, icol));
-// ==             /*if ( std::abs(H0_.get_Operator_R()(iR, irow, icol) - std::conj(H0_.get_Operator_R()(mR, icol, irow))) > 1.e-15 ) {
-// ==                 std::cout << irow << " " << icol << " " << H0_.get_Operator_R()(iR, irow, icol) << " " << H0_.get_Operator_R()(mR, icol, irow) << " ";
-// ==                 std::cout << std::abs(H0_.get_Operator_R()(iR, irow, icol) - std::conj(H0_.get_Operator_R()(mR, icol, irow))) << std::endl;
-// ==             }*/
+
+// ==     /*force hermiticity in R */
+// ==     output::print("Force hermiticity in R");
+// ==     for(int iR=0; iR <  H_.get_Operator_R().get_nblocks(); iR++ ) {
+// ==         auto mR = MeshGrid::MasterRgrid_GammaCentered.find(-MeshGrid::MasterRgrid_GammaCentered[iR]);
+// ==         for(int irow=0; irow <H_.get_Operator_R().get_nrows(); irow++ ) {
+// ==             for(int icol=0; icol < H_.get_Operator_R().get_ncols(); icol++ ) {
+// ==                 H0_.get_Operator_R()(iR, irow, icol) = (H0_.get_Operator_R()(iR, irow, icol) + std::conj(H0_.get_Operator_R()(mR, icol, irow)))/2.;
+// ==                 H0_.get_Operator_R()(mR, icol, irow) = std::conj(H0_.get_Operator_R()(iR, irow, icol));
+// ==                 /*if ( std::abs(H0_.get_Operator_R()(iR, irow, icol) - std::conj(H0_.get_Operator_R()(mR, icol, irow))) > 1.e-15 ) {
+// ==                     std::cout << irow << " " << icol << " " << H0_.get_Operator_R()(iR, irow, icol) << " " << H0_.get_Operator_R()(mR, icol, irow) << " ";
+// ==                     std::cout << std::abs(H0_.get_Operator_R()(iR, irow, icol) - std::conj(H0_.get_Operator_R()(mR, icol, irow))) << std::endl;
+// ==                 }*/
+// ==             }
 // ==         }
 // ==     }
-// == }
-// == std::cout << "done" << std::endl;
+// ==     std::cout << "done" << std::endl;
+
+
+
+    if( ctx_->cfg().opengap() ) {
+        output::print("It is recommended to restart the simulation with the file wannier_tb.dat that I will print");
+        this->PrintWannier();
+    }
+
 
 output::print("-> Check hermiticity of H0...");
     if( !H0_.is_hermitian() ) {
@@ -855,7 +866,7 @@ void print_bandstructure(const std::vector<std::vector<double>>& bare_kpath__, O
     MeshGrid MeshGridPath(Space::k, path, 0.01);
 
     /* diagonalize the hamiltonian on the kmesh */
-    Hamiltonian__.dft(MeshGridPath.get_mesh(), +1, false, true);
+    Hamiltonian__.dft(MeshGridPath.get_mesh(), +1, false);
     std::vector<mdarray<double,1>> Eigenvalues;
     BlockMatrix<std::complex<double>> Eigenvectors;
     Hamiltonian__.get_Operator_k().diagonalize(Eigenvalues, Eigenvectors);
@@ -987,7 +998,7 @@ void Simulation::PrintWannier()
             A(ix,jx) = Coordinate::get_Basis(LatticeVectors(R)).get_M()(jx,ix);
             A(ix,jx) = Convert(A(ix,jx), AuLength, Angstrom);
         }
-    }
+    }    
     std::vector<int> Degeneracy(H_.get_Operator_R().get_MeshGrid()->get_TotalSize(),1);
     mdarray<double,2> Rmesh_gamma({H_.get_Operator_R().get_MeshGrid()->get_TotalSize(),3});
     for(int iR=0; iR<Rmesh_gamma.get_Size()[0]; iR++) {
@@ -995,7 +1006,6 @@ void Simulation::PrintWannier()
             Rmesh_gamma(iR,ix) = MeshGrid::MasterRgrid_GammaCentered[iR].get(LatticeVectors(R))[ix];
         }
     }
-
     mdarray<std::complex<double>,3> H__;
     H__.initialize({Rmesh_gamma.get_Size()[0], nbnd, nbnd});
     std::array<mdarray<std::complex<double>,3>, 3> r__;
@@ -1006,21 +1016,11 @@ void Simulation::PrintWannier()
         std::copy(r_[ix].get_Operator(R).begin(), r_[ix].get_Operator(R).end(), r__[ix].begin());
         Convert_iterable(r__[ix], AuLength, Angstrom);
     }
-
     for(int iR=0; iR<Rmesh_gamma.get_Size()[0]; iR++) {
         for(auto& ix : {0,1,2} ){
             Rmesh_gamma(iR,ix) = MeshGrid::MasterRgrid_GammaCentered[iR].get(LatticeVectors(R))[ix];
         }
     }    
-    
-    PrintWannier("wannier_tb.dat", nbnd, H_.get_Operator_R().get_MeshGrid()->get_TotalSize(),
+    wann::print("wannier_tb.dat", nbnd, H_.get_Operator_R().get_MeshGrid()->get_TotalSize(),
                  A, Degeneracy, Rmesh_gamma, H__, r__);
-
-
-    if( ctx_->cfg().kpath().size() > 1 ) {
-        output::print("-> Printing band structure");
-        print_bandstructure(ctx_->cfg().kpath(), material_.H);
-    }
-                 exit(0);
-
 }
