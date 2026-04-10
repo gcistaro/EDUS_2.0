@@ -64,4 +64,5 @@ jobs:
       # 8. Run tests (if build succeeds)
       - name: hBN CTest
         run: |
+          cd build
           ctest -R "^hBN$" --output-on-failure
