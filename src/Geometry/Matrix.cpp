@@ -1,9 +1,16 @@
-#include <complex>
+#include <complex.h>
 #ifndef MKL_Complex16
     #define MKL_Complex16 std::complex<double>
 #endif
 
-#include "mkl.h"
+#ifdef EDUS_MKL
+    #include "mkl.h"
+#else 
+    #define OPENBLAS_COMPLEX_STRUCT
+    #include "cblas.h"
+    #include "lapacke.h"
+#endif
+
 #include "Geometry/Matrix.hpp"
 //#include <armadillo>
 
@@ -75,8 +82,11 @@ void Matrix<std::complex<double>>::diagonalize(Matrix<std::complex<double>>& Eig
     auto lda = n;
     EigenValues.initialize({this->get_nrows()});
     //LAPACKE_dsyev( LAPACK_ROW_MAJOR, 'V', 'U', n, &EigenVectors(0,0), lda, &EigenValues(0) );
+#ifndef EDUS_MKL
+    LAPACKE_zheevd( LAPACK_ROW_MAJOR, 'V', 'U', n, reinterpret_cast<__complex__ double*>(&(EigenVectors(0,0))), lda, &EigenValues(0) );
+#else 
     LAPACKE_zheevd( LAPACK_ROW_MAJOR, 'V', 'U', n, &EigenVectors(0,0), lda, &EigenValues(0) );
-
+#endif
 // ==    //quick check
 // ==    Matrix<std::complex<double>> D(n,n);
 // ==    D.fill(0.);
@@ -133,8 +143,14 @@ void Matrix<std::complex<double>>::LUdecompose(Matrix<std::complex<double>>& LU,
     *pointer_to_ipiv= new lapack_int[n];
     
     //LU decomposition
+#ifndef EDUS_MKL
+    auto info = LAPACKE_zgetrf(LAPACK_ROW_MAJOR, m, n, 
+                   reinterpret_cast<__complex__ double*>(&(LU(0,0))), 
+                   lda, *pointer_to_ipiv);  
+#else 
     auto info = LAPACKE_zgetrf(LAPACK_ROW_MAJOR, m, n, 
                    &(LU(0,0)), lda, *pointer_to_ipiv);  
+#endif
 }
 
 
@@ -168,8 +184,13 @@ Matrix<std::complex<double>> Matrix<std::complex<double>>::inverse() const
     //inverse
     lapack_int n = invM.get_ncols();
     lapack_int lda = n;
+#ifndef EDUS_MKL
+    LAPACKE_zgetri(LAPACK_ROW_MAJOR, n, reinterpret_cast<__complex__ double*>(&invM(0,0)),
+                    lda, ipiv);
+#else 
     LAPACKE_zgetri(LAPACK_ROW_MAJOR, n, &invM(0,0),
                     lda, ipiv);
+#endif
     delete[] ipiv;
     return invM;
 }

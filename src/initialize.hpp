@@ -16,8 +16,8 @@
 
 
 #ifdef EDUS_MPI
-extern mpi::Communicator kpool_comm;
-extern mpi::Communicator band_comm;
+extern std::unique_ptr<mpi::Communicator> kpool_comm;
+extern std::unique_ptr<mpi::Communicator> band_comm;
 extern int NumberKpools;
 #endif
 

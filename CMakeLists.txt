@@ -6,11 +6,13 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 
 
 option(EDUS_PROFILE     "Profiling function timings"                            ON)
+option(EDUS_MKL         "Enable MKL"                                           OFF)
 option(EDUS_MPI         "Enabling MPI"                                          ON)
 option(EDUS_BATCHGEMM   "Enabling Batch Gemm for k matrix multiplication"      OFF)
 option(EDUS_FFTWTHREADS "Enabling threads in fftw"                             OFF)                
 option(EDUS_MKL_THREAD  "Enabling threads in mkl"                              OFF)                  
 option(EDUS_HDF5        "Link hdf5 library for fast writing of big matrices"    ON)
+
 
 #set(HDF5_PREFER_PARALLEL  true)
 #add_definitions(-D__DEBUG)
@@ -158,21 +160,40 @@ endif()
 
 
 #adding mkl (can it be replaced with lapack?)
-set(MKL_ARCH intel64)
+if(EDUS_MKL)
+  set(MKL_ARCH intel64)
 
-if(EDUS_MKL_THREAD)
-  set(MKL_THREADING intel_thread)
+  if(EDUS_MKL_THREAD)
+    set(MKL_THREADING intel_thread)
+  else()
+    set(MKL_THREADING sequential)
+  endif()
+
+  set(MKL_INTERFACE lp64)
+  find_package(MKL CONFIG REQUIRED PATHS $ENV{MKLROOT})
+  add_compile_options($<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
+  include_directories($<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
+  link_libraries($<LINK_ONLY:MKL::MKL>)
+  message(STATUS "Imported oneMKL targets: ${MKL_IMPORTED_TARGETS}")
 else()
-  set(MKL_THREADING sequential)
+  set(BLA_VENDOR OpenBLAS)
+  find_path(LAPACKE_INCLUDE_DIR
+      NAMES lapacke.h
+  )
+  find_library(LAPACKE_LIBRARY
+      NAMES lapacke
+  )
+  if(NOT LAPACKE_INCLUDE_DIR OR NOT LAPACKE_LIBRARY)
+    message(FATAL_ERROR "LAPACKE not found. Install liblapacke-dev")
+  endif()
+  find_library(LAPACKE_LIBRARY lapacke)  
+  find_package(BLAS REQUIRED)
+  find_package(LAPACK REQUIRED)
+  include_directories(${LAPACKE_INCLUDE_DIR})
+  link_libraries(    ${BLAS_LIBRARIES}
+                     ${LAPACK_LIBRARIES}
+                     ${LAPACKE_LIBRARY})
 endif()
-
-set(MKL_INTERFACE lp64)
-find_package(MKL CONFIG REQUIRED PATHS $ENV{MKLROOT})
-add_compile_options($<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
-include_directories($<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
-link_libraries($<LINK_ONLY:MKL::MKL>)
-message(STATUS "Imported oneMKL targets: ${MKL_IMPORTED_TARGETS}")
-
 
 #fftw3
 

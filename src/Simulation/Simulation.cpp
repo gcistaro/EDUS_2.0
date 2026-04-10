@@ -693,7 +693,7 @@ void Simulation::Print_Velocity(Operator<std::complex<double>>& aux_DM)
         v[ix] /= DMK.get_MeshGrid()->get_TotalSize();
     }
 #ifdef EDUS_MPI
-    if (kpool_comm.rank() == 0)
+    if (kpool_comm->rank() == 0)
 #endif
     {
         os_Velocity_ << std::setw(20) << std::setprecision(8) << v[0].real();
@@ -904,7 +904,7 @@ template<typename Func>
 double findextreme(Func func, const std::vector<mdarray<double,1>>& array, int bandindex, mpi::Communicator& comm)
 {
     std::vector<double> local_extreme(comm.size());
-    local_extreme[kpool_comm.rank()] = findextreme(func, array, bandindex);
+    local_extreme[kpool_comm->rank()] = findextreme(func, array, bandindex);
     MPI_Allgather(MPI_IN_PLACE, 1, MPI_DOUBLE, &local_extreme[0], 1, MPI_DOUBLE, comm.communicator());
     return *func(local_extreme.begin(), local_extreme.end());
 }

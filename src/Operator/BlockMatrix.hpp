@@ -4,8 +4,6 @@
 #include <complex>
 #include <memory>
 #include <cassert>
-#define MKL_Complex16 std::complex<double>
-#include "mkl.h"
 #include <iostream>
 #include <iomanip>
 #include <typeinfo>

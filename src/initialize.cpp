@@ -4,15 +4,19 @@
 //- MPI_COMM_WORLD
 //- fftw initialization
 
-#include "mkl.h"
+#ifdef EDUS_MKL
+    #include "mkl.h"
+#else 
+    #include "lapacke.h"
+#endif
 //#include <thread>
 #include <iomanip>
 #include "initialize.hpp"
 #include "GlobalFunctions.hpp"
 
 #ifdef EDUS_MPI
-mpi::Communicator kpool_comm;
-mpi::Communicator band_comm;
+std::unique_ptr<mpi::Communicator> kpool_comm = nullptr;
+std::unique_ptr<mpi::Communicator> band_comm = nullptr;
 int NumberKpools;
 #endif
 /*
@@ -44,7 +48,9 @@ void initialize()
     print_header();
     output::title("PARALLELIZATION RECAP");  
     output::print("OpenMP  threads:   *", omp_get_max_threads());
+#ifdef EDUS_MKL
     output::print("MKL  threads:      *", mkl_get_max_threads());
+#endif 
 #ifdef EDUS_FFTWTHREADS
     fftw_plan_with_nthreads(omp_get_max_threads());
     output::print("fftw  threads:     *", fftw_planner_nthreads());
@@ -55,10 +61,12 @@ void initialize()
      assert( mpi::Communicator::world().size()%NumberKpools == 0 );//for now i just implemented a rectangular MPI grid
      
      //create k point communicator
-     kpool_comm.generate( mpi::Communicator::world(), mpi::Communicator::world().rank()/NumberKpools );
+     kpool_comm = std::make_unique<mpi::Communicator>();
+     kpool_comm->generate( mpi::Communicator::world(), mpi::Communicator::world().rank()/NumberKpools );
  
      //create band communicator
-     band_comm.generate( mpi::Communicator::world(), mpi::Communicator::world().rank()%NumberKpools );
+     band_comm = std::make_unique<mpi::Communicator>();
+     band_comm->generate( mpi::Communicator::world(), mpi::Communicator::world().rank()%NumberKpools );
 // == 
 // ==     //recap of mpi ranks -- to be done only for high verbosity
 // ==     if ( mpi::Communicator::world().rank() != 0 ) {
