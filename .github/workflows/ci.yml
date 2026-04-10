@@ -1,41 +1,60 @@
-name: EDUS CI (Spack + Separate Tests)
+name: EDUS CI (dependency discovery)
 
 on:
   push:
   pull_request:
 
 jobs:
-  build-and-test:
+  build:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Get code
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2. Show environment (VERY IMPORTANT for debugging)
+      - name: Inspect system
+        run: |
+          echo "=== COMPILER ==="
+          g++ --version || true
+          echo "=== CMAKE ==="
+          cmake --version || true
+          echo "=== PYTHON ==="
+          python3 --version || true
+
+      # 3. Install ONLY minimal build tools
+      - name: Install build essentials
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            python3 \
+            python3-pip
+
+      # 4. Clone Spack (but DO NOT install heavy deps yet)
       - name: Clone Spack
         run: git clone --depth=1 https://github.com/spack/spack.git $HOME/spack
 
-      - name: Build EDUS with Spack
+      # 5. Register your local Spack repo (safe, no installs yet)
+      - name: Register Spack repo
         run: |
           . $HOME/spack/share/spack/setup-env.sh
-          spack repo add $GITHUB_WORKSPACE/spack
-          spack install edus
-          spack load edus
+          spack repo add $GITHUB_WORKSPACE/spack || true
+          spack repo list
 
-#####      - name: Run test - hBN Coulomb
-#####        run: |
-#####          . $HOME/spack/share/spack/setup-env.sh
-#####          spack load edus
-#####          ctest --test-dir build -R hBN_Coulomb --output-on-failure
-#####
-#####      - name: Run test - Test 2
-#####        run: |
-#####          . $HOME/spack/share/spack/setup-env.sh
-#####          spack load edus
-#####          ctest --test-dir build -R Test2 --output-on-failure
-#####
-#####      - name: Run test - Test 3
-#####        run: |
-#####          . $HOME/spack/share/spack/setup-env.sh
-#####          spack load edus
-#####          ctest --test-dir build -R Test3 --output-on-failure
+      # 6. Configure project (this is where missing deps will show)
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build
+
+      # 7. Build (will likely fail if dependencies missing — GOOD!)
+      - name: Build project
+        run: |
+          cmake --build build -j$(nproc)
+
+######      # 8. Run tests (if build succeeds)
+######      - name: Run CTest
+######        run: |
+######          ctest --test-dir build --output-on-failure
