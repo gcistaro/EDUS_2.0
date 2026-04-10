@@ -3,7 +3,6 @@
 //- header printing with git infos
 //- MPI_COMM_WORLD
 //- fftw initialization
-
 #ifdef EDUS_MKL
     #include "mkl.h"
 #else 

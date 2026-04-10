@@ -61,7 +61,7 @@ jobs:
         run: |
           cmake --build build -j$(nproc)
 
-######      # 8. Run tests (if build succeeds)
-######      - name: Run CTest
-######        run: |
-######          ctest --test-dir build --output-on-failure
+      # 8. Run tests (if build succeeds)
+      - name: hBN CTest
+        run: |
+          ctest -R "^hBN$" --output-on-failure
