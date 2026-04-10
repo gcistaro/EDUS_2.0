@@ -135,7 +135,7 @@ std::vector<std::complex<double>> TraceK(BlockMatrix<T>& O__)
     }
 #ifdef EDUS_MPI
     std::vector<std::complex<double>> TraceK_reduced(O__.get_nrows(), 0.);
-    kpool_comm.reduce(&TraceK[0], &TraceK_reduced[0], TraceK.size(), MPI_SUM, 0);
+    kpool_comm->reduce(&TraceK[0], &TraceK_reduced[0], TraceK.size(), MPI_SUM, 0);
     return TraceK_reduced;
 #else
     return TraceK;

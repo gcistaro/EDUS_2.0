@@ -24,17 +24,20 @@ jobs:
           python3 --version || true
 
       # 3. Install ONLY minimal build tools
-      - name: Install build essentials
+      - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             build-essential \
             cmake \
-            python3 \
-            python3-pip \
             libopenmpi-dev \
             openmpi-bin \
-            libhdf5-dev
+            libhdf5-dev \
+            libfftw3-dev \
+            libfftw3-mpi-dev \
+            libopenblas-dev \
+            liblapack-dev \
+            liblapacke-dev \            
 
 
       # 4. Clone Spack (but DO NOT install heavy deps yet)

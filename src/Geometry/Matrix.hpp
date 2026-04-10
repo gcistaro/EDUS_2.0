@@ -9,9 +9,11 @@
 #include <algorithm>
 #include <type_traits>
 
-//define mkl_complex16 to avoid incompatibilities
-
-//#include "mkl.h"
+#ifdef EDUS_MKL
+    #include "mkl.h"
+#else 
+    #include "lapacke.h"
+#endif
 #include "mdContainers/mdContainers.hpp"
 #include "LinearAlgebra/gemm.hpp"
 #include "core/profiler.hpp"
