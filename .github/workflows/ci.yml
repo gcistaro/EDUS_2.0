@@ -37,7 +37,7 @@ jobs:
             libfftw3-mpi-dev \
             libopenblas-dev \
             liblapack-dev \
-            liblapacke-dev \            
+            liblapacke-dev            
 
 
       # 4. Clone Spack (but DO NOT install heavy deps yet)
