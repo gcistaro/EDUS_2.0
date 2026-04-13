@@ -11,9 +11,9 @@ PROJECT_ROOT="${SCRIPT_DIR}/../.."
 # Paths
 # ─────────────────────────────────────────────
 BUILD_DIR="${PROJECT_ROOT}/build"
-INPUT="${PROJECT_ROOT}/ci-test/inputs/hBN.json"
-REF_DIR="${PROJECT_ROOT}/ci-test/outputs/hBN"
-OUT_DIR="${BUILD_DIR}/CTEST/hBN"
+INPUT="${PROJECT_ROOT}/ci-test/inputs/hBN_IPA.json"
+REF_DIR="${PROJECT_ROOT}/ci-test/outputs/hBN_IPA"
+OUT_DIR="${BUILD_DIR}/CTEST/hBN_IPA"
 
 # ─────────────────────────────────────────────
 # Clean output directory
@@ -36,5 +36,11 @@ python3 "${PROJECT_ROOT}/ci-test/compare.py" \
 python3 "${PROJECT_ROOT}/ci-test/compare.py" \
     Output/Velocity.txt "${REF_DIR}/Velocity.txt"
 
+
 python3 "${PROJECT_ROOT}/ci-test/compare.py" \
-    Output/DM0.txt "${REF_DIR}/DM0.txt"
+    Output/Population_wannier.txt "${REF_DIR}/Population_wannier.txt"
+
+python3 "${PROJECT_ROOT}/PostProces/Absorbance.py --smearing=0.6"
+
+python3 "${PROJECT_ROOT}/ci-test/compare.py" \
+    absorbance.txt "${REF_DIR}/absorbance.txt"
