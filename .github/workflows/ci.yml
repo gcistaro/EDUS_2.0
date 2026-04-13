@@ -49,6 +49,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install numpy==1.26.4
+          python -m pip install scipy
       
       # 4. Clone Spack (but DO NOT install heavy deps yet)
       - name: Clone Spack
