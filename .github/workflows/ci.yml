@@ -52,6 +52,7 @@ jobs:
           python -m pip install scipy
           python -m pip install matplotlib
           python -m pip install plotly
+          python -m pip install h5py
       
       # 4. Clone Spack (but DO NOT install heavy deps yet)
       - name: Clone Spack
