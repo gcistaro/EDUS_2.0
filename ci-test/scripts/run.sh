@@ -13,7 +13,7 @@ PROJECT_ROOT="${SCRIPT_DIR}/../.."
 BUILD_DIR="${PROJECT_ROOT}/build"
 INPUT="${PROJECT_ROOT}/ci-test/inputs/hBN_IPA.json"
 REF_DIR="${PROJECT_ROOT}/ci-test/outputs/hBN_IPA"
-OUT_DIR="${BUILD_DIR}/CTEST/hBN_IPA"
+OUT_DIR="${PROJECT_ROOT}/CTEST/hBN_IPA"
 
 # ─────────────────────────────────────────────
 # Clean output directory
