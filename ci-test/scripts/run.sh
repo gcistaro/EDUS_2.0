@@ -40,6 +40,8 @@ python3 "${PROJECT_ROOT}/ci-test/compare.py" \
 python3 "${PROJECT_ROOT}/ci-test/compare.py" \
     Output/Population_wannier.txt "${REF_DIR}/Population_wannier.txt"
 
+ls "${PROJECT_ROOT}/PostProces/"
+
 python3 "${PROJECT_ROOT}/PostProces/Absorbance.py" \
          "--smearing=0.6"
 
