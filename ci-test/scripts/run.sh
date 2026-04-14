@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 
+SEEDNAME=$1
 # ─────────────────────────────────────────────
 # Locate project root from script location
 # ─────────────────────────────────────────────
@@ -11,9 +12,9 @@ PROJECT_ROOT="${SCRIPT_DIR}/../.."
 # Paths
 # ─────────────────────────────────────────────
 BUILD_DIR="${PROJECT_ROOT}/build"
-INPUT="${PROJECT_ROOT}/ci-test/inputs/hBN_IPA.json"
-REF_DIR="${PROJECT_ROOT}/ci-test/outputs/hBN_IPA"
-OUT_DIR="${PROJECT_ROOT}/CTEST/hBN_IPA"
+INPUT="${PROJECT_ROOT}/ci-test/inputs/${SEEDNAME}.json"
+REF_DIR="${PROJECT_ROOT}/ci-test/outputs/${SEEDNAME}"
+OUT_DIR="${PROJECT_ROOT}/CTEST/${SEEDNAME}"
 
 # ─────────────────────────────────────────────
 # Clean output directory
