@@ -65,33 +65,40 @@ jobs:
           spack repo add $GITHUB_WORKSPACE/spack || true
           spack repo list
 
-      # 6. Configure project (this is where missing deps will show)
+      # Configure project 
       - name: Configure CMake
         run: |
           cmake -S . -B build
 
-      # 7. Build (will likely fail if dependencies missing — GOOD!)
+      # Build (will likely fail if dependencies missing)
       - name: Build project
         run: |
           cmake --build build -j$(nproc)
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: build/
+          
   test:
     name: Test - ${{ matrix.test_name }}
     runs-on: ubuntu-latest
     needs: build
-  
+
     strategy:
       matrix:
         test_name:
           - hBN_IPA
           - hBN_HSEX
-  
+
     steps:
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           name: build-artifacts
           path: build/
-  
+
       - name: Run test
         run: |
           cd build
