@@ -74,9 +74,16 @@ jobs:
       - name: Build project
         run: |
           cmake --build build -j$(nproc)
-
-      # 8. Run tests (if build succeeds)
-      - name: hBN CTest
+  hBN_IPA:
+    steps:
+      - name: hBN IPA CTest
         run: |
           cd build
-          ctest -R "^hBN$" --output-on-failure
+          ctest -R "^hBN_IPA$" --output-on-failure
+  hBN_HSEX:
+    steps:
+      - name: hBN HSEX CTest
+        run: |
+          cd build
+          ctest -R "^hBN_HSEX$" --output-on-failure
+

@@ -285,7 +285,8 @@ add_test(NAME Bandstructure_test COMMAND
 ####             python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_SOURCE_DIR}/CTEST/hBN/Output/Population.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN/Population.txt
 ####             python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_SOURCE_DIR}/CTEST/hBN/Output/Velocity.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN/Velocity.txt; \
 ####             python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_SOURCE_DIR}/CTEST/hBN/Output/DM0.txt ${PROJECT_SOURCE_DIR}/ci-test/outputs/hBN/DM0.txt")
-add_test(NAME hBN COMMAND bash ${CMAKE_SOURCE_DIR}/ci-test/scripts/run.sh)
+add_test(NAME hBN_IPA COMMAND bash ${CMAKE_SOURCE_DIR}/ci-test/scripts/run.sh hBN_IPA)
+add_test(NAME hBN_HSEX COMMAND bash ${CMAKE_SOURCE_DIR}/ci-test/scripts/run.sh hBN_HSEX)
 ############add_test(NAME hBN_Coulomb COMMAND 
 ############          bash -c "mkdir ${CMAKE_SOURCE_DIR}/CTEST; 
 ############          rm -rf ${CMAKE_SOURCE_DIR}/CTEST/hBN_coulomb/; \ 
