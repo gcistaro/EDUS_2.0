@@ -102,6 +102,9 @@ jobs:
           name: build-artifacts
           path: build/
 
+      - name: Fix permissions
+        run: chmod +x build/EDUS
+
       - name: Run test
         run: |
           cd build
