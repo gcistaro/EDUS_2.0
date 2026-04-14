@@ -76,11 +76,15 @@ jobs:
           cmake --build build -j$(nproc)
   hBN_IPA:
     steps:
+
+    runs-on: ubuntu-latest
       - name: hBN IPA CTest
         run: |
           cd build
           ctest -R "^hBN_IPA$" --output-on-failure
   hBN_HSEX:
+    runs-on: ubuntu-latest
+
     steps:
       - name: hBN HSEX CTest
         run: |
