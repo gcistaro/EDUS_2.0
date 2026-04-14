@@ -1,5 +1,5 @@
 {
-    "tb_file": "/home/gcistaro/EDUS_2.0/tb_models/hBN_gap7.25eV_a2.5A",
+    "tb_file": "../../tb_models/hBN_gap7.25eV_a2.5A",
     "grid": [20,20,1],
     "filledbands" : 1,
     
