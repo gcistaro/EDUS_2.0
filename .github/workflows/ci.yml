@@ -75,37 +75,12 @@ jobs:
         run: |
           cmake --build build -j$(nproc)
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-artifacts
-          path: build/
-
-  test:
-    name: Test - ${{ matrix.test_name }}
-    runs-on: ubuntu-latest
-    needs: build
-
-    strategy:
-      matrix:
-        test_name:
-          - hBN_IPA
-          - hBN_HSEX
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-artifacts
-          path: build/
-
-      - name: Fix permissions
-        run: chmod +x build/EDUS
-
-      - name: Run test
+      - name: Run hBN_IPA test
         run: |
           cd build
-          ctest -R "^${{ matrix.test_name }}$" --output-on-failure
+          ctest -R "^hBN_IPA$" --output-on-failure
+      
+      - name: Run hBN_HSEX test
+        run: |
+          cd build
+          ctest -R "^hBN_HSEX$" --output-on-failure
