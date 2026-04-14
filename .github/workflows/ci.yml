@@ -80,7 +80,7 @@ jobs:
         with:
           name: build-artifacts
           path: build/
-          
+
   test:
     name: Test - ${{ matrix.test_name }}
     runs-on: ubuntu-latest
@@ -93,6 +93,9 @@ jobs:
           - hBN_HSEX
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
