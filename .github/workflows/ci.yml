@@ -75,9 +75,9 @@ jobs:
         run: |
           cmake --build build -j$(nproc)
   hBN_IPA:
-    steps:
-
     runs-on: ubuntu-latest
+
+    steps:
       - name: hBN IPA CTest
         run: |
           cd build
