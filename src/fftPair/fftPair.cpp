@@ -4,6 +4,9 @@
 #include <cctype>
 #include <locale>
 #include "core/profiler.hpp"
+#ifdef EDUS_GPU
+#include <cuda_runtime.h>
+#endif
 
 FourierTransform::FourierTransform
 (mdarray<std::complex<double>, 2>& Array_x__, mdarray<std::complex<double>, 2>& Array_k__, const std::vector<int>& Dimensions__)
@@ -61,6 +64,34 @@ FourierTransform::initialize
     //in the dimension of the bands (no transpose needed!)
     delete[] Dimensions_ptr;
 #else
+#ifdef EDUS_GPU
+    cudaMalloc((void**)&Array_k_device,
+           TotalSize*howmany * sizeof(cufftDoubleComplex));
+    cudaMalloc((void**)&Array_x_device,
+           TotalSize*howmany * sizeof(cufftDoubleComplex));       
+    cufftPlanMany(&MyPlan_FWD,
+                  dim,                    // rank
+                  Dimensions.data(),      // n
+                  inembed,                // inembed
+                  istride,                // istride
+                  idist,                  // idist
+                  onembed,                // onembed
+                  ostride,                // ostride
+                  odist,                  // odist
+                  CUFFT_Z2Z,              // complex-to-complex
+                  howmany);               // batch
+    cufftPlanMany(&MyPlan_BWD,
+                  dim,                    // rank
+                  Dimensions.data(),      // n
+                  inembed,                // inembed
+                  istride,                // istride
+                  idist,                  // idist
+                  onembed,                // onembed
+                  ostride,                // ostride
+                  odist,                  // odist
+                  CUFFT_Z2Z,              // complex-to-complex
+                  howmany);               // batch
+#else
     //from x to k (fft to Fourier space)
     MyPlan_FWD = fftw_plan_many_dft(dim, &Dimensions[0], howmany,
                                     reinterpret_cast<fftw_complex*>(&(*Array_x)[0]), inembed, istride, idist, 
@@ -71,6 +102,8 @@ FourierTransform::initialize
                                     reinterpret_cast<fftw_complex*>(&(*Array_k)[0]), inembed, istride, idist, 
                                     reinterpret_cast<fftw_complex*>(&(*Array_x)[0]), onembed, ostride, odist,
                                     +1, FFTW_ESTIMATE);
+
+#endif
 #endif
 }
 
@@ -93,9 +126,33 @@ void FourierTransform::fft(const int& sign)
     assert( sign == 1 || sign == -1 );
     auto& output = (sign == +1 ? (*Array_x) : (*Array_k) ); 
     auto& MyPlan = (sign == +1 ? (MyPlan_BWD) : (MyPlan_FWD) );
+    std::cout << ((*Array_x)(howmany-1, TotalSize-1)) << std::endl;
 
+#ifdef EDUS_GPU
+    auto& input = (sign == +1 ? (*Array_k) : (*Array_x) ); 
+    auto& input_GPU = ( sign == +1 ? Array_k_device : Array_x_device );
+    auto& output_GPU = ( sign == +1 ? Array_x_device : Array_k_device );
+    // adjust size if your layout differs (see note below)
+    /* send data to GPU */
+    cudaMemcpy(input_GPU,
+               reinterpret_cast<cufftDoubleComplex*>(&input[0]),
+               TotalSize*howmany * sizeof(cufftDoubleComplex),
+               cudaMemcpyHostToDevice);
+    /* execute fft */
+    cufftExecZ2Z(MyPlan,
+                (cufftDoubleComplex*) input_GPU,
+                (cufftDoubleComplex*) output_GPU,
+                sign);
+    /* send back data to CPU */
+    cudaMemcpy(reinterpret_cast<cufftDoubleComplex*>(&output[0]),
+           output_GPU,
+           TotalSize*howmany * sizeof(cufftDoubleComplex),
+           cudaMemcpyDeviceToHost);
+#else
+std::cout << "executing " << std::endl;
     fftw_execute(MyPlan);
-
+    std::cout << "executed" << std::endl;
+#endif 
     if( sign == -1 ) {
         #pragma omp parallel for schedule(static)
         for(int index = 0; index < output.get_TotalSize(); ++index) {
@@ -144,8 +201,15 @@ FourierTransform::~FourierTransform()
 {
     if( IsFFT && destruct )
      {
+#ifdef EDUS_GPU
+        cudaFree(Array_x_device);
+        cudaFree(Array_k_device);
+        cufftDestroy(MyPlan_FWD);
+        cufftDestroy(MyPlan_BWD);
+#else 
         fftw_destroy_plan(MyPlan_FWD);
         fftw_destroy_plan(MyPlan_BWD);
+#endif
         destruct = false;
     }
 }

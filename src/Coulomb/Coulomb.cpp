@@ -49,6 +49,7 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
         index_origin_local_ = Rgrid__->mpindex.glob1D_to_loc1D(index_origin_global);  
     }  
 
+#ifdef EDUS_MPI
     /* get rank with origin in all the ranks */
     int HasOrigin_int = HasOrigin_ ? 1 : 0;
     output::print("has origin: ", (HasOrigin_ ? "true" : "false"));
@@ -66,7 +67,9 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
         }
     }
     output::print("rank with origin: ", root_origin);
-
+#else
+    HasOrigin_ = 1;
+#endif
 
     /* define matrix for Hartree potential */
     Hartree.initialize({nbnd, nbnd});
@@ -79,6 +82,7 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
         }
     }
 
+#ifdef EDUS_MPI
     /* reduce the elements of the Hartree potential */
     if (kpool_comm->rank() == root_origin) {
         // Root process: in-place reduction
@@ -91,6 +95,7 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
                nbnd * nbnd, MPI_CXX_DOUBLE_COMPLEX, MPI_SUM,
                root_origin, kpool_comm->communicator());
     }
+#endif
 
     /* make it hermitian (it must be mathematically) but is not numerically */
     for( int irow = 0; irow < nbnd; ++irow ) {

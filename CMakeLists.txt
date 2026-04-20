@@ -7,17 +7,21 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 
 option(EDUS_PROFILE     "Profiling function timings"                            ON)
 option(EDUS_MKL         "Enable MKL"                                           OFF)
-option(EDUS_MPI         "Enabling MPI"                                          ON)
+option(EDUS_MPI         "Enabling MPI"                                         OFF)
 option(EDUS_BATCHGEMM   "Enabling Batch Gemm for k matrix multiplication"      OFF)
 option(EDUS_FFTWTHREADS "Enabling threads in fftw"                             OFF)                
 option(EDUS_MKL_THREAD  "Enabling threads in mkl"                              OFF)                  
 option(EDUS_HDF5        "Link hdf5 library for fast writing of big matrices"    ON)
+option(EDUS_GPU         "Compile with GPU support"                             ON)
 
 
 #set(HDF5_PREFER_PARALLEL  true)
 #add_definitions(-D__DEBUG)
 if(EDUS_PROFILE)
   add_definitions(-DEDUS_PROFILE)
+endif()
+if(EDUS_GPU)
+  add_definitions(-DEDUS_GPU)
 endif()
 if(EDUS_MPI)
   add_definitions(-DEDUS_MPI)
@@ -124,6 +128,14 @@ add_library(OBJECTS OBJECT ${_SOURCES} )
 
 #adding all sources to target
 link_libraries(OBJECTS)
+
+#adding GPU support 
+if(EDUS_GPU)
+  enable_language(CUDA)
+  find_package(CUDAToolkit REQUIRED)
+
+  link_libraries( CUDA::cudart  CUDA::cufft )
+endif()
 
 #adding OpenMP
 find_package(OpenMP)
@@ -243,7 +255,7 @@ add_executable(Matrix_test ci-test/test_matrix.cpp)
 add_executable(Eigen_test ci-test/test_eigen.cpp) 
 add_executable(DE_test ci-test/test_DEsolver.cpp)
 add_executable(DE2_test ci-test/test_DEsolver2.cpp)
-#add_executable(fft-many_test ci-test/test_fft_many.cpp)
+add_executable(fft-many_test ci-test/test_fft_many.cpp)
 #add_executable(fft_test ci-test/test_fft_mpi.cpp)
 #add_executable(Gradient_R_test ci-test/test_Gradient_R.cpp)
 #add_executable(NonEQ ci-test/test_NEQ_H0.cpp)
