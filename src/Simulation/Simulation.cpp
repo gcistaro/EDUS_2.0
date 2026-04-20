@@ -900,24 +900,24 @@ void print_bandstructure(const std::vector<std::vector<double>>& bare_kpath__, O
     Gnuplot << "pause -1" << std::endl;
 }
 
-template<typename Func>
-double findextreme(Func func, const std::vector<mdarray<double,1>>& array, int bandindex, mpi::Communicator& comm)
-{
-    std::vector<double> local_extreme(comm.size());
-    local_extreme[kpool_comm->rank()] = findextreme(func, array, bandindex);
-    MPI_Allgather(MPI_IN_PLACE, 1, MPI_DOUBLE, &local_extreme[0], 1, MPI_DOUBLE, comm.communicator());
-    return *func(local_extreme.begin(), local_extreme.end());
-}
-
-template<typename Func>
-double findextreme(Func func, const std::vector<mdarray<double,1>>& array, int bandindex)
-{
-    std::vector<double> array_k(array.size());
-    for( int ik=0; ik<array.size(); ++ik ) {
-        array_k[ik] = array[ik](bandindex);
-    }
-    return *func(array_k.begin(), array_k.end());
-}
+// == template<typename Func>
+// == double findextreme(Func func, const std::vector<mdarray<double,1>>& array, int bandindex, mpi::Communicator& comm)
+// == {
+// ==     std::vector<double> local_extreme(comm.size());
+// ==     local_extreme[kpool_comm->rank()] = findextreme(func, array, bandindex);
+// ==     MPI_Allgather(MPI_IN_PLACE, 1, MPI_DOUBLE, &local_extreme[0], 1, MPI_DOUBLE, comm.communicator());
+// ==     return *func(local_extreme.begin(), local_extreme.end());
+// == }
+// == 
+// == template<typename Func>
+// == double findextreme(Func func, const std::vector<mdarray<double,1>>& array, int bandindex)
+// == {
+// ==     std::vector<double> array_k(array.size());
+// ==     for( int ik=0; ik<array.size(); ++ik ) {
+// ==         array_k[ik] = array[ik](bandindex);
+// ==     }
+// ==     return *func(array_k.begin(), array_k.end());
+// == }
 
 void Simulation::OpenGap()
 {
