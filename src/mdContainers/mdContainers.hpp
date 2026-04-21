@@ -8,25 +8,43 @@
 #include <iomanip>
 #include <cassert>
 #include <memory>
-
+#include <complex>
 #include <iterator> // For std::forward_iterator_tag
 #include <cstddef>  // For std::ptrdiff_t
 
 #include "MultiIndex/MultiIndex.hpp"
+#ifdef EDUS_GPU
+#include <cuda_runtime.h>
+#endif
+
+enum Processor {host, device};
 
 template<typename T, size_t dim> //requires ( dim>0 && dim<7 )
 class mdarray
 {
     private:
-        //std::unique_ptr<T[]> Ptr =nullptr;
+        /// container for data on CPU
         T* Ptr=nullptr;
+        /// container for data on GPU
+        T* Ptr_device=nullptr;
+        /// Dimension of mdarray on each of dim
         std::array<int, dim> Size{0};
+        /// TotalDimension as multiplication of Size 
         int TotalSize=0;
+        /// Offset over each dimension to link 1D index to nD index
         std::array<int, dim> Offset{0};
+        /// multiindex to get the 1D<->nD link-
         MultiIndex<dim> multindex;
+        /// Check if array needs to be deleted when out-of-scope
         bool NotDestruct = false;
+        /// initialize TotalSize and Offset
         void TotalSizeAndOffset();
+        /// In general different, because for some libraries we need additional memory (i.e. fftw)
         int real_dims;
+        /// Keeps track of where the object lives
+        Processor processor_=host;
+        /// check if the GPU array is initialized
+        bool initialized_device=false;
     public:
         mdarray() = default;
         mdarray(const mdarray<T,dim>& ToBeCopied);
@@ -41,6 +59,9 @@ class mdarray
         mdarray(T* Ptr_, const std::array<int,dim>& Size_, const int& real_dims__=0);
         void initialize(T* Ptr_, const std::array<int,dim>& Size_, const int& real_dims__=0);
         
+        void initialize_device();
+        void transfer_to ( const Processor& );
+
         void fill(const T& FillingValue);
 
         struct Iterator
@@ -81,7 +102,9 @@ class mdarray
         size_t size() const { return TotalSize; }
         const auto& data() const {return Ptr;};
         auto& data() {return Ptr;};
-        
+        const auto& device_ptr() const {return Ptr_device;};
+        auto& device_ptr() {return Ptr_device;};
+                
         template <typename... Args>
         inline int oneDindex(Args... args) const;
         
@@ -100,6 +123,7 @@ class mdarray
         inline const int get_Size(const int& index) const;
         inline auto get_Size() const {return Size;};
         inline auto get_TotalSize() const {return TotalSize;};
+        inline bool on(const Processor& proc__) const {return ( proc__ == processor_ ? true : false );};
         ~mdarray();
 
         template<typename T_, size_t dim_>

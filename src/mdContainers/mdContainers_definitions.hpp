@@ -106,8 +106,51 @@ void mdarray<T,dim>::initialize(T* Ptr_, const std::array<int,dim>& Size_, const
 }
 
 template <typename T, size_t dim>
+void mdarray<T,dim>::initialize_device()
+{
+    /* we allocate the memory on gpu, but we the array is still on CPU if not explicitly transferred */
+#ifdef EDUS_GPU
+        cudaMalloc((void**)&Ptr_device, real_dims*sizeof(T));
+        processor_ = device; 
+        fill(0.);
+        processor_ = host;
+        initialized_device = true;
+#endif
+}
+
+template <typename T, size_t dim>
+void mdarray<T,dim>::transfer_to(const Processor& proc__)
+{
+#ifdef EDUS_GPU
+    if( !initialized_device ) {
+        throw std::runtime_error("Trying to transfer memory but device memory is not allocated!\n");
+    }
+    /* Transfer the array from host to device or viceversa */
+    if ( this->processor_ == proc__ ) {
+        return;
+    }
+    auto& sender   = ( proc__ == device   ? Ptr                    : Ptr_device            );
+    auto& receiver = ( proc__ == device   ? Ptr_device             : Ptr                   );
+    auto  protocol = ( proc__ == device   ? cudaMemcpyHostToDevice : cudaMemcpyDeviceToHost);
+
+    cudaMemcpy(receiver, sender, TotalSize * sizeof(T), protocol);
+
+    processor_ = proc__;
+#endif 
+}
+
+template <typename T, size_t dim>
 void mdarray<T,dim>::fill(const T& FillingValue)
 {
+#ifdef EDUS_GPU
+    if ( processor_ == device ) {
+        if ( std::abs( FillingValue ) > 1.e-15 ) {
+            throw std::runtime_error("Trying to fill a GPU array with a value != 0. Still not implemented.\n");
+            exit(1);
+        }
+        cudaMemset(Ptr_device, 0, TotalSize * sizeof(T));
+    } else 
+#endif 
     std::fill((*this).begin(), (*this).end(), FillingValue);
 }
 
