@@ -658,6 +658,18 @@ class Operator
             }
             return is_hermitian;
         }
+
+        void initialize_device()
+        {
+            Operator_k.initialize_device();
+            Operator_R.initialize_device();
+        }
+
+        void transfer_to(const Processor& proc__)
+        {
+            Operator_k.transfer_to(proc__);
+            Operator_R.transfer_to(proc__);
+        }
 };
 
 

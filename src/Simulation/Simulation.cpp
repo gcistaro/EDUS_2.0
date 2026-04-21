@@ -284,6 +284,28 @@ output::print("-> Check hermiticity of H0...");
     mpi::Communicator::world().barrier();
 #endif
     //---------------------------------------------------------------------------------------
+
+    /* allocate device memory for the arrays we need on gpu */
+    if( processor_ == device ) {
+        H_                                       .initialize_device();
+        H0_                                      .initialize_device();
+        r_[0]                                    .initialize_device();
+        r_[1]                                    .initialize_device();
+        r_[2]                                    .initialize_device();
+        // == DensityMatrix_                     .initialize_device();
+        // == MeshGrid::MasterRgrid              .initialize_device();
+        // == MeshGrid::MasterRgrid_GammaCentered.initialize_device();
+        
+        /* send all arrays used for time evolution to gpu */
+        H_                                 .transfer_to(Processor::device);
+        H0_                                .transfer_to(Processor::device);
+        r_[0]                              .transfer_to(Processor::device);
+        r_[1]                              .transfer_to(Processor::device);
+        r_[2]                              .transfer_to(Processor::device);
+        // == DensityMatrix_                     .transfer_to(Processor::device);
+        // == MeshGrid::MasterRgrid              .transfer_to(Processor::device);
+        // == MeshGrid::MasterRgrid_GammaCentered.transfer_to(Processor::device);
+    }
 }
 
 /// @brief Defines whether or not at the current time step time__ we print the txt files and the matrices in hdf5
@@ -360,6 +382,47 @@ void Simulation::SettingUp_EigenSystem()
 
 };
 
+
+void Calculate_TDHamiltonian_cpu( BlockMatrix<std::complex<double>>& H, 
+                                  const BlockMatrix<std::complex<double>>& H0, 
+                                  const BlockMatrix<std::complex<double>>& x, 
+                                  const BlockMatrix<std::complex<double>>& y, 
+                                  const BlockMatrix<std::complex<double>>& z, 
+                                  const Vector<double>& las)
+{
+    #pragma omp parallel for schedule(static) collapse(3)
+        for (int iblock = 0; iblock < H0.get_nblocks(); ++iblock) {
+            for (int irow = 0; irow < H0.get_nrows(); ++irow) {
+                for (int icol = 0; icol < H0.get_ncols(); ++icol) {
+                    // auto Hblock = ( SpaceOfPropagation == k ? iblock : ci(iblock, 0) );
+                    // H_(Hblock, irow, icol) = H0_(iblock, irow, icol)
+                    H(iblock, irow, icol) += H0(iblock, irow, icol)
+                        + las[0] * x(iblock, irow, icol)
+                        + las[1] * y(iblock, irow, icol)
+                        + las[2] * z(iblock, irow, icol);
+                }
+            }
+        }
+
+    //== auto& ci = MeshGrid::ConvolutionIndex[{H0_.get_MeshGrid()->get_id(),
+    //==                                           H_.get_MeshGrid()->get_id(),
+    //==                                           Operator<std::complex<double>>::MeshGrid_Null->get_id()}];
+    //== if(ci.get_Size(0) == 0 && SpaceOfPropagation == R) {
+    //==     MeshGrid::Calculate_ConvolutionIndex( *(H0_.get_MeshGrid()),
+    //==                                               *(H_.get_MeshGrid()),
+    //==                                               *(Operator<std::complex<double>>::MeshGrid_Null));
+    //== }
+
+    //------------------------H(R) = H0(R) + E.r(R)-------------------------------------
+    // == /* H_ = H0_ + las_x \cdot x */
+    // == SumWithProduct(H, 1., H0, las[0], x);
+    // == /* H_ = H_ + las_y \cdot y */
+    // == SumWithProduct(H, 1., H, las[1], y);
+    // == /* H_ = H_ + las_z \cdot z */
+    // == SumWithProduct(H, 1., H, las[2], z);
+}
+
+
 /// @brief Function to calculate the time dependent Hamiltonian (one-body) as a sum of H0 and the
 /// interaction with the laser:
 /// @f[
@@ -381,47 +444,36 @@ void Simulation::Calculate_TDHamiltonian(const double& time__, const bool& erase
     auto& z = r_[2].get_Operator(SpaceOfCalculateTDHamiltonian_);
 
     auto las  = setoflaser_(time__).get("Cartesian");
-
-    // auto& ci = MeshGrid::ConvolutionIndex[{H0_.get_MeshGrid()->get_id(),
-    //                                           H_.get_MeshGrid()->get_id(),
-    //                                           Operator<std::complex<double>>::MeshGrid_Null->get_id()}];
-    //-----------------------------------------------------------------------------------
-
-    //--------------------------do initializations---------------------------------------
     if (erase_H__) {
         H.fill(0.);
     }
-
-    // if(ci.get_Size(0) == 0 && SpaceOfPropagation == R) {
-    //     MeshGrid::Calculate_ConvolutionIndex( *(H0_.get_MeshGrid()),
-    //                                               *(H_.get_MeshGrid()),
-    //                                               *(Operator<std::complex<double>>::MeshGrid_Null));
-    // }
-    //---------------------------------------------------------------------------------
-
-    //------------------------H(R) = H0(R) + E.r(R)-------------------------------------
-    // == /* H_ = H0_ + las_x \cdot x */
-    // == SumWithProduct(H, 1., H0, las[0], x);
-    // == /* H_ = H_ + las_y \cdot y */
-    // == SumWithProduct(H, 1., H, las[1], y);
-    // == /* H_ = H_ + las_z \cdot z */
-    // == SumWithProduct(H, 1., H, las[2], z);
-
-#pragma omp parallel for schedule(static) collapse(3)
-    for (int iblock = 0; iblock < H0.get_nblocks(); ++iblock) {
-        for (int irow = 0; irow < H0.get_nrows(); ++irow) {
-            for (int icol = 0; icol < H0.get_ncols(); ++icol) {
-                // auto Hblock = ( SpaceOfPropagation == k ? iblock : ci(iblock, 0) );
-                // H_(Hblock, irow, icol) = H0_(iblock, irow, icol)
-                H(iblock, irow, icol) += H0(iblock, irow, icol)
-                    + las[0] * x(iblock, irow, icol)
-                    + las[1] * y(iblock, irow, icol)
-                    + las[2] * z(iblock, irow, icol);
-            }
-        }
-    }
     H_.lock_space(SpaceOfCalculateTDHamiltonian_);
+#ifdef EDUS_GPU
+    if ( processor_ == device ) {
+        las.initialize_device();
+        las.transfer_to(processor_);
+        Calculate_TDHamiltonian_gpu(H.data(device), 
+                                    H0.data(device), 
+                                    x.data(device), 
+                                    y.data(device), 
+                                    z.data(device), 
+                                    las.data(device),
+                                    las.data(device)+1,
+                                    las.data(device)+2,
+                                    H.get_TotalSize()
+                                );
+        H.transfer_to(host);
+        H0.transfer_to(host);
+        x.transfer_to(host);
+        y.transfer_to(host);
+        z.transfer_to(host);
+        return;
+    } 
+#endif
+    Calculate_TDHamiltonian_cpu(H, H0, x, y, z, las);
 }
+
+
 
 /// @brief Driver for the full time propagation. It prints every 100 steps in the standard output a message.
 void Simulation::Propagate()

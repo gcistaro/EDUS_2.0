@@ -114,7 +114,8 @@ void BlockMatrix<T>::fill(const T& Scalar)
 #ifdef EDUS_TIMERS
     PROFILE("BlockMatrix::fill");
 #endif
-    std::fill(this->Values.begin(), this->Values.end(), Scalar);
+    Values.fill(Scalar);
+// ==     std::fill(this->Values.begin(), this->Values.end(), Scalar);
 }
 
 template<typename T>
@@ -407,7 +408,17 @@ void BlockMatrix<T>::load(const std::string& name__, const int& node__, const st
 #endif //EDUS_HDF5
 }
 
+template<typename T>
+void BlockMatrix<T>::initialize_device()
+{
+    Values.initialize_device();
+}
 
+template<typename T>
+void BlockMatrix<T>::transfer_to(const Processor& proc__)
+{
+    Values.transfer_to(proc__);
+}
 
 template<typename T>
 auto max(const BlockMatrix<T>& m)

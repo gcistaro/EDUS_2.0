@@ -14,6 +14,26 @@
 
 void print_bandstructure(const std::vector<std::vector<double>>& bare_kpath, Operator<std::complex<double>> Hamiltonian);
 
+#ifdef EDUS_GPU
+void Calculate_TDHamiltonian_gpu( std::complex<double>* H, 
+                                  const std::complex<double>* H0, 
+                                  const std::complex<double>* x, 
+                                  const std::complex<double>* y, 
+                                  const std::complex<double>* z, 
+                                  double* las0,
+                                  double* las1,
+                                  double* las2,
+                                  int N
+                                );
+#endif
+
+void Calculate_TDHamiltonian_cpu( BlockMatrix<std::complex<double>>& H, 
+                                  const BlockMatrix<std::complex<double>>& H0, 
+                                  const BlockMatrix<std::complex<double>>& x, 
+                                  const BlockMatrix<std::complex<double>>& y, 
+                                  const BlockMatrix<std::complex<double>>& z, 
+                                  const Vector<double>& las);
+
 /// @brief This class contains all the variables that are used in the simulations
 class Simulation
 {
@@ -55,6 +75,8 @@ class Simulation
         Space SpaceOfPropagation_ = k;
         /// Space where we calculate the gradient in k 
         Space SpaceOfPropagation_Gradient_ = R;
+        /// Processor where to run the heavy parts of the simulation
+        Processor processor_ = device;
 
         /// Output text file to print the time values where we get the other text files printed
         std::ofstream os_Time_;
