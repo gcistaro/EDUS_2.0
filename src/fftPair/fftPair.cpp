@@ -65,10 +65,12 @@ FourierTransform::initialize
     delete[] Dimensions_ptr;
 #else
 #ifdef EDUS_GPU
-    cudaMalloc((void**)&Array_k_device,
-           TotalSize*howmany * sizeof(cufftDoubleComplex));
-    cudaMalloc((void**)&Array_x_device,
-           TotalSize*howmany * sizeof(cufftDoubleComplex));       
+    Array_k->initialize_device();
+    Array_x->initialize_device();
+    // == cudaMalloc((void**)&Array_k_device,
+    // ==        TotalSize*howmany * sizeof(cufftDoubleComplex));
+    // == cudaMalloc((void**)&Array_x_device,
+    // ==        TotalSize*howmany * sizeof(cufftDoubleComplex));       
     cufftPlanMany(&MyPlan_FWD,
                   dim,                    // rank
                   Dimensions.data(),      // n
@@ -126,32 +128,26 @@ void FourierTransform::fft(const int& sign)
     assert( sign == 1 || sign == -1 );
     auto& output = (sign == +1 ? (*Array_x) : (*Array_k) ); 
     auto& MyPlan = (sign == +1 ? (MyPlan_BWD) : (MyPlan_FWD) );
-    std::cout << ((*Array_x)(howmany-1, TotalSize-1)) << std::endl;
 
 #ifdef EDUS_GPU
     auto& input = (sign == +1 ? (*Array_k) : (*Array_x) ); 
-    auto& input_GPU = ( sign == +1 ? Array_k_device : Array_x_device );
-    auto& output_GPU = ( sign == +1 ? Array_x_device : Array_k_device );
-    // adjust size if your layout differs (see note below)
+    auto& input_GPU = ( sign == +1 ? Array_k->device_ptr() : Array_x->device_ptr() );
+    auto& output_GPU = ( sign == +1 ? Array_x->device_ptr() : Array_k->device_ptr() );
+
     /* send data to GPU */
-    cudaMemcpy(input_GPU,
-               reinterpret_cast<cufftDoubleComplex*>(&input[0]),
-               TotalSize*howmany * sizeof(cufftDoubleComplex),
-               cudaMemcpyHostToDevice);
+    input.transfer_to(Processor::device);
+
     /* execute fft */
     cufftExecZ2Z(MyPlan,
                 (cufftDoubleComplex*) input_GPU,
                 (cufftDoubleComplex*) output_GPU,
                 sign);
+    
     /* send back data to CPU */
-    cudaMemcpy(reinterpret_cast<cufftDoubleComplex*>(&output[0]),
-           output_GPU,
-           TotalSize*howmany * sizeof(cufftDoubleComplex),
-           cudaMemcpyDeviceToHost);
+    output.transfer_to(Processor::host);
+
 #else
-std::cout << "executing " << std::endl;
     fftw_execute(MyPlan);
-    std::cout << "executed" << std::endl;
 #endif 
     if( sign == -1 ) {
         #pragma omp parallel for schedule(static)
@@ -202,8 +198,6 @@ FourierTransform::~FourierTransform()
     if( IsFFT && destruct )
      {
 #ifdef EDUS_GPU
-        cudaFree(Array_x_device);
-        cudaFree(Array_k_device);
         cufftDestroy(MyPlan_FWD);
         cufftDestroy(MyPlan_BWD);
 #else 

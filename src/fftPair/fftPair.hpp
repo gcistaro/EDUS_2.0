@@ -42,8 +42,6 @@ class FourierTransform
 #ifdef EDUS_GPU
         cufftHandle MyPlan_FWD;
         cufftHandle MyPlan_BWD;
-        cufftDoubleComplex* Array_k_device;
-        cufftDoubleComplex* Array_x_device;
 #else 
         fftw_plan MyPlan_FWD;
         fftw_plan MyPlan_BWD;
