@@ -100,10 +100,8 @@ class mdarray
         Iterator begin() const{ return Iterator(Ptr); }
         Iterator end() const{ return Iterator(Ptr+TotalSize); } // TotalSize is out of bounds        
         size_t size() const { return TotalSize; }
-        const auto& data() const {return Ptr;};
-        auto& data() {return Ptr;};
-        const auto& device_ptr() const {return Ptr_device;};
-        auto& device_ptr() {return Ptr_device;};
+        const T* data(const Processor& proc__=host) const {return (proc__ == host ? Ptr : Ptr_device);};
+        T* data(const Processor& proc__=host) {return (proc__ == host ? Ptr : Ptr_device);};
                 
         template <typename... Args>
         inline int oneDindex(Args... args) const;
@@ -120,7 +118,7 @@ class mdarray
         inline T& operator[](const int& oneDindex);        
 
 
-        inline const int get_Size(const int& index) const;
+        inline int get_Size(const int& index) const;
         inline auto get_Size() const {return Size;};
         inline auto get_TotalSize() const {return TotalSize;};
         inline bool on(const Processor& proc__) const {return ( proc__ == processor_ ? true : false );};

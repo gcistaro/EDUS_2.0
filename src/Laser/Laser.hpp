@@ -142,7 +142,7 @@ class SetOfLaser
 
         auto operator()(const double& Time) -> Coordinate
         {
-            Coordinate result({0,0,0});
+            static Coordinate result({0,0,0});
             for(auto& laser : LaserArray){
                 result += laser(Time);
             }

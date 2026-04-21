@@ -74,8 +74,9 @@ class BlockMatrix{
 
         BlockMatrix<T> operator*(const BlockMatrix<T>& B);
 
-        const T* data() const {return Values.data();};
-        T* data() {return const_cast<T*>((const_cast<const BlockMatrix<T>&>(*this)).Values.data());};
+        const T* data(const Processor& proc__=host) const {return Values.data(proc__);};
+        T* data(const Processor& proc__=host) 
+            {return const_cast<T*>((const_cast<const BlockMatrix<T>&>(*this)).Values.data(proc__));};
         //friend void multiply(Matrix<T>& OutputMatrix, const auto& Scalar1, const Matrix<T>& Matrix1, 
         //                                              const auto& Scalar2, const Matrix<T>& Matrix2);
 
@@ -132,6 +133,9 @@ class BlockMatrix{
                 }
             }
         }
+
+        void initialize_device();
+        void transfer_to(const Processor& );
 
         template<typename U>
         void Divide(const U& Divisors__);

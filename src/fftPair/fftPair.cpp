@@ -131,16 +131,16 @@ void FourierTransform::fft(const int& sign)
 
 #ifdef EDUS_GPU
     auto& input = (sign == +1 ? (*Array_k) : (*Array_x) ); 
-    auto& input_GPU = ( sign == +1 ? Array_k->device_ptr() : Array_x->device_ptr() );
-    auto& output_GPU = ( sign == +1 ? Array_x->device_ptr() : Array_k->device_ptr() );
+    auto& input_GPU = ( sign == +1 ? (*(Array_k->data(device))) : (*(Array_x->data(device))) );
+    auto& output_GPU = ( sign == +1 ? (*(Array_x->data(device))) : (*(Array_k->data(device))) );
 
     /* send data to GPU */
     input.transfer_to(Processor::device);
 
     /* execute fft */
     cufftExecZ2Z(MyPlan,
-                (cufftDoubleComplex*) input_GPU,
-                (cufftDoubleComplex*) output_GPU,
+                (cufftDoubleComplex*) &input_GPU,
+                (cufftDoubleComplex*) &output_GPU,
                 sign);
     
     /* send back data to CPU */

@@ -110,7 +110,7 @@ void mdarray<T,dim>::initialize_device()
 {
     /* we allocate the memory on gpu, but we the array is still on CPU if not explicitly transferred */
 #ifdef EDUS_GPU
-        cudaMalloc((void**)&Ptr_device, real_dims*sizeof(T));
+        cudaMalloc((void**)&Ptr_device, TotalSize*sizeof(T));
         processor_ = device; 
         fill(0.);
         processor_ = host;
@@ -201,7 +201,7 @@ inline T& mdarray<T,dim>::operator[](const int& oneDindex)
 
 
 template <typename T, size_t dim>
-inline const int mdarray<T,dim>::get_Size(const int& index) const
+inline int mdarray<T,dim>::get_Size(const int& index) const
 {
     return Size[index];
 }
