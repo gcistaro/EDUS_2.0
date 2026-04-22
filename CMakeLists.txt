@@ -21,6 +21,7 @@ option(EDUS_FFTWTHREADS "Enabling threads in fftw"                             O
 option(EDUS_MKL_THREAD  "Enabling threads in mkl"                              OFF)                  
 option(EDUS_HDF5        "Link hdf5 library for fast writing of big matrices"    OFF)
 option(EDUS_GPU         "Compile with GPU support"                             ON)
+option(__DEBUG          ""                                                     OFF)
 
 # =================================================================================
 # Compile definitions
@@ -34,6 +35,7 @@ add_compile_definitions(
     $<$<BOOL:${EDUS_MKL_THREAD}>:EDUS_MKL_THREAD>
     $<$<BOOL:${EDUS_HDF5}>:EDUS_HDF5>
     $<$<BOOL:${EDUS_GPU}>:EDUS_GPU>
+    $<$<BOOL:${__DEBUG}>:__DEBUG>
 )
 
 # =================================================================================
