@@ -126,6 +126,8 @@ class mdarray
 
         template<typename T_, size_t dim_>
         friend std::ostream& operator<<(std::ostream&, const mdarray<T_,dim_>& mdarray_); 
+        template<typename T_, size_t dim_>
+        friend void copy(const mdarray<T_,dim_>& ToCopy, mdarray<T_,dim_>& ToBeCopied, const Processor& proc__);
 };
 
 #include "mdContainers_definitions.hpp"

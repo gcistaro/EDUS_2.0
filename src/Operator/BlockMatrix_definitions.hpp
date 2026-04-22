@@ -118,6 +118,13 @@ void BlockMatrix<T>::fill(const T& Scalar)
 // ==     std::fill(this->Values.begin(), this->Values.end(), Scalar);
 }
 
+template<class T>
+void copy(const BlockMatrix<T>& ToCopy__, BlockMatrix<T>& ToBeCopied__, const Processor& proc__)
+{
+    copy(ToCopy__.Values, ToBeCopied__.Values, proc__);
+}
+
+
 template<typename T>
 Matrix<T>& BlockMatrix<T>::operator[](const int& iblock)
 {

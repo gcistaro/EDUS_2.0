@@ -68,6 +68,16 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     output::print("-> initializing grid and arrays");
     MeshGrid::MasterRgrid = MeshGrid(R, ctx_->cfg().grid());
     MeshGrid::MasterRgrid_GammaCentered = get_GammaCentered_grid(MeshGrid::MasterRgrid);
+
+    bare_MasterRgridGammaCentered.initialize({MeshGrid::MasterRgrid.mpindex.get_nlocal(), 3});
+    for( int iR_loc=0; iR_loc<MeshGrid::MasterRgrid.mpindex.get_nlocal(); iR_loc++ ) {
+        int iR_glob = MeshGrid::MasterRgrid.mpindex.loc1D_to_glob1D(iR_loc);
+        for (auto& ix : {0,1,2}) {
+            bare_MasterRgridGammaCentered(iR_loc,ix) = MeshGrid::MasterRgrid_GammaCentered[iR_glob].get("Cartesian")[ix];
+        }
+    }
+    Peierls_phase.initialize({MeshGrid::MasterRgrid.mpindex.get_nlocal()});
+
     coulomb_.set_DoCoulomb(ctx_->cfg().coulomb());
     coulomb_.set_epsilon(ctx_->cfg().epsilon());
     coulomb_.set_method(ctx_->cfg().method());
@@ -292,17 +302,23 @@ output::print("-> Check hermiticity of H0...");
         r_[0]                                    .initialize_device();
         r_[1]                                    .initialize_device();
         r_[2]                                    .initialize_device();
-        // == DensityMatrix_                     .initialize_device();
+        bare_MasterRgridGammaCentered            .initialize_device();
+        aux_DM_                                  .initialize_device();
+        Peierls_phase                            .initialize_device();
+        DensityMatrix_                           .initialize_device();
         // == MeshGrid::MasterRgrid              .initialize_device();
         // == MeshGrid::MasterRgrid_GammaCentered.initialize_device();
         
         /* send all arrays used for time evolution to gpu */
-        H_                                 .transfer_to(Processor::device);
-        H0_                                .transfer_to(Processor::device);
-        r_[0]                              .transfer_to(Processor::device);
-        r_[1]                              .transfer_to(Processor::device);
-        r_[2]                              .transfer_to(Processor::device);
-        // == DensityMatrix_                     .transfer_to(Processor::device);
+        H_                                       .transfer_to(Processor::device);
+        H0_                                      .transfer_to(Processor::device);
+        r_[0]                                    .transfer_to(Processor::device);
+        r_[1]                                    .transfer_to(Processor::device);
+        r_[2]                                    .transfer_to(Processor::device);
+        bare_MasterRgridGammaCentered            .transfer_to(Processor::device);
+        aux_DM_                                  .transfer_to(Processor::device);
+        Peierls_phase                            .transfer_to(Processor::device);
+        DensityMatrix_                           .transfer_to(Processor::device);
         // == MeshGrid::MasterRgrid              .transfer_to(Processor::device);
         // == MeshGrid::MasterRgrid_GammaCentered.transfer_to(Processor::device);
     }
@@ -1015,23 +1031,50 @@ void Simulation::OpenGap()
 void Simulation::Apply_Peierls_phase(Operator<std::complex<double>>& O__, const double& time__, const int sign = +1)
 {
     O__.go_to_R();
-    static mdarray<std::complex<double>,1> Peierls_phase({O__.get_Operator(Space::R).get_nblocks()});
 
     /* Calculate Peierls phase on the grid */
     auto At     = setoflaser_.VectorPotential(time__);
     auto& Rgrid = MeshGrid::MasterRgrid_GammaCentered; //WARNING! Here we are supposing O__ R grid is the MasterRgrid! A check would be ideal
+#ifdef EDUS_GPU
+    if ( processor_ == device ) {
+        auto At_cart     = At.get("Cartesian");
+        At_cart.initialize_device();
+        At_cart.transfer_to(processor_);
+        O__.transfer_to(device);
+        Apply_Peierls_phase_gpu(    O__.get_Operator(R).data(device), 
+                                    Peierls_phase.data(device),
+                                    At_cart.data(device),
+                                    At_cart.data(device)+1,
+                                    At_cart.data(device)+2,
+                                    bare_MasterRgridGammaCentered.data(device),
+                                    sign, 
+                                    O__.get_Operator(R).get_TotalSize(),
+                                    O__.get_Operator(R).get_nblocks()
+                                );
+        O__.get_Operator(R).transfer_to(host);
+        return;
+    } 
+#endif
+}
 
+
+void Apply_Peierls_phase_cpu( BlockMatrix<std::complex<double>>& OR__, 
+                              mdarray<std::complex<double>,1>& Peierls_phase,
+                              const Coordinate& At,
+                              int sign)
+{
+    auto& Rgrid = MeshGrid::MasterRgrid_GammaCentered; //WARNING! Here we are supposing O__ R grid is the MasterRgrid! A check would be ideal
 #pragma omp parallel for schedule(static)
-    for (int iR_loc = 0; iR_loc < O__.get_Operator(Space::R).get_nblocks(); ++iR_loc) {
+    for (int iR_loc = 0; iR_loc < OR__.get_nblocks(); ++iR_loc) {
         int iR_glob = Rgrid.mpindex.loc1D_to_glob1D(iR_loc);
         Peierls_phase(iR_loc) = std::exp(im*double(sign)*At.dot(Rgrid[iR_glob]));
     }
 
 #pragma omp parallel for schedule(static) collapse(3)
-    for (int iblock = 0; iblock < O__.get_Operator(Space::R).get_nblocks(); ++iblock) {
-        for (int irow = 0; irow < O__.get_Operator(Space::R).get_nrows(); ++irow) {
-            for (int icol = 0; icol < O__.get_Operator(Space::R).get_ncols(); ++icol) {
-                O__.get_Operator(Space::R)(iblock, irow, icol) *= Peierls_phase(iblock);
+    for (int iblock = 0; iblock < OR__.get_nblocks(); ++iblock) {
+        for (int irow = 0; irow < OR__.get_nrows(); ++irow) {
+            for (int icol = 0; icol < OR__.get_ncols(); ++icol) {
+                OR__(iblock, irow, icol) *= Peierls_phase(iblock);
             }
         }
     }

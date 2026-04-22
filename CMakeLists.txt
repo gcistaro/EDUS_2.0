@@ -126,7 +126,8 @@ set(_SOURCES src/initialize.cpp
     )
 
 if (EDUS_GPU)
-    list(APPEND _SOURCES src/Simulation/Calculate_TDHamiltonian.cu)
+    list(APPEND _SOURCES src/core/kernels/Calculate_TDHamiltonian.cu
+                         src/core/kernels/Apply_Peierls_phase.cu)
 endif()
 
 add_library(core SHARED ${_SOURCES} )

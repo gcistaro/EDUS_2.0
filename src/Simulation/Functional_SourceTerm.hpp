@@ -29,9 +29,7 @@ SourceTerm =
     /* Coulomb interaction H_ += \Sigma^H[\rho] + \Sigma^{SEX}[\rho] */
     H_.go_to_R();
     if(ctx_->cfg().peierls()) {
-        std::copy(Input__.get_Operator(R).begin(),
-                  Input__.get_Operator(R).end(),
-                  aux_DM_.get_Operator(R).begin());   
+        copy(Input__.get_Operator(R), aux_DM_.get_Operator(R), processor_);
         aux_DM_.lock_space(R);    
         Apply_Peierls_phase(aux_DM_, time__, -1);
     }
