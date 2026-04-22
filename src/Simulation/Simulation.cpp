@@ -463,10 +463,6 @@ void Simulation::Calculate_TDHamiltonian(const double& time__, const bool& erase
                                     H.get_TotalSize()
                                 );
         H.transfer_to(host);
-        H0.transfer_to(host);
-        x.transfer_to(host);
-        y.transfer_to(host);
-        z.transfer_to(host);
         return;
     } 
 #endif

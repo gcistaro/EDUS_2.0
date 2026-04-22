@@ -32,6 +32,15 @@ cd "${OUT_DIR}"
 # Compare outputs (numerical regression)
 # ─────────────────────────────────────────────
 python3 "${PROJECT_ROOT}/ci-test/compare.py" \
+    Output/Laser.txt "${REF_DIR}/Laser.txt"
+
+python3 "${PROJECT_ROOT}/ci-test/compare.py" \
+    Output/Laser_A.txt "${REF_DIR}/Laser_A.txt"
+
+python3 "${PROJECT_ROOT}/ci-test/compare.py" \
+    Output/DM0.txt "${REF_DIR}/DM0.txt"
+
+python3 "${PROJECT_ROOT}/ci-test/compare.py" \
     Output/Population.txt "${REF_DIR}/Population.txt"
 
 python3 "${PROJECT_ROOT}/ci-test/compare.py" \

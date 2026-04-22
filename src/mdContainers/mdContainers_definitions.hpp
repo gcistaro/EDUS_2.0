@@ -126,9 +126,9 @@ void mdarray<T,dim>::transfer_to(const Processor& proc__)
         throw std::runtime_error("Trying to transfer memory but device memory is not allocated!\n");
     }
     /* Transfer the array from host to device or viceversa */
-    if ( this->processor_ == proc__ ) {
-        return;
-    }
+    // == if ( this->processor_ == proc__ ) {
+    // ==     return;
+    // == }
     auto& sender   = ( proc__ == device   ? Ptr                    : Ptr_device            );
     auto& receiver = ( proc__ == device   ? Ptr_device             : Ptr                   );
     auto  protocol = ( proc__ == device   ? cudaMemcpyHostToDevice : cudaMemcpyDeviceToHost);
