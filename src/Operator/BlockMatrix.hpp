@@ -141,7 +141,8 @@ class BlockMatrix{
         void Divide(const U& Divisors__);
 };
 
-
+template<class T>
+void copy(const BlockMatrix<T>& ToCopy__, BlockMatrix<T>& ToBeCopied__, const Processor& proc__);
 
 //overloading writing matrix
 template<class T>

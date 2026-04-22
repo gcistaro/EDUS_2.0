@@ -186,7 +186,7 @@
         },
         "peierls": {
             "type": "boolean",
-            "default": false,
+            "default": true,
             "title": "If true, we propagate the EOM in the Peierls gauge"
         },
         "toprint": {

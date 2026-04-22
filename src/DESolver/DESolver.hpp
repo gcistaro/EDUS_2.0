@@ -79,6 +79,7 @@ class DESolver{
         void set_type(SolverType t){type = t;}
         void initialize_beta();
         SolverType get_type(){return type;}	
+        void initialize_device();
 };
 
 /// @brief Initialize all the class variables
@@ -256,7 +257,16 @@ T& DESolver<T>::get_Function()
     return *Function;
 }
 
+template<typename T>
+void DESolver<T>::initialize_device()
+{
+    aux_Function[0].initialize_device();
+    aux_Function[1].initialize_device();
+    aux_Function[2].initialize_device();
+    aux_Function[3].initialize_device();
+    aux_Function[4].initialize_device();
 
+}
 
 template<>
 void DESolver<Operator<std::complex<double>>>::initialize(Operator<std::complex<double>>& Function_, 
