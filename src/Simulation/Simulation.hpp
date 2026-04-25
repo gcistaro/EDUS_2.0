@@ -102,7 +102,7 @@ class Simulation
         std::string wavelength_or_frequency(const int&);
 
         template <typename Scalar_T>
-        friend void SumWithProduct(Operator<std::complex<double>>& Output__, 
+        friend void axpby(Operator<std::complex<double>>& Output__, 
                     const Scalar_T& FirstScalar__, 
                     const Operator<std::complex<double>>& FirstAddend__, 
                     const Scalar_T& SecondScalar__, 
@@ -191,7 +191,5 @@ void Apply_Peierls_phase_cpu( BlockMatrix<std::complex<double>>& OR__,
                               mdarray<std::complex<double>,1>& Peierls_phase,
                               const Coordinate& At,
                               int sign);
-
-#include "Simulation_definitions.hpp"
 
 #endif

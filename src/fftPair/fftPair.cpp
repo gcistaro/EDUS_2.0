@@ -6,6 +6,8 @@
 #include "core/profiler.hpp"
 #ifdef EDUS_GPU
 #include <cuda_runtime.h>
+#include <cuComplex.h>
+#include "initialize.hpp"
 #endif
 
 FourierTransform::FourierTransform
@@ -24,11 +26,11 @@ FourierTransform::initialize
     Array_x = &Array_x__;
     Array_k = &Array_k__;
 
-#ifdef EDUS_MPI
+//==#ifdef EDUS_MPI
     howmany = Array_x->get_Size(1);
-#else
-    howmany = Array_x->get_Size(0);
-#endif
+//==#else
+//==    howmany = Array_x->get_Size(0);
+//==#endif
     TotalSize = 1;
     for(auto& dim__ : Dimensions__) {
         TotalSize *= dim__; 
@@ -36,8 +38,10 @@ FourierTransform::initialize
     SqrtTotalSize = std::sqrt(double(TotalSize));
     dim = Dimensions__.size();
     Dimensions = Dimensions__;
-    idist = TotalSize;
-    odist = TotalSize;
+    idist = 1;
+    odist = 1;
+    istride = howmany;
+    ostride = howmany;
 
 //initializing plans, two for each object for +1 and -1 transforms.
 #ifdef EDUS_MPI
@@ -122,40 +126,48 @@ FourierTransform::initialize
     Array_x = &Array_x__;
 }
 
-void FourierTransform::fft(const int& sign)
+void FourierTransform::normalize(mdarray<std::complex<double>,2>& array__)
+{
+#pragma omp parallel for schedule(static)
+    for(int index = 0; index < array__.get_TotalSize(); ++index) {
+        auto& output_el = array__[index];
+        output_el /= TotalSize;
+    }
+}
+
+void FourierTransform::fft(const int& sign, const Processor& proc__)
 {
     assert(IsFFT);
     assert( sign == 1 || sign == -1 );
     auto& output = (sign == +1 ? (*Array_x) : (*Array_k) ); 
+    auto& input = (sign == +1 ? (*Array_k) : (*Array_x) ); 
     auto& MyPlan = (sign == +1 ? (MyPlan_BWD) : (MyPlan_FWD) );
 
 #ifdef EDUS_GPU
-    auto& input = (sign == +1 ? (*Array_k) : (*Array_x) ); 
-    auto& input_GPU = ( sign == +1 ? (*(Array_k->data(device))) : (*(Array_x->data(device))) );
-    auto& output_GPU = ( sign == +1 ? (*(Array_x->data(device))) : (*(Array_k->data(device))) );
+    auto input_GPU = ( sign == +1 ? ((Array_k->data(device))) : ((Array_x->data(device))) );
+    auto output_GPU = ( sign == +1 ? (Array_x->data(device)) : ((Array_k->data(device))) );
 
     /* send data to GPU */
     input.transfer_to(Processor::device);
 
     /* execute fft */
     cufftExecZ2Z(MyPlan,
-                (cufftDoubleComplex*) &input_GPU,
-                (cufftDoubleComplex*) &output_GPU,
+                reinterpret_cast<cufftDoubleComplex*>(input_GPU),
+                reinterpret_cast<cufftDoubleComplex*>(output_GPU),
                 sign);
-    
+    output.set_processor(Processor::device);
+    std::complex<double> alpha = 1./double(TotalSize);
+    if (sign == -1 ) cublasZscal(cublas_handle,
+                     TotalSize*howmany,
+                     reinterpret_cast<cufftDoubleComplex*>(&alpha),
+                     reinterpret_cast<cufftDoubleComplex*>(output_GPU),
+                     1);
     /* send back data to CPU */
-    output.transfer_to(Processor::host);
-
+    return;
 #else
     fftw_execute(MyPlan);
-#endif 
-    if( sign == -1 ) {
-        #pragma omp parallel for schedule(static)
-        for(int index = 0; index < output.get_TotalSize(); ++index) {
-            auto& output_el = output[index];
-            output_el /= TotalSize;
-        }
-    }
+    if (sign == -1 ) normalize(output);
+#endif
 }
 
 

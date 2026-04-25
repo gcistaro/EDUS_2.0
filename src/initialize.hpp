@@ -13,8 +13,12 @@
 #include "omp.h"
 #include "core/print_header.hpp"
 #include "core/mpi/Communicator.hpp"
+#ifdef EDUS_MPI
 #include "fftw3-mpi.h"
-
+#endif
+#ifdef EDUS_GPU
+#include "cublas_v2.h"
+#endif
 
 #ifdef EDUS_MPI
 extern std::unique_ptr<mpi::Communicator> kpool_comm;
@@ -22,7 +26,11 @@ extern std::unique_ptr<mpi::Communicator> band_comm;
 extern int NumberKpools;
 #endif
 
-#define variable(x)  (#x)
+#ifdef EDUS_GPU
+extern cublasHandle_t cublas_handle;
+#endif
+
+//== #define variable(x)  (#x)
 
 void initialize();
 void finalize();

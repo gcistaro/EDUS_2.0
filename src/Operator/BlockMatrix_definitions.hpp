@@ -155,15 +155,45 @@ const Matrix<T>& BlockMatrix<T>::operator[](const Coordinate& Point) const
 
 
 template<typename T>
-void multiply(BlockMatrix<T>& Output, T Scalar, const BlockMatrix<T>& Input1, const BlockMatrix<T>& Input2 )
+void multiply(BlockMatrix<T>& Output, T Scalar, const BlockMatrix<T>& Input1, const BlockMatrix<T>& Input2, const Processor& proc__ )
 {
-    multiply(Output, Scalar, Input1, Input2, T(0.));
+    multiply(Output, Scalar, Input1, Input2, T(0.), proc__);
 }
 
 template<typename T>
-void multiply(BlockMatrix<T>& Output, T Scalar, const BlockMatrix<T>& Input1, const BlockMatrix<T>& Input2, T Scalar2 )
+void multiply(BlockMatrix<T>& Output, T Scalar, const BlockMatrix<T>& Input1, const BlockMatrix<T>& Input2, T Scalar2, const Processor& proc__ )
 {
     assert(Output.get_nblocks() == Input1.get_nblocks() && Input1.get_nblocks() == Input2.get_nblocks());
+#ifdef EDUS_GPU
+    if(proc__ == device) {
+        const_cast<BlockMatrix<std::complex<double>>&>(Input1).transfer_to(device);
+        const_cast<BlockMatrix<std::complex<double>>&>(Input2).transfer_to(device);
+        static auto stride = Output.get_nblocks();
+        static auto m = Output.get_nrows();
+        static auto n = Output.get_ncols();
+        static auto k = Input1.get_ncols();
+        assert( k == Input1.get_ncols() );
+        assert( n == Input2.get_ncols() );
+        assert( m == Input1.get_nrows() );
+         cublasZgemmStridedBatched(
+             cublas_handle,
+             CUBLAS_OP_N, CUBLAS_OP_N, 
+             n, m, k,
+             reinterpret_cast<const cuDoubleComplex*>(&Scalar),             
+             reinterpret_cast<const cuDoubleComplex*>(Input2.data(device)),
+             n,                 
+             k * n,             
+             reinterpret_cast<const cuDoubleComplex*>(Input1.data(device)),
+             k,                    
+             m * k,                
+             reinterpret_cast<const cuDoubleComplex*>(&Scalar2),
+             reinterpret_cast<cuDoubleComplex*>(Output.data(device)),
+             n,                    
+             m * n,                
+             stride);
+        return;
+    }
+#endif
 #ifdef EDUS_BATCHGEMM
     static auto stride = Output.get_nblocks();
     static auto m = Output.get_nrows();
@@ -209,7 +239,7 @@ void convolution(BlockMatrix<T>& Output, U Scalar, const BlockMatrix<T>& Input1,
 }
 
 template<typename T_, typename U>
-void commutator(BlockMatrix<T_>& Output, U Scalar, const BlockMatrix<T_>& Input1, const BlockMatrix<T_>& Input2, const bool& Erase_Output = true)
+void commutator(BlockMatrix<T_>& Output, U Scalar, const BlockMatrix<T_>& Input1, const BlockMatrix<T_>& Input2, const bool& Erase_Output, const Processor& proc__)
 {
 #ifdef EDUS_TIMERS
     PROFILE("Commutator");
@@ -226,8 +256,8 @@ void commutator(BlockMatrix<T_>& Output, U Scalar, const BlockMatrix<T_>& Input1
         }
         case(k):
         {
-            multiply(Output, Scalar, Input1, Input2, double(!Erase_Output) + im*0.);
-            multiply(Output, -Scalar, Input2, Input1, 1.+im*0.);
+            multiply(Output, Scalar, Input1, Input2, double(!Erase_Output) + im*0., proc__);
+            multiply(Output, -Scalar, Input2, Input1, 1.+im*0., proc__);
             break;
         }
     }
