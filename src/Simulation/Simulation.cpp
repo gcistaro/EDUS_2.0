@@ -236,6 +236,7 @@ output::print("-> Check hermiticity of H0...");
     DEsolver_DM_.set_ResolutionTime(Convert(ctx_->cfg().dt(),
         unit(ctx_->cfg().dt_units()),
         AuTime));
+    DEsolver_DM_.set_processor(processor_);
 
     kgradient_.initialize(*(DensityMatrix_.get_Operator(SpaceOfPropagation_Gradient_).get_MeshGrid()));
     coulomb_.initialize(material_.H.get_Operator_R().get_nrows(),
@@ -406,36 +407,20 @@ void Calculate_TDHamiltonian_cpu( BlockMatrix<std::complex<double>>& H,
                                   const BlockMatrix<std::complex<double>>& z, 
                                   const Vector<double>& las)
 {
-    #pragma omp parallel for schedule(static) collapse(3)
-        for (int iblock = 0; iblock < H0.get_nblocks(); ++iblock) {
-            for (int irow = 0; irow < H0.get_nrows(); ++irow) {
-                for (int icol = 0; icol < H0.get_ncols(); ++icol) {
-                    // auto Hblock = ( SpaceOfPropagation == k ? iblock : ci(iblock, 0) );
-                    // H_(Hblock, irow, icol) = H0_(iblock, irow, icol)
-                    H(iblock, irow, icol) += H0(iblock, irow, icol)
-                        + las[0] * x(iblock, irow, icol)
-                        + las[1] * y(iblock, irow, icol)
-                        + las[2] * z(iblock, irow, icol);
-                }
+#pragma omp parallel for schedule(static) collapse(3)
+    for (int iblock = 0; iblock < H0.get_nblocks(); ++iblock) {
+        for (int irow = 0; irow < H0.get_nrows(); ++irow) {
+            for (int icol = 0; icol < H0.get_ncols(); ++icol) {
+                // auto Hblock = ( SpaceOfPropagation == k ? iblock : ci(iblock, 0) );
+                // H_(Hblock, irow, icol) = H0_(iblock, irow, icol)
+                H(iblock, irow, icol) += H0(iblock, irow, icol)
+                    + las[0] * x(iblock, irow, icol)
+                    + las[1] * y(iblock, irow, icol)
+                    + las[2] * z(iblock, irow, icol);
             }
         }
-
-    //== auto& ci = MeshGrid::ConvolutionIndex[{H0_.get_MeshGrid()->get_id(),
-    //==                                           H_.get_MeshGrid()->get_id(),
-    //==                                           Operator<std::complex<double>>::MeshGrid_Null->get_id()}];
-    //== if(ci.get_Size(0) == 0 && SpaceOfPropagation == R) {
-    //==     MeshGrid::Calculate_ConvolutionIndex( *(H0_.get_MeshGrid()),
-    //==                                               *(H_.get_MeshGrid()),
-    //==                                               *(Operator<std::complex<double>>::MeshGrid_Null));
-    //== }
-
-    //------------------------H(R) = H0(R) + E.r(R)-------------------------------------
-    // == /* H_ = H0_ + las_x \cdot x */
-    // == SumWithProduct(H, 1., H0, las[0], x);
-    // == /* H_ = H_ + las_y \cdot y */
-    // == SumWithProduct(H, 1., H, las[1], y);
-    // == /* H_ = H_ + las_z \cdot z */
-    // == SumWithProduct(H, 1., H, las[2], z);
+    }
+    //==std::cout << *max(H) << " " << *max(H0) << std::endl;
 }
 
 
@@ -478,7 +463,8 @@ void Simulation::Calculate_TDHamiltonian(const double& time__, const bool& erase
                                     las.data(device)+2,
                                     H.get_TotalSize()
                                 );
-        H.transfer_to(host);
+        H.set_processor(Processor::device);
+//==        H.transfer_to(host);
         return;
     } 
 #endif
@@ -562,6 +548,7 @@ void Simulation::do_onestep()
         // print laser
         os_Laser_ << setoflaser_(DEsolver_DM_.get_CurrentTime()).get("Cartesian");
         os_VectorPot_ << setoflaser_.VectorPotential(DEsolver_DM_.get_CurrentTime()).get("Cartesian");
+        DensityMatrix_.transfer_to(host);
         Print_Population(BandGauge::bloch);
         Print_Population(BandGauge::wannier);
         Print_Velocity(DensityMatrix_);
@@ -1040,7 +1027,7 @@ void Simulation::Apply_Peierls_phase(Operator<std::complex<double>>& O__, const 
         auto At_cart     = At.get("Cartesian");
         At_cart.initialize_device();
         At_cart.transfer_to(processor_);
-        O__.transfer_to(device);
+//==        O__.transfer_to(device);
         Apply_Peierls_phase_gpu(    O__.get_Operator(R).data(device), 
                                     Peierls_phase.data(device),
                                     At_cart.data(device),
@@ -1051,10 +1038,15 @@ void Simulation::Apply_Peierls_phase(Operator<std::complex<double>>& O__, const 
                                     O__.get_Operator(R).get_TotalSize(),
                                     O__.get_Operator(R).get_nblocks()
                                 );
-        O__.get_Operator(R).transfer_to(host);
+        O__.get_Operator(R).set_processor(Processor::device);
+//==        O__.get_Operator(R).transfer_to(host);
         return;
     } 
 #endif
+    Apply_Peierls_phase_cpu(O__.get_Operator(R),
+                            Peierls_phase,
+                            At,
+                            sign);
 }
 
 

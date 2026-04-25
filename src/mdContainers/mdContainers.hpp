@@ -19,6 +19,9 @@
 
 enum Processor {host, device};
 
+template<typename T>
+class BlockMatrix;
+
 template<typename T, size_t dim> //requires ( dim>0 && dim<7 )
 class mdarray
 {
@@ -122,12 +125,15 @@ class mdarray
         inline auto get_Size() const {return Size;};
         inline auto get_TotalSize() const {return TotalSize;};
         inline bool on(const Processor& proc__) const {return ( proc__ == processor_ ? true : false );};
+        inline void set_processor(const Processor& proc__) { processor_ = proc__;}
         ~mdarray();
 
         template<typename T_, size_t dim_>
         friend std::ostream& operator<<(std::ostream&, const mdarray<T_,dim_>& mdarray_); 
         template<typename T_, size_t dim_>
         friend void copy(const mdarray<T_,dim_>& ToCopy, mdarray<T_,dim_>& ToBeCopied, const Processor& proc__);
+
+        friend class BlockMatrix<T>; 
 };
 
 #include "mdContainers_definitions.hpp"

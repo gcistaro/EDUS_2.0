@@ -18,6 +18,11 @@ std::unique_ptr<mpi::Communicator> kpool_comm = nullptr;
 std::unique_ptr<mpi::Communicator> band_comm = nullptr;
 int NumberKpools;
 #endif
+
+#ifdef EDUS_GPU
+cublasHandle_t cublas_handle = nullptr;
+#endif
+
 /*
     Parallelization using grid / example with 4 kpools, 12 ranks
 
@@ -41,6 +46,9 @@ void initialize()
     NumberKpools = mpi::Communicator::world().size();
     fftw_mpi_init();  
 #endif 
+#ifdef EDUS_GPU
+    cublasCreate(&cublas_handle); 
+#endif
 #ifdef EDUS_FFTWTHREADS
     fftw_init_threads();
 #endif
@@ -110,6 +118,9 @@ void finalize()
 #ifdef EDUS_MPI
     mpi::Communicator::finalize();
     output::print("MPI Communicator finalized!");
+#endif
+#ifdef EDUS_GPU
+     if (cublas_handle) cublasDestroy(cublas_handle);
 #endif
     time_t now = time(0);
     char* dt = ctime(&now);

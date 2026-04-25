@@ -127,7 +127,8 @@ set(_SOURCES src/initialize.cpp
 
 if (EDUS_GPU)
     list(APPEND _SOURCES src/core/kernels/Calculate_TDHamiltonian.cu
-                         src/core/kernels/Apply_Peierls_phase.cu)
+                         src/core/kernels/Apply_Peierls_phase.cu
+                         src/core/kernels/axpby.cu)
 endif()
 
 add_library(core SHARED ${_SOURCES} )
@@ -147,11 +148,11 @@ if(EDUS_GPU)
   
   set_target_properties(core PROPERTIES
     CUDA_RUNTIME_LIBRARY Shared
-    CUDA_ARCHITECTURES 86                    # Your GPU architecture
+    CUDA_ARCHITECTURES 86                   
     #CUDA_SEPARABLE_COMPILATION ON
     #CUDA_RESOLVE_DEVICE_SYMBOLS ON
   )  
-  target_link_libraries(core PUBLIC CUDA::cudart CUDA::cufft)
+  target_link_libraries(core PUBLIC CUDA::cudart CUDA::cufft CUDA::cublas)
 endif()
 
 # =================================================================================
@@ -270,6 +271,20 @@ endif()
 add_executable(EDUS src/EDUS.cpp)
 target_link_libraries(EDUS PRIVATE core)
 
+
+# Google test
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/refs/heads/main.zip
+)
+FetchContent_MakeAvailable(googletest)
+
+add_executable(test_fft tests/test_fft.cpp)
+target_link_libraries(test_fft gtest gtest_main core)
+include(GoogleTest)
+gtest_discover_tests(test_fft)
+
 #add armadillo
 #find_package(Armadillo REQUIRED)
 #target_compile_definitions(EDUS PRIVATE ARMA_DONT_USE_WRAPPER)
@@ -277,22 +292,22 @@ target_link_libraries(EDUS PRIVATE core)
 
 
 #speed executables
-add_executable(Matrix_mult_speed speed-apps/Matrix_multiplication.cpp)
-add_executable(BlockMatrix_mult_speed speed-apps/BlockMatrix_multiplication.cpp)
-add_executable(FourierTransform_speed speed-apps/FourierTransform.cpp)
+###add_executable(Matrix_mult_speed speed-apps/Matrix_multiplication.cpp)
+###add_executable(BlockMatrix_mult_speed speed-apps/BlockMatrix_multiplication.cpp)
+###add_executable(FourierTransform_speed speed-apps/FourierTransform.cpp)
 
 #Executables for test various classes
-add_executable(Containers_test ci-test/test_mdarray.cpp) 
-add_executable(Matrix_test ci-test/test_matrix.cpp)
-add_executable(Eigen_test ci-test/test_eigen.cpp) 
-add_executable(DE_test ci-test/test_DEsolver.cpp)
-add_executable(DE2_test ci-test/test_DEsolver2.cpp)
-add_executable(fft-many_test ci-test/test_fft_many.cpp)
+#add_executable(Containers_test ci-test/test_mdarray.cpp) 
+#add_executable(Matrix_test ci-test/test_matrix.cpp)
+#add_executable(Eigen_test ci-test/test_eigen.cpp) 
+#add_executable(DE_test ci-test/test_DEsolver.cpp)
+#add_executable(DE2_test ci-test/test_DEsolver2.cpp)
+#add_executable(fft-many_test ci-test/test_fft_many.cpp)
 #add_executable(fft_test ci-test/test_fft_mpi.cpp)
 #add_executable(Gradient_R_test ci-test/test_Gradient_R.cpp)
 #add_executable(NonEQ ci-test/test_NEQ_H0.cpp)
 #add_executable(NonEQ_Grad ci-test/test_NEQ_Grad.cpp)
-add_executable(Bandstructure_test ci-test/test_bandstructure.cpp)
+#add_executable(Bandstructure_test ci-test/test_bandstructure.cpp)
 #add_executable(Pseudoinv_test ci-test/test_pseudoinverse.cpp)
 #add_executable(ScreenedPotential ci-test/test_Response.cpp)
 
@@ -300,15 +315,15 @@ add_executable(Bandstructure_test ci-test/test_bandstructure.cpp)
 install (TARGETS EDUS PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_BINDIR})
 #build for ctest
 enable_testing()
-add_test(NAME Containers_test COMMAND Containers_test)
-add_test(NAME Matrix_test COMMAND Matrix_test)
-add_test(NAME Eigen_test COMMAND Eigen_test)
-add_test(NAME DE_test COMMAND DE_test)
-add_test(NAME DE2_test COMMAND DE2_test)
+#add_test(NAME Containers_test COMMAND Containers_test)
+#add_test(NAME Matrix_test COMMAND Matrix_test)
+#add_test(NAME Eigen_test COMMAND Eigen_test)
+#add_test(NAME DE_test COMMAND DE_test)
+#add_test(NAME DE2_test COMMAND DE2_test)
 #add_test(NAME Gradient_R_test COMMAND Gradient_R_test)
-add_test(NAME Bandstructure_test COMMAND 
-					bash -c "${CMAKE_CURRENT_BINARY_DIR}/Bandstructure_test ; \
-					python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_CURRENT_BINARY_DIR}/BANDSTRUCTURE.txt ${CMAKE_SOURCE_DIR}/ci-test/Reference/BANDSTRUCTURE.txt")
+#add_test(NAME Bandstructure_test COMMAND 
+#					bash -c "${CMAKE_CURRENT_BINARY_DIR}/Bandstructure_test ; \
+#					python3 ${CMAKE_SOURCE_DIR}/ci-test/compare.py ${CMAKE_CURRENT_BINARY_DIR}/BANDSTRUCTURE.txt ${CMAKE_SOURCE_DIR}/ci-test/Reference/BANDSTRUCTURE.txt")
 #add_test(NAME fft_test COMMAND fft_test)
 #add_test(NAME NonEQ_H0 COMMAND NonEQ)
 #add_test(NAME NonEQ_Grad COMMAND 

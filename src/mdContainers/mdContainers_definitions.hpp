@@ -110,11 +110,13 @@ void mdarray<T,dim>::initialize_device()
 {
     /* we allocate the memory on gpu, but we the array is still on CPU if not explicitly transferred */
 #ifdef EDUS_GPU
+    if( !initialized_device ) {
         cudaMalloc((void**)&Ptr_device, TotalSize*sizeof(T));
         processor_ = device; 
         fill(0.);
         processor_ = host;
         initialized_device = true;
+    } 
 #endif
 }
 
@@ -126,13 +128,12 @@ void mdarray<T,dim>::transfer_to(const Processor& proc__)
         throw std::runtime_error("Trying to transfer memory but device memory is not allocated!\n");
     }
     /* Transfer the array from host to device or viceversa */
-    // == if ( this->processor_ == proc__ ) {
-    // ==     return;
-    // == }
+    if ( this->processor_ == proc__ ) {
+        return;
+    }
     auto& sender   = ( proc__ == device   ? Ptr                    : Ptr_device            );
     auto& receiver = ( proc__ == device   ? Ptr_device             : Ptr                   );
     auto  protocol = ( proc__ == device   ? cudaMemcpyHostToDevice : cudaMemcpyDeviceToHost);
-
     cudaMemcpy(receiver, sender, TotalSize * sizeof(T), protocol);
 
     processor_ = proc__;
@@ -211,6 +212,9 @@ mdarray<T,dim>::~mdarray()
 {
     if(this->Ptr != nullptr && !NotDestruct){
         delete[] Ptr;
+#ifdef EDUS_GPU
+        if( initialized_device ) cudaFree(Ptr_device);
+#endif
     }
     Ptr=nullptr;
 }

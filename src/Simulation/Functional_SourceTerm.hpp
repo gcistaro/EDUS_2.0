@@ -51,7 +51,7 @@ SourceTerm =
     auto& Output = Output__.get_Operator(SpaceOfPropagation_);
     auto& Input = Input__.get_Operator(SpaceOfPropagation_);
     auto& H = H_.get_Operator(SpaceOfPropagation_);
-    commutator(Output, -im, H, Input, false);
+    commutator(Output, -im, H, Input, false, processor_);
 
     /* apply decay in time */
     auto& DM0k = coulomb_.get_DM0().get_Operator(Space::k);
@@ -66,4 +66,8 @@ SourceTerm =
             }
         }
     }
+//==    Output.transfer_to(host);
+//==    std::cout << "Output: " << *max(Output) << std::endl;
+//==    H.transfer_to(host);
+//==    std::cout << "H: " << *max(H) << std::endl;
 };
