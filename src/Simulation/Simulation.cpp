@@ -332,6 +332,7 @@ output::print("-> Check hermiticity of H0...");
 /// @return Boolean defining if we want to print the observables
 bool Simulation::PrintObservables(const double& time__, const bool& use_sparse)
 {
+    return false;
     /* check if we are within (any) pulse */
     int printresolution;
     if( !use_sparse ) {
@@ -452,7 +453,8 @@ void Simulation::Calculate_TDHamiltonian(const double& time__, const bool& erase
 #ifdef EDUS_GPU
     if ( processor_ == device ) {
         las.initialize_device();
-        las.transfer_to(processor_);
+        las.transfer_to(device);
+        H0.transfer_to(device);
         Calculate_TDHamiltonian_gpu(H.data(device), 
                                     H0.data(device), 
                                     x.data(device), 
@@ -464,7 +466,7 @@ void Simulation::Calculate_TDHamiltonian(const double& time__, const bool& erase
                                     H.get_TotalSize()
                                 );
         H.set_processor(Processor::device);
-//==        H.transfer_to(host);
+        H.transfer_to(host);
         return;
     } 
 #endif
@@ -506,7 +508,22 @@ void Simulation::Propagate()
 void Simulation::do_onestep()
 {
     auto CurrentTime = DEsolver_DM_.get_CurrentTime();
-    //------------------------Print population-------------------------------------
+
+    if (PrintObservables(CurrentTime, false)) {
+        DensityMatrix_.transfer_to(host);
+        // print time
+        os_Time_ << CurrentTime << std::endl;
+        // print laser
+        os_Laser_ << setoflaser_(DEsolver_DM_.get_CurrentTime()).get("Cartesian");
+        os_VectorPot_ << setoflaser_.VectorPotential(DEsolver_DM_.get_CurrentTime()).get("Cartesian");
+        std::cout << "print_population bloch" << std::endl;
+        Print_Population(BandGauge::bloch);
+        std::cout << "print_population wannier" << std::endl;
+        Print_Population(BandGauge::wannier);
+        std::cout << "print_velocity" << std::endl;
+        Print_Velocity(DensityMatrix_);
+        std::cout << "done" << std::endl;
+    }
 
     if (PrintObservables(CurrentTime, true)) {
 #ifdef EDUS_HDF5
@@ -541,19 +558,7 @@ void Simulation::do_onestep()
         fout[nodename::time_au].write(node.str(), CurrentTime);
 #endif
     }
-
-    if (PrintObservables(CurrentTime, false)) {
-        // print time
-        os_Time_ << CurrentTime << std::endl;
-        // print laser
-        os_Laser_ << setoflaser_(DEsolver_DM_.get_CurrentTime()).get("Cartesian");
-        os_VectorPot_ << setoflaser_.VectorPotential(DEsolver_DM_.get_CurrentTime()).get("Cartesian");
-        DensityMatrix_.transfer_to(host);
-        Print_Population(BandGauge::bloch);
-        Print_Population(BandGauge::wannier);
-        Print_Velocity(DensityMatrix_);
-    }
-    //------------------------------------------------------------------------------
+    DensityMatrix_.set_processor(processor_);
     DEsolver_DM_.Propagate();
 }
 
@@ -564,6 +569,7 @@ void Simulation::do_onestep()
 /// where @f$ \rho_{nn}(\textbf{k}) @f$ is the density matrix in the bloch gauge.
 void Simulation::Print_Population(const BandGauge& bandgauge__)
 {
+    aux_DM_.set_processor(host);
     std::copy(DensityMatrix_.get_Operator(DensityMatrix_.space).begin(),
               DensityMatrix_.get_Operator(DensityMatrix_.space).end(),
               aux_DM_.get_Operator(DensityMatrix_.space).begin());
@@ -603,6 +609,7 @@ void Simulation::Print_Population(const BandGauge& bandgauge__)
         }
         os << std::endl;
     }
+    aux_DM_.set_processor(processor_);
 }
 
 /// @brief Calculation of the jacobian of the real lattice vectors
@@ -719,7 +726,7 @@ void Simulation::Calculate_Velocity()
 void Simulation::Print_Velocity(Operator<std::complex<double>>& aux_DM)
 {
     std::array<std::complex<double>, 3> v = { 0., 0., 0. };
-
+    aux_DM_.set_processor(host);
     std::copy(DensityMatrix_.get_Operator(DensityMatrix_.space).begin(),
               DensityMatrix_.get_Operator(DensityMatrix_.space).end(),
               aux_DM_.get_Operator(DensityMatrix_.space).begin());
@@ -755,6 +762,7 @@ void Simulation::Print_Velocity(Operator<std::complex<double>>& aux_DM)
         os_Velocity_ << std::setw(20) << std::setprecision(8) << v[2].imag();
         os_Velocity_ << std::endl;
     }    
+    aux_DM_.set_processor(processor_);
 }
 
 /// @brief Recap of all the variables of the simulation, as read from the input json file or
@@ -1015,7 +1023,7 @@ void Simulation::OpenGap()
 }
 
 
-void Simulation::Apply_Peierls_phase(Operator<std::complex<double>>& O__, const double& time__, const int sign = +1)
+void Simulation::Apply_Peierls_phase(Operator<std::complex<double>>& O__, const double& time__, const int sign = +1, const Processor& proc__)
 {
     O__.go_to_R();
 
@@ -1023,7 +1031,7 @@ void Simulation::Apply_Peierls_phase(Operator<std::complex<double>>& O__, const 
     auto At     = setoflaser_.VectorPotential(time__);
     auto& Rgrid = MeshGrid::MasterRgrid_GammaCentered; //WARNING! Here we are supposing O__ R grid is the MasterRgrid! A check would be ideal
 #ifdef EDUS_GPU
-    if ( processor_ == device ) {
+    if ( proc__ == device ) {
         auto At_cart     = At.get("Cartesian");
         At_cart.initialize_device();
         At_cart.transfer_to(processor_);
@@ -1038,8 +1046,7 @@ void Simulation::Apply_Peierls_phase(Operator<std::complex<double>>& O__, const 
                                     O__.get_Operator(R).get_TotalSize(),
                                     O__.get_Operator(R).get_nblocks()
                                 );
-        O__.get_Operator(R).set_processor(Processor::device);
-//==        O__.get_Operator(R).transfer_to(host);
+        O__.set_processor(Processor::device);
         return;
     } 
 #endif

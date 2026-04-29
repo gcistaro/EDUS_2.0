@@ -61,7 +61,8 @@ class mdarray
 
         mdarray(T* Ptr_, const std::array<int,dim>& Size_, const int& real_dims__=0);
         void initialize(T* Ptr_, const std::array<int,dim>& Size_, const int& real_dims__=0);
-        
+        void initialize_device(T* Ptr_device_);
+
         void initialize_device();
         void transfer_to ( const Processor& );
 

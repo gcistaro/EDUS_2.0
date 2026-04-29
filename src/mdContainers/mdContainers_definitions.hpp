@@ -120,9 +120,22 @@ void mdarray<T,dim>::initialize_device()
 #endif
 }
 
+template<typename T, size_t dim> 
+void mdarray<T,dim>::initialize_device(T* Ptr_device_)
+{
+#ifdef EDUS_GPU
+    Ptr_device = Ptr_device_;
+    initialized_device = true;
+#endif
+}
+
+
 template <typename T, size_t dim>
 void mdarray<T,dim>::transfer_to(const Processor& proc__)
 {
+#ifdef __DEBUG
+    std::cout << "transfer from " << (processor_==host ? "host" : "device") << " to " << (proc__==host ? "host" : "device")<< std::endl;
+#endif
 #ifdef EDUS_GPU
     if( !initialized_device ) {
         throw std::runtime_error("Trying to transfer memory but device memory is not allocated!\n");

@@ -251,11 +251,11 @@ T& DESolver<T>::get_Function()
 template<typename T>
 void DESolver<T>::initialize_device()
 {
-    aux_Function[0].initialize_device();
-    aux_Function[1].initialize_device();
-    aux_Function[2].initialize_device();
-    aux_Function[3].initialize_device();
-    aux_Function[4].initialize_device();
+    for( auto& ix : {0,1,2,3,4} ) {
+        aux_Function[ix].initialize_device();    
+        aux_Function[ix].set_processor(device);  
+        aux_Function[ix].fill(0.);
+    }
 }
 
 template<>

@@ -7,12 +7,11 @@
 
 #ifdef EDUS_MPI
 #include <fftw3-mpi.h>
-#else
-#ifdef EDUS_GPU
-#include <cufft.h>
 #else 
 #include <fftw3.h>
 #endif
+#ifdef EDUS_GPU
+#include <cufft.h>
 #endif 
 
 #include "mdContainers/mdContainers.hpp"
@@ -40,12 +39,11 @@ class FourierTransform
         int* onembed = nullptr;
         int howmany = 1;
 #ifdef EDUS_GPU
-        cufftHandle MyPlan_FWD;
-        cufftHandle MyPlan_BWD;
-#else 
+        cufftHandle MyPlan_device;
+#endif
         fftw_plan MyPlan_FWD;
         fftw_plan MyPlan_BWD;
-#endif
+
         std::string tagname="";
         bool IsFFT = false;
         bool destruct = true;

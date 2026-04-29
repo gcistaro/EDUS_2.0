@@ -109,6 +109,7 @@ class Operator
         bool initialized_dft = false;
         bool initialized_fft = false;
         FourierTransform ft_;
+        Processor processor_ = host;
 
         std::string tagname = "";
 
@@ -577,7 +578,7 @@ class Operator
                 return;
             }
             shuffle_to_fft_k();
-            ft_.fft(-1);       
+            ft_.fft(-1, processor_);       
             shuffle_from_fft_R();  
 
             space = R;
@@ -598,7 +599,7 @@ class Operator
                 return;
             }
             shuffle_to_fft_R();
-            ft_.fft(+1);          
+            ft_.fft(+1, processor_);          
             shuffle_from_fft_k();  
 
             space = k;
@@ -663,12 +664,31 @@ class Operator
         {
             Operator_k.initialize_device();
             Operator_R.initialize_device();
+            FTfriendly_Operator_k.initialize_device(Operator_k.data(device));
+            FTfriendly_Operator_R.initialize_device(Operator_R.data(device));
         }
 
         void transfer_to(const Processor& proc__)
         {
+            processor_ = proc__;
             Operator_k.transfer_to(proc__);
             Operator_R.transfer_to(proc__);
+        }
+
+        void set_processor(const Processor& proc__) 
+        {
+            processor_ = proc__; 
+            Operator_k.set_processor(proc__); 
+            Operator_R.set_processor(proc__);
+            FTfriendly_Operator_k.set_processor(proc__);
+            FTfriendly_Operator_R.set_processor(proc__);            
+        }
+
+        template<typename T_>
+        void fill(const T_& value) 
+        {
+            Operator_k.fill(value);
+            Operator_R.fill(value);
         }
 };
 
@@ -690,7 +710,7 @@ void axpby(Operator<std::complex<double>>& Output_,
     auto& FirstAddend  = FirstAddend_ .get_Operator( SpaceOfPropagation );
     auto& SecondAddend = SecondAddend_.get_Operator( SpaceOfPropagation );
 
-    axpby(Output, FirstScalar_, FirstAddend, SecondScalar_, SecondAddend);
+    axpby(Output, FirstScalar_, FirstAddend, SecondScalar_, SecondAddend, proc__);
 }
 
 

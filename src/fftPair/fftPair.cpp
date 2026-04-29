@@ -69,35 +69,18 @@ FourierTransform::initialize
     delete[] Dimensions_ptr;
 #else
 #ifdef EDUS_GPU
-    Array_k->initialize_device();
-    Array_x->initialize_device();
-    // == cudaMalloc((void**)&Array_k_device,
-    // ==        TotalSize*howmany * sizeof(cufftDoubleComplex));
-    // == cudaMalloc((void**)&Array_x_device,
-    // ==        TotalSize*howmany * sizeof(cufftDoubleComplex));       
-    cufftPlanMany(&MyPlan_FWD,
+    cufftPlanMany(&MyPlan_device,
                   dim,                    // rank
                   Dimensions.data(),      // n
-                  inembed,                // inembed
+                  Dimensions.data(),//inembed,                // inembed
                   istride,                // istride
                   idist,                  // idist
-                  onembed,                // onembed
+                  Dimensions.data(),//onembed,                // onembed
                   ostride,                // ostride
                   odist,                  // odist
                   CUFFT_Z2Z,              // complex-to-complex
                   howmany);               // batch
-    cufftPlanMany(&MyPlan_BWD,
-                  dim,                    // rank
-                  Dimensions.data(),      // n
-                  inembed,                // inembed
-                  istride,                // istride
-                  idist,                  // idist
-                  onembed,                // onembed
-                  ostride,                // ostride
-                  odist,                  // odist
-                  CUFFT_Z2Z,              // complex-to-complex
-                  howmany);               // batch
-#else
+#endif
     //from x to k (fft to Fourier space)
     MyPlan_FWD = fftw_plan_many_dft(dim, &Dimensions[0], howmany,
                                     reinterpret_cast<fftw_complex*>(&(*Array_x)[0]), inembed, istride, idist, 
@@ -109,7 +92,6 @@ FourierTransform::initialize
                                     reinterpret_cast<fftw_complex*>(&(*Array_x)[0]), onembed, ostride, odist,
                                     +1, FFTW_ESTIMATE);
 
-#endif
 #endif
 }
 
@@ -142,32 +124,31 @@ void FourierTransform::fft(const int& sign, const Processor& proc__)
     auto& output = (sign == +1 ? (*Array_x) : (*Array_k) ); 
     auto& input = (sign == +1 ? (*Array_k) : (*Array_x) ); 
     auto& MyPlan = (sign == +1 ? (MyPlan_BWD) : (MyPlan_FWD) );
-
 #ifdef EDUS_GPU
-    auto input_GPU = ( sign == +1 ? ((Array_k->data(device))) : ((Array_x->data(device))) );
-    auto output_GPU = ( sign == +1 ? (Array_x->data(device)) : ((Array_k->data(device))) );
+    if( proc__ == device ) {
+        auto input_GPU = ( sign == +1 ? ((Array_k->data(device))) : ((Array_x->data(device))) );
+        auto output_GPU = ( sign == +1 ? (Array_x->data(device)) : ((Array_k->data(device))) );
 
-    /* send data to GPU */
-    input.transfer_to(Processor::device);
+        /* send data to GPU */
+        input.transfer_to(Processor::device);
 
-    /* execute fft */
-    cufftExecZ2Z(MyPlan,
-                reinterpret_cast<cufftDoubleComplex*>(input_GPU),
-                reinterpret_cast<cufftDoubleComplex*>(output_GPU),
-                sign);
-    output.set_processor(Processor::device);
-    std::complex<double> alpha = 1./double(TotalSize);
-    if (sign == -1 ) cublasZscal(cublas_handle,
-                     TotalSize*howmany,
-                     reinterpret_cast<cufftDoubleComplex*>(&alpha),
-                     reinterpret_cast<cufftDoubleComplex*>(output_GPU),
-                     1);
-    /* send back data to CPU */
-    return;
-#else
+        /* execute fft */
+        cufftExecZ2Z(MyPlan_device,
+                    reinterpret_cast<cufftDoubleComplex*>(input_GPU),
+                    reinterpret_cast<cufftDoubleComplex*>(output_GPU),
+                    sign);
+        output.set_processor(Processor::device);
+        std::complex<double> alpha = 1./double(TotalSize);
+        if (sign == -1 ) cublasZscal(cublas_handle,
+                         TotalSize*howmany,
+                         reinterpret_cast<cufftDoubleComplex*>(&alpha),
+                         reinterpret_cast<cufftDoubleComplex*>(output_GPU),
+                         1);
+        return;
+    }
+#endif
     fftw_execute(MyPlan);
     if (sign == -1 ) normalize(output);
-#endif
 }
 
 
@@ -210,12 +191,10 @@ FourierTransform::~FourierTransform()
     if( IsFFT && destruct )
      {
 #ifdef EDUS_GPU
-        cufftDestroy(MyPlan_FWD);
-        cufftDestroy(MyPlan_BWD);
-#else 
+        cufftDestroy(MyPlan_device);
+#endif 
         fftw_destroy_plan(MyPlan_FWD);
         fftw_destroy_plan(MyPlan_BWD);
-#endif
         destruct = false;
     }
 }

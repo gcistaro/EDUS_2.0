@@ -16,10 +16,10 @@ void Calculate_TDHamiltonian_kernel(
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= N) return;
 
-    H[i] = cuCadd(H0[i],
+    H[i] = cuCadd(H[i], cuCadd(H0[i],
            cuCadd(cuCmul(make_cuDoubleComplex(*l0, 0.0), x[i]),
            cuCadd(cuCmul(make_cuDoubleComplex(*l1, 0.0), y[i]),
-                  cuCmul(make_cuDoubleComplex(*l2, 0.0), z[i]))));
+                  cuCmul(make_cuDoubleComplex(*l2, 0.0), z[i])))));
 }
 
 void Calculate_TDHamiltonian_gpu( std::complex<double>* H, 
@@ -35,7 +35,7 @@ void Calculate_TDHamiltonian_gpu( std::complex<double>* H,
 {
     int threads = 256;
     int blocks  = (N+threads-1)/threads;
-    Calculate_TDHamiltonian_kernel<<<threads, blocks>>>
+    Calculate_TDHamiltonian_kernel<<<blocks, threads>>>
                                   ( reinterpret_cast<cuDoubleComplex*>(H), 
                                     reinterpret_cast<const cuDoubleComplex*>(H0), 
                                     reinterpret_cast<const cuDoubleComplex*>(x),
