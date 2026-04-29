@@ -332,7 +332,6 @@ output::print("-> Check hermiticity of H0...");
 /// @return Boolean defining if we want to print the observables
 bool Simulation::PrintObservables(const double& time__, const bool& use_sparse)
 {
-    return false;
     /* check if we are within (any) pulse */
     int printresolution;
     if( !use_sparse ) {
@@ -454,7 +453,6 @@ void Simulation::Calculate_TDHamiltonian(const double& time__, const bool& erase
     if ( processor_ == device ) {
         las.initialize_device();
         las.transfer_to(device);
-        H0.transfer_to(device);
         Calculate_TDHamiltonian_gpu(H.data(device), 
                                     H0.data(device), 
                                     x.data(device), 
@@ -466,7 +464,6 @@ void Simulation::Calculate_TDHamiltonian(const double& time__, const bool& erase
                                     H.get_TotalSize()
                                 );
         H.set_processor(Processor::device);
-        H.transfer_to(host);
         return;
     } 
 #endif
