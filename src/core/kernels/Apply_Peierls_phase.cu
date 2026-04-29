@@ -55,7 +55,7 @@ void Apply_Peierls_phase_gpu( std::complex<double>* O__,
 {
     int threads = 256;
     int blocks  = (nR+threads-1)/threads;
-    Compute_Peierls_phase_kernel<<<threads, blocks>>>
+    Compute_Peierls_phase_kernel<<<blocks, threads>>>
                         ( reinterpret_cast<cuDoubleComplex*>(Peierls_phase),
                           A0__, 
                           A1__, 

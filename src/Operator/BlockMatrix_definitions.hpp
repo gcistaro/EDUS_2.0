@@ -172,9 +172,6 @@ void multiply(BlockMatrix<T>& Output, T Scalar, const BlockMatrix<T>& Input1, co
         static auto m = Output.get_nrows();
         static auto n = Output.get_ncols();
         static auto k = Input1.get_ncols();
-        assert( k == Input1.get_ncols() );
-        assert( n == Input2.get_ncols() );
-        assert( m == Input1.get_nrows() );
          cublasZgemmStridedBatched(
              cublas_handle,
              CUBLAS_OP_N, CUBLAS_OP_N, 
@@ -191,6 +188,9 @@ void multiply(BlockMatrix<T>& Output, T Scalar, const BlockMatrix<T>& Input1, co
              n,                    
              m * n,                
              stride);
+        Output.transfer_to(host);
+        std::cout <<"multiply max GPU: "<< *max(Output) << std::endl;
+        Output.set_processor(device);
         return;
     }
 #endif
@@ -210,6 +210,7 @@ void multiply(BlockMatrix<T>& Output, T Scalar, const BlockMatrix<T>& Input1, co
     for(int iblock=0; iblock<Output.get_nblocks(); iblock++){
         Matrix_gemm(Output[iblock], Scalar, Input1[iblock], Input2[iblock], Scalar2);
     }
+    std::cout <<"multiply max: "<< *max(Output) << std::endl;
 #endif
 }
 

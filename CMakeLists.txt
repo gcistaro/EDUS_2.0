@@ -160,7 +160,7 @@ endif()
 # =================================================================================
 find_package(OpenMP)
 set(OpenMP_USE_STATIC_LIBRARIES OFF)
-target_link_libraries(core PRIVATE OpenMP::OpenMP_CXX)
+target_link_libraries(core PUBLIC OpenMP::OpenMP_CXX)
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
@@ -193,7 +193,7 @@ if(EDUS_HDF5)
     message(STATUS "HDF5 parallel: ${HDF5_IS_PARALLEL}")
     message(STATUS "HDF5 include directories: ${HDF5_INCLUDE_DIRS}")
     include_directories(${HDF5_INCLUDE_DIRS})
-    target_link_libraries(core PRIVATE HDF5::HDF5)
+    target_link_libraries(core PUBLIC HDF5::HDF5)
 endif()
 
 
@@ -214,7 +214,7 @@ if(EDUS_MKL)
   find_package(MKL CONFIG REQUIRED PATHS $ENV{MKLROOT})
   add_compile_options($<TARGET_PROPERTY:MKL::MKL,INTERFACE_COMPILE_OPTIONS>)
   include_directories($<TARGET_PROPERTY:MKL::MKL,INTERFACE_INCLUDE_DIRECTORIES>)
-  target_link_libraries(core PRIVATE $<LINK_ONLY:MKL::MKL>)
+  target_link_libraries(core PUBLIC $<LINK_ONLY:MKL::MKL>)
   message(STATUS "Imported oneMKL targets: ${MKL_IMPORTED_TARGETS}")
 else()
   set(BLA_VENDOR OpenBLAS)
@@ -238,7 +238,7 @@ else()
   )
 
   # IMPORTANT: link only through targets
-  target_link_libraries(core PRIVATE
+  target_link_libraries(core PUBLIC
     LAPACKE::LAPACKE
     BLAS::BLAS
     LAPACK::LAPACK
@@ -248,7 +248,6 @@ endif()
 # =================================================================================
 # FFTW3
 # =================================================================================
-IF( NOT EDUS_GPU)
   set(FFTW_USE_STATIC_LIBRARIES OFF)
   find_package(FFTW REQUIRED)
   if(TARGET FFTW::FFTW3)
@@ -265,7 +264,6 @@ IF( NOT EDUS_GPU)
       target_link_libraries(core PUBLIC fftw3_mpi)
     endif()
   endif()
-endif()
 
 # add the executable
 add_executable(EDUS src/EDUS.cpp)
@@ -281,9 +279,18 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest)
 
 add_executable(test_fft tests/test_fft.cpp)
+add_executable(test_batchfft tests/test_batchfft.cpp)
+add_executable(test_batchgemm tests/test_batchgemm.cpp)
+add_executable(test_axpby tests/test_axpby.cpp)
 target_link_libraries(test_fft gtest gtest_main core)
+target_link_libraries(test_batchfft gtest gtest_main core)
+target_link_libraries(test_batchgemm gtest gtest_main core)
+target_link_libraries(test_axpby gtest gtest_main core)
 include(GoogleTest)
 gtest_discover_tests(test_fft)
+gtest_discover_tests(test_batchfft)
+gtest_discover_tests(test_batchgemm)
+gtest_discover_tests(test_axpby)
 
 #add armadillo
 #find_package(Armadillo REQUIRED)
