@@ -245,6 +245,7 @@ std::ostream& operator<<(std::ostream& os, const mdarray<T,dim>& mdarray_)
 template<typename T, size_t dim> 
 void copy(const mdarray<T,dim>& ToCopy, mdarray<T,dim>& ToBeCopied, const Processor& proc__)
 {
+    assert(ToCopy.get_TotalSize() == ToBeCopied.get_TotalSize());
     if( proc__ == device ) {
         assert(ToCopy.initialized_device);
         assert(ToBeCopied.initialized_device);

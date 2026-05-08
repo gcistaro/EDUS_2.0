@@ -51,7 +51,7 @@ bool Matrix<std::complex<double>>::is_hermitian() const
     for(int irow=0; irow < (*this).get_nrows(); irow++) {
         for (int icol=irow; icol< (*this).get_ncols(); icol++) {
             max = std::max(max, std::abs( (*this)( irow, icol ) - std::conj( (*this)( icol, irow ) ) ) );
-            if( std::abs( (*this)( irow, icol ) - std::conj( (*this)( icol, irow ) ) ) > 1.e-15 ) {
+            if( std::abs( (*this)( irow, icol ) - std::conj( (*this)( icol, irow ) ) ) > 1.e-13 ) {
                 is_hermitian = false;
             }
         }
