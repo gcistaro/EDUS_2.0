@@ -132,6 +132,8 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     output::print("-> solve eigensystem");
     SettingUp_EigenSystem();
 
+    pdos();
+    
     if( ctx_->cfg().kpath().size() > 1 ) {
         output::print("-> Printing band structure");
         print_bandstructure(ctx_->cfg().kpath(), material_.H);
@@ -916,8 +918,8 @@ void print_bandstructure(const std::vector<std::vector<double>>& bare_kpath__, O
     for( int ik = 0; ik < bare_kpath__.size(); ++ik ) {
         auto& bare_k = bare_kpath__[ik];
         path[ik] = Coordinate(bare_k[0], bare_k[1], bare_k[2], LatticeVectors(Space::k));
-    }
-
+    }    
+    
     /* create kmesh */
     MeshGrid MeshGridPath(Space::k, path, 0.01);
 
@@ -934,7 +936,14 @@ void print_bandstructure(const std::vector<std::vector<double>>& bare_kpath__, O
     for(int ik=0; ik<Eigenvalues.size(); ik++){
         for(int iband=0; iband<Eigenvalues[ik].get_Size(0); ++iband){
             Output << std::setw(6) << ik;
-            Output << std::setw(15) << std::setprecision(6) << Convert(Eigenvalues[ik](iband),AuEnergy,ElectronVolt) << std::endl;
+            Output << std::setw(15) << std::setprecision(6) << Convert(Eigenvalues[ik](iband),AuEnergy,ElectronVolt);
+            auto sum = 0.;
+            for(int iwann=0; iwann<Eigenvalues[ik].get_Size(0); ++iwann) {
+                Output << std::setw(15) << std::setprecision(6) << std::pow(std::abs(Eigenvectors[ik](iwann,iband)),2);
+                sum += std::pow(std::abs(Eigenvectors[ik](iwann,iband)),2);
+            }
+            Output << std::setw(15) << std::setprecision(6)<< sum; 
+            Output << std::endl;
         }
     }
     Output.close();
@@ -1110,4 +1119,38 @@ void Simulation::PrintWannier()
     }    
     wann::print("wannier_tb.dat", nbnd, H_.get_Operator_R().get_MeshGrid()->get_TotalSize(),
                  A, Degeneracy, Rmesh_gamma, H__, r__);
+}
+
+void Simulation::pdos()
+{
+    auto& Uk = Operator<std::complex<double>>::EigenVectors;
+    auto nbnd = Uk.get_nrows();
+
+    /* sum over k points the projections */
+    std::vector< std::map<int, double> >  pdos(nbnd);
+    auto E_resolution = Convert(0.1, ElectronVolt, AuEnergy);
+    auto min_eig = min(Band_energies_);
+    auto max_eig = max(Band_energies_);
+    auto DeltaE = max_eig - min_eig;
+
+
+    /* since psi_{nk} = \sum_m U_{mn} \tilde{psi_{mk}} we have U_{mn} = <psi_{nk}|\tilde{psi_{mk}}>*/
+    for(int ik = 0; ik < Uk.get_nblocks(); ++ik) {
+        for( int irow = 0; irow < nbnd; ++irow ) {
+            for( int icol = 0; icol < nbnd; ++icol ) {
+                auto ibar = int( ( Band_energies_[ik](icol) - min_eig )/E_resolution );
+                pdos[irow][ibar] += std::pow( std::abs( Uk(ik, irow, icol) ), 2 );
+            }
+        }
+    }
+
+    std::ofstream os_pdos("pdos.txt");
+    for(int iE=0; iE<int((max_eig-min_eig)/E_resolution); iE++) {
+        os_pdos << min_eig + iE * E_resolution << " ";
+        for(int ialpha=0; ialpha<nbnd; ialpha++) {
+            os_pdos << pdos[ialpha][iE] << " ";
+        }
+        os_pdos << std::endl;
+    }
+    os_pdos.close();
 }
