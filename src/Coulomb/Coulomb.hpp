@@ -53,7 +53,15 @@ class Coulomb
         void set_read_interaction(const bool& read_interaction__);
         void set_bare_file_path(const std::string& bare_file_path__);
         void set_screen_file_path(const std::string& screen_file_path__);
+        
+        void initialize_device();
 };
 
+void Hartree_interaction_gpu ( std::complex<double>* SigmaH, 
+                               const std::complex<double>* Hartree, 
+                               const std::complex<double>* DM, 
+                               const std::complex<double>* DM0, 
+                               int index, 
+                               int N);
 
 

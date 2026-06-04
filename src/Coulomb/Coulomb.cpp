@@ -205,6 +205,42 @@ bool& Coulomb::get_DoCoulomb()
     return DoCoulomb_;
 }
 
+void Hartree_interaction_cpu(BlockMatrix<std::complex<double>>& HR__, 
+                         const mdarray<std::complex<double>,2>& Hartree, 
+                         const BlockMatrix<std::complex<double>>& DMR__, 
+                         const BlockMatrix<std::complex<double>>& DM0R_, 
+                         int index_origin_local_)
+{
+    #pragma omp parallel for
+    for( int irow = 0; irow < HR__.get_nrows(); ++irow ) {
+        for( int icol = 0; icol < HR__.get_ncols(); ++icol ) {
+            HR__(index_origin_local_, irow, irow) += 
+                    Hartree(irow, icol)*(DMR__(index_origin_local_, icol, icol) - DM0R_(index_origin_local_, icol, icol)); 
+        }
+    }
+}
+
+void Hartree_interaction(BlockMatrix<std::complex<double>>& HR__, 
+                         const mdarray<std::complex<double>,2>& Hartree, 
+                         const BlockMatrix<std::complex<double>>& DMR__, 
+                         const BlockMatrix<std::complex<double>>& DM0R_, 
+                         int index_origin_local)
+{
+#ifdef EDUS_GPU
+    if ( processor_ == device ) {
+        Hartree_interaction_gpu ( HR__.data(device), 
+                                  Hartree.data(device), 
+                                  DMR__.data(device),
+                                  DM0R_.data(device), 
+                                  index_origin_local, 
+                                  HR__.end() - HR__.begin() );
+        HR__.set_processor(device);
+        return;
+    }
+#endif
+    Hartree_interaction_cpu(HR__, Hartree, DMR__, DM0R_, index_origin_local);
+}
+
 /// @brief This function calculates the effective Hamiltonian from the Coulomb interaction. 
 /// The Coulomb interaction has two different terms: 
 /// - The Hartree term 
@@ -240,13 +276,7 @@ void Coulomb::EffectiveHamiltonian(Operator<std::complex<double>>& H__, const Op
 
     /* Hartree term */
     if( HasOrigin_  && (method_ == rpa || method_ == hsex)) { // Only the rank with R=0 contributes to this term 
-        #pragma omp parallel for
-        for( int irow = 0; irow < HR__.get_nrows(); ++irow ) {
-            for( int icol = 0; icol < HR__.get_ncols(); ++icol ) {
-                HR__(index_origin_local_, irow, irow) += 
-                        Hartree(irow, icol)*(DMR__(index_origin_local_, icol, icol) - DM0R_(index_origin_local_, icol, icol)); 
-            }
-        }
+        //Hartree_interaction(HR__, Hartree, DMR__, DM0R_);
     }
 
     /* Fock term */
@@ -312,4 +342,14 @@ std::string Coulomb::get_method()
 bool& Coulomb::get_read_interaction()
 {
     return read_interaction_;
+}
+
+void Coulomb::initialize_device()
+{
+    Hartree.initialize_device();
+    Hartree.transfer_to(device);
+    modelcoulomb_.ScreenedPotential_.initialize_device();
+    modelcoulomb_.ScreenedPotential_.transfer_to(device);
+    DM0_.initialize_device();
+    DM0_.transfer_to(device);
 }
