@@ -105,6 +105,16 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
             Hartree(icol, irow) = value;
         }
     }
+
+    /* make W is hermitian. From tests this modifies only last R */
+    auto& W = modelcoulomb_.ScreenedPotential_;
+    Operator<std::complex<double>> Wop; 
+    Wop.initialize_fft(*Rgrid_, nbnd);
+    std::copy(W.begin(), W.end(), Wop.get_Operator_R().begin());
+    Wop.go_to(k);
+    Wop.get_Operator_k().make_hermitian();
+    Wop.go_to(R);
+    std::copy(Wop.get_Operator(R).begin(), Wop.get_Operator(R).end(), W.begin());
 }
 
 void Coulomb::set_read_interaction(const bool& read_interaction__)
