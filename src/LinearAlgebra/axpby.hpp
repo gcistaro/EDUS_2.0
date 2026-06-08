@@ -24,9 +24,9 @@ void axpby(T& Output,
 {
     assert(Output.end() - Output.begin() == FirstAddend.end() - FirstAddend.begin());
     assert(FirstAddend.end() - FirstAddend.begin() == SecondAddend.end() - SecondAddend.begin());
-  std::cout << "from axpby " << Output.end()-Output.begin() << " " << FirstScalar << " " << SecondScalar << std::endl;
+///== cout debug  std::cout << "from axpby " << Output.end()-Output.begin() << " " << FirstScalar << " " << SecondScalar << std::endl;
 
-  std::cout << "from axpby processor:  " << (proc__ == host ? "host" : "device") << std::endl;
+///== cout debug  std::cout << "from axpby processor:  " << (proc__ == host ? "host" : "device") << std::endl;
 #ifdef EDUS_GPU
     if(proc__ == device) {
         axpby_gpu(Output.data(device), FirstScalar, FirstAddend.data(device), SecondScalar, SecondAddend.data(device),
@@ -36,5 +36,5 @@ void axpby(T& Output,
     }
 #endif
     axpby_cpu(Output, FirstScalar, FirstAddend, SecondScalar, SecondAddend);
-//    std::cout << "axpby. max Output: " << *max(Output) << std::endl;
+///== cout debug    std::cout << "axpby. max Output: " << *max(Output) << std::endl;
 }

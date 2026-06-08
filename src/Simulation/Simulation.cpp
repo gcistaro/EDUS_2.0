@@ -515,13 +515,9 @@ void Simulation::do_onestep()
         // print laser
         os_Laser_ << setoflaser_(DEsolver_DM_.get_CurrentTime()).get("Cartesian");
         os_VectorPot_ << setoflaser_.VectorPotential(DEsolver_DM_.get_CurrentTime()).get("Cartesian");
-        std::cout << "print_population bloch" << std::endl;
         Print_Population(BandGauge::bloch);
-        std::cout << "print_population wannier" << std::endl;
         Print_Population(BandGauge::wannier);
-        std::cout << "print_velocity" << std::endl;
         Print_Velocity(DensityMatrix_);
-        std::cout << "done" << std::endl;
     }
 
     if (PrintObservables(CurrentTime, true)) {

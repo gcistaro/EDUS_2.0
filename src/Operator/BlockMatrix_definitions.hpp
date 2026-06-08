@@ -189,7 +189,7 @@ void multiply(BlockMatrix<T>& Output, T Scalar, const BlockMatrix<T>& Input1, co
              m * n,                
              stride);
         Output.transfer_to(host);
-        std::cout <<"multiply max GPU: "<< *max(Output) << std::endl;
+///== debug        std::cout <<"multiply max GPU: "<< *max(Output) << std::endl;
         Output.set_processor(device);
         return;
     }
@@ -210,7 +210,7 @@ void multiply(BlockMatrix<T>& Output, T Scalar, const BlockMatrix<T>& Input1, co
     for(int iblock=0; iblock<Output.get_nblocks(); iblock++){
         Matrix_gemm(Output[iblock], Scalar, Input1[iblock], Input2[iblock], Scalar2);
     }
-    std::cout <<"multiply max: "<< *max(Output) << std::endl;
+///== debug    std::cout <<"multiply max: "<< *max(Output) << std::endl;
 #endif
 }
 
