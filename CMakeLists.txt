@@ -170,16 +170,7 @@ set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS
 # =================================================================================
 if(EDUS_MPI)
   find_package(MPI REQUIRED)
-  message("MPI include dir: ${MPI_CXX_INCLUDE_DIRS}")
-  include_directories(${MPI_CXX_INCLUDE_DIRS})
-target_link_libraries(core PUBLIC MPI::MPI_CXX)
-  message(STATUS "Run: ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS} ${MPIEXEC_PREFLAGS} EXECUTABLE ${MPIEXEC_POSTFLAGS} ARGS")
-  if(MPI_COMPILE_FLAGS)
-    set(COMPILE_FLAGS "${MPI_COMPILE_FLAGS}")
-  endif()
-  if(MPI_LINK_FLAGS)
-    set(LINK_FLAGS "${MPI_LINK_FLAGS}")
-  endif()
+  target_link_libraries(core PUBLIC MPI::MPI_CXX)
 endif()
 
 # =================================================================================
@@ -248,22 +239,16 @@ endif()
 # =================================================================================
 # FFTW3
 # =================================================================================
-  set(FFTW_USE_STATIC_LIBRARIES OFF)
-  find_package(FFTW REQUIRED)
-  if(TARGET FFTW::FFTW3)
-    target_link_libraries(core PUBLIC FFTW::FFTW3)
-  else()
-    target_link_libraries(core PUBLIC fftw3)
-  endif()
+find_package(FFTW REQUIRED)
+message(STATUS "FFTW_LIBRARIES: ${FFTW_LIBRARIES}")
+message(STATUS "FFTW_INCLUDE_DIRS: ${FFTW_INCLUDE_DIRS}")
 
-  # MPI FFTW only if needed
-  if(EDUS_MPI)
-    if(TARGET FFTW::MPI)
-      target_link_libraries(core PUBLIC FFTW::MPI)
-    else()
-      target_link_libraries(core PUBLIC fftw3_mpi)
-    endif()
-  endif()
+target_link_libraries(core PUBLIC ${FFTW_LIBRARIES} fftw3_mpi)
+target_include_directories(core PUBLIC ${FFTW_INCLUDE_DIRS})
+
+
+
+
 
 # add the executable
 add_executable(EDUS src/EDUS.cpp)
@@ -271,6 +256,10 @@ target_link_libraries(EDUS PRIVATE core)
 
 
 # Google test
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
+
+
 include(FetchContent)
 FetchContent_Declare(
   googletest

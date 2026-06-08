@@ -53,15 +53,15 @@ FourierTransform::initialize
     //from x to k (fft to Fourier space)
     MyPlan_FWD = fftw_mpi_plan_many_dft(dim, Dimensions_ptr,
                                  howmany, FFTW_MPI_DEFAULT_BLOCK, FFTW_MPI_DEFAULT_BLOCK,
-                                 reinterpret_cast<fftw_complex*>(&(*Array_x)[0]),
-                                 reinterpret_cast<fftw_complex*>(&(*Array_k)[0]), 
+                                 reinterpret_cast<fftw_complex*>(Array_x->data(host)),
+                                 reinterpret_cast<fftw_complex*>(Array_k->data(host)), 
                                  MPI_COMM_WORLD, -1, FFTW_ESTIMATE);
 
     //from k to x (fft to original space) -> sign = +1 correspond to ifft -> f(x) = sum_n c_n e^{+inx}
     MyPlan_BWD = fftw_mpi_plan_many_dft(dim, Dimensions_ptr,
                                  howmany, FFTW_MPI_DEFAULT_BLOCK, FFTW_MPI_DEFAULT_BLOCK,
-                                 reinterpret_cast<fftw_complex*>(&(*Array_k)[0]),
-                                 reinterpret_cast<fftw_complex*>(&(*Array_x)[0]), 
+                                 reinterpret_cast<fftw_complex*>(Array_k->data(host)),
+                                 reinterpret_cast<fftw_complex*>(Array_x->data(host)), 
                                  MPI_COMM_WORLD, +1, FFTW_ESTIMATE);
     //as per user guide: this corresponds to the same parameter in the serial advanced interface 
     //(see Advanced Complex DFTs) with stride = howmany and dist = 1. Meaning that data are contiguous 

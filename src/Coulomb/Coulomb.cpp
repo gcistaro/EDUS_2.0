@@ -237,7 +237,7 @@ void Hartree_interaction(BlockMatrix<std::complex<double>>& HR__,
         HR__.set_processor(device);
         return;
     }
-#endif
+#endif      
     Hartree_interaction_cpu(HR__, Hartree, DMR__, DM0R_, index_origin_local);
 }
 
@@ -276,7 +276,7 @@ void Coulomb::EffectiveHamiltonian(Operator<std::complex<double>>& H__, const Op
 
     /* Hartree term */
     if( HasOrigin_  && (method_ == rpa || method_ == hsex)) { // Only the rank with R=0 contributes to this term 
-        //Hartree_interaction(HR__, Hartree, DMR__, DM0R_);
+        Hartree_interaction(HR__, Hartree, DMR__, DM0R_);
     }
 
     /* Fock term */
