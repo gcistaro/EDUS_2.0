@@ -98,6 +98,7 @@ class Simulation
         double jacobian(const Matrix<double>& A__) const;
         void OpenGap();
         void pdos();
+        void Print_DeltaRho(const double& it__);
 
         std::string wavelength_or_frequency(const int&);
 

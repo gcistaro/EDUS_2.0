@@ -518,6 +518,7 @@ void Simulation::do_onestep()
         Print_Population(BandGauge::bloch);
         Print_Population(BandGauge::wannier);
         Print_Velocity(DensityMatrix_);
+        Print_DeltaRho(Convert(CurrentTime,AuTime,FemtoSeconds)); 
     }
 
     if (PrintObservables(CurrentTime, true)) {
@@ -1149,4 +1150,23 @@ void Simulation::pdos()
         os_pdos << std::endl;
     }
     os_pdos.close();
+}
+
+
+void Simulation::Print_DeltaRho(const double& it__) 
+{
+    static Operator<std::complex<double>> deltarho(DensityMatrix_);
+
+    for(int iblock=0; iblock<DensityMatrix_.get_Operator(R).get_nblocks(); iblock++) {
+        for(int irow=0; irow<DensityMatrix_.get_Operator(R).get_nrows(); irow++) {
+            for(int icol=0; icol<DensityMatrix_.get_Operator(R).get_ncols(); icol++) {
+                deltarho.get_Operator(R)(iblock, irow, icol) = 
+                    DensityMatrix_.get_Operator_R()(iblock,irow,icol) - coulomb_.get_DM0().get_Operator(R)(iblock,irow,icol);
+            }
+        } 
+    }
+
+    std::stringstream filename; 
+    filename << "DeltaRho_" << it__ << ".txt";
+    deltarho.print_Rdecay(filename.str(), material_.rwann_);
 }
