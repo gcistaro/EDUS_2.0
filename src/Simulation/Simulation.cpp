@@ -518,7 +518,7 @@ void Simulation::do_onestep()
         Print_Population(BandGauge::bloch);
         Print_Population(BandGauge::wannier);
         Print_Velocity(DensityMatrix_);
-        Print_DeltaRho(Convert(CurrentTime,AuTime,FemtoSeconds)); 
+        // == Print_DeltaRho(Convert(CurrentTime,AuTime,FemtoSeconds)); 
     }
 
     if (PrintObservables(CurrentTime, true)) {
