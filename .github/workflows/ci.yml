@@ -68,12 +68,12 @@ jobs:
       # Configure project 
       - name: Configure CMake
         run: |
-          cmake -S . -B build
+          cmake -S . -B build -DEDUS_PROFILE=ON -EDUS_MKL=OFF -DEDUS_MPI=ON 
 
       # Build (will likely fail if dependencies missing)
       - name: Build project
         run: |
-          cmake --build build -j$(nproc) -DEDUS_PROFILE=ON -EDUS_MKL=OFF -DEDUS_MPI=ON 
+          cmake --build build -j$(nproc) 
 
       - name: Run hBN_IPA test
         run: |
