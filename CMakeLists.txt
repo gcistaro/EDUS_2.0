@@ -13,14 +13,14 @@ set(BLA_STATIC OFF)
 # =================================================================================
 # Options
 # =================================================================================
-option(EDUS_PROFILE     "Profiling function timings"                            ON)
-option(EDUS_MKL         "Enable MKL"                                           ON)
-option(EDUS_MPI         "Enabling MPI"                                         OFF)
+option(EDUS_PROFILE     "Profiling function timings"                           ON )
+option(EDUS_MKL         "Enable MKL"                                           ON )
+option(EDUS_MPI         "Enabling MPI"                                         ON )
 option(EDUS_BATCHGEMM   "Enabling Batch Gemm for k matrix multiplication"      OFF)
 option(EDUS_FFTWTHREADS "Enabling threads in fftw"                             OFF)                
 option(EDUS_MKL_THREAD  "Enabling threads in mkl"                              OFF)                  
-option(EDUS_HDF5        "Link hdf5 library for fast writing of big matrices"    OFF)
-option(EDUS_GPU         "Compile with GPU support"                             ON)
+option(EDUS_HDF5        "Link hdf5 library for fast writing of big matrices"   OFF)
+option(EDUS_GPU         "Compile with GPU support"                             OFF)
 option(__DEBUG          ""                                                     OFF)
 
 # =================================================================================
