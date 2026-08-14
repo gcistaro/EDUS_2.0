@@ -73,7 +73,7 @@ jobs:
       # Build (will likely fail if dependencies missing)
       - name: Build project
         run: |
-          cmake --build build -j$(nproc)
+          cmake --build build -j$(nproc) -DEDUS_PROFILE=ON -EDUS_MKL=OFF -DEDUS_MPI=ON 
 
       - name: Run hBN_IPA test
         run: |
