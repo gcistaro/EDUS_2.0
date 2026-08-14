@@ -490,10 +490,13 @@ void Simulation::Propagate()
     /* do steps */
     double start_time = omp_get_wtime();
 
+    output::stars();
+    output::print("        it         percentage                   Elapsed time                    Estimated time    ");
     for (int it = 0; it < iFinalTime; ++it) {
         if (it % 100 == 0) {
-            output::print("it:                 *", it, " / ", iFinalTime, 100 * double(it) / iFinalTime, " %",
-                          "               time: ", omp_get_wtime() - start_time, " sec");
+            output::print(it, 100 * double(it) / iFinalTime, " %        ",
+                          omp_get_wtime() - start_time, " sec            ", 
+                          ( omp_get_wtime() - start_time ) / (double(it) / iFinalTime), " sec");
         }
         do_onestep();
     }
