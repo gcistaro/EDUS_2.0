@@ -68,7 +68,7 @@ jobs:
       # Configure project 
       - name: Configure CMake
         run: |
-          cmake -S . -B build -DEDUS_PROFILE=ON -EDUS_MKL=OFF -DEDUS_MPI=ON 
+          cmake -S . -B build -DEDUS_PROFILE=ON -DEDUS_MKL=OFF -DEDUS_MPI=ON 
 
       # Build (will likely fail if dependencies missing)
       - name: Build project
