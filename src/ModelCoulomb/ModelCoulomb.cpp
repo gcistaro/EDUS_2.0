@@ -90,13 +90,8 @@ void ModelCoulomb::initialize_Potential(const std::string& file_path__, const in
     // build the coulomb interaction matrix elements in the imported R vectors
     Potential_.fill(0.0);
     for (int iRCoulomb=0; iRCoulomb<R_MeshGrid.get_TotalSize(); iRCoulomb++) {
-<<<<<<< HEAD
-        if ( Rgrid__->mpindex.is_local( ci(iRCoulomb,0) ) ) {
-            int iR_local = Rgrid__->mpindex.glob1D_to_loc1D( ci(iRCoulomb,0) );
-=======
         if ( Rgrid_->mpindex.is_local( ci(iRCoulomb,0) ) ) {
             auto iR_local = Rgrid_->mpindex.glob1D_to_loc1D( ci(iRCoulomb,0) );
->>>>>>> 178c253 (Restructure ModelCoulomb to accept different type of potentials)
             for (int irow=0; irow<nbnd__; irow++) {
                 for (int icol=0; icol<nbnd__; icol++) {
                     int iline = nbnd__*2*irow + 2*icol + (std::pow(nbnd__,2)*2+1)*iRCoulomb + 1;
@@ -191,8 +186,12 @@ std::complex<double> ModelCoulomb::Potentials_wrapper(const Coordinate& r__)
             auto& rcart = r__.get("Cartesian");
             auto r_reduced = Coordinate(rcart[0]/Parameters_.r0[0], rcart[1]/Parameters_.r0[1], rcart[2]/Parameters_.r0[2]); 
             auto r_norm = r_reduced.norm();
-            if (r_norm < threshold ) r_norm = min_distance_norm_;
-            //auto r_norm = std::max( r_reduced.norm(), min_distance_norm_ );
+            if( r__.norm() < min_distance_norm_ ) {
+                r_reduced = Coordinate(min_distance_.get("Cartesian")[0]/Parameters_.r0[0], 
+                                       min_distance_.get("Cartesian")[1]/Parameters_.r0[1], 
+                                       min_distance_.get("Cartesian")[2]/Parameters_.r0[2]);   
+                r_norm = r_reduced.norm();
+            }
             V = pot::RytovaKeldysh(r_norm, Parameters_.epsilon, Parameters_.r0_avg);
             break;
         }

@@ -109,7 +109,7 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
     }
 
     /* make W is hermitian. From tests this modifies only last R */
-    auto& W = modelcoulomb_.ScreenedPotential_;
+    auto& W = screencoulomb_.Potential_;
     Operator<std::complex<double>> Wop; 
     Wop.initialize_fft(*Rgrid_, nbnd);
     std::copy(W.begin(), W.end(), Wop.get_Operator_R().begin());
@@ -117,6 +117,15 @@ void Coulomb::initialize(const int& nbnd, const std::shared_ptr<MeshGrid>& Rgrid
     Wop.get_Operator_k().make_hermitian();
     Wop.go_to(R);
     std::copy(Wop.get_Operator(R).begin(), Wop.get_Operator(R).end(), W.begin());
+
+#ifdef __DEBUG
+    std::ofstream osos("bare.txt"); 
+    osos << barecoulomb_.Potential_ << std::endl; 
+    osos.close();
+    osos.open("screen.txt"); 
+    osos << screencoulomb_.Potential_ << std::endl; 
+    osos.close();
+#endif
 }
 
 void Coulomb::set_read_interaction(const bool& read_interaction__)
@@ -367,8 +376,8 @@ void Coulomb::initialize_device()
 {
     Hartree.initialize_device();
     Hartree.transfer_to(device);
-    modelcoulomb_.ScreenedPotential_.initialize_device();
-    modelcoulomb_.ScreenedPotential_.transfer_to(device);
+    screencoulomb_.Potential_.initialize_device();
+    screencoulomb_.Potential_.transfer_to(device);
     DM0_.initialize_device();
     DM0_.transfer_to(device);
 }
