@@ -492,11 +492,46 @@ void Simulation::Propagate()
 
     output::stars();
     output::print("        it         percentage                   Elapsed time                    Estimated time    ");
+    
     for (int it = 0; it < iFinalTime; ++it) {
         if (it % 100 == 0) {
-            output::print(it, 100 * double(it) / iFinalTime, " %        ",
-                          omp_get_wtime() - start_time, " sec            ", 
-                          ( omp_get_wtime() - start_time ) / (double(it) / iFinalTime), " sec");
+            double est_time_sec= ( omp_get_wtime() - start_time ) / ( double(it) / iFinalTime );
+            int est_time_min=-1.;
+            int est_time_h=-1.;
+            int est_time_days=-1.;
+            if ( est_time_sec > 60. ) {
+                est_time_min = est_time_sec / 60.;
+                est_time_sec = int(est_time_sec) % 60;
+            }
+            if ( est_time_min > 60. ) {
+                est_time_h = est_time_min / 60.;
+                est_time_min = est_time_min % 60;
+            }
+            if( est_time_h > 24. ) {
+                est_time_days = est_time_h / 24.;
+                est_time_h = est_time_h % 24;
+            }
+            
+            if (est_time_days > 0 ) {
+                output::print(it, 100 * double(it) / iFinalTime, " %        ",
+                              omp_get_wtime() - start_time, " sec            ", 
+                              est_time_days, " d ", est_time_h, " h");
+            }
+            else if (est_time_h > 0 ) {
+                output::print(it, 100 * double(it) / iFinalTime, " %        ",
+                              omp_get_wtime() - start_time, " sec            ", 
+                              est_time_h, " h ", est_time_min, " min");
+            }
+            else if (est_time_min > 0 ) {
+                output::print(it, 100 * double(it) / iFinalTime, " %        ",
+                              omp_get_wtime() - start_time, " sec            ", 
+                              est_time_min, " min ", int(est_time_sec), " sec");
+            }
+            else {
+                output::print(it, 100 * double(it) / iFinalTime, " %        ",
+                              omp_get_wtime() - start_time, " sec            ", 
+                              est_time_sec, " sec");
+            }
         }
         do_onestep();
     }
