@@ -211,7 +211,7 @@ void MeanField::self_energy(Operator<std::complex<double>>& H__, const Operator<
     }
 
     /* Hartree term */
-    if( HasOrigin_  && (parameters_.method == MeanFieldMethod::RPA || parameters_.method == MeanFieldMethod::HSEX)) { // Only the rank with R=0 contributes to this term 
+    if( HasOrigin_ && parameters_.hartree && (parameters_.method == MeanFieldMethod::RPA || parameters_.method == MeanFieldMethod::HSEX)) { // Only the rank with R=0 contributes to this term 
         Hartree_interaction(HR__, Hartree, DMR__, DM0R_, index_origin_local_);
     }
 
@@ -264,6 +264,7 @@ void MeanField::print_recap() const
     if( parameters_.enabled ) {
         output::print("Method                   *", std::string(8, ' '), to_string(parameters_.method));
         output::print("Read Interaction         *", std::string(8, ' '), (parameters_.read_interaction ? "True" : "False"));
+        output::print("Hartree                  *", std::string(8, ' '), (parameters_.hartree ? "True" : "False"));
         if( parameters_.read_interaction ) {
             output::print("barecoulomb              *", std::string(8, ' '), parameters_.bare_file);
             output::print("screencoulomb            *", std::string(8, ' '), parameters_.screen_file);
