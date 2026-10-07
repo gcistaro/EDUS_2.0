@@ -165,7 +165,10 @@ void OutputManager::write(const double& time__)
         print_velocity_energy(time__);
     }
 #ifdef EDUS_HDF5
-    if ( is_print_step(time__, true) ) {
+    bool print_h5 = ( parameters_.printresolution_h5 > 0
+                      ? int(round(time__ / propagator_->time_step())) % parameters_.printresolution_h5 == 0
+                      : is_print_step(time__, true) );
+    if ( print_h5 ) {
         write_h5(time__);
     }
 #endif

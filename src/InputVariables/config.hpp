@@ -148,6 +148,17 @@ class config_t
         dict_["/bare_file"_json_pointer] = bare_file__;
     }
     /// path of the screencoulomb.txt file
+    inline auto hartree() const
+    {
+        return dict_.at("/hartree"_json_pointer).get<bool>();
+    }
+    inline void hartree(bool hartree__)
+    {
+        if (dict_.contains("locked")) {
+            throw std::runtime_error(locked_msg);
+        }
+        dict_["/hartree"_json_pointer] = hartree__;
+    }
     inline auto screen_file() const
     {
         return dict_.at("/screen_file"_json_pointer).get<std::string>();
@@ -283,6 +294,17 @@ class config_t
         dict_["/printresolution"_json_pointer] = printresolution__;
     }
     /// Time steps needed to print in hdf5 and observables
+    inline auto printresolution_h5() const
+    {
+        return dict_.at("/printresolution_h5"_json_pointer).get<int>();
+    }
+    inline void printresolution_h5(int printresolution__)
+    {
+        if (dict_.contains("locked")) {
+            throw std::runtime_error(locked_msg);
+        }
+        dict_["/printresolution_h5"_json_pointer] = printresolution__;
+    }
     inline auto printresolution_pulse() const
     {
         return dict_.at("/printresolution_pulse"_json_pointer).get<int>();

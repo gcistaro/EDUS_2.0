@@ -50,6 +50,8 @@ namespace electron
         double hartree_cutoff_factor = 1.;
         /// Distance below which two Wannier centers belong to the same atom (a.u.)
         double hartree_center_tolerance = 0.6 / 0.529177210903;
+        /// If false, the Hartree term is skipped
+        bool hartree = true;
     };
 
 class MeanFieldParametersFactory
@@ -76,6 +78,7 @@ public:
         p.hartree_cutoff_factor = cfg.hartree_cutoff_factor();
         if (p.hartree_cutoff_factor <= 0.)
             throw std::runtime_error("hartree_cutoff_factor must be positive");
+        p.hartree = cfg.hartree();
         if (cfg.method() == "ipa")
             p.method = MeanFieldMethod::IPA;
         else if (cfg.method() == "rpa")
