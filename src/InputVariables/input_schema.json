@@ -75,6 +75,16 @@
             "default": "./barecoulomb.txt",
             "title": "Path of the bare Coulomb interaction"
         },
+        "hartree": {
+            "type": "boolean",
+            "default": true,
+            "title": "If false, the Hartree term is skipped in the mean field (with method hsex: screened exchange only)"
+        },
+        "lambda": {
+            "type": "number",
+            "default": 1.0,
+            "title": "Scaling factor of the bare and screened interactions (0 = IPA, 1 = full interaction)"
+        },
         "screen_file": {
             "type": "string",
             "default": "./screencoulomb.txt",
@@ -153,6 +163,11 @@
             "type": "integer",
             "default": 1,
             "title": "Time steps needed to print in hdf5 and observables"
+        },
+        "printresolution_h5": {
+            "type": "integer",
+            "default": 0,
+            "title": "If > 0, the hdf5 matrices are printed every printresolution_h5 time steps, whether the lasers are on or off"
         },
         "printresolution_pulse": {
             "type": "integer",

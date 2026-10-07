@@ -10,6 +10,8 @@ struct OutputParameters
     int printresolution = 1;
     /// Print every printresolution_pulse steps when a laser is on (always used for txt files)
     int printresolution_pulse = 1;
+    /// If > 0, print h5 every printresolution_h5 steps, independently of the lasers
+    int printresolution_h5 = 0;
     /// Number of filled bands: for them we print the population of holes, 1-rho_nn
     int filledbands = 0;
     /// Matrices to print in the h5 file
@@ -30,6 +32,7 @@ public:
         p.printresolution = cfg.printresolution();
         p.printresolution_pulse = ( cfg.printresolution_pulse() == 0 ? cfg.printresolution()
                                                                      : cfg.printresolution_pulse() );
+        p.printresolution_h5 = cfg.printresolution_h5();
         p.filledbands = cfg.filledbands();
 
         auto toprint = [&cfg](const std::string& key) {

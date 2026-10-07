@@ -45,6 +45,15 @@ void MeanField::initialize( const MeanFieldParameters& parameters__,
                               parameters__.screen_file, 
                               decomposition__.mpindex(), 
                               1);
+    /* scale the interactions by lambda */
+    if( std::abs(parameters_.lambda - 1.) > 1.e-12 ) {
+        for( auto& v : barecoulomb_.Potential_ ) {
+            v *= parameters_.lambda;
+        }
+        for( auto& v : screencoulomb_.Potential_ ) {
+            v *= parameters_.lambda;
+        }
+    }
     output::print("Maximum and minimum (in norm) of bare and screened interaction:");
     auto max = *std::max_element( barecoulomb_.Potential_.begin(), barecoulomb_.Potential_.end(),
                           [] (std::complex<double> a, std::complex<double> b) { return std::real(a) < std::real(b); }); 
@@ -211,7 +220,7 @@ void MeanField::self_energy(Operator<std::complex<double>>& H__, const Operator<
     }
 
     /* Hartree term */
-    if( HasOrigin_  && (parameters_.method == MeanFieldMethod::RPA || parameters_.method == MeanFieldMethod::HSEX)) { // Only the rank with R=0 contributes to this term 
+    if( HasOrigin_ && parameters_.hartree && (parameters_.method == MeanFieldMethod::RPA || parameters_.method == MeanFieldMethod::HSEX)) { // Only the rank with R=0 contributes to this term 
         Hartree_interaction(HR__, Hartree, DMR__, DM0R_, index_origin_local_);
     }
 
@@ -264,6 +273,8 @@ void MeanField::print_recap() const
     if( parameters_.enabled ) {
         output::print("Method                   *", std::string(8, ' '), to_string(parameters_.method));
         output::print("Read Interaction         *", std::string(8, ' '), (parameters_.read_interaction ? "True" : "False"));
+        output::print("Hartree                  *", std::string(8, ' '), (parameters_.hartree ? "True" : "False"));
+        output::print("lambda                   *", parameters_.lambda);
         if( parameters_.read_interaction ) {
             output::print("barecoulomb              *", std::string(8, ' '), parameters_.bare_file);
             output::print("screencoulomb            *", std::string(8, ' '), parameters_.screen_file);

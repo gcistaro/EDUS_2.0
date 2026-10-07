@@ -44,6 +44,10 @@ namespace electron
         std::string bare_file;
         /// Screened Coulomb file
         std::string screen_file;  
+        /// If false, the Hartree term is skipped
+        bool hartree = true;
+        /// Scaling factor of bare and screened interactions
+        double lambda = 1.0;
     };
 
 class MeanFieldParametersFactory
@@ -62,6 +66,8 @@ public:
         p.coulomb_model = cfg.coulomb_model();
         p.bare_file = cfg.bare_file();
         p.screen_file = cfg.screen_file();
+        p.hartree = cfg.hartree();
+        p.lambda = cfg.lambda();
         if (cfg.method() == "ipa")
             p.method = MeanFieldMethod::IPA;
         else if (cfg.method() == "rpa")
