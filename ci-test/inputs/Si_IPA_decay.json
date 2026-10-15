@@ -35,5 +35,8 @@
         }
     ],
     "decay": 1.0,
-    "decay_units": "femtoseconds"
+    "decay_units": "femtoseconds",
+    "toprint": {
+        "DM_R": "true"
+    }
 }

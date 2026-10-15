@@ -35,5 +35,8 @@
         }
     ],
     "solver": "Magnus",
-    "order": 4
+    "order": 4,
+    "toprint": {
+        "DM_R": "true"
+    }
 }

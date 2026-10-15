@@ -41,5 +41,8 @@
       "adiabatic_reference": "dynamic",
       "damping_time": 100,
       "damping_time_units": "fs"
+    },
+    "toprint": {
+        "DM_R": "true"
     }
-  }
+}
