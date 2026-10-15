@@ -41,11 +41,13 @@ void OutputManager::initialize(const OutputParameters& parameters__,
     mpi::Communicator::world().barrier();
 
     /* print equilibrium density matrix in real space (one file per rank) */
-    auto& aux = state_->aux_DM();
-    auto& DM0R = system_->DM0().get_Operator(R);
-    std::copy(DM0R.begin(), DM0R.end(), aux.get_Operator(R).begin());
-    aux.lock_space(R);
-    aux.print_Rdecay(path("DM"), system_->wannier_centers());
+    if( parameters_.print_DM_R ) {
+        auto& aux = state_->aux_DM();
+        auto& DM0R = system_->DM0().get_Operator(R);
+        std::copy(DM0R.begin(), DM0R.end(), aux.get_Operator(R).begin());
+        aux.lock_space(R);
+        aux.print_Rdecay(path("DM"), system_->wannier_centers());
+    }
 
     bool restart = ( parameters_.restart_step >= 0 );
     bool write_energy_header = true;
@@ -141,6 +143,7 @@ void OutputManager::print_recap() const
     output::print("toprint-> DMk_bloch      *", std::string(8, ' '), to_str(parameters_.print_DMk_bloch));
     output::print("toprint-> fullH          *", std::string(8, ' '), to_str(parameters_.print_fullH));
     output::print("toprint-> SelfEnergy     *", std::string(8, ' '), to_str(parameters_.print_SelfEnergy));
+    output::print("toprint-> DM_R           *", std::string(8, ' '), to_str(parameters_.print_DM_R));
     output::stars();
 }
 

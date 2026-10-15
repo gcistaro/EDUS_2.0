@@ -35,5 +35,8 @@
         }
     ],
     "gradient_space": "k",
-    "peierls": false
+    "peierls": false,
+    "toprint": {
+        "DM_R": "true"
+    }
 }
