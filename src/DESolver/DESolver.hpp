@@ -76,6 +76,18 @@ class DESolver{
 
         void set_aux_Function(const T& a, const T& b, const T& c, const T& d, const T& e){aux_ = {a, b, c, d, e};}
 
+        /* restart: the state of the solver is the function, istep_ and, for AB, f(t_{n-i}, y_{n-i}) for
+           i=1..order-1 (the term i=0 is computed at the beginning of the next step) */
+        long istep() const { return istep_; }
+        /// Number of previous source terms needed by the next step
+        int num_saved_history() const { return ( parameters_.solver == AB ? parameters_.order - 1 : 0 ); }
+        /// False during the first RK4 steps of AB, when the history is not complete yet
+        bool history_complete() const { return parameters_.solver == RK || istep_ >= parameters_.order - 1; }
+        /// @f$ f(t_{n-i}, y(t_{n-i})) @f$, with n the step to be done next and 1 <= i <= num_saved_history()
+        T& history(const int& i__) { return aux_[index[i__]]; }
+        /// Sets the solver at step istep__, with complete history: after this call fill the history
+        void restart_from_step(const long& istep__);
+
         /* getter methods */
         const T& function() const { return *function_; }
         T& function() { return *function_; }
@@ -267,6 +279,23 @@ void DESolver<T>::propagate(const int& nstep__)
 {
     for( int istep = 0; istep < nstep__; ++istep ) {
         propagate();
+    }
+}
+
+template<typename T>
+void DESolver<T>::restart_from_step(const long& istep__)
+{
+    istep_ = istep__;
+    if ( !history_complete() ) {
+        std::stringstream ss;
+        ss << "DESolver: cannot restart AB" << parameters_.order << " at step " << istep__
+           << ", the history is complete only from step " << parameters_.order - 1 << "\n";
+        throw std::runtime_error(ss.str());
+    }
+    index = {0, 1, 2, 3, 4};
+    /* the arrays of RK4 are not needed anymore */
+    if ( parameters_.solver == AB ) {
+        aux_.resize(parameters_.order);
     }
 }
 

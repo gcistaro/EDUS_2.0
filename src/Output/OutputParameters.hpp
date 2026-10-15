@@ -21,6 +21,9 @@ struct OutputParameters
     bool print_fullH = false;
     /// Directory where all the output files are written
     std::string directory = "Output";
+    /// Restart: step of the checkpoint (-1 if no restart) and number of steps printed before it in the txt files
+    long restart_step = -1;
+    long restart_num_prints = 0;
 };
 
 class OutputParametersFactory

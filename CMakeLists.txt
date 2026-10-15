@@ -114,6 +114,7 @@ set(_SOURCES src/initialize.cpp
              src/kGradient/kGradient.cpp
              src/DESolver/DESolver.cpp
              src/Simulation/Simulation.cpp
+             src/Simulation/Checkpoint.cpp
              src/core/profiler.cpp
              src/core/print_timing.cpp
              src/core/cmd_args/cmd_args.cpp

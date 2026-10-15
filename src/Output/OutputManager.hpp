@@ -49,6 +49,10 @@ class OutputManager
         double last_time_ = 0.;
         double initial_energy_ = 0.;
         bool first_energy_step_ = true;
+        /// Number of steps printed in the txt files (one line per file each)
+        long num_prints_ = 0;
+        /// Name of the h5 file
+        std::string h5_name_;
 
         std::ofstream os_time_;
         std::ofstream os_laser_;
@@ -68,8 +72,21 @@ class OutputManager
         void print_velocity_energy(const double& time__);
         void initialize_h5(nlohmann::json dict__, const GridStructure& gridstructure__);
         void write_h5(const double& time__);
+        static void truncate_txt(const std::string& name__, const long& num_lines__);
 
     public:
+        /// Variables that depend on the previous steps, saved in the checkpoint to restart a simulation
+        struct RestartState
+        {
+            double work;
+            double last_power;
+            double last_time;
+            double initial_energy;
+            bool first_energy_step;
+            int index_h5;
+            long num_prints;
+        };
+
         OutputManager() = default;
 
         /// Creates the output directory, opens the files and prints the equilibrium density matrix
@@ -86,6 +103,8 @@ class OutputManager
         void print_recap() const;
         /// Writes all the outputs at time__, if it is a printing step. To be called before each time step
         void write(const double& time__);
+        RestartState restart_state() const;
+        void set_restart_state(const RestartState& state__);
 };
 
 #endif // OUTPUT_MANAGER_HPP

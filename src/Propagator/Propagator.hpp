@@ -84,6 +84,7 @@ class Propagator
         /* getter methods */
         const PropagatorParameters& parameters() const { return parameters_; }
         const kGradient& kgradient() const { return *kgradient_; }
+        DESolver<Operator<std::complex<double>>>& desolver() { return desolver_; }
         double current_time() const { return desolver_.current_time(); }
         double time_step() const { return desolver_.time_step(); }
         Processor processor() const { return processor_; }

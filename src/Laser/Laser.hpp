@@ -126,6 +126,18 @@ class Laser{
         double get_NumberOfCycles();
         double get_Lambda();
         double get_Omega();
+        double get_Phase() { return PlaneWave.get_Phase(); }
+        double get_Amplitude() const { return Amplitude; }
+        const Coordinate& get_Polarization() const { return Polarization; }
+
+        /* state of the time integration of A, saved in the checkpoint to restart a simulation */
+        const Coordinate& get_A() const { return A; }
+        double get_previous_Time() const { return previous_Time; }
+        void set_A_state(const Coordinate& A__, const double& previous_Time__)
+        {
+            A = A__;
+            previous_Time = previous_Time__;
+        }
 };
 
 

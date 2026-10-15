@@ -6,6 +6,8 @@
 #include "Electrons/BandStructurePath.hpp"
 #include "Electrons/Pdos.hpp"
 #include <cstdlib>
+#include <algorithm>
+#include <cmath>
 #include <filesystem>
 
 
@@ -70,7 +72,20 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
                             setoflaser_, 
                             kgradient_ );
 
-    output_.initialize( OutputParametersFactory::create( ctx_->cfg() ), 
+    auto output_parameters = OutputParametersFactory::create( ctx_->cfg() );
+    checkpoint_directory_ = output_parameters.directory;
+    bool restart = !ctx_->cfg().restart_file().empty();
+    if ( restart ) {
+        read_checkpoint_header( ctx_->cfg().restart_file(), output_parameters.restart_step,
+                                output_parameters.restart_num_prints );
+        restart_step_ = output_parameters.restart_step;
+    }
+    for ( auto t : ctx_->cfg().checkpoint_times() ) {
+        auto t_au = Convert(t, unit(ctx_->cfg().checkpoint_times_units()), AuTime);
+        checkpoint_steps_.push_back( std::lround( (t_au - ctx_->cfg().initialtime()) / propagator_.time_step() ) );
+    }
+
+    output_.initialize( output_parameters, 
                         ctx_->cfg().dict(), 
                         gridstructure_, 
                         decomposition_, 
@@ -90,6 +105,10 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
         if( meanfield_.parameters().enabled ) {
             meanfield_.initialize_device();
         }
+    }
+
+    if ( restart ) {
+        restore_checkpoint( ctx_->cfg().restart_file() );
     }
 }
 
@@ -302,6 +321,14 @@ void Simulation::Propagate()
     output::print("Initial time:       *", ctx_->cfg().initialtime(), " a.u.", Convert(ctx_->cfg().initialtime(), AuTime, FemtoSeconds), " fs");
     output::print("Final time:         *", ctx_->cfg().finaltime(), " a.u.", Convert(ctx_->cfg().finaltime(), AuTime, FemtoSeconds), " fs");
     output::print("Number of steps:    *", iFinalTime);
+    if ( restart_step_ > 0 ) {
+        output::print("Restart from step:  *", std::to_string(restart_step_));
+        if ( restart_step_ >= iFinalTime ) {
+            throw std::runtime_error("the final time is before the time of the checkpoint");
+        }
+    }
+    auto checkpoint_path = [this](const std::string& name) { return checkpoint_directory_ + "/" + name; };
+    int checkpoint_resolution = ctx_->cfg().checkpoint_resolution();
 
     /* do steps */
     double start_time = omp_get_wtime();
@@ -309,9 +336,18 @@ void Simulation::Propagate()
     output::stars();
     output::print("        it         percentage                   Elapsed time                    Estimated time    ");
     
-    for (int it = 0; it < iFinalTime; ++it) {
+    for (int it = restart_step_; it < iFinalTime; ++it) {
+        /* checkpoints describe the state at the beginning of the step, before printing the outputs */
+        if ( it != restart_step_ ) {
+            if ( std::find(checkpoint_steps_.begin(), checkpoint_steps_.end(), it) != checkpoint_steps_.end() ) {
+                write_checkpoint( checkpoint_path("checkpoint_" + std::to_string(it) + ".h5") );
+            }
+            if ( checkpoint_resolution > 0 && it % checkpoint_resolution == 0 ) {
+                write_checkpoint( checkpoint_path("checkpoint.h5") );
+            }
+        }
         if (it % 100 == 0) {
-            double est_time_sec= ( omp_get_wtime() - start_time ) / ( double(it) / iFinalTime );
+            double est_time_sec= ( omp_get_wtime() - start_time ) / ( double(it - restart_step_) / (iFinalTime - restart_step_) );
             int est_time_min=-1.;
             int est_time_h=-1.;
             int est_time_days=-1.;
@@ -351,6 +387,9 @@ void Simulation::Propagate()
         }
         output_.write(propagator_.current_time());
         propagator_.step();
+    }
+    if ( checkpoint_resolution > 0 ) {
+        write_checkpoint( checkpoint_path("checkpoint.h5") );
     }
 
     output::print(std::string(output::linesize - 5, '*'));

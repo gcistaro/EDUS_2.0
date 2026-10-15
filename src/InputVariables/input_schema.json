@@ -169,6 +169,36 @@
             "default": 0,
             "title": "If > 0, the hdf5 matrices are printed every printresolution_h5 time steps, whether the lasers are on or off"
         },
+        "restart_file": {
+            "type": "string",
+            "default": "",
+            "title": "Checkpoint file (h5) to restart the simulation from; empty for a simulation from the equilibrium"
+        },
+        "restart_check_input": {
+            "type": "boolean",
+            "default": true,
+            "title": "If true, at restart the input must be the same as in the checkpoint, apart from lasers that start after the restart time, final time, outputs and checkpoints"
+        },
+        "checkpoint_resolution": {
+            "type": "integer",
+            "default": 0,
+            "title": "If > 0, a checkpoint (Output/checkpoint.h5, overwritten) is written every checkpoint_resolution time steps and at the end of the simulation"
+        },
+        "checkpoint_times": {
+            "type": "array",
+            "default": [],
+            "title": "Times at which a checkpoint is written and kept (Output/checkpoint_<step>.h5)"
+        },
+        "checkpoint_times_units": {
+            "type": "string",
+            "default": "femtoseconds",
+            "enum": [
+                "femtoseconds",
+                "fs",
+                "autime"
+            ],
+            "title": "Units for checkpoint_times"
+        },
         "printresolution_pulse": {
             "type": "integer",
             "default": 0,

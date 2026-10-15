@@ -1,4 +1,5 @@
 #include <filesystem>
+#include <sstream>
 #include "Output/OutputManager.hpp"
 #include "GlobalFunctions.hpp"
 
@@ -46,14 +47,31 @@ void OutputManager::initialize(const OutputParameters& parameters__,
     aux.lock_space(R);
     aux.print_Rdecay(path("DM"), system_->wannier_centers());
 
+    bool restart = ( parameters_.restart_step >= 0 );
+    bool write_energy_header = true;
     if( is_writer_ ) {
-        os_pop_.open(path("Population.txt"));
-        os_pop_wannier_.open(path("Population_wannier.txt"));
-        os_laser_.open(path("Laser.txt"));
-        os_vectorpot_.open(path("Laser_A.txt"));
-        os_time_.open(path("Time.txt"));
-        os_velocity_.open(path("Velocity.txt"));
-        os_energy_.open(path("Energy.txt"));
+        /* restart: the files of the same directory are kept up to the restart time and continued */
+        auto open = [&](std::ofstream& os, const std::string& name) {
+            if( restart && std::filesystem::exists(path(name)) ) {
+                truncate_txt(path(name), parameters_.restart_num_prints);
+                os.open(path(name), std::ios::app);
+                if( name == "Energy.txt" ) {
+                    write_energy_header = false;
+                }
+            }
+            else {
+                os.open(path(name));
+            }
+        };
+        open(os_pop_, "Population.txt");
+        open(os_pop_wannier_, "Population_wannier.txt");
+        open(os_laser_, "Laser.txt");
+        open(os_vectorpot_, "Laser_A.txt");
+        open(os_time_, "Time.txt");
+        open(os_velocity_, "Velocity.txt");
+        open(os_energy_, "Energy.txt");
+    }
+    if( is_writer_ && write_energy_header ) {
         os_energy_ << "# Energy balance of the electrons, Hartree per unit cell (one spin channel)\n"
                    << "# E_band = Tr[H0 (rho-rho0)], E_MF = 1/2 Tr[Sigma[rho-rho0] (rho-rho0)], E = E_band + E_MF\n"
                    << "# (changes with respect to equilibrium, computed from rho-rho0 to keep all the digits)\n"
@@ -64,8 +82,52 @@ void OutputManager::initialize(const OutputParameters& parameters__,
     }
 
 #ifdef EDUS_HDF5
+    /* restart: a new h5 file, the one of the parent run (if in the same directory) is not touched */
+    h5_name_ = path("output.h5");
+    if( restart && std::filesystem::exists(h5_name_) ) {
+        h5_name_ = path("output_restart" + std::to_string(parameters_.restart_step) + ".h5");
+    }
     initialize_h5(input_dict__, gridstructure__);
 #endif
+}
+
+/// @brief Keeps in the file name__ the lines starting with '#' and the first num_lines__ other lines.
+/// Used at restart, to remove the lines printed by the parent run after the checkpoint.
+void OutputManager::truncate_txt(const std::string& name__, const long& num_lines__)
+{
+    std::ifstream is(name__);
+    std::stringstream kept;
+    std::string line;
+    long count = 0;
+    while( count < num_lines__ && std::getline(is, line) ) {
+        if( line.empty() || line[0] != '#' ) {
+            ++count;
+        }
+        kept << line << "\n";
+    }
+    is.close();
+    if( count < num_lines__ ) {
+        output::print("WARNING: ", name__, " has ", count, " lines, the checkpoint was written after ",
+                      num_lines__, " print steps");
+    }
+    std::ofstream os(name__, std::ios::trunc);
+    os << kept.str();
+}
+
+OutputManager::RestartState OutputManager::restart_state() const
+{
+    return { work_, last_power_, last_time_, initial_energy_, first_energy_step_, index_h5_, num_prints_ };
+}
+
+void OutputManager::set_restart_state(const RestartState& state__)
+{
+    work_              = state__.work;
+    last_power_        = state__.last_power;
+    last_time_         = state__.last_time;
+    initial_energy_    = state__.initial_energy;
+    first_energy_step_ = state__.first_energy_step;
+    index_h5_          = state__.index_h5;
+    num_prints_        = state__.num_prints;
 }
 
 void OutputManager::print_recap() const
@@ -94,6 +156,7 @@ void OutputManager::write(const double& time__)
         print_population(time__, BandGauge::bloch);
         print_population(time__, BandGauge::wannier);
         print_velocity_energy(time__);
+        ++num_prints_;
     }
 #ifdef EDUS_HDF5
     bool print_h5 = ( parameters_.printresolution_h5 > 0
@@ -360,7 +423,7 @@ void OutputManager::initialize_h5(nlohmann::json dict__, const GridStructure& gr
         laser_dict["wavelength_units"] = "aulength";
     }
 
-    std::string name = path("output.h5");
+    std::string name = h5_name_;
     if (!file_exists(name)) {
         HDF5_tree(name, hdf5_access_t::truncate);
     }
@@ -379,7 +442,7 @@ void OutputManager::write_h5(const double& time__)
     auto& DM = state_->DensityMatrix();
     auto& H = state_->H();
 
-    std::string name = path("output.h5");
+    std::string name = h5_name_;
     std::stringstream node;
     node << index_h5_;
     index_h5_++;

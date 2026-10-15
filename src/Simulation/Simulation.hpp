@@ -51,6 +51,20 @@ class Simulation
         /// Recap of the simulation: each component prints its own section
         void print_recap();
 
+        /* checkpoint and restart (Checkpoint.cpp) */
+        /// Step from which the propagation starts: 0, or the step of the checkpoint at restart
+        long restart_step_ = 0;
+        /// Directory of the checkpoint files (the output directory)
+        std::string checkpoint_directory_ = "Output";
+        /// Steps at which a checkpoint is written and kept (checkpoint_times in input)
+        std::vector<long> checkpoint_steps_;
+        /// Writes the state at the beginning of the current step
+        void write_checkpoint(const std::string& name__);
+        /// Reads step and number of txt prints of the checkpoint, needed before initializing the outputs
+        void read_checkpoint_header(const std::string& name__, long& istep__, long& num_prints__);
+        /// Sets density matrix, solver, lasers and outputs to the state of the checkpoint
+        void restore_checkpoint(const std::string& name__);
+
     public:
         
     /// Dynamical variables that are propagated in time, like the density matrix

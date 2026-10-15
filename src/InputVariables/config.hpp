@@ -301,6 +301,66 @@ class config_t
         }
         dict_["/printresolution_h5"_json_pointer] = printresolution__;
     }
+    /// checkpoint file to restart the simulation from (empty: no restart)
+    inline auto restart_file() const
+    {
+        return dict_.at("/restart_file"_json_pointer).get<std::string>();
+    }
+    inline void restart_file(std::string restart_file__)
+    {
+        if (dict_.contains("locked")) {
+            throw std::runtime_error(locked_msg);
+        }
+        dict_["/restart_file"_json_pointer] = restart_file__;
+    }
+    /// if true, the input of the restart must be the same of the checkpoint, apart from lasers, final time and outputs
+    inline auto restart_check_input() const
+    {
+        return dict_.at("/restart_check_input"_json_pointer).get<bool>();
+    }
+    inline void restart_check_input(bool restart_check_input__)
+    {
+        if (dict_.contains("locked")) {
+            throw std::runtime_error(locked_msg);
+        }
+        dict_["/restart_check_input"_json_pointer] = restart_check_input__;
+    }
+    /// if > 0, a checkpoint is written every checkpoint_resolution steps and at the end
+    inline auto checkpoint_resolution() const
+    {
+        return dict_.at("/checkpoint_resolution"_json_pointer).get<int>();
+    }
+    inline void checkpoint_resolution(int checkpoint_resolution__)
+    {
+        if (dict_.contains("locked")) {
+            throw std::runtime_error(locked_msg);
+        }
+        dict_["/checkpoint_resolution"_json_pointer] = checkpoint_resolution__;
+    }
+    /// times at which a checkpoint is written and kept
+    inline auto checkpoint_times() const
+    {
+        return dict_.at("/checkpoint_times"_json_pointer).get<std::vector<double>>();
+    }
+    inline void checkpoint_times(std::vector<double> checkpoint_times__)
+    {
+        if (dict_.contains("locked")) {
+            throw std::runtime_error(locked_msg);
+        }
+        dict_["/checkpoint_times"_json_pointer] = checkpoint_times__;
+    }
+    /// units of checkpoint_times
+    inline auto checkpoint_times_units() const
+    {
+        return dict_.at("/checkpoint_times_units"_json_pointer).get<std::string>();
+    }
+    inline void checkpoint_times_units(std::string checkpoint_times_units__)
+    {
+        if (dict_.contains("locked")) {
+            throw std::runtime_error(locked_msg);
+        }
+        dict_["/checkpoint_times_units"_json_pointer] = checkpoint_times_units__;
+    }
     inline auto printresolution_pulse() const
     {
         return dict_.at("/printresolution_pulse"_json_pointer).get<int>();
