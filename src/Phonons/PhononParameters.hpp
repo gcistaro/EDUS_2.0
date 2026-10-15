@@ -63,6 +63,9 @@ struct PhononParameters
     bool acoustic_sum_rule = true;
     /// Adiabatic response of the electrons removed from the force on the lattice
     AdiabaticReference adiabatic_reference = AdiabaticReference::static_response;
+    /// Dynamic reference with g_s: if true rho_BO is propagated with u.g_b + Sigma[rho_BO - rho0] (Born-Oppenheimer
+    /// electrons of the bare model), otherwise with u.g_s and no mean field
+    bool adiabatic_bare = false;
     /// Static response (Anderson mixing): largest relative residual, and maximum number of iterations
     double response_tolerance = 1.e-10;
     int response_max_iterations = 500;
@@ -122,6 +125,11 @@ public:
         else {
             throw std::runtime_error("phonons/adiabatic_reference must be static or dynamic\n");
         }
+        auto adiabatic_coupling = cfg.phonons().adiabatic_coupling();
+        if( adiabatic_coupling != "screened" && adiabatic_coupling != "bare" ) {
+            throw std::runtime_error("phonons/adiabatic_coupling must be screened or bare\n");
+        }
+        p.adiabatic_bare = ( adiabatic_coupling == "bare" );
         p.initial_displacement = cfg.phonons().initial_displacement();
 
         p.qpoints.clear();

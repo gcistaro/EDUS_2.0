@@ -38,6 +38,12 @@ void OutputManager::initialize(const OutputParameters& parameters__,
     if( propagator_->lattice() && propagator_->lattice()->static_reference() ) {
         rho_bo_.initialize_fft(gridstructure__.Rgrid(), gridstructure__.kgrid(), DMk.get_nrows(), decomposition_->mpindex(), "rho_BO_output");
     }
+    if( propagator_->lattice() ) {
+        sigma_ref_.initialize_fft(gridstructure__.Rgrid(), gridstructure__.kgrid(), DMk.get_nrows(), decomposition_->mpindex(), "Sigma_ref_energy");
+        for( auto* m : {&hk_, &rhodot_, &eta_g_} ) {
+            m->initialize(k, DMk.get_nblocks(), DMk.get_nrows(), DMk.get_ncols());
+        }
+    }
 
     std::filesystem::create_directories(parameters_.directory);
     mpi::Communicator::world().barrier();
@@ -63,7 +69,8 @@ void OutputManager::initialize(const OutputParameters& parameters__,
                    << (lattice ? " + E_ph\n# E_ph = (E_lattice + E_coupling)/s: lattice and coupling (see Lattice.txt), divided by the spin degeneracy s\n" : "\n")
                    << "# (changes with respect to equilibrium, computed from rho-rho0 to keep all the digits)\n"
                    << "# W = work of the field = -int E(t).v(t) dt, v = <grad_k(H0+Sigma) + i[H0+Sigma, r]>\n"
-                   << "# P = -E.v is the power; W is integrated with the trapezoidal rule (error O(dt^2))\n"
+                   << "# P = -E.v is the power; W is integrated with the 3-point rule (quadratic through three consecutive print steps, error O(dt^3);\n"
+                   << "#   trapezoidal rule at the first print step)\n"
                    << "# Without decay, E(t) - E(0) = W(t) up to the error of the time integration of W\n"
                    << "#        time (a.u.)       E_band-E_band(0)                  E_MF              E - E(0)                     P                     W          E - E(0) - W\n";
         if( lattice ) {
@@ -72,7 +79,8 @@ void OutputManager::initialize(const OutputParameters& parameters__,
             bool dynamic = lattice->dynamic_reference();
             os_lattice_ << "# Lattice at q = 0, atomic units, per unit cell (all spin channels), adiabatic reference: "
                         << phonon::to_string(lattice->parameters().adiabatic_reference)
-                        << (lattice->screened() ? ", electrons with g_s and Sigma[rho - rho_BO]" : ", electrons with g_b and Sigma[rho - rho0]") << "\n"
+                        << (lattice->screened() ? ", electrons with g_s and Sigma[rho - rho_BO]" : ", electrons with g_b and Sigma[rho - rho0]")
+                        << (lattice->adiabatic_bare() ? ", rho_BO with g_b and Sigma[rho_BO - rho0]" : "") << "\n"
                         << "# mu = 3*atom + direction (cartesian), u = displacement (bohr), du/dt (bohr/a.u.),\n"
                         << "# F = force of the electrons used in the dynamics, s/N sum_k Tr[g_b,mu (rho - rho_BO)]"
                         << (dynamic ? "" : " = F[rho - rho0] - Pi u") << " (Ha/bohr): the atoms feel -F\n"
@@ -82,6 +90,23 @@ void OutputManager::initialize(const OutputParameters& parameters__,
                         << (lattice->screened() ? "# (with g_s the energy is the one of the bare model, conserved only if g_b = g_s - Sigma[chi0 g_s])\n" : "")
                         << "# columns: time, E_lattice, E_coupling, u_mu (" << nmodes << "), du_mu/dt (" << nmodes << "), F_mu ("
                         << nmodes << ")\n";
+
+            os_energy_terms_.open(path("EnergyTerms.txt"));
+            os_energy_terms_ << "# Terms of the energy of Energy.txt and powers that change it, Hartree (per unit time) per unit cell, one spin channel\n"
+                             << "# E = E_band + E_MF + E_int + T + U - E_ad, with\n"
+                             << "#   E_band = Tr[H0 (rho-rho0)], E_MF = 1/2 Tr[Sigma[rho-rho0] (rho-rho0)] (bare model, always rho0)\n"
+                             << "#   E_int = u.F[rho-rho0]/s, F[X] = s/N sum_k Tr[g_b X]; T = 1/2 M v^2/s, U = 1/2 u.K_BO.u/s\n"
+                             << "#   E_ad = 1/2 u.F[rho_BO-rho0]/s (static) or E_band[rho_BO] + E_MF[rho_BO] + u.F[rho_BO-rho0]/s (dynamic, also\n"
+                             << "#   printed separately); Tr = 1/N sum_k Tr\n"
+                             << "# Without decay and damping dE/dt = P_field + P_g + P_sigma + P_BO + P_Pi (derived from the equations of motion):\n"
+                             << "#   P_g     = -Tr[u.(g_e - g_b) drho/dt]      g_e = coupling felt by the electrons (g_s if given)\n"
+                             << "#   P_sigma = +Tr[Sigma[rho_ref - rho0] drho/dt] rho_ref = rho0 (only g_b) or rho_BO (g_s): the mean field of rho is Sigma[rho-rho_ref]\n"
+                             << "#   P_BO    = +Tr[eta drho_BO/dt], eta = u.(g_s - g_b) - Sigma[rho_BO - rho0] (dynamic with g_s and adiabatic_coupling = screened)\n"
+                             << "#   P_Pi    = du/dt.Pi_A.u/s, Pi_A antisymmetric part of Pi (static with g_s)\n"
+                             << "#   all zero with only g_b. drho/dt = E.grad_k rho - i[H0 + E.r + Sigma[rho-rho_ref] + u.g_e, rho]\n"
+                             << "#   I_x = time integral of P_x (3-point rule, like W); residual = E - E(0) - W - I_g - I_sigma - I_BO - I_Pi ~ 0\n"
+                             << "# columns: 1 time, 2 E_band, 3 E_MF, 4 E_int, 5 T, 6 U, 7 E_ad, 8 E_band[rho_BO], 9 E_MF[rho_BO], 10 u.F[rho_BO-rho0]/s,\n"
+                             << "#   11 E-E(0), 12 W, 13 P_g, 14 P_sigma, 15 P_BO, 16 P_Pi, 17 I_g, 18 I_sigma, 19 I_BO, 20 I_Pi, 21 residual\n";
 
             os_modes_.open(path("Phonon_modes.txt"));
             os_modes_ << "# Lattice at q = 0 in the normal modes lambda of the dynamical matrix of ph.x, atomic units per unit cell\n"
@@ -257,6 +282,28 @@ static std::complex<double> trace_product_difference(const BlockMatrix<std::comp
     return std::complex<double>(re, im_);
 }
 
+/// @brief Integral in time with the 3-point rule of print_velocity_energy (the same used for the work W): step__ is the
+/// index of the print step just done (0 = first). The integral on [t_{i-1}, t_i] of the quadratic through
+/// P_{i-2}, P_{i-1}, P_i is dt/12 (-P_{i-2} + 8 P_{i-1} + 5 P_i); trapezoidal rule at the first interval, replaced at the
+/// second one by the integral of the quadratic through P_0, P_1, P_2
+static void integrate_3pt(double& integral__, const double second_last__, const double last__, const double power__,
+                          const double dt__, const int step__)
+{
+    if( step__ == 0 ) {
+        integral__ = 0.;
+    }
+    else if( step__ == 1 ) {
+        integral__ += 0.5 * (last__ + power__) * dt__;
+    }
+    else if( step__ == 2 ) {
+        integral__ = dt__ / 12. * (5. * second_last__ + 8. * last__ - power__)
+                   + dt__ / 12. * (-second_last__ + 8. * last__ + 5. * power__);
+    }
+    else {
+        integral__ += dt__ / 12. * (-second_last__ + 8. * last__ + 5. * power__);
+    }
+}
+
 /// @brief Prints the mean value of the velocity (Velocity.txt) and the energy balance of the electrons (Energy.txt).
 ///
 /// The velocity is the one generated by the Hamiltonian that propagates the density matrix, including the
@@ -267,8 +314,8 @@ static std::complex<double> trace_product_difference(const BlockMatrix<std::comp
 /// (@f$\Omega@f$ volume or area of the unit cell). With the equation of motion of EDUS (length gauge)
 /// @f[ \dot\rho = \mathbf E\cdot\nabla_k\rho - i[H_0 + \mathbf E\cdot\mathbf r + \Sigma[\rho-\rho_0], \rho] @f]
 /// the energy @f$ E = \mathrm{Tr}[H_0\Delta\rho] + \frac12 \mathrm{Tr}[\Sigma[\Delta\rho]\Delta\rho] @f$ changes only because of the
-/// work of the field: @f$ \dot E = -\Omega\,\mathbf E(t)\cdot\mathbf v(t) @f$. The work is integrated with the trapezoidal
-/// rule over the print steps.
+/// work of the field: @f$ \dot E = -\Omega\,\mathbf E(t)\cdot\mathbf v(t) @f$. The work is integrated over the print steps
+/// with the 3-point rule: on each interval, the integral of the quadratic through the last three print steps.
 void OutputManager::print_velocity_energy(const double& time__)
 {
     PROFILE("OutputManager::print_velocity_energy");
@@ -282,8 +329,8 @@ void OutputManager::print_velocity_energy(const double& time__)
 
     /* local sums: 0-2 H0 part of the velocity (operator of System, already divided by the cell volume),
        3-5 Sigma part of the velocity (not divided), 6 Tr[H0 (rho-rho0)], 7 Tr[Sigma (rho-rho0)],
-       8-9 the same two for rho_BO (dynamic adiabatic reference) */
-    std::array<std::complex<double>, 10> local;
+       8-9 the same two for rho_BO (dynamic adiabatic reference), 10-12 powers of EnergyTerms.txt */
+    std::array<std::complex<double>, 13> local;
     local.fill(0.);
     for (auto ix : { 0, 1, 2 }) {
         temp_.fill(0.);
@@ -353,6 +400,73 @@ void OutputManager::print_velocity_energy(const double& time__)
             grad_sigma_.go_to_k();
             local[3 + ix] += trace_product(grad_sigma_.get_Operator(Space::k), rho);
         }
+        /* powers that change the energy of the bare model (EnergyTerms.txt). The electrons feel
+           H = H_bm + E.r + eta, H_bm = H0 + u.g_b + Sigma[rho - rho0], eta = u.(g_e - g_b) - Sigma[rho_ref - rho0]:
+           d/dt E = W - Tr[eta drho/dt] (+ the terms of rho_BO and Pi, below). Only with g_s eta is not zero */
+        if( lattice && screened ) {
+            auto& x = state_->lattice();
+            /* drho/dt = E.grad_k rho - i[H0 + E.r + sigma, rho], sigma_k = Sigma[rho - rho_ref] + u.g_e */
+            auto field = (*lasers_)(time__);
+            auto E = field.get("Cartesian");
+            auto& H0k = system_->H0().get_Operator(Space::k);
+            for( int i = 0; i < hk_.get_TotalSize(); ++i ) {
+                *(hk_.begin() + i) = *(H0k.begin() + i) + *(sigma_k.begin() + i);
+            }
+            for( auto ix : { 0, 1, 2 } ) {
+                auto& r = system_->r()[ix].get_Operator(Space::k);
+                for( int i = 0; i < hk_.get_TotalSize(); ++i ) {
+                    *(hk_.begin() + i) += E[ix] * *(r.begin() + i);
+                }
+            }
+            commutator(rhodot_, -im, hk_, rho);
+            if( std::abs(E[0]) + std::abs(E[1]) + std::abs(E[2]) > 0. ) {
+                grad_sigma_.lock_space(gradient_space);
+                kgradient.Calculate(1. + 0. * im, grad_sigma_.get_Operator(gradient_space),
+                                    aux.get_Operator(gradient_space), field, true);
+                grad_sigma_.go_to_k();
+                auto& grad = grad_sigma_.get_Operator(Space::k);
+                for( int i = 0; i < rhodot_.get_TotalSize(); ++i ) {
+                    *(rhodot_.begin() + i) += *(grad.begin() + i);
+                }
+            }
+            /* eta_g = u.(g_e - g_b), in k */
+            eta_g_.fill(0.);
+            for( int mu = 0; mu < lattice->num_modes(); ++mu ) {
+                double u = x.displacement(0, mu).real();
+                auto& ge = lattice->electronic_coupling(mu).get_Operator(Space::k);
+                auto& gb = lattice->coupling(mu).get_Operator(Space::k);
+                for( int i = 0; i < eta_g_.get_TotalSize(); ++i ) {
+                    *(eta_g_.begin() + i) += u * (*(ge.begin() + i) - *(gb.begin() + i));
+                }
+            }
+            /* Sigma[rho_ref - rho0], rho_ref = rho_BO */
+            sigma_ref_.get_Operator(R).fill(0.);
+            sigma_ref_.lock_space(R);
+            if( meanfield_->parameters().enabled ) {
+                meanfield_->self_energy(sigma_ref_, *rho_bo, system_->DM0());
+            }
+            sigma_ref_.go_to_k();
+            auto& sigma_ref_k = sigma_ref_.get_Operator(Space::k);
+            local[10] = -trace_product(eta_g_, rhodot_);
+            local[11] = trace_product(sigma_ref_k, rhodot_);
+            /* dynamic reference propagated with H0 + u.g_s (adiabatic_coupling = screened): it also feels eta,
+               d/dt E += Tr[eta drho_BO/dt], drho_BO/dt = -i[H0 + u.g_s, rho_BO] */
+            if( dynamic && !lattice->adiabatic_bare() ) {
+                std::copy(H0k.begin(), H0k.end(), hk_.begin());
+                for( int mu = 0; mu < lattice->num_modes(); ++mu ) {
+                    double u = x.displacement(0, mu).real();
+                    auto& gs = lattice->electronic_coupling(mu).get_Operator(Space::k);
+                    for( int i = 0; i < hk_.get_TotalSize(); ++i ) {
+                        *(hk_.begin() + i) += u * *(gs.begin() + i);
+                    }
+                }
+                commutator(rhodot_, -im, hk_, rho_bo->get_Operator(Space::k));
+                for( int i = 0; i < eta_g_.get_TotalSize(); ++i ) {
+                    *(eta_g_.begin() + i) -= *(sigma_ref_k.begin() + i);
+                }
+                local[12] = trace_product(eta_g_, rhodot_);
+            }
+        }
         /* with the screened coupling the energy is the one of the bare model: E_MF with Sigma[rho - rho0] only */
         if( screened ) {
             local[7] = 0.;
@@ -407,6 +521,9 @@ void OutputManager::print_velocity_energy(const double& time__)
     double energy_band = local[6].real() / num_k;
     double energy_mf = 0.5 * local[7].real() / num_k;
     double energy = energy_band + energy_mf;
+    /* EnergyTerms.txt: columns 2-10 (terms of the energy) and the powers P_g, P_sigma, P_BO, P_Pi */
+    std::array<double, 9> terms{};
+    std::array<double, 4> powers{};
     if( lattice ) {
         /* Energy balance with the lattice. The total energy per unit cell (all spin channels) is
                s E_electrons + u.F + E_lattice,     E_electrons = E_band + E_MF  (one spin channel, as in Energy.txt)
@@ -445,6 +562,21 @@ void OutputManager::print_velocity_energy(const double& time__)
         double energy_lattice = lattice->energy(x);
         energy = energy_band + energy_mf + (energy_lattice + coupling) / s;
 
+        double kinetic = 0.;
+        for( int mu = 0; mu < lattice->num_modes(); ++mu ) {
+            kinetic += 0.5 * lattice->mass()[mu] * std::norm(x.velocity(0, mu));
+        }
+        double interaction = dot_u(force_full);
+        terms = { energy_band, energy_mf, interaction / s, kinetic / s, (energy_lattice - kinetic) / s,
+                  (interaction - coupling) / s, 0., 0., 0. };
+        if( dynamic ) {
+            terms[6] = local[8].real() / num_k;
+            terms[7] = 0.5 * local[9].real() / num_k;
+            terms[8] = dot_u(force_bo) / s;
+        }
+        powers = { local[10].real() / num_k, local[11].real() / num_k, local[12].real() / num_k,
+                   lattice->antisymmetric_power(x) / s };
+
         os_lattice_ << std::setw(22) << std::setprecision(12) << time__
                     << std::setw(22) << std::setprecision(12) << energy_lattice
                     << std::setw(22) << std::setprecision(12) << coupling;
@@ -470,16 +602,52 @@ void OutputManager::print_velocity_energy(const double& time__)
         os_modes_ << std::endl;
     }
 
-    if( first_energy_step_ ) {
-        first_energy_step_ = false;
+    /* work of the field with the 3-point rule (the same as ci-test/check_energy.py): the integral on
+       [t_{i-1}, t_i] of the quadratic through P_{i-2}, P_{i-1}, P_i is dt/12 (-P_{i-2} + 8 P_{i-1} + 5 P_i).
+       At the first interval only two points are known and W(t_1) is written with the trapezoidal rule; at the
+       second one W(t_1) is replaced by the integral of the quadratic through P_0, P_1, P_2 */
+    double dt = time__ - last_time_;
+    if( num_energy_steps_ == 0 ) {
         initial_energy_ = energy;
         work_ = 0.;
     }
-    else {
-        work_ += 0.5 * (last_power_ + power) * (time__ - last_time_);
+    else if( num_energy_steps_ == 1 ) {
+        work_ += 0.5 * (last_power_ + power) * dt;
     }
+    else if( num_energy_steps_ == 2 ) {
+        work_ = dt / 12. * (5. * second_last_power_ + 8. * last_power_ - power)
+              + dt / 12. * (-second_last_power_ + 8. * last_power_ + 5. * power);
+    }
+    else {
+        work_ += dt / 12. * (-second_last_power_ + 8. * last_power_ + 5. * power);
+    }
+    ++num_energy_steps_;
+    second_last_power_ = last_power_;
     last_power_ = power;
     last_time_ = time__;
+
+    if( lattice ) {
+        double residual = energy - initial_energy_ - work_;
+        for( int i = 0; i < 4; ++i ) {
+            integrate_3pt(power_integral_[i], power_second_last_[i], power_last_[i], powers[i], dt, num_energy_steps_ - 1);
+            power_second_last_[i] = power_last_[i];
+            power_last_[i] = powers[i];
+            residual -= power_integral_[i];
+        }
+        os_energy_terms_ << std::setw(22) << std::setprecision(12) << time__;
+        for( auto value : terms ) {
+            os_energy_terms_ << std::setw(22) << std::setprecision(12) << value;
+        }
+        for( auto value : { energy - initial_energy_, work_ } ) {
+            os_energy_terms_ << std::setw(22) << std::setprecision(12) << value;
+        }
+        for( auto* a : { &powers, &power_integral_ } ) {
+            for( auto value : *a ) {
+                os_energy_terms_ << std::setw(22) << std::setprecision(12) << value;
+            }
+        }
+        os_energy_terms_ << std::setw(22) << std::setprecision(12) << residual << std::endl;
+    }
 
     for (auto x : { time__, energy_band, energy_mf, energy - initial_energy_, power, work_, energy - initial_energy_ - work_ }) {
         os_energy_ << std::setw(22) << std::setprecision(12) << x;

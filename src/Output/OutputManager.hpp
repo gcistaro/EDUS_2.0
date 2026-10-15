@@ -1,6 +1,7 @@
 #ifndef OUTPUT_MANAGER_HPP
 #define OUTPUT_MANAGER_HPP
 
+#include <array>
 #include <fstream>
 #include "Json/json.hpp"
 #include "GridStructure/GridStructure.hpp"
@@ -45,12 +46,21 @@ class OutputManager
         Operator<std::complex<double>> grad_sigma_;
         /// rho_BO of the static adiabatic reference (with phonons), for the force on the lattice
         Operator<std::complex<double>> rho_bo_;
-        /// Energy balance: work done by the field up to the last print step, and power and time at that step
+        /// Workspaces of EnergyTerms.txt (with phonons): Sigma[rho_ref - rho0] (R and k), and in k the Hamiltonian,
+        /// d(rho)/dt and u.(g_e - g_b)
+        Operator<std::complex<double>> sigma_ref_;
+        BlockMatrix<std::complex<double>> hk_, rhodot_, eta_g_;
+        /// Integrals in time (3-point rule, like W) of the powers that break the energy balance, see EnergyTerms.txt,
+        /// and their values at the last two print steps
+        std::array<double, 4> power_integral_{}, power_last_{}, power_second_last_{};
+        /// Energy balance: work done by the field up to the last print step, power at the last two print steps
+        /// (for the 3-point rule) and time of the last one, number of print steps done
         double work_ = 0.;
         double last_power_ = 0.;
+        double second_last_power_ = 0.;
         double last_time_ = 0.;
+        int num_energy_steps_ = 0;
         double initial_energy_ = 0.;
-        bool first_energy_step_ = true;
 
         std::ofstream os_time_;
         std::ofstream os_laser_;
@@ -61,6 +71,7 @@ class OutputManager
         std::ofstream os_energy_;
         std::ofstream os_lattice_;
         std::ofstream os_modes_;
+        std::ofstream os_energy_terms_;
 
         std::string path(const std::string& filename__) const { return parameters_.directory + "/" + filename__; }
         /// True if at time__ we print (use_sparse__=true: resolution depends on whether a laser is on)

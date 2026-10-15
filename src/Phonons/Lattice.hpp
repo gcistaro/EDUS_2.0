@@ -109,6 +109,16 @@ class Lattice
         double pi_asr_residual_ = 0.;
         /// With g_s: max|g_s - Sigma[chi0 g_s] - g_b| / max|g_b| (see screening_mismatch)
         double screening_mismatch_ = 0.;
+        /// With g_s, for each normal mode of ph.x (u = e/sqrt(M)): norms of A = g_s - g_b (screening contained in g_s)
+        /// and of B = Sigma[chi0 g_s] (screening of the mean field of the model), on-site diagonal part (R = 0, n = m) and
+        /// rest, and the overlaps (see screening_analysis)
+        struct ScreeningMode
+        {
+            double omega = 0.;
+            double A_diag = 0., A_rest = 0., B_diag = 0., B_rest = 0., D_diag = 0., D_rest = 0.;
+            double cos_diag = 0., cos_rest = 0.;
+        };
+        std::vector<ScreeningMode> screening_modes_;
         /// Static reference: electronic force constants Pi (mu, nu), Ha/bohr^2, and static response delta rho_mu per
         /// unit displacement (R components, Wannier gauge), rho_BO = rho0 + u.delta rho
         mdarray<std::complex<double>, 2> Pi_;
@@ -133,6 +143,12 @@ class Lattice
         /// max|g_s - Sigma[chi0 g_s] - g_b| / max|g_b|: 0 if the screening of the model in g_s is the one of its mean field
         double screening_mismatch(const GridStructure& gridstructure__, const parallel::Decomposition& decomposition__,
                                   const electron::System& system__, electron::MeanField* meanfield__) const;
+        /// Decomposition of the mismatch along the normal modes, in the on-site diagonal elements (the only ones that a
+        /// density-density Hartree term produces) and in the rest (off-diagonal on-site and R != 0)
+        std::vector<ScreeningMode> screening_analysis(const GridStructure& gridstructure__,
+                                                      const parallel::Decomposition& decomposition__,
+                                                      const electron::System& system__,
+                                                      electron::MeanField* meanfield__) const;
         /// Static linear response of the electrons of the model to the displacements at q = 0, and the resulting
         /// electronic force constants @f$ \Pi_{\mu\nu} = \frac{s}{N}\sum_k\mathrm{Tr}[g_\mu\,\delta\rho_\nu] @f$ (Ha/bohr^2).
         /// @f$ \delta\rho_\nu @f$ is the self-consistent solution of (Bloch gauge)
@@ -159,13 +175,16 @@ class Lattice
 
         /// Allocates the coordinates and sets the initial displacement (lattice at rest)
         void initial_condition(Coordinates& x__) const;
-        /// H__(R) += sum_mu u_mu g_mu(R), g_s if given, g_b otherwise (the R component of H__ must be up to date)
-        void add_coupling(Operator<std::complex<double>>& H__, const Coordinates& x__) const;
+        /// H__(R) += sum_mu u_mu g_mu(R), g_s if given, g_b otherwise or if bare__ (the R component of H__ must be up to date)
+        void add_coupling(Operator<std::complex<double>>& H__, const Coordinates& x__, const bool bare__ = false) const;
         /// Static reference: R component of rho_bo__ = rho0__ + u.delta rho
         void adiabatic_density(Operator<std::complex<double>>& rho_bo__, const Coordinates& x__,
                                const Operator<std::complex<double>>& rho0__) const;
         /// Static reference: 1/2 u.Pi.u, energy of the adiabatic response (0 with the dynamic reference)
         double adiabatic_energy(const Coordinates& x__) const;
+        /// Static reference: du/dt.Pi_A.u, Pi_A = (Pi - Pi^T)/2, power of the non-conservative part of the force -Pi u
+        /// (not zero only with g_s, Pi = s/N Tr[g_b chi0 g_s]); 0 with the dynamic reference
+        double antisymmetric_power(const Coordinates& x__) const;
         /// Force on each mode at q = 0 (Ha/bohr) with g_b, from the R components of rho__ and of the reference
         /// reference__ (rho0, or rho_BO for the force used in the dynamics):
         /// @f$ F_\mu = s\sum_{\mathbf R}\sum_{mn} g_{\mu,mn}(\mathbf R)\,(\rho-\rho_{\rm ref})_{mn}(\mathbf R)^* @f$
@@ -187,6 +206,8 @@ class Lattice
         bool static_reference() const { return parameters_.adiabatic_reference == AdiabaticReference::static_response; }
         /// True if the electrons feel g_s and Sigma[rho - rho_BO]
         bool screened() const { return parameters_.screened(); }
+        /// True if rho_BO (dynamic, with g_s) is propagated with u.g_b + Sigma[rho_BO - rho0]
+        bool adiabatic_bare() const { return parameters_.screened() && dynamic_reference() && parameters_.adiabatic_bare; }
         int num_modes() const { return num_modes_; }
         int num_qpoints() const { return int(parameters_.qpoints.size()); }
         const std::vector<double>& mass() const { return mass_; }

@@ -338,6 +338,15 @@
                     ],
                     "title": "Adiabatic (Born-Oppenheimer) density matrix rho_BO(u): the force constants of ph.x already contain the static screening of the atoms by the electrons, so only rho - rho_BO pushes the atoms. static (recommended) = rho0 + static linear response of the electrons of the model to u, computed at the beginning (keeps the non-adiabatic correction Pi(omega) - Pi(0)); dynamic = density matrix propagated with the same displacements and no laser (removes also the non-adiabatic correction of the ground state)"
                 },
+                "adiabatic_coupling": {
+                    "type": "string",
+                    "default": "screened",
+                    "enum": [
+                        "screened",
+                        "bare"
+                    ],
+                    "title": "Only with epw_directory_screened: how rho_BO is built. Dynamic reference, Hamiltonian of the propagated rho_BO: screened = H0 + u.g_s (static screening already in g_s, no mean field); bare = H0 + u.g_b + Sigma[rho_BO - rho0], the Born-Oppenheimer electrons of the model with their own mean field. Static reference: screened = rho0 + u.chi0 g_s; bare = rho0 + u.chi(0) g_b, static response of the bare model with its mean field. The electrons always feel u.g_s + Sigma[rho - rho_BO] and the atoms the force of g_b"
+                },
                 "initial_displacement": {
                     "type": "array",
                     "default": [],

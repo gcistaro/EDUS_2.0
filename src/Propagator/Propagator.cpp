@@ -301,6 +301,10 @@ void Propagator::build_hamiltonian(const double& time__, const Operator<std::com
         if( with_field__ ) {
             meanfield_->self_energy(H_, DM, *reference_);
         }
+        /* rho_BO of the bare model: Sigma[rho_BO - rho0] with u.g_b */
+        else if( lattice_->adiabatic_bare() ) {
+            meanfield_->self_energy(H_, DM, system_->DM0());
+        }
     }
     else {
         meanfield_->self_energy(H_, DM, system_->DM0());
@@ -309,7 +313,7 @@ void Propagator::build_hamiltonian(const double& time__, const Operator<std::com
     /* lattice: H_ += sum_mu u_mu g_mu, and force of the (physical) density matrix on the lattice, with respect to
        rho_BO. rho_BO (no field) exerts no force of its own */
     if( lattice__ ) {
-        lattice_->add_coupling(H_, *lattice__);
+        lattice_->add_coupling(H_, *lattice__, !with_field__ && lattice_->adiabatic_bare());
         if( with_field__ ) {
             force_ = lattice_->force(DM, *reference_);
         }

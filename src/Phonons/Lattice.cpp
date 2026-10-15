@@ -85,6 +85,7 @@ void Lattice::initialize(const PhononParameters& parameters__, const GridStructu
     }
     if( parameters_.screened() ) {
         screening_mismatch_ = screening_mismatch(gridstructure__, decomposition__, system__, meanfield__);
+        screening_modes_ = screening_analysis(gridstructure__, decomposition__, system__, meanfield__);
     }
 
     /* 3. static reference. K of ph.x is Born-Oppenheimer: K_BO = K0 + Pi, with Pi the static screening of the lattice
@@ -495,6 +496,97 @@ double Lattice::screening_mismatch(const GridStructure& gridstructure__, const p
     return scale > 0. ? difference / scale : 0.;
 }
 
+/// @brief Screening of g_s compared with the one of the mean field, along each normal mode lambda of ph.x.
+///
+/// With the displacement u_mu = e(mu, lambda)/sqrt(M_mu) of the mode, A = sum_mu u_mu (g_s - g_b)_mu is the screening
+/// already in the coupling of EPW and B = sum_mu u_mu Sigma[chi0 g_s,mu] the one the mean field of the model gives
+/// (consistency means A = B). Each matrix X(R)_nm is split into its on-site diagonal elements X(R=0)_nn (the only ones
+/// produced by a density-density Hartree term) and the rest, with |X|^2 = sum_R sum_nm |X(R)_nm|^2 (Parseval:
+/// 1/N sum_k |X(k)|^2). For each part the recap shows |A|, |B|/|A|, |A - B|/|A| and cos(A, B) = Re<A, B>/(|A||B|).
+std::vector<Lattice::ScreeningMode> Lattice::screening_analysis(const GridStructure& gridstructure__,
+                                                                const parallel::Decomposition& decomposition__,
+                                                                const electron::System& system__,
+                                                                electron::MeanField* meanfield__) const
+{
+    PROFILE("phonon::Lattice::screening_analysis");
+    ModelResponse response(gridstructure__, decomposition__, system__, meanfield__, num_bands_);
+    const int nk_local = response.nk_local();
+    BlockMatrix<std::complex<double>> drho(k, nk_local, num_bands_, num_bands_);
+    BlockMatrix<std::complex<double>> sigma(k, nk_local, num_bands_, num_bands_);
+    std::vector<BlockMatrix<std::complex<double>>> A_mu, B_mu;
+    for( int mu = 0; mu < num_modes_; ++mu ) {
+        auto& gs = coupling_screened_[mu].get_Operator(Space::k);
+        auto& gb = coupling_[mu].get_Operator(Space::k);
+        response.chi0(drho, gs);
+        response.self_energy(sigma, drho);
+        A_mu.emplace_back(k, nk_local, num_bands_, num_bands_);
+        B_mu.emplace_back(k, nk_local, num_bands_, num_bands_);
+        for( int i = 0; i < sigma.get_TotalSize(); ++i ) {
+            *(A_mu[mu].begin() + i) = *(gs.begin() + i) - *(gb.begin() + i);
+            *(B_mu[mu].begin() + i) = *(sigma.begin() + i);
+        }
+    }
+    double nk = nk_local;
+#ifdef EDUS_MPI
+    MPI_Allreduce(MPI_IN_PLACE, &nk, 1, MPI_DOUBLE, MPI_SUM, comm_->communicator());
+#endif
+    std::vector<ScreeningMode> result;
+    std::vector<std::complex<double>> A(nk_local * num_bands_ * num_bands_), B(A.size());
+    for( int lambda = 0; lambda < num_modes_; ++lambda ) {
+        if( std::abs(frequencies_input_[lambda]) * 219474.6313705 < 10. ) {
+            continue;
+        }
+        std::fill(A.begin(), A.end(), 0.);
+        std::fill(B.begin(), B.end(), 0.);
+        for( int mu = 0; mu < num_modes_; ++mu ) {
+            double u = mode_vectors_(mu, lambda) / std::sqrt(mass_[mu]);
+            for( size_t i = 0; i < A.size(); ++i ) {
+                A[i] += u * *(A_mu[mu].begin() + i);
+                B[i] += u * *(B_mu[mu].begin() + i);
+            }
+        }
+        /* totals <X, Y> = 1/N sum_k sum_nm conj(X) Y, and the R = 0 diagonal elements X_nn(R=0) = 1/N sum_k X_nn(k) */
+        std::array<std::complex<double>, 3> total{0., 0., 0.};  // <A,A>, <B,B>, <A,B>
+        std::vector<std::complex<double>> diag(2 * num_bands_, 0.);
+        for( int ik = 0; ik < nk_local; ++ik ) {
+            for( int n = 0; n < num_bands_; ++n ) {
+                for( int m = 0; m < num_bands_; ++m ) {
+                    size_t i = (size_t(ik) * num_bands_ + n) * num_bands_ + m;
+                    total[0] += std::norm(A[i]);
+                    total[1] += std::norm(B[i]);
+                    total[2] += std::conj(A[i]) * B[i];
+                }
+                diag[n] += A[(size_t(ik) * num_bands_ + n) * num_bands_ + n];
+                diag[num_bands_ + n] += B[(size_t(ik) * num_bands_ + n) * num_bands_ + n];
+            }
+        }
+#ifdef EDUS_MPI
+        MPI_Allreduce(MPI_IN_PLACE, total.data(), 3, MPI_CXX_DOUBLE_COMPLEX, MPI_SUM, comm_->communicator());
+        MPI_Allreduce(MPI_IN_PLACE, diag.data(), int(diag.size()), MPI_CXX_DOUBLE_COMPLEX, MPI_SUM, comm_->communicator());
+#endif
+        double AA_d = 0., BB_d = 0., AB_d = 0., DD_d = 0.;
+        for( int n = 0; n < num_bands_; ++n ) {
+            auto a = diag[n] / nk, b = diag[num_bands_ + n] / nk;
+            AA_d += std::norm(a);
+            BB_d += std::norm(b);
+            AB_d += std::real(std::conj(a) * b);
+            DD_d += std::norm(a - b);
+        }
+        double AA = total[0].real() / nk, BB = total[1].real() / nk, AB = total[2].real() / nk;
+        double AA_r = std::max(AA - AA_d, 0.), BB_r = std::max(BB - BB_d, 0.), AB_r = AB - AB_d;
+        double DD_r = std::max(AA_r + BB_r - 2. * AB_r, 0.);
+        ScreeningMode s;
+        s.omega = frequencies_input_[lambda];
+        s.A_diag = std::sqrt(AA_d); s.A_rest = std::sqrt(AA_r);
+        s.B_diag = std::sqrt(BB_d); s.B_rest = std::sqrt(BB_r);
+        s.D_diag = std::sqrt(DD_d); s.D_rest = std::sqrt(DD_r);
+        s.cos_diag = (AA_d > 0. && BB_d > 0.) ? AB_d / std::sqrt(AA_d * BB_d) : 0.;
+        s.cos_rest = (AA_r > 0. && BB_r > 0.) ? AB_r / std::sqrt(AA_r * BB_r) : 0.;
+        result.push_back(s);
+    }
+    return result;
+}
+
 /// @brief Static linear response of the electrons to a displacement of the lattice, and the electronic force
 /// constants Pi that it gives.
 ///
@@ -504,8 +596,10 @@ double Lattice::screening_mismatch(const GridStructure& gridstructure__, const p
 /// with f the occupations, e the band energies and V the total perturbation felt by the electrons. With the mean
 /// field, delta rho changes the self energy, which is part of the perturbation: V = g_nu + Sigma[delta rho].
 /// The equation delta rho = chi0 (g_nu + Sigma[delta rho]) is solved as follows:
-/// - with the screened coupling of EPW the electrons feel g_s + Sigma[rho - rho_BO], and in the static limit
-///   Sigma[rho_BO - rho_BO] = 0: V = g_s and delta rho = chi0 g_s, in a single step;
+/// - with the screened coupling of EPW and adiabatic_coupling = screened the electrons feel g_s + Sigma[rho - rho_BO],
+///   and in the static limit Sigma[rho_BO - rho_BO] = 0: V = g_s and delta rho = chi0 g_s, in a single step;
+/// - with adiabatic_coupling = bare rho_BO is the Born-Oppenheimer density of the bare model, delta rho = chi(0) g_b,
+///   the same response of the dynamic reference with adiabatic_coupling = bare at zero frequency (Anderson mixing below);
 /// - without the mean field a single step, V = g_nu, is exact;
 /// - otherwise by Anderson mixing of the fixed point delta rho -> chi0 (g_nu + Sigma[delta rho]). The problem is linear,
 ///   and Anderson mixing is then close to GMRES: it converges also when the plain iteration does not (strong mean field).
@@ -551,7 +645,7 @@ mdarray<std::complex<double>, 2> Lattice::static_response(const GridStructure& g
         auto& g = coupling_[nu].get_Operator(Space::k);
         int iteration = 0;
         double error = 0.;
-        if( parameters_.screened() ) {
+        if( parameters_.screened() && !parameters_.adiabatic_bare ) {
             /* the static screening is already in g_s: V = g_s */
             response.chi0(drho, coupling_screened_[nu].get_Operator(Space::k));
             iteration = 1;
@@ -759,7 +853,7 @@ void Lattice::initial_condition(Coordinates& x__) const
 /// given, g_b otherwise.
 /// It is called on the R component of the Hamiltonian, after H0 + E.r and the self energy and before the Peierls
 /// phase, like any other lattice-periodic term of the Hamiltonian.
-void Lattice::add_coupling(Operator<std::complex<double>>& H__, const Coordinates& x__) const
+void Lattice::add_coupling(Operator<std::complex<double>>& H__, const Coordinates& x__, const bool bare__) const
 {
     auto& HR = H__.get_Operator(R);
     for( int mu = 0; mu < num_modes_; ++mu ) {
@@ -768,7 +862,7 @@ void Lattice::add_coupling(Operator<std::complex<double>>& H__, const Coordinate
         if( u == 0. ) {
             continue;
         }
-        auto& gR = electronic_coupling(mu).get_Operator(R);
+        auto& gR = ( bare__ ? coupling(mu) : electronic_coupling(mu) ).get_Operator(R);
         #pragma omp parallel for schedule(static)
         for( int iR = 0; iR < HR.get_nblocks(); ++iR ) {
             for( int i = 0; i < num_bands_; ++i ) {
@@ -820,6 +914,21 @@ double Lattice::adiabatic_energy(const Coordinates& x__) const
         }
     }
     return energy;
+}
+
+/// @brief Power of the antisymmetric part of Pi, du/dt.Pi_A.u (0 with the dynamic reference)
+double Lattice::antisymmetric_power(const Coordinates& x__) const
+{
+    if( Pi_.get_TotalSize() == 0 ) {
+        return 0.;
+    }
+    double power = 0.;
+    for( int mu = 0; mu < num_modes_; ++mu ) {
+        for( int nu = 0; nu < num_modes_; ++nu ) {
+            power += x__.velocity(0, mu).real() * 0.5 * (Pi_(mu, nu) - Pi_(nu, mu)).real() * x__.displacement(0, nu).real();
+        }
+    }
+    return power;
 }
 
 /// @brief Force of the electrons on the lattice, F_mu = s/N sum_k Tr[g_mu(k) (rho(k) - rho_ref(k))], with g_b.
@@ -916,6 +1025,13 @@ void Lattice::print_recap() const
                   parameters_.screened() ? "u.g_s + Sigma[rho - rho_BO]" : "u.g_b + Sigma[rho - rho0]");
     if( parameters_.screened() ) {
         output::print("|g_s-Sigma[chi0 g_s]-g_b|*", screening_mismatch_, " (max, relative to max|g_b|)");
+        output::print("Screening along the modes: A = g_s - g_b (in EPW), B = Sigma[chi0 g_s] (mean field of the model)");
+        output::print("  on-site diagonal (R = 0, n = m) | rest (off-diagonal and R != 0): |A| (a.u., u = e/sqrt(M)), |B|/|A|, |A-B|/|A|, cos(A,B)");
+        for( auto& m : screening_modes_ ) {
+            auto rel = [](double x, double y) { return y > 0. ? x / y : 0.; };
+            output::print("   ", m.omega * 219474.6313705, " cm-1 | diag", m.A_diag, rel(m.B_diag, m.A_diag), rel(m.D_diag, m.A_diag),
+                          m.cos_diag, " | rest", m.A_rest, rel(m.B_rest, m.A_rest), rel(m.D_rest, m.A_rest), m.cos_rest);
+        }
     }
     output::print("Coupling scale           *", parameters_.coupling_scale);
     output::print("Damping time             *", parameters_.damping_time, " a.u.",
@@ -926,6 +1042,14 @@ void Lattice::print_recap() const
         output::print("Translation in g removed *", translation_coupling_, " (max|sum_atom g| / max|g|)");
     }
     output::print("Adiabatic reference      *", std::string(8, ' '), to_string(parameters_.adiabatic_reference));
+    if( parameters_.screened() && dynamic_reference() ) {
+        output::print("rho_BO propagated with   *", std::string(8, ' '),
+                      ( adiabatic_bare() ? "u.g_b + Sigma[rho_BO - rho0]" : "u.g_s (no mean field)" ));
+    }
+    if( parameters_.screened() && static_reference() ) {
+        output::print("rho_BO - rho0 (static)   *", std::string(8, ' '),
+                      ( parameters_.adiabatic_bare ? "u.chi(0) g_b (bare model)" : "u.chi0 g_s" ));
+    }
     if( static_reference() ) {
         output::print("Static response: iter.   *", response_iterations_);
         output::print("Static response: resid.  *", response_error_);

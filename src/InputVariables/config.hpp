@@ -502,6 +502,7 @@ class config_t
         double coupling_scale() const { return dict_.at("coupling_scale").get<double>(); }
         bool acoustic_sum_rule() const { return dict_.at("acoustic_sum_rule").get<bool>(); }
         std::string adiabatic_reference() const { return dict_.at("adiabatic_reference").get<std::string>(); }
+        std::string adiabatic_coupling() const { return dict_.at("adiabatic_coupling").get<std::string>(); }
         std::vector<double> initial_displacement() const { return dict_.at("initial_displacement").get<std::vector<double>>(); }
         void initial_displacement(std::vector<double> displacement__) { dict_["initial_displacement"] = displacement__; }
         std::string initial_displacement_units() const { return dict_.at("initial_displacement_units").get<std::string>(); }
