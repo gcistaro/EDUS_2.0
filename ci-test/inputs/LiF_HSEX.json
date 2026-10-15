@@ -40,5 +40,8 @@
         }
     ],
     "solver": "AB",
-    "order": 4
+    "order": 4,
+    "toprint": {
+        "DM_R": "true"
+    }
 }

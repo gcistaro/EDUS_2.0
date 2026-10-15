@@ -17,6 +17,8 @@ struct OutputParameters
     bool print_DMk_bloch = false;
     bool print_SelfEnergy = false;
     bool print_fullH = false;
+    /// Equilibrium density matrix in real space, Output/DM<rank>.txt
+    bool print_DM_R = false;
     /// Directory where all the output files are written
     std::string directory = "Output";
 };
@@ -40,6 +42,7 @@ public:
         p.print_DMk_bloch = toprint("DMk_bloch");
         p.print_SelfEnergy = toprint("SelfEnergy");
         p.print_fullH = toprint("fullH");
+        p.print_DM_R = toprint("DM_R");
         return p;
     }
 };
