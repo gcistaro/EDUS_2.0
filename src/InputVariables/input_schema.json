@@ -217,7 +217,8 @@
                 "DMk_wannier" : "false",
                 "DMk_bloch"   : "false",
                 "fullH"       : "false",
-                "SelfEnergy"  : "false"
+                "SelfEnergy"  : "false",
+                "DM_R"        : "false"
             },
             "items" : {
                 "DMk_wannier" : {
@@ -239,6 +240,11 @@
                     "type"    : "string",
                     "default" : "false",
                     "title"   : "true if you want to print the self energy in k, wannier gauge"
+                },
+                "DM_R"        : {
+                    "type"    : "string",
+                    "default" : "false",
+                    "title"   : "true if you want to print the equilibrium DM in R (Output/DM<rank>.txt, txt)"
                 }
             }
         },
