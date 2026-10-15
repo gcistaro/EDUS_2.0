@@ -1,6 +1,8 @@
 #include <algorithm>
 #include <cmath>
 #include <sstream>
+#include <tuple>
+#include <utility>
 #include "ConvertUnits.hpp"
 #include "GlobalFunctions.hpp"
 #include "Geometry/Matrix.hpp"
@@ -102,6 +104,37 @@ void Lattice::initialize(const PhononParameters& parameters__, const GridStructu
             }
         }
         frequencies_bare_ = frequencies(K0);
+        /* adiabatic frequencies of the dynamics with the mismatch of g_s (only for the recap): K_BO + C, symmetric part,
+           and the relative size of the antisymmetric part of C */
+        if( mismatch_force_constants_.get_TotalSize() > 0 ) {
+            auto& Cm = mismatch_force_constants_;
+            mdarray<std::complex<double>, 2> Keff({num_modes_, num_modes_});
+            double sym = 0., anti = 0.;
+            for( int mu = 0; mu < num_modes_; ++mu ) {
+                for( int nu = 0; nu < num_modes_; ++nu ) {
+                    auto s_part = 0.5 * (Cm(mu, nu) + std::conj(Cm(nu, mu)));
+                    auto a_part = 0.5 * (Cm(mu, nu) - std::conj(Cm(nu, mu)));
+                    Keff(mu, nu) = K(mu, nu) + s_part;
+                    sym = std::max(sym, std::abs(s_part));
+                    anti = std::max(anti, std::abs(a_part));
+                }
+            }
+            /* projected on the normal modes of ph.x, omega_lambda^2 = e_lambda.M^-1/2 (K_BO + C) M^-1/2.e_lambda, so that
+               each value stays attached to its mode (the eigenvalues of K_BO + C would be sorted and could swap modes;
+               a non degenerate mode like A1' does not mix with the others by symmetry) */
+            frequencies_mismatch_.assign(num_modes_, 0.);
+            for( int lambda = 0; lambda < num_modes_; ++lambda ) {
+                double w2 = 0.;
+                for( int mu = 0; mu < num_modes_; ++mu ) {
+                    for( int nu = 0; nu < num_modes_; ++nu ) {
+                        w2 += mode_vectors_(mu, lambda) * Keff(mu, nu).real() / std::sqrt(mass_[mu] * mass_[nu])
+                              * mode_vectors_(nu, lambda);
+                    }
+                }
+                frequencies_mismatch_[lambda] = (w2 >= 0. ? 1. : -1.) * std::sqrt(std::abs(w2));
+            }
+            mismatch_antisymmetry_ = sym > 0. ? anti / sym : 0.;
+        }
     }
 
     /* one matrix per q point; for now only Gamma (index 0) */
@@ -637,8 +670,82 @@ mdarray<std::complex<double>, 2> Lattice::static_response(const GridStructure& g
 
     mdarray<std::complex<double>, 2> Pi({num_modes_, num_modes_});
     Pi.fill(0.);
+    /* adiabatic force constants of the mismatch (only with g_s and adiabatic_coupling = bare, see below) */
+    mdarray<std::complex<double>, 2> C({num_modes_, num_modes_});
+    C.fill(0.);
+    BlockMatrix<std::complex<double>> V0(k, nk_local, num_bands_, num_bands_);
+    BlockMatrix<std::complex<double>> drho_e(k, nk_local, num_bands_, num_bands_);
     response_iterations_ = 0;
     response_error_ = 0.;
+    /* Anderson mixing of the fixed point x -> chi0 (V0 + Sigma[x]), starting from x = 0: the static response of the
+       electrons of the model to the perturbation V0, screened by their own mean field. Returns the iterations and
+       the final relative residual */
+    auto anderson = [&](const BlockMatrix<std::complex<double>>& V0__, BlockMatrix<std::complex<double>>& x__,
+                        const std::string& what__) {
+        int iteration = 0;
+        double error = 0.;
+        x__.fill(0.);
+        dx.clear();
+        dr.clear();
+        while( true ) {
+            ++iteration;
+            /* F(x) = chi0 (V0 + Sigma[x]) */
+            response.self_energy(sigma, x__);
+            for( int i = 0; i < V.get_TotalSize(); ++i ) {
+                *(V.begin() + i) = *(V0__.begin() + i) + *(sigma.begin() + i);
+            }
+            response.chi0(map, V);
+            for( int i = 0; i < residual.get_TotalSize(); ++i ) {
+                *(residual.begin() + i) = *(map.begin() + i) - *(x__.begin() + i);
+            }
+            /* relative residual max|F(x) - x| / max|F(x)|, over all the ranks */
+            double scale = max_abs(map, nullptr, *comm_);
+            error = scale > 0. ? max_abs(residual, nullptr, *comm_) / scale : 0.;
+            if( error < parameters_.response_tolerance ) {
+                std::copy(map.begin(), map.end(), x__.begin());
+                break;
+            }
+            if( iteration >= parameters_.response_max_iterations ) {
+                std::stringstream ss;
+                ss << "The static response of the electrons (" << what__ << ") did not converge: "
+                   << "relative residual " << error << " after " << iteration << " iterations\n";
+                throw std::runtime_error(ss.str());
+            }
+            /* update the history with the last step */
+            if( iteration > 1 ) {
+                if( int(dx.size()) == history ) {
+                    dx.erase(dx.begin());
+                    dr.erase(dr.begin());
+                }
+                dx.emplace_back(k, nk_local, num_bands_, num_bands_);
+                dr.emplace_back(k, nk_local, num_bands_, num_bands_);
+                for( int i = 0; i < x__.get_TotalSize(); ++i ) {
+                    *(dx.back().begin() + i) = *(x__.begin() + i) - *(drho_last.begin() + i);
+                    *(dr.back().begin() + i) = *(residual.begin() + i) - *(residual_last.begin() + i);
+                }
+            }
+            std::copy(x__.begin(), x__.end(), drho_last.begin());
+            std::copy(residual.begin(), residual.end(), residual_last.begin());
+            /* gamma = argmin |r - sum_j gamma_j dr_j|, then x <- x + r - sum_j gamma_j (dx_j + dr_j) */
+            const int n = int(dr.size());
+            std::vector<std::complex<double>> A(n * n), b(n);
+            for( int i = 0; i < n; ++i ) {
+                for( int j = 0; j < n; ++j ) {
+                    A[i * n + j] = dot(dr[i], dr[j], *comm_);
+                }
+                b[i] = dot(dr[i], residual, *comm_);
+            }
+            auto gamma = solve_small(A, b);
+            for( int i = 0; i < x__.get_TotalSize(); ++i ) {
+                auto step = *(residual.begin() + i);
+                for( int j = 0; j < n; ++j ) {
+                    step -= gamma[j] * (*(dx[j].begin() + i) + *(dr[j].begin() + i));
+                }
+                *(x__.begin() + i) += step;
+            }
+        }
+        return std::make_pair(iteration, error);
+    };
     /* one problem for each displacement nu (the response is linear: displacements are independent) */
     response_.resize(num_modes_);
     for( int nu = 0; nu < num_modes_; ++nu ) {
@@ -656,67 +763,9 @@ mdarray<std::complex<double>, 2> Lattice::static_response(const GridStructure& g
             iteration = 1;
         }
         else {
-            /* Anderson mixing, starting from delta rho = 0 */
-            drho.fill(0.);
-            dx.clear();
-            dr.clear();
-            while( true ) {
-                ++iteration;
-                /* F(x) = chi0 (g + Sigma[x]) */
-                response.self_energy(sigma, drho);
-                for( int i = 0; i < V.get_TotalSize(); ++i ) {
-                    *(V.begin() + i) = *(g.begin() + i) + *(sigma.begin() + i);
-                }
-                response.chi0(map, V);
-                for( int i = 0; i < residual.get_TotalSize(); ++i ) {
-                    *(residual.begin() + i) = *(map.begin() + i) - *(drho.begin() + i);
-                }
-                /* relative residual max|F(x) - x| / max|F(x)|, over all the ranks */
-                double scale = max_abs(map, nullptr, *comm_);
-                error = scale > 0. ? max_abs(residual, nullptr, *comm_) / scale : 0.;
-                if( error < parameters_.response_tolerance ) {
-                    std::copy(map.begin(), map.end(), drho.begin());
-                    break;
-                }
-                if( iteration >= parameters_.response_max_iterations ) {
-                    std::stringstream ss;
-                    ss << "The static response of the electrons to the displacement " << nu << " did not converge: "
-                       << "relative residual " << error << " after " << iteration << " iterations\n";
-                    throw std::runtime_error(ss.str());
-                }
-                /* update the history with the last step */
-                if( iteration > 1 ) {
-                    if( int(dx.size()) == history ) {
-                        dx.erase(dx.begin());
-                        dr.erase(dr.begin());
-                    }
-                    dx.emplace_back(k, nk_local, num_bands_, num_bands_);
-                    dr.emplace_back(k, nk_local, num_bands_, num_bands_);
-                    for( int i = 0; i < drho.get_TotalSize(); ++i ) {
-                        *(dx.back().begin() + i) = *(drho.begin() + i) - *(drho_last.begin() + i);
-                        *(dr.back().begin() + i) = *(residual.begin() + i) - *(residual_last.begin() + i);
-                    }
-                }
-                std::copy(drho.begin(), drho.end(), drho_last.begin());
-                std::copy(residual.begin(), residual.end(), residual_last.begin());
-                /* gamma = argmin |r - sum_j gamma_j dr_j|, then x <- x + r - sum_j gamma_j (dx_j + dr_j) */
-                const int n = int(dr.size());
-                std::vector<std::complex<double>> A(n * n), b(n);
-                for( int i = 0; i < n; ++i ) {
-                    for( int j = 0; j < n; ++j ) {
-                        A[i * n + j] = dot(dr[i], dr[j], *comm_);
-                    }
-                    b[i] = dot(dr[i], residual, *comm_);
-                }
-                auto gamma = solve_small(A, b);
-                for( int i = 0; i < drho.get_TotalSize(); ++i ) {
-                    auto step = *(residual.begin() + i);
-                    for( int j = 0; j < n; ++j ) {
-                        step -= gamma[j] * (*(dx[j].begin() + i) + *(dr[j].begin() + i));
-                    }
-                    *(drho.begin() + i) += step;
-                }
-            }
+            std::stringstream what;
+            what << "displacement " << nu;
+            std::tie(iteration, error) = anderson(g, drho, what.str());
         }
         /* delta rho_nu in R, where rho_BO is built during the propagation */
         std::stringstream tag;
@@ -744,9 +793,37 @@ mdarray<std::complex<double>, 2> Lattice::static_response(const GridStructure& g
                 }
             }
         }
+
+        /* with g_s and rho_BO = rho0 + u.chi(0) g_b: static response of the propagated electrons, which feel
+           u.g_s + Sigma[rho - rho_BO], i.e. V0 = g_s - Sigma[delta rho_BO] screened by Sigma[delta rho_e]. The difference
+           delta rho_e - delta rho_BO = chi(0) (g_s - g_b - Sigma[chi(0) g_b]) pushes the atoms also in the adiabatic limit:
+           C(mu, nu) = s/N sum_k Tr[g_b,mu (delta rho_e,nu - delta rho_BO,nu)], K_eff = K_BO + C */
+        if( parameters_.screened() && parameters_.adiabatic_bare ) {
+            response.self_energy(sigma, drho);
+            auto& gs = coupling_screened_[nu].get_Operator(Space::k);
+            for( int i = 0; i < V0.get_TotalSize(); ++i ) {
+                *(V0.begin() + i) = *(gs.begin() + i) - *(sigma.begin() + i);
+            }
+            std::stringstream what;
+            what << "electrons with g_s, displacement " << nu;
+            auto result = anderson(V0, drho_e, what.str());
+            response_iterations_ = std::max(response_iterations_, result.first);
+            response_error_ = std::max(response_error_, result.second);
+            for( int mu = 0; mu < num_modes_; ++mu ) {
+                auto& gmu = coupling_[mu].get_Operator(Space::k);
+                for( int ik = 0; ik < nk_local; ++ik ) {
+                    for( int n = 0; n < num_bands_; ++n ) {
+                        for( int m = 0; m < num_bands_; ++m ) {
+                            C(mu, nu) += gmu(ik, n, m) * (drho_e(ik, m, n) - drho(ik, m, n));
+                        }
+                    }
+                }
+            }
+        }
     }
 #ifdef EDUS_MPI
     MPI_Allreduce(MPI_IN_PLACE, Pi.data(), int(Pi.get_TotalSize()), MPI_CXX_DOUBLE_COMPLEX, MPI_SUM, comm_->communicator());
+    MPI_Allreduce(MPI_IN_PLACE, C.data(), int(C.get_TotalSize()), MPI_CXX_DOUBLE_COMPLEX, MPI_SUM, comm_->communicator());
 #endif
     double num_k = coupling_[0].get_Operator(Space::k).get_MeshGrid()->get_TotalSize();
     /* not symmetrized: F[rho - rho0] - Pi u must be exactly the force of rho - rho_BO */
@@ -754,6 +831,14 @@ mdarray<std::complex<double>, 2> Lattice::static_response(const GridStructure& g
     for( int mu = 0; mu < num_modes_; ++mu ) {
         for( int nu = 0; nu < num_modes_; ++nu ) {
             result(mu, nu) = Pi(mu, nu) * parameters_.spin_degeneracy / num_k;
+        }
+    }
+    if( parameters_.screened() && parameters_.adiabatic_bare ) {
+        mismatch_force_constants_ = mdarray<std::complex<double>, 2>({num_modes_, num_modes_});
+        for( int mu = 0; mu < num_modes_; ++mu ) {
+            for( int nu = 0; nu < num_modes_; ++nu ) {
+                mismatch_force_constants_(mu, nu) = C(mu, nu) * parameters_.spin_degeneracy / num_k;
+            }
         }
     }
     /* acoustic sum rule of Pi, only as a check: with the translation removed from g (acoustic_sum_rule) the sums
@@ -1064,7 +1149,18 @@ void Lattice::print_recap() const
         output::print("WARNING: the Hamiltonian of EPW is not the one of the tight-binding model: the Wannier functions "
                       "(or their order and phases) are different and the coupling is in another gauge");
     }
-    if( static_reference() ) {
+    if( static_reference() && !frequencies_mismatch_.empty() ) {
+        output::print("Frequencies at Gamma (cm^-1) of the dynamical matrix of ph.x (used in the dynamics), of the");
+        output::print("bare lattice K_BO - Pi (without the static response of the electrons of the model), and adiabatic");
+        output::print("frequencies of the dynamics K_BO + C, C = s/N Tr[g_b (chi(0) (g_s - Sigma[delta rho_BO]) - delta rho_BO)]");
+        output::print("(force of the mismatch of g_s with the model; symmetric part projected on the modes of ph.x):");
+        for( int i = 0; i < num_modes_; ++i ) {
+            output::print("   ", i, frequencies_input_[i] * ha_to_cm, frequencies_bare_[i] * ha_to_cm,
+                          frequencies_mismatch_[i] * ha_to_cm);
+        }
+        output::print("C: max|antisym| / max|sym| *", mismatch_antisymmetry_);
+    }
+    else if( static_reference() ) {
         output::print("Frequencies at Gamma (cm^-1) of the dynamical matrix of ph.x (used in the dynamics), and of the");
         output::print("bare lattice K_BO - Pi (without the static response of the electrons of the model):");
         for( int i = 0; i < num_modes_; ++i ) {

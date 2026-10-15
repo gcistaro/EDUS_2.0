@@ -122,6 +122,12 @@ class Lattice
         /// Static reference: electronic force constants Pi (mu, nu), Ha/bohr^2, and static response delta rho_mu per
         /// unit displacement (R components, Wannier gauge), rho_BO = rho0 + u.delta rho
         mdarray<std::complex<double>, 2> Pi_;
+        /// Static reference with g_s and adiabatic_coupling = bare: adiabatic force constants of the mismatch
+        /// C(mu, nu) = s/N sum_k Tr[g_b,mu (delta rho_e,nu - delta rho_BO,nu)] (Ha/bohr^2), the adiabatic frequencies
+        /// of K_BO + C (symmetric part) and max|antisymmetric part| / max|symmetric part| of C. Only for the recap
+        mdarray<std::complex<double>, 2> mismatch_force_constants_;
+        std::vector<double> frequencies_mismatch_;
+        double mismatch_antisymmetry_ = 0.;
         std::vector<Operator<std::complex<double>>> response_;
         /// Bare electron-phonon coupling g_b at q = 0 on the grid of the simulation, one Operator per mode (Ha/bohr)
         std::vector<Operator<std::complex<double>>> coupling_;
