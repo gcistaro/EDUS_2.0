@@ -4,8 +4,6 @@ import numpy as np
 from numpy import fft
 import matplotlib.pyplot as plt
 import sys
-import plotly.graph_objects as go
-import plotly.io as pio
 
 from custom_functions.read import read_observables
 from custom_functions.absorbance import get_absorbance
@@ -21,6 +19,7 @@ parser.add_argument("--resolution", default=0.01, help="Spacing of the frequency
 parser.add_argument("--window", help="Window of energy where we want to plot the absorbance, numbers given in a sequence", nargs=2, type=float)
 parser.add_argument("--folder", default="./Output/", help="Folder where the .txt files are contained")
 parser.add_argument("--version", default="new", help="Version of the EDUS code that you used")
+parser.add_argument("--plot", default=True, action=argparse.BooleanOptionalAction, help="Plot the absorbance (Absorbance.png and window); --no-plot only writes absorbance.txt")
 args=parser.parse_args()
 
 #print in output some infos
@@ -30,6 +29,7 @@ print("resolution (eV):  ", args.resolution)
 print("window (eV)  :    ", args.window)
 print("folder       :    ", args.folder)
 print("version      :    ", args.version)
+print("plot         :    ", args.plot)
 
 
 #read data
@@ -39,18 +39,17 @@ print("done.")
 freq_eV, Absorbance = get_absorbance(t_au, Vt_au, Et_au, args.window, args.smearing, args.resolution)
 
 
-print("Plotting absorbance...", end=" ", flush=True)
-fig, ax = plt.subplots()
-ax.plot(freq_eV, 100*Absorbance,linestyle='dashed', color="black")
-ax.fill_between(freq_eV, 0*freq_eV, 100*Absorbance, facecolor = "green", alpha=0.6)
-ax.set_xlabel("$\\omega$ (eV)")
-ax.set_ylabel("Absorbed light (%)")
 np.savetxt("absorbance.txt", np.array(np.transpose([freq_eV, Absorbance])))
-plt.savefig("Absorbance.png", dpi=200)
-plt.show()
-plt.close()
-print("done.")
-absorbance_fig = go.Figure()
-absorbance_fig.add_trace(go.Scatter(x=freq_eV, y=Absorbance, mode='lines'))
-pio.write_html(absorbance_fig, 'absorbance.html')
+
+if args.plot:
+    print("Plotting absorbance...", end=" ", flush=True)
+    fig, ax = plt.subplots()
+    ax.plot(freq_eV, 100*Absorbance,linestyle='dashed', color="black")
+    ax.fill_between(freq_eV, 0*freq_eV, 100*Absorbance, facecolor = "green", alpha=0.6)
+    ax.set_xlabel("$\\omega$ (eV)")
+    ax.set_ylabel("Absorbed light (%)")
+    plt.savefig("Absorbance.png", dpi=200)
+    plt.show()
+    plt.close()
+    print("done.")
 
