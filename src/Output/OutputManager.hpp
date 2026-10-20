@@ -68,6 +68,7 @@ class OutputManager
         std::ofstream os_pop_;
         std::ofstream os_pop_wannier_;
         std::ofstream os_velocity_;
+        std::ofstream os_velocity_sigma_;
         std::ofstream os_energy_;
         std::ofstream os_lattice_;
         std::ofstream os_modes_;

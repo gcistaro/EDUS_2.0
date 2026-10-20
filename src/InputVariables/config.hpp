@@ -294,6 +294,17 @@ class config_t
         dict_["/printresolution"_json_pointer] = printresolution__;
     }
     /// Time steps needed to print in hdf5 and observables
+    inline auto write_velocity_sigma() const
+    {
+        return dict_.at("/write_velocity_sigma"_json_pointer).get<bool>();
+    }
+    inline void write_velocity_sigma(bool write_velocity_sigma__)
+    {
+        if (dict_.contains("locked")) {
+            throw std::runtime_error(locked_msg);
+        }
+        dict_["/write_velocity_sigma"_json_pointer] = write_velocity_sigma__;
+    }
     inline auto printresolution_h5() const
     {
         return dict_.at("/printresolution_h5"_json_pointer).get<int>();

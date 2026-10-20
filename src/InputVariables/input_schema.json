@@ -178,6 +178,11 @@
             "default": 1,
             "title": "Time steps needed to print in hdf5 and observables"
         },
+        "write_velocity_sigma": {
+            "type": "boolean",
+            "default": false,
+            "title": "If true, Output/Velocity_sigma.txt: the mean-field part of the velocity, (i[Sigma, r] + grad_k Sigma)/V, already included in Velocity.txt"
+        },
         "printresolution_h5": {
             "type": "integer",
             "default": 0,

@@ -64,6 +64,9 @@ void OutputManager::initialize(const OutputParameters& parameters__,
         os_vectorpot_.open(path("Laser_A.txt"));
         os_time_.open(path("Time.txt"));
         os_velocity_.open(path("Velocity.txt"));
+        if( parameters_.write_velocity_sigma ) {
+            os_velocity_sigma_.open(path("Velocity_sigma.txt"));
+        }
         os_energy_.open(path("Energy.txt"));
         auto* lattice = propagator_->lattice();
         os_energy_ << "# Energy balance of the electrons, Hartree per unit cell (one spin channel)\n"
@@ -148,6 +151,7 @@ void OutputManager::print_recap() const
     output::print("toprint-> fullH          *", std::string(8, ' '), to_str(parameters_.print_fullH));
     output::print("toprint-> SelfEnergy     *", std::string(8, ' '), to_str(parameters_.print_SelfEnergy));
     output::print("toprint-> DM_R           *", std::string(8, ' '), to_str(parameters_.print_DM_R));
+    output::print("write_velocity_sigma     *", std::string(8, ' '), to_str(parameters_.write_velocity_sigma));
     output::stars();
 }
 
@@ -517,6 +521,15 @@ void OutputManager::print_velocity_energy(const double& time__)
         os_velocity_ << std::setw(20) << std::setprecision(8) << v[ix].imag();
     }
     os_velocity_ << std::endl;
+    /* mean-field part of the velocity, (i[Sigma, r] + grad_k Sigma)/V, already in Velocity.txt */
+    if( parameters_.write_velocity_sigma ) {
+        for (auto ix : { 0, 1, 2 }) {
+            auto vs = local[3 + ix] / (num_k * volume);
+            os_velocity_sigma_ << std::setw(20) << std::setprecision(8) << vs.real();
+            os_velocity_sigma_ << std::setw(20) << std::setprecision(8) << vs.imag();
+        }
+        os_velocity_sigma_ << std::endl;
+    }
 
     /* energy balance, per unit cell: changes with respect to the equilibrium density matrix rho0 */
     auto field = (*lasers_)(time__).get("Cartesian");

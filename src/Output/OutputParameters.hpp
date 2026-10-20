@@ -21,6 +21,8 @@ struct OutputParameters
     bool print_fullH = false;
     /// Equilibrium density matrix in real space, Output/DM<rank>.txt
     bool print_DM_R = false;
+    /// Mean-field part of the velocity, Output/Velocity_sigma.txt
+    bool write_velocity_sigma = false;
     /// Directory where all the output files are written
     std::string directory = "Output";
 };
@@ -36,6 +38,7 @@ public:
                                                                      : cfg.printresolution_pulse() );
         p.printresolution_h5 = cfg.printresolution_h5();
         p.filledbands = cfg.filledbands();
+        p.write_velocity_sigma = cfg.write_velocity_sigma();
 
         auto toprint = [&cfg](const std::string& key) {
             auto& dict = cfg.dict();
