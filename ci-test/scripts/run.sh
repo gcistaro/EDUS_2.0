@@ -54,7 +54,7 @@ for ref in "${REF_DIR}"/*; do
     case "${file}" in
         absorbance.txt)
             # obtained from Output/Velocity.txt with the postprocessing script
-            python3 "${PROJECT_ROOT}/Postproces/Absorbance.py" "--smearing=0.6" > absorbance.log 2>&1 \
+            python3 "${PROJECT_ROOT}/Postproces/Absorbance.py" "--smearing=0.6" "--no-plot" > absorbance.log 2>&1 \
                 || echo "[ERROR] Absorbance.py failed, see ${OUT_DIR}/absorbance.log"
             out="${file}"
             ;;
