@@ -22,6 +22,7 @@
 
 #include "Constants.hpp"
 #include "LinearAlgebra/gemm.hpp"
+#include "Wannier/FortranBinary.hpp"
 #include "Wannier/WannierWavefunctions.hpp"
 
 namespace {
@@ -113,6 +114,53 @@ WannierWavefunctionsParameters WannierWavefunctionsParameters::from_json(const n
     p.fix_phase   = in__.value("fix_phase", p.fix_phase);
     p.output_dir  = in__.value("output_dir", p.output_dir);
     p.fft_ranks_per_kpoint = in__.value("fft_ranks_per_kpoint", p.fft_ranks_per_kpoint);
+    if (in__.contains("pair_density")) {
+        const auto& pd = in__["pair_density"];
+        auto& out      = p.pair_density;
+        if (pd.is_boolean()) {
+            out.enabled = pd.get<bool>();
+        } else {
+            out.enabled = true;
+            if (pd.contains("q_list")) {
+                out.q_list.clear();
+                for (auto& v : pd["q_list"].get<std::vector<std::vector<double>>>()) {
+                    out.q_list.push_back({v.at(0), v.at(1), v.at(2)});
+                }
+            }
+            if (pd.contains("R_list")) {
+                out.R_list.clear();
+                for (auto& v : pd["R_list"].get<std::vector<std::vector<int>>>()) {
+                    out.R_list.push_back({v.at(0), v.at(1), v.at(2)});
+                }
+            }
+            if (pd.contains("wannier_list")) {
+                out.wannier_list = pd["wannier_list"].get<std::vector<int>>();
+            }
+            if (pd.contains("fft_grid")) {
+                auto v       = pd["fft_grid"].get<std::vector<int>>();
+                out.fft_grid = {v.at(0), v.at(1), v.at(2)};
+            }
+        }
+    }
+    if (in__.contains("coulomb")) {
+        const auto& c = in__["coulomb"];
+        auto& out     = p.coulomb;
+        if (c.is_boolean()) {
+            out.enabled = c.get<bool>();
+        } else {
+            out.enabled      = true;
+            out.em1s_dir     = c.value("em1s_dir", out.em1s_dir);
+            out.yambo_save   = c.value("yambo_save", out.yambo_save);
+            out.ecut_bare    = c.value("ecut_bare", out.ecut_bare);
+            out.include_head = c.value("include_head", out.include_head);
+            out.rim_file     = c.value("rim_file", out.rim_file);
+            out.rim_mode     = c.value("rim_mode", out.rim_mode);
+            out.cutoff       = c.value("cutoff", out.cutoff);
+            if (out.cutoff != "none" && out.cutoff != "slab") {
+                throw std::runtime_error("coulomb/cutoff must be none or slab");
+            }
+        }
+    }
     return p;
 }
 
@@ -145,6 +193,8 @@ WannierWavefunctions::WannierWavefunctions(const WannierWavefunctionsParameters&
     }
 
     map_kpoints();
+    setup_pair_density();
+    choose_fft_grids();
     setup_fft_groups();
     read_atoms();
 
@@ -166,7 +216,6 @@ void WannierWavefunctions::map_kpoints()
     const int nk = gauge_.num_kpts();
     // read the headers of all the QE files (only the first 3 small records)
     std::vector<std::array<double, 3>> kqe;
-    int max_miller[3] = {0, 0, 0};
     for (int ik = 1;; ++ik) {
         auto name = resolve_qe_wfc_file(p_.qe_save_dir, ik, p_.spin);
         if (name.empty()) {
@@ -233,26 +282,122 @@ void WannierWavefunctions::map_kpoints()
             throw std::runtime_error(ss.str());
         }
     }
+}
 
-    // FFT grid: large enough to contain all the G vectors of all the k points (-> no aliasing)
-    if (p_.fft_grid[0] * p_.fft_grid[1] * p_.fft_grid[2] > 0) {
-        fft_grid_ = p_.fft_grid;
-    } else if (p_.real_space) {
+void WannierWavefunctions::setup_pair_density()
+{
+    const auto& pd = p_.pair_density;
+    if (!pd.enabled) {
+        return;
+    }
+    const int nk  = gauge_.num_kpts();
+    const auto& M = gauge_.mp_grid();
+    if (pd.q_list.empty() || pd.R_list.empty()) {
+        throw std::runtime_error("WannierWavefunctions: pair_density needs non-empty q_list and R_list");
+    }
+    if (pd.wannier_list.empty()) {
+        for (int n = 0; n < gauge_.num_wann(); ++n) {
+            pd_wannier_list_.push_back(n);
+        }
+    } else {
+        for (int n : pd.wannier_list) {
+            if (n < 1 || n > gauge_.num_wann()) {
+                throw std::runtime_error("WannierWavefunctions: pair_density wannier_list out of range");
+            }
+            pd_wannier_list_.push_back(n - 1);
+        }
+    }
+
+    pd_ikq_.assign(pd.q_list.size(), std::vector<int>(nk, -1));
+    pd_G_.assign(pd.q_list.size(), std::vector<std::array<int, 3>>(nk, {0, 0, 0}));
+    for (size_t iq = 0; iq < pd.q_list.size(); ++iq) {
+        const auto& q = pd.q_list[iq];
+        for (int x = 0; x < 3; ++x) {
+            if (std::abs(q[x] * M[x] - std::round(q[x] * M[x])) > 1.e-5) {
+                std::stringstream ss;
+                ss << "WannierWavefunctions: pair_density q = (" << q[0] << ", " << q[1] << ", " << q[2]
+                   << ") is not on the k grid (mp_grid " << M[0] << " " << M[1] << " " << M[2] << ")";
+                throw std::runtime_error(ss.str());
+            }
+        }
         for (int ik = 0; ik < nk; ++ik) {
-            auto wf = QEWavefunction::read(resolve_qe_wfc_file(p_.qe_save_dir, qe_index_[ik], p_.spin),
-                                           QEWavefunction::Content::header_and_miller);
-            // for gamma_only files -G is missing, but |m| is symmetric
-            for (int ig = 0; ig < wf.igwx; ++ig) {
+            auto k = gauge_.kpt(ik);
+            for (int jk = 0; jk < nk && pd_ikq_[iq][ik] < 0; ++jk) {
+                auto kj = gauge_.kpt(jk);
+                std::array<int, 3> G;
+                bool match = true;
                 for (int x = 0; x < 3; ++x) {
-                    max_miller[x] = std::max(max_miller[x], std::abs(wf.miller(ig, x) + G0_[ik][x]));
-                    if (wf.gamma_only) {
-                        max_miller[x] = std::max(max_miller[x], std::abs(-wf.miller(ig, x) + G0_[ik][x]));
-                    }
+                    double d = k[x] + q[x] - kj[x];
+                    G[x]     = int(std::lround(d));
+                    match    = match && std::abs(d - G[x]) < 1.e-5;
+                }
+                if (match) {
+                    pd_ikq_[iq][ik] = jk;
+                    pd_G_[iq][ik]   = G;
+                }
+            }
+            if (pd_ikq_[iq][ik] < 0) {
+                std::stringstream ss;
+                ss << "WannierWavefunctions: k + q not found in " << p_.seedname << "_u.mat (k point " << ik + 1
+                   << ", q point " << iq + 1 << "): the k list is not a full Monkhorst-Pack grid?";
+                throw std::runtime_error(ss.str());
+            }
+        }
+    }
+}
+
+void WannierWavefunctions::choose_fft_grids()
+{
+    const int nk      = gauge_.num_kpts();
+    const auto& pd    = p_.pair_density;
+    const bool user_w = p_.fft_grid[0] * p_.fft_grid[1] * p_.fft_grid[2] > 0;
+    const bool user_pd = pd.fft_grid[0] * pd.fft_grid[1] * pd.fft_grid[2] > 0;
+    if (user_w) {
+        fft_grid_ = p_.fft_grid;
+    }
+    if (user_pd) {
+        pd_fft_grid_ = pd.fft_grid;
+    }
+    const bool auto_w  = p_.real_space && !user_w;
+    const bool auto_pd = pd.enabled && !user_pd;
+    if (!auto_w && !auto_pd) {
+        return;
+    }
+
+    // largest |Miller index| of the Bloch functions in the Wannier gauge (Miller indices shifted by G0)
+    int max_miller[3] = {0, 0, 0};
+    for (int ik = 0; ik < nk; ++ik) {
+        auto wf = QEWavefunction::read(resolve_qe_wfc_file(p_.qe_save_dir, qe_index_[ik], p_.spin),
+                                       QEWavefunction::Content::header_and_miller);
+        // for gamma_only files -G is missing, but |m| is symmetric
+        for (int ig = 0; ig < wf.igwx; ++ig) {
+            for (int x = 0; x < 3; ++x) {
+                max_miller[x] = std::max(max_miller[x], std::abs(wf.miller(ig, x) + G0_[ik][x]));
+                if (wf.gamma_only) {
+                    max_miller[x] = std::max(max_miller[x], std::abs(-wf.miller(ig, x) + G0_[ik][x]));
+                }
+            }
+        }
+    }
+    // w_n(r): large enough to contain all the G vectors of all the k points (-> no aliasing)
+    if (auto_w) {
+        for (int x = 0; x < 3; ++x) {
+            fft_grid_[x] = good_fft_size(2 * max_miller[x] + 1);
+        }
+    }
+    // pair densities: u_{k+q} has Miller indices shifted by -G (|m| <= max_miller + |G|), so the product
+    // u*_k u_{k+q} has |m| <= 2 max_miller + |G|: no aliasing in the Fourier components of rho(r)
+    if (auto_pd) {
+        int max_G[3] = {0, 0, 0};
+        for (auto& Gq : pd_G_) {
+            for (auto& G : Gq) {
+                for (int x = 0; x < 3; ++x) {
+                    max_G[x] = std::max(max_G[x], std::abs(G[x]));
                 }
             }
         }
         for (int x = 0; x < 3; ++x) {
-            fft_grid_[x] = good_fft_size(2 * max_miller[x] + 1);
+            pd_fft_grid_[x] = good_fft_size(2 * (2 * max_miller[x] + max_G[x]) + 1);
         }
     }
 }
@@ -549,6 +694,220 @@ void WannierWavefunctions::accumulate_real_space(int ik__, const QEWavefunction&
     fftw_free(buffer);
 }
 
+void WannierWavefunctions::periodic_part(const QEWavefunction& wf__, const std::array<int, 3>& G_shift__,
+                                         const std::array<int, 3>& grid__, const std::vector<int>& bands__,
+                                         std::vector<std::complex<double>>& u__) const
+{
+    const int N1 = grid__[0], N2 = grid__[1], N3 = grid__[2];
+    const size_t Nr = size_t(N1) * N2 * N3;
+    u__.resize(bands__.size() * npol_ * Nr);
+
+    std::vector<size_t> index(wf__.igwx);
+    for (int ig = 0; ig < wf__.igwx; ++ig) {
+        int i1     = positive_mod(wf__.miller(ig, 0) - G_shift__[0], N1);
+        int i2     = positive_mod(wf__.miller(ig, 1) - G_shift__[1], N2);
+        int i3     = positive_mod(wf__.miller(ig, 2) - G_shift__[2], N3);
+        index[ig] = (size_t(i1) * N2 + i2) * N3 + i3;
+    }
+    const double norm = 1. / std::sqrt(omega_);
+
+    auto* buffer = reinterpret_cast<std::complex<double>*>(fftw_malloc(sizeof(fftw_complex) * Nr));
+    auto plan    = fftw_plan_dft_3d(N1, N2, N3, reinterpret_cast<fftw_complex*>(buffer),
+                                    reinterpret_cast<fftw_complex*>(buffer), FFTW_BACKWARD, FFTW_ESTIMATE);
+    for (size_t ib = 0; ib < bands__.size(); ++ib) {
+        for (int ipol = 0; ipol < npol_; ++ipol) {
+            std::fill(buffer, buffer + Nr, std::complex<double>(0.));
+            for (int ig = 0; ig < wf__.igwx; ++ig) {
+                buffer[index[ig]] += wf__.evc(bands__[ib], ipol * wf__.igwx + ig);
+            }
+            fftw_execute(plan);
+            auto* u = u__.data() + (ib * npol_ + ipol) * Nr;
+            for (size_t ir = 0; ir < Nr; ++ir) {
+                u[ir] = norm * buffer[ir];
+            }
+        }
+    }
+    fftw_destroy_plan(plan);
+    fftw_free(buffer);
+}
+
+void WannierWavefunctions::compute_pair_density()
+{
+    const auto& pd  = p_.pair_density;
+    const int nk    = gauge_.num_kpts();
+    const int nq    = int(pd.q_list.size());
+    const int nR    = int(pd.R_list.size());
+    const int nb    = int(pd_wannier_list_.size());
+    const size_t Nr = size_t(pd_fft_grid_[0]) * pd_fft_grid_[1] * pd_fft_grid_[2];
+    const size_t np = size_t(nb) * nb * Nr;  // size of one (q, R) block
+
+    if (mpi_rank() == 0) {
+        std::cout << "\n  Pair densities rho^{q,R}_{nn'}(r) = sum_k e^{ik.R} u*_{nk}(r) u_{n'k+q}(r)\n"
+                  << "    FFT grid (cell)  : " << pd_fft_grid_[0] << " " << pd_fft_grid_[1] << " " << pd_fft_grid_[2]
+                  << "\n    q, R points      : " << nq << ", " << nR << "\n    Wannier functions: " << nb
+                  << "\n    memory per rank  : " << std::fixed << std::setprecision(1)
+                  << double(nq) * nR * np * sizeof(std::complex<double>) / double(1 << 20) << " MB"
+                  << std::defaultfloat << "\n";
+    }
+
+    rho_.assign(size_t(nq) * nR * np, 0.);
+    std::vector<std::complex<double>> uk, ukq, P(np);
+    std::vector<std::complex<double>> phase(nR);
+    for (int ik = mpi_rank(); ik < nk; ik += mpi_size()) {
+        auto wk = bloch_wannier_gauge(ik);
+        periodic_part(wk, {0, 0, 0}, pd_fft_grid_, pd_wannier_list_, uk);
+        auto k = gauge_.kpt(ik);
+        for (int iR = 0; iR < nR; ++iR) {
+            const auto& R = pd.R_list[iR];
+            phase[iR]     = std::exp(im * 2. * pi * (k[0] * R[0] + k[1] * R[1] + k[2] * R[2]));
+        }
+        for (int iq = 0; iq < nq; ++iq) {
+            // k + q = k_jk + G  ->  u_{k+q}(r) = e^{-iG.r} u_{k_jk}(r)
+            const int jk = pd_ikq_[iq][ik];
+            if (jk == ik) {
+                periodic_part(wk, pd_G_[iq][ik], pd_fft_grid_, pd_wannier_list_, ukq);
+            } else {
+                periodic_part(bloch_wannier_gauge(jk), pd_G_[iq][ik], pd_fft_grid_, pd_wannier_list_, ukq);
+            }
+            #pragma omp parallel for collapse(2)
+            for (int a = 0; a < nb; ++a) {
+                for (int b = 0; b < nb; ++b) {
+                    auto* p = P.data() + (size_t(a) * nb + b) * Nr;
+                    std::fill(p, p + Nr, std::complex<double>(0.));
+                    for (int ipol = 0; ipol < npol_; ++ipol) {
+                        const auto* ua = uk.data() + (size_t(a) * npol_ + ipol) * Nr;
+                        const auto* ub = ukq.data() + (size_t(b) * npol_ + ipol) * Nr;
+                        for (size_t ir = 0; ir < Nr; ++ir) {
+                            p[ir] += std::conj(ua[ir]) * ub[ir];
+                        }
+                    }
+                }
+            }
+            for (int iR = 0; iR < nR; ++iR) {
+                auto* rho = rho_.data() + (size_t(iq) * nR + iR) * np;
+                const auto ph = phase[iR];
+                #pragma omp parallel for
+                for (size_t i = 0; i < np; ++i) {
+                    rho[i] += ph * P[i];
+                }
+            }
+        }
+    }
+
+#ifdef EDUS_MPI
+    {
+        auto comm          = mpi::Communicator::world().communicator();
+        const size_t chunk = size_t(1) << 26;
+        for (size_t offset = 0; offset < rho_.size(); offset += chunk) {
+            int count = int(std::min(chunk, rho_.size() - offset));
+            if (mpi_rank() == 0) {
+                MPI_Reduce(MPI_IN_PLACE, rho_.data() + offset, count, MPI_C_DOUBLE_COMPLEX, MPI_SUM, 0, comm);
+            } else {
+                MPI_Reduce(rho_.data() + offset, nullptr, count, MPI_C_DOUBLE_COMPLEX, MPI_SUM, 0, comm);
+            }
+        }
+    }
+#endif
+    if (mpi_rank() != 0) {
+        rho_.clear();
+        rho_.shrink_to_fit();
+        return;
+    }
+
+    // q = 0: int_cell rho^{0,R}_{ab} = N_k <w_{a,R}|w_{b,0}> = N_k delta_{R,0} delta_{ab} (R modulo the k grid)
+    pd_norm_error_ = 0.;
+    bool has_q0    = false;
+    const double dV = omega_ / double(Nr);
+    const auto& M   = gauge_.mp_grid();
+    for (int iq = 0; iq < nq; ++iq) {
+        const auto& q = pd.q_list[iq];
+        if (std::abs(q[0]) + std::abs(q[1]) + std::abs(q[2]) > 1.e-8) {
+            continue;
+        }
+        has_q0 = true;
+        for (int iR = 0; iR < nR; ++iR) {
+            const auto& R = pd.R_list[iR];
+            const bool R0 = R[0] % M[0] == 0 && R[1] % M[1] == 0 && R[2] % M[2] == 0;
+            for (int a = 0; a < nb; ++a) {
+                for (int b = 0; b < nb; ++b) {
+                    const auto* rho = pair_density(iq, iR, a, b);
+                    std::complex<double> s = 0.;
+                    for (size_t ir = 0; ir < Nr; ++ir) {
+                        s += rho[ir];
+                    }
+                    const double expected = (R0 && pd_wannier_list_[a] == pd_wannier_list_[b]) ? 1. : 0.;
+                    pd_norm_error_ = std::max(pd_norm_error_, std::abs(s * dV / double(nk) - expected));
+                }
+            }
+        }
+    }
+    if (has_q0) {
+        std::cout << "    max |int rho^{0,R}_{nn'} / N_k - delta_{R0} delta_{nn'}| = " << std::scientific
+                  << std::setprecision(3) << pd_norm_error_ << std::defaultfloat
+                  << (pd_norm_error_ > 1.e-6 ? "  (large: ultrasoft/PAW pseudopotentials or fft_grid too small?)" : "")
+                  << "\n";
+    }
+    for (int iq = 0; iq < nq; ++iq) {
+        write_pair_density(iq);
+    }
+    std::cout << "    written to " << p_.output_dir << "/pair_density_q<iq>.dat\n";
+}
+
+void WannierWavefunctions::write_pair_density(int iq__) const
+{
+    const auto& pd  = p_.pair_density;
+    const int nR    = int(pd.R_list.size());
+    const int nb    = int(pd_wannier_list_.size());
+    const int N1 = pd_fft_grid_[0], N2 = pd_fft_grid_[1], N3 = pd_fft_grid_[2];
+    const auto& M   = gauge_.mp_grid();
+
+    // Fortran unformatted, as the wfc files:
+    //   nb, N1, N2, N3, nR, num_kpts, mp_grid(3)
+    //   wannier indices (nb, 1-based)
+    //   q (3, crystal), a (3,3; a(:,i) = a_i, bohr)
+    //   R (3, nR, crystal)
+    //   rho(N1, N2, N3) for iR = 1..nR, n = 1..nb, n' = 1..nb (n' fastest): one record each, bohr^-3,
+    //   point (i1, i2, i3) at r = (i1-1)/N1 a_1 + (i2-1)/N2 a_2 + (i3-1)/N3 a_3
+    FortranBinaryWriter f(p_.output_dir + "/pair_density_q" + std::to_string(iq__ + 1) + ".dat");
+    for (int v : {nb, N1, N2, N3, nR, gauge_.num_kpts(), M[0], M[1], M[2]}) {
+        f.put(int32_t(v));
+    }
+    f.end_record();
+    for (int n : pd_wannier_list_) {
+        f.put(int32_t(n + 1));
+    }
+    f.end_record();
+    f.put(pd.q_list[iq__].data(), 3);
+    for (int i = 0; i < 3; ++i) {
+        f.put(a_[i].data(), 3);
+    }
+    f.end_record();
+    for (auto& R : pd.R_list) {
+        for (int x = 0; x < 3; ++x) {
+            f.put(int32_t(R[x]));
+        }
+    }
+    f.end_record();
+
+    std::vector<std::complex<double>> buf(size_t(N1) * N2 * N3);
+    for (int iR = 0; iR < nR; ++iR) {
+        for (int a = 0; a < nb; ++a) {
+            for (int b = 0; b < nb; ++b) {
+                const auto* rho = pair_density(iq__, iR, a, b);
+                for (int i1 = 0; i1 < N1; ++i1) {
+                    for (int i2 = 0; i2 < N2; ++i2) {
+                        for (int i3 = 0; i3 < N3; ++i3) {
+                            buf[(size_t(i3) * N2 + i2) * N1 + i1] = rho[(size_t(i1) * N2 + i2) * N3 + i3];
+                        }
+                    }
+                }
+                f.put(buf.data(), buf.size());
+                f.end_record();
+            }
+        }
+    }
+}
+
 void WannierWavefunctions::run()
 {
     const int nk   = gauge_.num_kpts();
@@ -653,6 +1012,12 @@ void WannierWavefunctions::run()
             std::cout << "  Bloch functions in the Wannier gauge written to " << p_.output_dir
                       << "/wfc<ik>.dat (QE format, ik = wannier90 k index)\n";
         }
+    }
+    if (p_.pair_density.enabled) {
+        compute_pair_density();
+    }
+    if (p_.coulomb.enabled) {
+        compute_coulomb();
     }
     if (!p_.real_space) {
         return;
@@ -766,9 +1131,14 @@ void WannierWavefunctions::centre_and_spread(int iw__, double& norm__, std::arra
         }
     }
     // preliminary centre, fractional coordinates (unit cell units), one representative per period
+    // arg() gives f0 in (-M/2, M/2]: take instead the periodic image closest to the centre of the sampled
+    // supercell, so that the centre is reported inside the box where w_n(r) is computed (e.g. with mp_grid 1
+    // and supercell 1 the box is [0, 1) and f0 = -0.45 must be reported as 0.55)
     double f0[3];
     for (int x = 0; x < 3; ++x) {
-        f0[x] = double(M[x]) * std::arg(z[x]) / (2. * pi);
+        f0[x]           = double(M[x]) * std::arg(z[x]) / (2. * pi);
+        const double c  = (double(s0[x]) + 0.5 * S[x]) / fft_grid_[x];
+        f0[x]          -= double(M[x]) * std::round((f0[x] - c) / M[x]);
     }
 
     // Pass 2: second moment of the minimum-image displacement from f0, then the usual

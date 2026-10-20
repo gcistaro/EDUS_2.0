@@ -114,6 +114,7 @@ set(_SOURCES src/initialize.cpp
              src/Wannier/QEWavefunction.cpp
              src/Wannier/WannierGauge.cpp
              src/Wannier/WannierWavefunctions.cpp
+             src/Wannier/WannierCoulomb.cpp
              src/Laser/Laser.cpp
              src/fftPair/fftPair.cpp
              src/kGradient/kGradient.cpp
@@ -378,7 +379,7 @@ add_test(NAME MoS2_HSEX  COMMAND bash ${CMAKE_SOURCE_DIR}/ci-test/scripts/run.sh
 add_test(NAME hBN_HSEX_np4 COMMAND bash ${CMAKE_SOURCE_DIR}/ci-test/scripts/run.sh hBN_HSEX 4)
 add_test(NAME LiF_HSEX_np4 COMMAND bash ${CMAKE_SOURCE_DIR}/ci-test/scripts/run.sh LiF_HSEX 4)
 set_tests_properties(hBN_HSEX_np4 LiF_HSEX_np4 PROPERTIES ENVIRONMENT "OMP_NUM_THREADS=1")
-# QE -> Wannier rotation of the wavefunctions on synthetic data (Gaussian Wannier functions)
+# QE -> Wannier rotation of the wavefunctions and pair densities on synthetic data (Gaussian Wannier functions)
 add_test(NAME wfc2wannier     COMMAND bash ${CMAKE_SOURCE_DIR}/ci-test/wfc2wannier/run_test.sh $<TARGET_FILE:EDUS_wfc2wannier> 1)
 add_test(NAME wfc2wannier_np2 COMMAND bash ${CMAKE_SOURCE_DIR}/ci-test/wfc2wannier/run_test.sh $<TARGET_FILE:EDUS_wfc2wannier> 2)
 ############

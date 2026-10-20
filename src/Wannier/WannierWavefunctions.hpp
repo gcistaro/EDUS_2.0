@@ -13,6 +13,48 @@
 #include "Wannier/WannierGauge.hpp"
 #include "core/mpi/Communicator.hpp"
 
+/// Input of the pair densities rho^{q,R}_{nn'}(r) (json block "pair_density")
+struct PairDensityParameters
+{
+    bool enabled = false;
+    /// q vectors, crystal coordinates of the reciprocal lattice. Must belong to the k grid (q * mp_grid integer)
+    std::vector<std::array<double, 3>> q_list{{0., 0., 0.}};
+    /// R vectors, crystal coordinates of the direct lattice
+    std::vector<std::array<int, 3>> R_list{{0, 0, 0}};
+    /// Wannier indices n, n' (1-based). Empty -> all
+    std::vector<int> wannier_list;
+    /// FFT grid of the unit cell. 0 -> smallest grid where the products u*_{nk} u_{n'k+q} are not aliased
+    std::array<int, 3> fft_grid{0, 0, 0};
+};
+
+/// Input of the density-density Coulomb matrix elements in the Wannier basis (json block "coulomb")
+struct CoulombParameters
+{
+    bool enabled = false;
+    /// directory with ndb.em1s (and ndb.em1s_fragment_<iq>) of a yambo/Lumen static screening run (yambo -X s).
+    /// Empty -> only the bare interaction
+    std::string em1s_dir;
+    /// yambo SAVE directory (ns.db1, for the lattice parameters of the yambo units)
+    std::string yambo_save = "SAVE";
+    /// G vectors of the bare interaction: |q+G|^2 <= ecut_bare (Ry). 0 -> the G vectors of ndb.em1s.
+    /// Outside the block of ndb.em1s the screened interaction is the bare one (eps^-1 = 1)
+    double ecut_bare = 0.;
+    /// add the q -> 0 divergent terms (head and wings), averaged on the small cell of the q grid around Gamma.
+    /// false (default, as in KCW): the q + G = 0 term is left out, i.e. the interactions are defined up to a
+    /// constant (the same for all R and all the Wannier functions for the bare interaction)
+    bool include_head = false;
+    /// yambo/Lumen ndb.RIM (yambo -r, CUTGeo = "none", same q points as ndb.em1s); needs include_head.
+    /// The q -> 0 head is 4pi <1/q^2> = 4pi RIM_qpg(Gamma,0,0) Omega N_k / 2 and the wings use <1/q> ~ R_sphere/2 <1/q^2>
+    /// as yambo (scatter_Gamp). rim_mode "head": only that; "full": as in yambo, also v(q+G) of every q and of the
+    /// first RIM_ng G vectors replaced by the cell average (diagonal), and v^1/2(q) of the G = 0 wings by <v(q)>^1/2
+    std::string rim_file;
+    std::string rim_mode = "full";
+    /// truncation of the Coulomb interaction: "none" (3D periodic) or "slab" (2D systems, layer in the plane of
+    /// a1, a2 with a3 along z): v(Q) = 4pi/Q^2 [1 - e^{-Q_par L/2} cos(Q_z L/2)], L = |a3|, the slab cutoff of
+    /// yambo (CUTGeo = "slab z"), which must be used also for ndb.em1s
+    std::string cutoff = "none";
+};
+
 /// Input of the QE -> Wannier rotation (see WannierWavefunctionsParameters::from_json for the keys)
 struct WannierWavefunctionsParameters
 {
@@ -42,6 +84,8 @@ struct WannierWavefunctionsParameters
     /// (1) where a single rank holds the whole dense FFT box of its k point alone. Must divide
     /// the total number of MPI ranks.
     int fft_ranks_per_kpoint = 1;
+    PairDensityParameters pair_density;
+    CoulombParameters coulomb;
 
     static WannierWavefunctionsParameters from_json(const nlohmann::json& in__);
 };
@@ -53,6 +97,12 @@ struct WannierWavefunctionsParameters
 /// @f[ w_n(r) = \frac{1}{N_k}\sum_k e^{ik\cdot r}\, \tilde u_{nk}(r), \qquad
 ///     \tilde u_{nk}(r) = \frac{1}{\sqrt{\Omega}}\sum_G \tilde\psi_{nk}(G) e^{iG\cdot r} @f]
 /// normalized to 1 on the Born-von Karman supercell (norm-conserving pseudopotentials).
+///
+/// Optionally (PairDensityParameters) it builds the pair densities on the unit cell
+/// @f[ \rho^{q,R}_{nn'}(r) = \sum_k e^{ik\cdot R}\, \tilde u^*_{nk}(r)\, \tilde u_{n'k+q}(r)
+///     = N_k \sum_T e^{-iq\cdot(r-T)}\, w^*_n(r-T-R)\, w_{n'}(r-T) @f]
+/// (summed over the spin components for spinors), using the periodic gauge
+/// @f$ \tilde u_{n,k'+G}(r) = e^{-iG\cdot r}\tilde u_{nk'}(r) @f$ when k+q is outside the wannier90 k list.
 class WannierWavefunctions
 {
     private:
@@ -87,7 +137,20 @@ class WannierWavefunctions
         /// is the range of global z indices owned by rank r of fft_comm_ in accumulate_real_space
         std::vector<int> fft_z_offset_, fft_z_len_;
 
+        /// pair densities: grid, Wannier indices (0-based), and for each q and k the index jk of k+q
+        /// in the wannier90 list together with G such that k + q = k_jk + G (crystal coordinates)
+        std::array<int, 3> pd_fft_grid_{0, 0, 0};
+        std::vector<int> pd_wannier_list_;
+        std::vector<std::vector<int>> pd_ikq_;
+        std::vector<std::vector<std::array<int, 3>>> pd_G_;
+        /// rho[iq][iR][a][b][i1][i2][i3], a, b indices in pd_wannier_list_ (complete only on rank 0)
+        std::vector<std::complex<double>> rho_;
+        /// max over q = 0 of | int_cell rho^{0,R}_{ab} / N_k - delta_{R,0} delta_{ab} | (R modulo mp_grid)
+        double pd_norm_error_ = 0.;
+
         void map_kpoints();
+        void setup_pair_density();
+        void choose_fft_grids();
         void read_atoms();
         void setup_fft_groups();
         bool is_fft_group_leader() const { return !fft_comm_ || fft_comm_->rank() == 0; }
@@ -99,6 +162,15 @@ class WannierWavefunctions
                                                const std::complex<double>* ph1, const std::complex<double>* ph2,
                                                double norm__);
 #endif
+        /// u_{nk}(r) = 1/sqrt(Omega) sum_G c_n(G) e^{i(G - G_shift).r} on the unit-cell grid grid__, for the
+        /// bands (rows of wf__.evc) in bands__. Layout of u__: [ib][ipol][(i1 * N2 + i2) * N3 + i3]
+        void periodic_part(const QEWavefunction& wf__, const std::array<int, 3>& G_shift__,
+                           const std::array<int, 3>& grid__, const std::vector<int>& bands__,
+                           std::vector<std::complex<double>>& u__) const;
+        void compute_pair_density();
+        void write_pair_density(int iq__) const;
+        /// density-density matrix elements of the bare (and screened) interaction, see WannierCoulomb.cpp
+        void compute_coulomb();
 
     public:
         explicit WannierWavefunctions(const WannierWavefunctionsParameters& params__);
@@ -130,6 +202,17 @@ class WannierWavefunctions
         void write_xsf(int iw__, const std::string& filename__) const;
 
         double max_orthonormality_error() const { return max_orthonormality_error_; }
+
+        const std::array<int, 3>& pair_density_grid() const { return pd_fft_grid_; }
+        const std::vector<int>& pair_density_wannier_list() const { return pd_wannier_list_; }
+        /// rho^{q,R}_{ab}(r) on the unit-cell grid, layout (i1 * N2 + i2) * N3 + i3 (rank 0 only, after run())
+        const std::complex<double>* pair_density(int iq__, int iR__, int a__, int b__) const
+        {
+            const size_t nb = pd_wannier_list_.size();
+            const size_t nr = size_t(pd_fft_grid_[0]) * pd_fft_grid_[1] * pd_fft_grid_[2];
+            return rho_.data() + (((size_t(iq__) * p_.pair_density.R_list.size() + iR__) * nb + a__) * nb + b__) * nr;
+        }
+        double pair_density_norm_error() const { return pd_norm_error_; }
 };
 
 #endif

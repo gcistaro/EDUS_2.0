@@ -17,7 +17,21 @@
 ///   "real_space"   : true,               // build w_n(r) on the supercell
 ///   "write_xsf"    : true,
 ///   "fix_phase"    : true,
-///   "output_dir"   : "wannier_wfc"
+///   "output_dir"   : "wannier_wfc",
+///   "pair_density" : {                   // optional: rho^{q,R}_{nn'}(r) = sum_k e^{ik.R} u*_{nk}(r) u_{n'k+q}(r)
+///       "q_list"      : [[0,0,0]],       // crystal coordinates, on the k grid
+///       "R_list"      : [[0,0,0]],       // crystal coordinates
+///       "wannier_list": [],              // 1-based, empty = all
+///       "fft_grid"    : [0,0,0]          // 0 = automatic (no aliasing of the product)
+///   },                                   // -> <output_dir>/pair_density_q<iq>.dat
+///   "coulomb"      : {                   // optional: density-density U_nm(R) of the bare/screened interaction
+///       "em1s_dir"    : "em1s",          // yambo/Lumen ndb.em1s (yambo -X s); "" -> bare only. Needs EDUS_HDF5
+///       "yambo_save"  : "SAVE",          // yambo SAVE (ns.db1)
+///       "ecut_bare"   : 0.,              // Ry, G sphere of the bare interaction; 0 -> G vectors of ndb.em1s
+///       "include_head": false,           // add the q -> 0 head and wings (default: left out, as in KCW)
+///       "rim_file"    : "",              // yambo ndb.RIM (with include_head): q -> 0 terms as yambo
+///       "rim_mode"    : "full"           // "full": RIM on all q and the RIM G vectors (as yambo); "head": only q -> 0
+///   }                                    // -> <output_dir>/barecoulomb.txt, screencoulomb.txt (KCW format)
 /// }
 #include <fstream>
 #include <iostream>

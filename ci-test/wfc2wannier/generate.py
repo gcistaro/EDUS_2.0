@@ -134,8 +134,10 @@ def case_plain(d):
     write_umat(f"{d}/si_u.mat", kpts, U)
     write_xml(save, taus)
     reference(d, kpts, taus)
-    json.dump({"qe_save_dir": "si.save", "seedname": "si", "supercell": [3, 3, 3], "output_dir": "out"},
-              open(f"{d}/input.json", "w"), indent=1)
+    # q outside the first cell of the k grid in both directions (k + q = k' + G with G != 0)
+    pd = {"q_list": [[0, 0, 0], [2 / 3, 1 / 3, 0], [-1 / 3, 0, 2 / 3]], "R_list": [[0, 0, 0], [1, 0, 0], [0, -1, 2]]}
+    json.dump({"qe_save_dir": "si.save", "seedname": "si", "supercell": [3, 3, 3], "output_dir": "out",
+               "pair_density": pd, "coulomb": {"ecut_bare": 6.0}}, open(f"{d}/input.json", "w"), indent=1)
 
 
 def case_dis(d):
@@ -177,7 +179,10 @@ def case_dis(d):
     write_xml(save, taus)
     reference(d, kpts, taus)
     json.dump({"qe_save_dir": "si.save", "seedname": "si", "exclude_bands": [1], "dis_win_min": -5.0,
-               "dis_win_max": 5.0, "spin": "up", "supercell": [3, 3, 3], "output_dir": "out"},
+               "dis_win_max": 5.0, "spin": "up", "supercell": [3, 3, 3], "output_dir": "out",
+               # R = (3,0,0) is R = 0 on the 3x3x3 Born-von Karman supercell
+               "pair_density": {"q_list": [[0, 0, 0], [1 / 3, 1 / 3, 1 / 3]], "R_list": [[0, 0, 0], [3, 0, 0]],
+                                "wannier_list": [2]}},
               open(f"{d}/input.json", "w"), indent=1)
 
 
@@ -194,8 +199,8 @@ def case_gamma(d):
     write_wfc(f"{save}/wfc1.dat", 1, kpts[0], M, A.T @ phi, gamma_only=True)
     write_umat(f"{d}/si_u.mat", kpts, A.conj().T[None, :, :])
     reference(d, kpts, taus, sigma=sigma)
-    json.dump({"qe_save_dir": "si.save", "seedname": "si", "supercell": [1, 1, 1], "output_dir": "out"},
-              open(f"{d}/input.json", "w"), indent=1)
+    json.dump({"qe_save_dir": "si.save", "seedname": "si", "supercell": [1, 1, 1], "output_dir": "out",
+               "pair_density": {"R_list": [[0, 0, 0], [1, 0, 0]]}}, open(f"{d}/input.json", "w"), indent=1)
 
 
 def case_spinor(d):
@@ -220,7 +225,9 @@ def case_spinor(d):
     write_umat(f"{d}/si_u.mat", kpts, U)
     write_xml(save, taus)
     reference(d, kpts, taus, spinors=chi, sigma=sigma)
-    json.dump({"qe_save_dir": "si.save", "seedname": "si", "supercell": [2, 2, 2], "output_dir": "out"},
+    json.dump({"qe_save_dir": "si.save", "seedname": "si", "supercell": [2, 2, 2], "output_dir": "out",
+               "pair_density": {"q_list": [[0, 0, 0], [0.5, 0.5, 0]], "R_list": [[0, 0, 0], [0, 1, 0]]},
+               "coulomb": {"ecut_bare": 6.0}},
               open(f"{d}/input.json", "w"), indent=1)
 
 
