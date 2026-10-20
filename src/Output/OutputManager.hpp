@@ -86,6 +86,9 @@ class OutputManager
         void print_recap() const;
         /// Writes all the outputs at time__, if it is a printing step. To be called before each time step
         void write(const double& time__);
+        /// Writes time__ and the populations (bloch and wannier gauge) of the current density matrix, at any time
+        void write_populations(const double& time__);
+        const std::string& directory() const { return parameters_.directory; }
 };
 
 #endif // OUTPUT_MANAGER_HPP

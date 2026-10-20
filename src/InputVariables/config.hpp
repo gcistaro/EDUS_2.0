@@ -359,6 +359,42 @@ class config_t
         }
         dict_["/peierls"_json_pointer] = peierls__;
     }
+    /// directory of the density matrices to read (no time propagation if not empty)
+    inline auto dm_directory() const
+    {
+        return dict_.at("/dm_directory"_json_pointer).get<std::string>();
+    }
+    inline void dm_directory(std::string dm_directory__)
+    {
+        if (dict_.contains("locked")) {
+            throw std::runtime_error(locked_msg);
+        }
+        dict_["/dm_directory"_json_pointer] = dm_directory__;
+    }
+    /// file with the k points of the density matrix files
+    inline auto dm_kpoints_file() const
+    {
+        return dict_.at("/dm_kpoints_file"_json_pointer).get<std::string>();
+    }
+    inline void dm_kpoints_file(std::string dm_kpoints_file__)
+    {
+        if (dict_.contains("locked")) {
+            throw std::runtime_error(locked_msg);
+        }
+        dict_["/dm_kpoints_file"_json_pointer] = dm_kpoints_file__;
+    }
+    /// file with the times of the density matrix snapshots
+    inline auto dm_times_file() const
+    {
+        return dict_.at("/dm_times_file"_json_pointer).get<std::string>();
+    }
+    inline void dm_times_file(std::string dm_times_file__)
+    {
+        if (dict_.contains("locked")) {
+            throw std::runtime_error(locked_msg);
+        }
+        dict_["/dm_times_file"_json_pointer] = dm_times_file__;
+    }
     /// Kpath to print the band structure in crystal coordinates 
     inline std::vector<std::vector<double>> kpath()
     {

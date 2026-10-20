@@ -64,6 +64,8 @@ class Simulation
 //         void print_grids();
 //         void Calculate_Velocity();
          void Propagate();
+         /// No time propagation: reads the density matrices of dm_directory and prints their populations
+         void populations_from_files();
 //         void print_recap();
 //         void PrintWannier();
 //         int get_it(const double& time__) const;

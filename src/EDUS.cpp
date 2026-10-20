@@ -27,7 +27,12 @@ int main(int argc, char *argv[])
     auto ctx = std::make_shared<Simulation_parameters>();
     ctx->import(std::string(argv[1]));
     Simulation simulation(ctx);
-    simulation.Propagate();
+    if ( ctx->cfg().dm_directory().empty() ) {
+        simulation.Propagate();
+    }
+    else {
+        simulation.populations_from_files();
+    }
 }
     finalize();
 

@@ -7,6 +7,21 @@
             "default": "",
             "title": "name of the file _tb.dat"
         },
+        "dm_directory": {
+            "type": "string",
+            "default": "",
+            "title": "if not empty, no time propagation: the density matrices P_in_W_{i1}{i2}_{it}.txt (wannier gauge) are read from this directory and the populations are printed"
+        },
+        "dm_kpoints_file": {
+            "type": "string",
+            "default": "k_grid.txt",
+            "title": "file in dm_directory with the k point (crystal coordinates) of each line of the density matrix files"
+        },
+        "dm_times_file": {
+            "type": "string",
+            "default": "t_Ek.txt",
+            "title": "file in dm_directory with the time of each snapshot (optional)"
+        },
         "decay": {
             "type": "number",
             "default": 0.0,

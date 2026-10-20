@@ -102,6 +102,15 @@ void OutputManager::write(const double& time__)
 #endif
 }
 
+void OutputManager::write_populations(const double& time__)
+{
+    if( is_writer_ ) {
+        os_time_ << time__ << std::endl;
+    }
+    print_population(time__, BandGauge::bloch);
+    print_population(time__, BandGauge::wannier);
+}
+
 /// @brief Defines whether or not at the current time step time__ we print the txt files and the matrices in hdf5
 /// @param time__ Current time in the simulation
 /// @param use_sparse__ If false, we always use printresolution_pulse; if true we use it only when a laser is on,

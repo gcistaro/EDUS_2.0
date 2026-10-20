@@ -106,6 +106,7 @@ set(_SOURCES src/initialize.cpp
              src/Geometry/Matrix.cpp
              src/Geometry/Coordinate.cpp
              src/MeshGrid/MeshGrid.cpp
+             src/Electrons/DensityMatrixReader.cpp
              src/Wannier/Wannier.cpp
              src/Wannier/ReadWannier.cpp
              src/Wannier/PrintWannier.cpp

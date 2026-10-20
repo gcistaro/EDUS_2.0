@@ -5,6 +5,7 @@
 #include "MeanField/MeanFieldParameters.hpp"
 #include "Electrons/BandStructurePath.hpp"
 #include "Electrons/Pdos.hpp"
+#include "Electrons/DensityMatrixReader.hpp"
 #include <cstdlib>
 #include <filesystem>
 
@@ -19,6 +20,10 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
     output::print("-> initializing simulation");
     ctx_ = ctx__;
     convert_input_au();
+    /* the density matrices read from file are in the length gauge */
+    if ( !ctx_->cfg().dm_directory().empty() ) {
+        ctx_->cfg().peierls(false);
+    }
 
     Material material(ctx_->cfg().tb_file());
     int num_bands_ = material.H.get_Operator_R().get_nrows();
@@ -59,8 +64,11 @@ Simulation::Simulation(std::shared_ptr<Simulation_parameters>& ctx__)
                            electrons_.wannier_centers(), 
                            decomposition_ );
 
-    output::print("-> initializing lasers");
-    setoflaser_ = LaserFactory::create( ctx_->cfg() );
+    /* no lasers when the density matrices are read from file */
+    if ( ctx_->cfg().dm_directory().empty() ) {
+        output::print("-> initializing lasers");
+        setoflaser_ = LaserFactory::create( ctx_->cfg() );
+    }
 
     propagator_.initialize( propagator_parameters, 
                             gridstructure_, 
@@ -1113,3 +1121,61 @@ void Simulation::Propagate()
 //    Operator<std::complex<double>>::mpindex.initialize(MeshGrid::MasterRgrid.get_Size(), 
 //                                                       material_.H.get_Operator_R().get_nrows() * material_.H.get_Operator_R().get_nrows());
 //}
+/// @brief No time propagation: for each snapshot of the density matrix in dm_directory (wannier gauge, k space)
+/// prints the populations in Output: Population.txt and Population_wannier.txt (one line per snapshot, as in a
+/// propagation, with the times in Time.txt), Population_k_{it}.txt (k resolved, bloch gauge) and, if kpath is
+/// given, the fat bands Fatbands_population_{it}.txt with the gnuplot script Fatbands_population_{it}.gnu
+void Simulation::populations_from_files()
+{
+    PROFILE("Simulation::populations_from_files");
+    auto& cfg = ctx_->cfg();
+    auto& comm = decomposition_.kpool_comm();
+    auto& mpindex = decomposition_.mpindex();
+    int num_bands = electrons_.num_bands();
+    int filledbands = electrons_.parameters().filledbands;
+
+    output::title("POPULATIONS FROM FILES");
+    electron::DensityMatrixReader reader;
+    reader.initialize(cfg.dm_directory(), cfg.dm_kpoints_file(), cfg.dm_times_file(), num_bands,
+                      *gridstructure_.kgrid(), comm);
+    /* hamiltonian in R from the tb file, to interpolate the bands on the path */
+    Material material(cfg.tb_file());
+    auto& DM = electrons_state_.DensityMatrix();
+    auto& aux = electrons_state_.aux_DM();
+    auto directory = output_.directory() + "/";
+
+    for (int isnap = 0; isnap < reader.num_snapshots(); ++isnap) {
+        output::print("-> snapshot ", isnap, ", time ", reader.times()[isnap]);
+        reader.read(isnap, DM, mpindex, comm);
+        output_.write_populations(reader.times()[isnap]);
+
+        /* number of electrons: (1/N_k) sum_k Tr rho(k) */
+        auto trace = TraceK(DM.get_Operator_k(), const_cast<mpi::Communicator&>(comm));
+        std::complex<double> num_electrons = 0.;
+        for (auto& t : trace) {
+            num_electrons += t;
+        }
+        num_electrons /= double(gridstructure_.kgrid()->get_TotalSize());
+        output::print("   number of electrons     ", num_electrons.real(), " (imaginary part ", num_electrons.imag(), ")");
+
+        /* k resolved populations in the bloch gauge */
+        std::copy(DM.get_Operator_k().begin(), DM.get_Operator_k().end(), aux.get_Operator_k().begin());
+        aux.lock_gauge(wannier);
+        aux.lock_space(k);
+        aux.go_to_bloch();
+        electron::print_population_k(directory + "Population_k_" + std::to_string(isnap) + ".txt",
+                                     aux.get_Operator_k(), electrons_.bandstructure(), *gridstructure_.kgrid(),
+                                     mpindex, filledbands, comm);
+
+        /* fat bands on the path, from rho(R) in the wannier gauge */
+        if ( cfg.kpath().size() > 1 ) {
+            std::copy(DM.get_Operator_k().begin(), DM.get_Operator_k().end(), aux.get_Operator_k().begin());
+            aux.lock_gauge(wannier);
+            aux.lock_space(k);
+            aux.go_to_R();
+            electron::print_fatbands_population(directory + "Fatbands_population_" + std::to_string(isnap) + ".txt",
+                                                aux.get_Operator_R(), material.H, cfg.kpath(), gridstructure_,
+                                                filledbands, electrons_.parameters().opengap, comm);
+        }
+    }
+}
