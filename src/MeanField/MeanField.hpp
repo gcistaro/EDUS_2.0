@@ -19,8 +19,10 @@ namespace electron {
         private:
             /// Parameters of the mean-field calculation (method, interaction files, ...)
             MeanFieldParameters parameters_;
-            /// Wrapper for bare interaction
+            /// Wrapper for bare interaction, density-density
             ModelCoulomb barecoulomb_;
+            /// Wrapper for bare interaction, Hund-like
+            ModelCoulomb barecoulomb_hund_;
             /// Wrapper for screened interaction
             ModelCoulomb screencoulomb_;
             /// True if the current rank propagates R=0 term

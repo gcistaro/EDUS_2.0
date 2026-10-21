@@ -42,6 +42,8 @@ namespace electron
         std::string coulomb_model;
         /// Bare Coulomb file
         std::string bare_file;
+        /// Bare Coulomb file, hund
+        std::string bare_file_hund;
         /// Screened Coulomb file
         std::string screen_file;  
         /// If false, the Hartree term is skipped
@@ -64,6 +66,7 @@ public:
         p.coulomb_model = cfg.coulomb_model();
         p.bare_file = cfg.bare_file();
         p.screen_file = cfg.screen_file();
+        p.bare_file_hund = cfg.bare_file_hund();
         p.hartree = cfg.hartree();
         if (cfg.method() == "ipa")
             p.method = MeanFieldMethod::IPA;

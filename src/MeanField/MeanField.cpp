@@ -36,6 +36,15 @@ void MeanField::initialize( const MeanFieldParameters& parameters__,
                               parameters__.bare_file, 
                               decomposition__.mpindex(), 
                               2);
+    bool newer = true;
+    if(newer) {
+    barecoulomb_hund_.initialize(wannier_centers__, 
+                              gridstructure__.Rgrid_GammaCentered(), 
+                              parameters__.read_interaction, 
+                              parameters__.bare_file_hund, 
+                              decomposition__.mpindex(), 
+                              2);
+    }
     screencoulomb_.set_coulomb_model(parameters__.coulomb_model);
     screencoulomb_.set_epsilon(parameters__.epsilon);
     screencoulomb_.set_r0(parameters__.r0);
@@ -49,6 +58,11 @@ void MeanField::initialize( const MeanFieldParameters& parameters__,
     auto max = *std::max_element( barecoulomb_.Potential_.begin(), barecoulomb_.Potential_.end(),
                           [] (std::complex<double> a, std::complex<double> b) { return std::real(a) < std::real(b); }); 
     auto min = *std::max_element( barecoulomb_.Potential_.begin(), barecoulomb_.Potential_.end(),
+                          [] (std::complex<double> a, std::complex<double> b) { return std::real(a) > std::real(b); }); 
+    output::print( "bare:    ", std::real(min), std::real(max));
+    max = *std::max_element( barecoulomb_hund_.Potential_.begin(), barecoulomb_hund_.Potential_.end(),
+                          [] (std::complex<double> a, std::complex<double> b) { return std::real(a) < std::real(b); }); 
+    min = *std::max_element( barecoulomb_hund_.Potential_.begin(), barecoulomb_hund_.Potential_.end(),
                           [] (std::complex<double> a, std::complex<double> b) { return std::real(a) > std::real(b); }); 
     output::print( "bare:    ", std::real(min), std::real(max));
     max = *std::max_element( screencoulomb_.Potential_.begin(), screencoulomb_.Potential_.end(),
@@ -214,6 +228,21 @@ void MeanField::self_energy(Operator<std::complex<double>>& H__, const Operator<
     if( HasOrigin_ && parameters_.hartree && (parameters_.method == MeanFieldMethod::RPA || parameters_.method == MeanFieldMethod::HSEX)) { // Only the rank with R=0 contributes to this term 
         Hartree_interaction(HR__, Hartree, DMR__, DM0R_, index_origin_local_);
     }
+ 
+    bool newer = true;
+    if(newer){
+    if( parameters_.hartree && (parameters_.method == MeanFieldMethod::RPA || parameters_.method == MeanFieldMethod::HSEX)) {
+        #pragma omp parallel for
+        for( int iblock = 0; iblock < HR__.get_nblocks(); ++iblock ) {
+            for( int irow = 0; irow < HR__.get_nrows(); ++irow ) {
+                for( int icol = 0; icol < HR__.get_ncols(); ++icol ) {
+                    HR__(iblock, irow, icol) += barecoulomb_hund_.Potential_(iblock, irow, icol) * 2.*(DMR__(iblock, irow, icol) - DM0R_(iblock, irow, icol)).real();
+                }
+            }
+        }
+    }
+    }
+
 
     /* Fock term */
     if (parameters_.method == MeanFieldMethod::HSEX) {

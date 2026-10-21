@@ -75,6 +75,11 @@
             "default": "./barecoulomb.txt",
             "title": "Path of the bare Coulomb interaction"
         },
+        "bare_file_hund": {
+            "type": "string",
+            "default": "./barecoulomb_hund.txt",
+            "title": "Path of the bare Coulomb interaction - Hund like"
+        },
         "hartree": {
             "type": "boolean",
             "default": true,

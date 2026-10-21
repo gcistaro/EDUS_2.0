@@ -147,6 +147,18 @@ class config_t
         }
         dict_["/bare_file"_json_pointer] = bare_file__;
     }
+    /// path of the barecoulomb_hund.txt file
+    inline auto bare_file_hund() const
+    {
+        return dict_.at("/bare_file_hund"_json_pointer).get<std::string>();
+    }
+    inline void bare_file_hund(std::string bare_file_hund__)
+    {
+        if (dict_.contains("locked")) {
+            throw std::runtime_error(locked_msg);
+        }
+        dict_["/bare_file_hund"_json_pointer] = bare_file_hund__;
+    }
     /// path of the screencoulomb.txt file
     inline auto hartree() const
     {
